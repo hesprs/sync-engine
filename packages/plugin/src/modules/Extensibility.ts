@@ -4,6 +4,7 @@ import type { Ref } from 'synthkernel';
 import type { StoreOperations } from 'uni-kv';
 import loadModule from '$/e2e-utils';
 import hash from '@repo/shared/crypto';
+import { encodeURIComponent3986 } from '@repo/shared/path';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
 import type { DatabaseAsync, StoreAsync } from '@/sdk';
@@ -15,7 +16,6 @@ import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
 import type { Translate } from './I18n';
 import { VERSION } from './EventBus';
-import { encodeURIComponent3986 } from '@repo/shared/path';
 
 type WindowAugmentation = { syncEngineApiBridge?: typeof obsidian };
 

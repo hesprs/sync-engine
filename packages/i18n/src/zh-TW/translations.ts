@@ -71,7 +71,19 @@ const zhTW: Translations = {
 	confirmDeleteInAutoSync: '自動同步時確認刪除',
 	confirmDeleteInAutoSyncDescription:
 		'在自動同步過程中刪除本地檔案前顯示確認視窗。您可以選擇刪除或重新上傳。',
-	confirmTasksDescription: '請確認以下操作。',
+	confirmTasksDescription: (frag) => {
+		frag.appendText('請確認以下操作：');
+		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: '綠色' });
+		frag.appendText('圖示代表本地操作；');
+		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: '藍色' });
+		frag.appendText('代表遠端操作；');
+		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: '紅色' });
+		frag.appendText('代表本地刪除；');
+		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: '粉紅色' });
+		frag.appendText('代表遠端刪除；而');
+		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: '黃色' });
+		frag.appendText('則代表衝突解決。');
+	},
 	confirmTasksInSync: '手動同步時確認操作',
 	confirmTasksInSyncDescription: '顯示待處理的操作，並在您確認後執行（不影響自動同步）。',
 	conflictResolveStrategy: '衝突解決策略',

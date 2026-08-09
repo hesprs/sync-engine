@@ -72,7 +72,19 @@ const ru: Translations = {
 	confirmDeleteInAutoSync: 'Подтверждать удаления при автосинхронизации',
 	confirmDeleteInAutoSyncDescription:
 		'Показывать подтверждение для локальных файлов, которые будут удалены во время автоматической синхронизации. Вы сможете выбрать: удалить их или загрузить повторно.',
-	confirmTasksDescription: 'Пожалуйста, подтвердите операции ниже.',
+	confirmTasksDescription: (frag) => {
+		frag.appendText('Пожалуйста, подтвердите операции ниже: ');
+		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: 'зелёный' });
+		frag.appendText(' значок означает локальную операцию; ');
+		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: 'синий' });
+		frag.appendText(' — удалённую операцию; ');
+		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: 'красный' });
+		frag.appendText(' — локальное удаление; ');
+		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: 'розовый' });
+		frag.appendText(' — удалённое удаление; а ');
+		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: 'жёлтый' });
+		frag.appendText(' — разрешение конфликта.');
+	},
 	confirmTasksInSync: 'Подтверждать операции при ручной синхронизации',
 	confirmTasksInSyncDescription:
 		'Показывать ожидающие операции и выполнять их только после подтверждения (не влияет на автосинхронизацию).',

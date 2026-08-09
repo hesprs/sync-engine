@@ -75,7 +75,7 @@ export default class HeadersEditorModal extends Modal {
 
 				const trash = itemContainer.createEl(
 					'button',
-					'clickable-icon aspect-square color-rose-500',
+					'clickable-icon aspect-square color-[--color-red]',
 				);
 				setIcon(trash, 'trash-2');
 				trash.onClickEvent(() => {

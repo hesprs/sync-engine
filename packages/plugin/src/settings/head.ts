@@ -59,8 +59,8 @@ export default function headSettings(
 	let statusButton: ExtraButtonComponent | undefined;
 
 	const possibleClasses = [
-		'color-green-400',
-		'color-rose-500',
+		'color-[--color-green]',
+		'color-[--color-red]',
 		'color-neutral-600',
 		'animate-spin',
 	];
@@ -76,14 +76,14 @@ export default function headSettings(
 		const ele = button.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClasses(['color-green-400']);
+		ele.addClasses(['color-[--color-green]']);
 	};
 	const setError = (button: ExtraButtonComponent) => {
 		button.setIcon('cloud-off');
 		const ele = button.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClasses(['color-rose-500']);
+		ele.addClasses(['color-[--color-red]']);
 	};
 	const scheduleCheckConnection = () =>
 		window.setTimeout(() => void checkConnection(), CHECK_CONNECTION_INTERVAL);

@@ -10,7 +10,7 @@ import renderFailedTasks from '@/components/render-failed-tasks';
 import renderProgress from '@/components/render-progress';
 import roundPercent from '@/utils/round-percent';
 import type { Dispatch, On } from './EventBus';
-import type { Translate } from './I18n';
+import type { Fragment, Translate } from './I18n';
 import type { SyncStage } from './Observability';
 import type { FailedTaskInfo, TaskInfo } from './Sync';
 
@@ -120,7 +120,7 @@ export default class ProgressModal extends Modal {
 		completed: string;
 		failedTasksDescription: string;
 		confirmDeleteDescription: string;
-		confirmTasksDescription: string;
+		confirmTasksDescription: Fragment;
 		hide: string;
 		confirm: string;
 		cancel: string;

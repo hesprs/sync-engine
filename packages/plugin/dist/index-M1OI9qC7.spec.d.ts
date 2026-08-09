@@ -1056,7 +1056,7 @@ declare class ProgressModal extends Modal {
     completed: string;
     failedTasksDescription: string;
     confirmDeleteDescription: string;
-    confirmTasksDescription: string;
+    confirmTasksDescription: Fragment;
     hide: string;
     confirm: string;
     cancel: string;

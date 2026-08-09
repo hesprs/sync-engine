@@ -72,7 +72,19 @@ const en: Translations = {
 	confirmDeleteInAutoSync: 'Confirm deletions during auto-sync',
 	confirmDeleteInAutoSyncDescription:
 		'Show a confirmation of local files that will be deleted during auto-triggered syncs. You can choose to delete or re-upload them.',
-	confirmTasksDescription: 'Please confirm the operations below.',
+	confirmTasksDescription: (frag) => {
+		frag.appendText('Please confirm the operations below: a ');
+		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: 'green' });
+		frag.appendText(' icon means local operation; ');
+		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: 'blue' });
+		frag.appendText(' means remote operation; ');
+		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: 'red' });
+		frag.appendText(' means local deletion; ');
+		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: 'pink' });
+		frag.appendText(' means remote deletion; and ');
+		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: 'yellow' });
+		frag.appendText(' means conflict resolution.');
+	},
 	confirmTasksInSync: 'Confirm operations in manual sync',
 	confirmTasksInSyncDescription:
 		'Show pending operations and execute after confirmation (does not affect auto-sync).',

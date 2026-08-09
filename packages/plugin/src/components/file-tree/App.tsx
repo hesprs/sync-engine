@@ -33,7 +33,7 @@ export default function App(props: {
 						}}
 						type="checkbox"
 					/>
-					<div class="h-4 w-4" ref={(element) => setIcon(element, 'files')} />
+					<div class="h-4 w-4" ref={(element) => setIcon(element, 'folders')} />
 					<div class="min-w-0 break-words text-[--text-normal]">{props.selectAll}</div>
 				</div>
 			</div>

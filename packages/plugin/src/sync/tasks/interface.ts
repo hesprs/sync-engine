@@ -54,9 +54,11 @@ export abstract class BaseTask<T extends TaskOptions = TaskOptions> {
 	abstract exec(): MaybePromise<void>;
 }
 
-const RED_COLOR = 'var(--color-red)';
-const BLUE_COLOR = 'var(--color-blue)';
-const YELLOW_COLOR = 'var(--color-yellow)';
+const RED = 'var(--color-red)';
+const PINK = 'var(--color-pink)';
+const BLUE = 'var(--color-blue)';
+const GREEN = 'var(--color-green)';
+const YELLOW = 'var(--color-yellow)';
 
 export function getTaskIcon(name: TaskNames, isDir: boolean): string {
 	if (name === 'createRemoteDir') return 'folder-up';
@@ -73,14 +75,21 @@ export function getTaskIcon(name: TaskNames, isDir: boolean): string {
 export function getTaskColor(name: TaskNames): string {
 	switch (name) {
 		case 'resolveConflict': {
-			return YELLOW_COLOR;
+			return YELLOW;
 		}
-		case 'removeLocal':
+		case 'removeLocal': {
+			return RED;
+		}
 		case 'removeRemote': {
-			return RED_COLOR;
+			return PINK;
+		}
+		case 'createLocalDir':
+		case 'download':
+		case 'moveLocal': {
+			return GREEN;
 		}
 		default: {
-			return BLUE_COLOR;
+			return BLUE;
 		}
 	}
 }

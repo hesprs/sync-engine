@@ -51,12 +51,6 @@ input[type='checkbox']:indeterminate {
 	background-color: rgb(246, 5, 34);
 }
 
-@container (max-width: 340px) {
-	.sync-engine-togglable-value {
-		flex-direction: column;
-	}
-}
-
 @container (max-width: 500px) {
 	.sync-engine-togglable-value {
 		flex-direction: column;

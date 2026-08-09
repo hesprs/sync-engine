@@ -59,7 +59,19 @@ const zh: Translations = {
 	confirmDeleteInAutoSync: '自动同步时确认删除',
 	confirmDeleteInAutoSyncDescription:
 		'在自动触发的同步过程中，显示将被删除的本地文件的确认提示。您可以选择删除或重新上传它们。',
-	confirmTasksDescription: '请确认以下操作。',
+	confirmTasksDescription: (frag) => {
+		frag.appendText('请确认以下操作：');
+		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: '绿色' });
+		frag.appendText(' 图标表示本地操作；');
+		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: '蓝色' });
+		frag.appendText(' 表示远程操作；');
+		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: '红色' });
+		frag.appendText(' 表示本地删除；');
+		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: '粉色' });
+		frag.appendText(' 表示远程删除；');
+		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: '黄色' });
+		frag.appendText(' 则表示冲突解决。');
+	},
 	confirmTasksInSync: '手动同步时确认操作',
 	confirmTasksInSyncDescription: '显示待处理的操作并在确认后执行（不影响自动同步）。',
 	conflictResolveStrategy: '冲突解决策略',

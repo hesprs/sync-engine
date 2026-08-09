@@ -1,7 +1,7 @@
 import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
 import { concatBinary } from '@repo/shared/binary';
-import { buildUrl, getFileUid, getHeader } from './utils';
 import { encodeURIComponent3986 } from '@repo/shared/path';
+import { buildUrl, getFileUid, getHeader } from './utils';
 
 const NEXTCLOUD_CHUNK_SIZE = 5 * 1024 * 1024;
 const NEXTCLOUD_MAX_CONCURRENT = 3;
