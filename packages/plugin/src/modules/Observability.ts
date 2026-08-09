@@ -123,8 +123,10 @@ export default class Observability {
 				syncStage('walkingRemote');
 				window.clearInterval(updateInterval);
 				sinceLastSyncText('');
-				if (settings.noticeStatusOnMobile && Platform.isMobile)
-					mobileSyncNotice = new Notice(progressText(), 0);
+				if (settings.noticeStatusOnMobile && Platform.isMobile) {
+					window.clearTimeout(noticeTimeout);
+					mobileSyncNotice ??= new Notice(progressText(), 0);
+				}
 			}),
 			on('requestConfirmDelete', () => syncStage('awaitingConfirmation')),
 			on('requestConfirmTasks', () => syncStage('awaitingConfirmation')),
