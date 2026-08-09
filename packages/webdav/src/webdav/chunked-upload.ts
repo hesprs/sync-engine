@@ -1,6 +1,7 @@
 import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
 import { concatBinary } from '@repo/shared/binary';
 import { buildUrl, getFileUid, getHeader } from './utils';
+import { encodeURIComponent3986 } from '@repo/shared/path';
 
 const NEXTCLOUD_CHUNK_SIZE = 5 * 1024 * 1024;
 const NEXTCLOUD_MAX_CONCURRENT = 3;
@@ -14,7 +15,7 @@ type NextcloudChunkedUploadOptions = {
 };
 
 function getUploadEndpoint(endpoint: string, username: string) {
-	const encodedUsername = encodeURIComponent(username);
+	const encodedUsername = encodeURIComponent3986(username);
 	const filesMarker = '/files/';
 	const filesMarkerIndex = endpoint.lastIndexOf(filesMarker);
 	return filesMarkerIndex === -1

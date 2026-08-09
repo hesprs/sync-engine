@@ -1,5 +1,6 @@
 import type { Binary, Request, RequestParam } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
+import { encodeURIComponent3986 } from '@repo/shared/path';
 import { md5 } from 'hash-wasm';
 
 export type UrlStyle = 'virtualHosted' | 'path';
@@ -72,7 +73,7 @@ function canonicalizeUrl(url: string): { canonicalUri: string; canonicalQuery: s
 			const values = params.getAll(key);
 			values.sort();
 			return values
-				.map((value) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+				.map((value) => `${encodeURIComponent3986(key)}=${encodeURIComponent3986(value)}`)
 				.join('&');
 		})
 		.filter(Boolean)

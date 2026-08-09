@@ -15,6 +15,7 @@ import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
 import type { Translate } from './I18n';
 import { VERSION } from './EventBus';
+import { encodeURIComponent3986 } from '@repo/shared/path';
 
 type WindowAugmentation = { syncEngineApiBridge?: typeof obsidian };
 
@@ -451,7 +452,7 @@ async function migrateModules({
 					icon: 'puzzle',
 					id,
 					integrity: await sha256(file),
-					main: `https://sync.consensia.cc/modules/${encodeURIComponent(name)}.js`,
+					main: `https://sync.consensia.cc/modules/${encodeURIComponent3986(name)}.js`,
 					name,
 					source: 'https://sync.consensia.cc/modules.json',
 					version,

@@ -41,19 +41,19 @@ export function normalizeUrl(value: string) {
 	return parsedUrl.toString().replace(/\/+$/v, '');
 }
 
+export function encodeURIComponent3986(url: string) {
+	return encodeURIComponent(url)
+		.replaceAll('!', '%21')
+		.replaceAll("'", '%27')
+		.replaceAll('(', '%28')
+		.replaceAll(')', '%29')
+		.replaceAll('*', '%2A');
+}
+
 export function encodeUrl(url: string) {
 	return url
 		.split('/')
-		.map((segment) =>
-			segment === ''
-				? ''
-				: encodeURIComponent(segment)
-						.replaceAll('!', '%21')
-						.replaceAll("'", '%27')
-						.replaceAll('(', '%28')
-						.replaceAll(')', '%29')
-						.replaceAll('*', '%2A'),
-		)
+		.map((segment) => (segment === '' ? '' : encodeURIComponent3986(segment)))
 		.join('/');
 }
 
