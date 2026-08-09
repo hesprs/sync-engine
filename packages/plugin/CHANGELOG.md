@@ -2,10 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## Sync Engine v3.0.3 - 2026-08-08
+## Sync Engine v3.0.3 - 2026-08-09
 
+- Fixed the bug that selecting "Show installed only" in module management modal doesn't show installed but disabled modules.
 - Fixed the bug that when a backend is unselected, setting encryption or asymmetric storage does nothing.
 - Removed `Clear all records` button as it is confusing and dangerous.
+- Fixed WebDAV check connection doesn't specify `Content-Type`.
+- Added more colors to the confirmation file tree to distinguish local and remote operations more distinctively.
+- Fixed the bug that causes mobile sync toast notice to stack and never clear.
+- Fixed the S3 SigV4 mismatch when synced file names contain RFC 3986 added unreserved characters.
+- Added Russian and Traditional Chinese translations for all modules.
 
 ## Sync Engine v3.0.2 - 2026-08-07
 
