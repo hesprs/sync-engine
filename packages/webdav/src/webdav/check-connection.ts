@@ -21,6 +21,7 @@ export async function checkConnection(
 	try {
 		const response = await request({
 			body: CHECK_CONNECTION_BODY,
+			contentType: 'application/xml',
 			headers: { Authorization, Depth: '0' },
 			method: 'PROPFIND',
 			url: buildUrl(normalizeUrl(options.endpoint), '/'),

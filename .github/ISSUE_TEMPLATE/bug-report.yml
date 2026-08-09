@@ -53,7 +53,7 @@ body:
   - type: textarea
     id: logs
     attributes:
-      label: Support Log
+      label: Logs
       description: Please go to plugin settings - `Development` - `Export logs`, click `Export to note`, copy and paste the content of the full log. This will be automatically formatted into code, so no need for backticks.
       render: shell
       placeholder: If the support log contains information that you think is improper to disclose, only pasting lines with `ERROR` labels is OK.

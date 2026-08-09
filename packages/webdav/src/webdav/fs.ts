@@ -151,7 +151,8 @@ async function propfind(args: PropfindPayload) {
 	const url = 'url' in args ? args.url : buildUrl(args.endpoint, args.key);
 	const response = await request({
 		body: PROPFIND_BODY,
-		headers: { Authorization: auth, 'Content-Type': 'application/xml', Depth: depth },
+		contentType: 'application/xml',
+		headers: { Authorization: auth, Depth: depth },
 		method: 'PROPFIND',
 		url,
 	});
