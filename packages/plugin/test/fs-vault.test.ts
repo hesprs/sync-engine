@@ -1,7 +1,7 @@
 import testKit from '$/test-kit';
 import { expect, test } from 'bun:test';
-import { App } from 'obsidian';
-import type { RootFs } from '@/fs';
+import { App, TFile, TFolder } from 'obsidian';
+import type { RootFs, VaultRequest } from '@/fs';
 import type { MaybePromise } from '@/types';
 import { createVaultRequest, VaultFs } from '@/fs';
 
@@ -42,19 +42,51 @@ type VaultControl = {
 	writeBinary: (path: string, data: ArrayBuffer) => MaybePromise<void>;
 };
 
+type VaultListing = { files: Array<string>; folders: Array<string> };
+
 type VaultHarness = {
 	calls: VaultCalls;
 	control: VaultControl;
 	fs: RootFs;
+	request: VaultRequest;
 };
 
 type VaultHarnessOptions = {
 	config?: { trashOption?: 'local' };
 	control?: Partial<VaultControl>;
-	list?: Record<string, { files: Array<string>; folders: Array<string> }>;
+	layoutReady?: boolean;
+	list?: Record<string, VaultListing>;
 	stats?: Record<string, VaultFixtureStat | undefined>;
+	// Obsidian's in-memory file tree, which never contains hidden entries
+	tree?: Record<string, VaultListing>;
 	trashSystem?: Record<string, boolean>;
 };
+
+function createCachedTree(options: VaultHarnessOptions): Map<string, TFile | TFolder> {
+	const cached = new Map<string, TFile | TFolder>();
+	const toFile = (path: string) => {
+		const stat = options.stats?.[path];
+		return Object.assign(new TFile(), {
+			path,
+			stat: { ctime: 0, mtime: stat?.mtime ?? 0, size: stat?.size ?? 0 },
+		});
+	};
+	for (const [path, { files, folders }] of Object.entries(options.tree ?? {})) {
+		const children = files.map(toFile);
+		for (const child of children) cached.set(child.path, child);
+		cached.set(
+			path,
+			Object.assign(new TFolder(), {
+				children: [
+					...folders.map((child) => Object.assign(new TFolder(), { path: child })),
+					...children,
+				],
+				path,
+			}),
+		);
+	}
+	return cached;
+}
 
 function createVaultControl(options: VaultHarnessOptions): VaultControl {
 	return {
@@ -135,19 +167,22 @@ function createVaultStub(options: VaultHarnessOptions): VaultHarness {
 		},
 	};
 
+	const cached = createCachedTree(options);
 	const app = {
 		vault: {
 			adapter,
 			config: options.config,
-			getAbstractFileByPath: () => {},
+			getAbstractFileByPath: (path: string) => cached.get(path),
 		},
-		workspace: { layoutReady: true },
+		workspace: { layoutReady: options.layoutReady ?? true },
 	} as unknown as App;
+	const request = createVaultRequest(app);
 
 	return {
 		calls,
 		control,
-		fs: new VaultFs(createVaultRequest(app), 'Vault Name'),
+		fs: new VaultFs(request, 'Vault Name'),
+		request,
 	};
 }
 
@@ -247,4 +282,70 @@ test('list should DFS descendants and exclude queried root', async () => {
 		'root.md',
 	]);
 	expect(stats.some(({ key }) => key === '/')).toBe(false);
+});
+
+// Hidden entries live on disk but never appear in Obsidian's in-memory file tree
+const HIDDEN_OPTIONS: VaultHarnessOptions = {
+	list: {
+		'/': { files: ['root.md', '.hidden-root.md'], folders: ['folder'] },
+		folder: { files: ['folder/note.md', 'folder/.hidden.md'], folders: ['folder/.hidden'] },
+		'folder/.hidden': { files: ['folder/.hidden/inner.md'], folders: [] },
+	},
+	stats: {
+		'.hidden-root.md': { mtime: 5, size: 5, type: 'file' },
+		'folder/.hidden.md': { mtime: 2, size: 2, type: 'file' },
+		'folder/.hidden/inner.md': { mtime: 3, size: 3, type: 'file' },
+		'folder/note.md': { mtime: 4, size: 4, type: 'file' },
+		'root.md': { mtime: 1, size: 1, type: 'file' },
+	},
+	tree: {
+		'/': { files: ['root.md'], folders: ['folder'] },
+		folder: { files: ['folder/note.md'], folders: [] },
+	},
+};
+
+const HIDDEN_KEYS = [
+	'.hidden-root.md',
+	'folder/',
+	'folder/.hidden.md',
+	'folder/.hidden/',
+	'folder/.hidden/inner.md',
+	'folder/note.md',
+	'root.md',
+].toSorted();
+
+async function listedKeys(vault: VaultHarness): Promise<Array<string>> {
+	const stats = await vault.fs.list('/', () => 'advance');
+	return stats.map(({ key }) => key).toSorted();
+}
+
+test('list should report hidden entries the file tree omits', async () => {
+	const vault = createVaultStub(HIDDEN_OPTIONS);
+
+	expect(await listedKeys(vault)).toStrictEqual(HIDDEN_KEYS);
+	expect(vault.calls.list.toSorted()).toStrictEqual(['/', 'folder', 'folder/.hidden']);
+});
+
+test('list should return the same entries whether or not the layout is ready', async () => {
+	const ready = await listedKeys(createVaultStub({ ...HIDDEN_OPTIONS, layoutReady: true }));
+	const notReady = await listedKeys(createVaultStub({ ...HIDDEN_OPTIONS, layoutReady: false }));
+
+	expect(ready).toStrictEqual(notReady);
+	expect(ready).toStrictEqual(HIDDEN_KEYS);
+});
+
+test('list should fall back to the adapter when the file tree has no such folder', async () => {
+	const vault = createVaultStub({ ...HIDDEN_OPTIONS, tree: {} });
+
+	expect(await listedKeys(vault)).toStrictEqual(HIDDEN_KEYS);
+});
+
+test('LIST should keep using the file tree when the caller does not opt out', async () => {
+	const vault = createVaultStub(HIDDEN_OPTIONS);
+
+	expect(await vault.request({ key: 'folder/', method: 'LIST' })).toStrictEqual({
+		files: ['folder/note.md'],
+		folders: [],
+	});
+	expect(vault.calls.list).toStrictEqual([]);
 });
