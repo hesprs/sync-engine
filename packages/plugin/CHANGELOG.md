@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.0.4 - 2026-08-10
+
+- Fixed the bug that "Rename and keep both" conflict resolution strategy duplicates content locally instead of propagate over remote.
+- Fixed the bugs that improper inclusion and exclusion rules can sync excluded empty folders.
+- Added guard to stop asymmetric storage early when the remote doesn't seem to be in asymmetric shape.
+
 ## Sync Engine v3.0.3 - 2026-08-09
 
 - Fixed the bug that selecting "Show installed only" in module management modal doesn't show installed but disabled modules.

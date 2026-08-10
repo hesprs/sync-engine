@@ -40,9 +40,6 @@ type Progress<T = string> = {
 };
 type Binary = Uint8Array<ArrayBuffer>;
 //#endregion
-//#region src/utils/glob-match.d.ts
-type GlobMatchResult = 'include' | 'exclude' | 'advance';
-//#endregion
 //#region src/fs/interface.d.ts
 /**
  * All keys use unified format:
@@ -63,7 +60,7 @@ type RootFs = {
   exists(key: string): MaybePromise<boolean>;
   list(key: string, reporter: ListReporter): MaybePromise<Array<Stat$1>>;
 };
-type ListReporter = (progress: Required<Progress>) => MaybePromise<GlobMatchResult>;
+type ListReporter = (progress: Required<Progress>) => MaybePromise<'include' | 'exclude' | 'advance'>;
 type WrappedFs = RootFs & {
   original: Fs;
 };
@@ -518,7 +515,7 @@ declare class Sync {
   private readonly confirmTasks;
   private readonly confirmDeletion;
   private readonly executeSync;
-  private convertDeleteToUpload;
+  private readonly convertDeleteToUpload;
   root: {
     executeSync: (trigger: string) => Promise<{
       result: 'cancelled';

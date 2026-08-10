@@ -1,7 +1,7 @@
 import { isFolder } from '@repo/shared/path';
 import type { GlobMatchRule } from '@/types';
 
-export type GlobMatchResult = 'include' | 'exclude' | 'advance';
+export type GlobMatchResult = 'include' | 'exclude' | 'advance' | 'probe';
 type SegmentMatcher = RegExp;
 
 type CompiledRule = {
@@ -236,7 +236,7 @@ export function prepareGlobMatch(
 		);
 		if (excluded) {
 			if (parsed.directory && inclusions.some((rule) => canMatchAnyDescendant(rule, parsed)))
-				return 'advance';
+				return 'probe';
 			return 'exclude';
 		}
 

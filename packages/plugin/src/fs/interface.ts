@@ -1,6 +1,5 @@
 // oxlint-disable typescript/method-signature-style
 import type { MaybePromise, Progress, Stat, Binary, FileStat } from '@/types';
-import type { GlobMatchResult } from '@/utils/glob-match';
 
 /**
  * All keys use unified format:
@@ -22,7 +21,9 @@ export type RootFs = {
 	list(key: string, reporter: ListReporter): MaybePromise<Array<Stat>>; // List recursive children under one folder
 };
 
-export type ListReporter = (progress: Required<Progress>) => MaybePromise<GlobMatchResult>;
+export type ListReporter = (
+	progress: Required<Progress>,
+) => MaybePromise<'include' | 'exclude' | 'advance'>;
 export type WrappedFs = RootFs & { original: Fs };
 export type Fs = WrappedFs | RootFs;
 

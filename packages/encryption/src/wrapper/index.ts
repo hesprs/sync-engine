@@ -45,7 +45,7 @@ export type EncryptionWrapperOptions = {
 
 class EncryptionFs implements WrappedFs {
 	private readonly pathStores: EncryptionStores;
-	private keysPromise: Promise<DerivedKeys> | undefined;
+	private keysPromise?: Promise<DerivedKeys>;
 
 	constructor(
 		readonly original: Fs,

@@ -120,19 +120,21 @@ Sync Engine welcomes everyone that would like to develop and contribute a module
 
 You can simply retry the sync. An error does not block later syncs nor corrupt your files.
 
-If the error persists after retrying, please [open an issue](https://github.com/hesprs/sync-engine/issues/new), describing the error, your setup, with the support log attached.
+If the error persists after retrying, please [open an issue](https://github.com/hesprs/sync-engine/issues/new), describing the error, your setup, with the log attached.
 
 </details>
 
-<details><summary>How should I manage my WebDAV storage when using this plugin?</summary>
+<details><summary>How should I manage my remote storage when using this plugin?</summary>
 
-According to this plugin's [file handling strategy](https://hesprs.github.io/projects/sync-engine#technical-breakdown), all remote changes will be propagated to all vaults. So it's generally not recommended to manually manage your WebDAV storage unless you intend to add / remove these files. Manual management is more discouraged when you have encryption or asymmetric storage enabled.
+According to this plugin's [file handling strategy](https://hesprs.github.io/projects/sync-engine#technical-breakdown), all remote changes will be propagated to all vaults. So it's generally not recommended to manually manage your remote storage unless you intend to add / remove these files. Manual management is more discouraged when you have encryption or asymmetric storage enabled.
 
 </details>
 
 ## Roadmap
 
-Below is a list of planned features and improvements, the faster this plugin is adopted and the star ⭐ grows, the faster the development will be. Also, we welcome contributors that would like to help us with the development of either modules or core.
+Below is a list of planned features and improvements, the faster this plugin is adopted and the **star** ⭐ grows, the faster the development will be. Also, we welcome contributors that would like to help us with the development of either modules or core.
+
+Sync Engine also has a [wishlist of features](https://github.com/hesprs/sync-engine/issues/214), you can react with **thumbs up** 👍 on feature comments you would like to have. And the features with more votes will have higher priority.
 
 - [x] v3.0: Rewrite entirely, dynamic module loading, module store, asymmetric storage, and rebrand
 - [ ] v3.1: Migrate settings to Obsidian v1.13 API

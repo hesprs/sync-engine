@@ -29,8 +29,8 @@ export default async function renameAndKeepBothResolver({
 	if (local.mtime > remote.mtime) {
 		await remoteFs.move(key, conflictKey);
 		const [remoteCanonicalUid, localConflictUid] = await Promise.all([
-			writeWithValue(remoteFs, key, remoteValue, local),
-			writeWithValue(localFs, conflictKey, localValue, local),
+			writeWithValue(remoteFs, key, localValue, local),
+			writeWithValue(localFs, conflictKey, remoteValue, remote),
 		]);
 		await record.batch([
 			{
@@ -47,8 +47,8 @@ export default async function renameAndKeepBothResolver({
 	} else {
 		await localFs.move(key, conflictKey);
 		const [localCanonicalUid, remoteConflictUid] = await Promise.all([
-			writeWithValue(localFs, key, localValue, remote),
-			writeWithValue(remoteFs, conflictKey, remoteValue, remote),
+			writeWithValue(localFs, key, remoteValue, remote),
+			writeWithValue(remoteFs, conflictKey, localValue, local),
 		]);
 		await record.batch([
 			{

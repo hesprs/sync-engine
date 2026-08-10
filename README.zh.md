@@ -73,7 +73,7 @@ Sync Engine 恰好填补了这一空白：您可以自由选择存储服务，�
 ### 模块扩展功能（[您也可以开发自己的模块](https://www.google.com/search?q=%23%E5%BC%80%E5%8F%91%E6%A8%A1%E5%9D%97)）
 
 - **存储后端**：WebDAV, S3
-- **功能**：加密、智能合并冲突解决（Smart Merge）
+- **功能**：加密、智能合并冲突解决
 
 ### 极具扩展性的架构
 
@@ -113,19 +113,21 @@ Sync Engine 欢迎大家开发并贡献模块。详细的模块开发文档可�
 
 您可以直接尝试重新同步。个别错误不会阻塞后续的同步，也不会损坏您的文件。
 
-如果重试后错误依然存在，请 [提交 Issue](https://github.com/hesprs/sync-engine/issues/new)，附上错误描述、您的配置环境以及支持日志（Support log）。
+如果重试后错误依然存在，请 [提交 Issue](https://github.com/hesprs/sync-engine/issues/new)，附上错误描述、您的配置环境以及日志。
 
 </details>
 
-<details><summary>使用本插件时，我应该如何管理 WebDAV 存储？</summary>
+<details><summary>使用本插件时，我该如何管理远程存储？</summary>
 
-根据本插件的 [文件处理策略](https://hesprs.github.io/projects/sync-engine#technical-breakdown)，所有远程变更都会传播到所有 Vault 中。因此通常不建议手动管理 WebDAV 存储中的文件，除非您确定要手动添加或删除这些文件。当您启用了加密或非对称存储时，更不建议进行手动干预。
+根据本插件的[文件处理策略](https://hesprs.github.io/projects/sync-engine#technical-breakdown)，所有远程变更都会同步传播至所有 vault。因此，除非您明确想要添加或删除这些文件，否则通常不建议手动去管理远程存储。特别是当您启用了加密或非对称存储功能时，更不建议进行手动干预。
 
 </details>
 
 ## 路线图
 
 以下是计划中的功能和改进清单。插件获得的关注和 Star ⭐ 越多，开发进度就会越快。同时，我们也极其欢迎贡献者加入我们，共同开发模块或插件核心。
+
+Sync Engine 还包含一份[期望功能清单](https://github.com/hesprs/sync-engine/issues/214)。您可以在您希望拥有的功能评论下方点赞 👍 进行投票，得票更高的功能将拥有更高的优先级。
 
 - [x] v3.0：全面重构，支持动态模块加载、模块商店、非对称存储，并完成品牌重塑
 - [ ] v3.1：将设置项迁移至 Obsidian v1.13 API

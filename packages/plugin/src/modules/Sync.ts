@@ -1,7 +1,8 @@
 import type { Events, Translations } from '@';
 import type { Ref } from 'synthkernel';
+import { isSub } from '@repo/shared/path';
 import { ref } from 'synthkernel';
-import type { Fs, ListReporter } from '@/fs';
+import type { Fs } from '@/fs';
 import type {
 	BaseTask,
 	ConflictResolver,
@@ -11,6 +12,7 @@ import type {
 	TaskOptionsMap,
 } from '@/sync';
 import type { GlobMatchRule, Progress, Stat, StatsMap, TogglableValue } from '@/types';
+import type { GlobMatchResult } from '@/utils/glob-match';
 import {
 	RemoveLocal,
 	CreateRemoteDir,
@@ -18,7 +20,6 @@ import {
 	AddRecord,
 	RemoveRecord,
 	detectMoves,
-	postTraversal,
 	syncCancelledError,
 	taskMap,
 } from '@/sync';
@@ -76,13 +77,22 @@ export default class Sync {
 		confirmTasksInSync: boolean;
 	};
 
-	private readonly postProcess = (stats: Array<Stat>) =>
-		postTraversal({
-			maxSize: this.settings.maxFileSize.enabled
-				? this.settings.maxFileSize.value
-				: undefined,
-			stats: toMap(stats),
-		});
+	private readonly postProcess = (
+		stats: Array<Stat>,
+		pruner: (stats: Array<Stat>) => Array<Stat>,
+	) => {
+		const statsMap = toMap(pruner(stats));
+		const maxSize = this.settings.maxFileSize.enabled
+			? this.settings.maxFileSize.value
+			: Infinity;
+		const includedStats: StatsMap = new Map();
+		if (statsMap.size === 0) return includedStats;
+		for (const [path, stat] of statsMap) {
+			if (!stat.isDir && stat.size > maxSize) continue;
+			includedStats.set(path, stat);
+		}
+		return includedStats;
+	};
 
 	private readonly confirmTasks = (tasks: Array<BaseTask>) =>
 		new Promise<Array<BaseTask>>((resolve, reject) => {
@@ -134,19 +144,24 @@ export default class Sync {
 				this.settings.inclusionRules,
 				this.settings.exclusionRules,
 			);
-			const reporter: ListReporter = (progress) => {
-				this.dispatch('remoteWalkProgress', progress);
-				return match(progress.current);
-			};
+			const { reporter: localReporter, pruner: localPruner } = prepareReporter(match);
+			const { reporter: remoteReporter, pruner: remotePruner } = prepareReporter(match);
 
 			const [localList, remoteList] = await Promise.all([
-				localFs.list('/', ({ current }) => match(current)),
-				this.ctx.listRemote({ ...infras, reporter, trigger }),
+				localFs.list('/', localReporter),
+				this.ctx.listRemote({
+					...infras,
+					reporter: (prog) => {
+						this.dispatch('remoteWalkProgress', prog);
+						return remoteReporter(prog);
+					},
+					trigger,
+				}),
 			]);
 			if (isCancelled()) throw syncCancelledError;
 			const records = new Map(await record.entries());
-			const localStats = this.postProcess(localList);
-			const remoteStats = this.postProcess(remoteList);
+			const localStats = this.postProcess(localList, localPruner);
+			const remoteStats = this.postProcess(remoteList, remotePruner);
 			this.dispatch(
 				'logSync',
 				`Local ${localStats.size} item(s), remote ${remoteStats.size} item(s), record ${records.size} item(s).`,
@@ -250,7 +265,7 @@ export default class Sync {
 		return terminateReason;
 	};
 
-	private async convertDeleteToUpload(tasks: Array<RemoveLocal>, localFs: Fs) {
+	private readonly convertDeleteToUpload = async (tasks: Array<RemoveLocal>, localFs: Fs) => {
 		const final: Array<Upload | CreateRemoteDir> = [];
 		await Promise.all(
 			tasks.map(async (task) => {
@@ -268,7 +283,7 @@ export default class Sync {
 			}),
 		);
 		return final;
-	}
+	};
 
 	root = { executeSync: this.executeSync };
 }
@@ -329,4 +344,28 @@ function sortTasks(tasks: Array<BaseTask>) {
 		if (aRegion === 1 || aRegion === 2) return a.key.length - b.key.length;
 		return 0;
 	});
+}
+
+function prepareReporter(match: (path: string) => GlobMatchResult) {
+	const probes: Array<string> = [];
+	return {
+		// Prune probe folders that need to be excluded
+		pruner: (stats: Array<Stat>) => {
+			const probeSet = new Set(probes);
+			const content = stats.filter((p) => !probeSet.has(p.key));
+			if (content.length === 0) return [];
+			const keptProbes = new Set<string>();
+			for (const probe of probeSet)
+				if (content.some((p) => isSub(probe, p.key, false))) keptProbes.add(probe);
+			return stats.filter((p) => !probeSet.has(p.key) || keptProbes.has(p.key));
+		},
+		reporter: (prog: Required<Progress>) => {
+			const result = match(prog.current);
+			if (result === 'probe') {
+				probes.push(prog.current);
+				return 'advance';
+			}
+			return result;
+		},
+	};
 }

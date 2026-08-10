@@ -123,11 +123,20 @@ test('direct inclusion overrides direct and ancestor exclusion', () => {
 			match,
 		),
 	).toEqual({
-		'build/': 'advance',
+		'build/': 'probe',
 		'build/keep.txt': 'include',
 		'build/keep/more.txt': 'exclude',
 		'build/other.txt': 'exclude',
 		'important.log': 'include',
+	});
+});
+
+test('probes excluded directories that may contain included descendants', () => {
+	const match = prepareGlobMatch([rule('build/keep.txt')], [rule('build/')]);
+	expect(results(['build/', 'build/keep.txt', 'build/other.txt'], match)).toEqual({
+		'build/': 'probe',
+		'build/keep.txt': 'include',
+		'build/other.txt': 'exclude',
 	});
 });
 
