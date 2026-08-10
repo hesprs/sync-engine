@@ -244,10 +244,9 @@ These actions are mainly for troubleshooting. Use them carefully.
 
 Sync Engine keeps records of which local and remote files were last matched. It uses these records to tell a new change from a conflict and to plan safe sync operations.
 
-- **Clear vault records** removes records for the current backend + vault combo.
-- **Clear all records** removes records for all vaults on this machine and installed modules.
+Clicking **Clear** button removes records for the current backend + vault combo.
 
-These actions do not directly delete files, but the next sync will have less history and may plan uploads, downloads, or deletions differently. The setting warns that clearing records can cause data loss. Export or back up important files before using it.
+These actions do not directly delete files, but the next sync will have less history and may plan uploads, downloads, or deletions differently. The setting warns that clearing records can cause data loss. Only use it when you manually modified remote files and the plugin already reports wrong operations.
 
 ### Export Logs to File
 

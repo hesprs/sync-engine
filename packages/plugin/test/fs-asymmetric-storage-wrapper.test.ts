@@ -52,12 +52,11 @@ test('list should infer folder anchors from remoteStatContext and return hierarc
 	expect(remote.calls.list).toStrictEqual(['/']);
 });
 
-test('list should skip malformed or orphan flattened entries without throwing', async () => {
+test('list should throw when encountering too many malformed or orphan flattened entries without proceeding', () => {
 	seedRemoteContext(file('00000abcde~folder'));
 	const remote = fs({
 		control: {
 			list: () => [
-				folder('/'),
 				file('bad-key', { size: 1, uid: 'bad' }),
 				file('zzzzz~lost.md', { size: 2, uid: 'orphan-file' }),
 				file('zzzzzqqqqq~ghost', { size: 0, uid: 'orphan-folder' }),
@@ -68,10 +67,9 @@ test('list should skip malformed or orphan flattened entries without throwing', 
 	});
 	const wrapper = asymmetricStorageWrapper(remote.fs, store);
 
-	expect(await wrapper.list('/', () => 'include')).toStrictEqual([
-		folder('folder/'),
-		file('folder/child.md', { size: 4, uid: 'child' }),
-	]);
+	expect(() => wrapper.list('/', () => 'include')).toThrow(
+		"There are too many files at remote that don't adopt asymmetric storage, maybe you want to turn it off in settings.",
+	);
 });
 
 test('mkdir should write empty folder marker file and reuse same generated anchor later', async () => {

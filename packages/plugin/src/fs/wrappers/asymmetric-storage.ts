@@ -157,11 +157,15 @@ class AsymmetricStorageFs implements WrappedFs {
 		const stats = await this.original.list(this.flattenKey(key), () => 'include');
 		const seen = new Set<string>();
 		const result: Array<Stat> = [];
+		let ignoredCount = 0;
 		await Promise.all(
 			stats.map(async (stat, index) => {
 				const inflated = this.inflateStat(stat);
+				if (!inflated) {
+					ignoredCount++;
+					return;
+				}
 				if (
-					!inflated ||
 					!isSub(key, inflated.key) ||
 					seen.has(inflated.key) ||
 					(await reporter({
@@ -175,6 +179,10 @@ class AsymmetricStorageFs implements WrappedFs {
 				result.push(inflated);
 			}),
 		);
+		if (ignoredCount / (stats.length || 1) >= 0.3)
+			throw new Error(
+				"There are too many files at remote that don't adopt asymmetric storage, maybe you want to turn it off in settings.",
+			);
 		return result;
 	}
 
