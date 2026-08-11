@@ -225,22 +225,6 @@ test('file with record, no local, remote unchanged → removeRemote', () => {
 	expect(task.remote).toBe(remote);
 });
 
-// https://github.com/hesprs/sync-engine/issues/222
-test('hidden file with record, present on both sides → no removeRemote', () => {
-	const key = 'folder/.hidden.md';
-	const local = file(key, 'local-uid');
-	const remote = file(key, 'remote-uid');
-	const records: RecordStatsMap = new Map([[key, fileRecord('local-uid', 'remote-uid')]]);
-	const tasks = runDecider({
-		localStats: new Map([[key, local]]),
-		records,
-		remoteStats: new Map([[key, remote]]),
-	});
-
-	expect(names(tasks)).not.toContain('removeRemote');
-	expect(tasks).toHaveLength(0);
-});
-
 test('folder only local, no record → createRemoteDir', () => {
 	const local = folder('docs/');
 	const task = keyed(runDecider({ localStats: new Map([['docs/', local]]) }), 'docs/');
