@@ -99,7 +99,7 @@ export default function createVaultRequest(app: App): VaultRequest {
 		}
 		if (method === 'LIST') {
 			const children: ListedFiles = { files: [], folders: [] };
-			if (canUseCache() && (params.headers?.cached ?? true) && key !== '/') {
+			if (canUseCache() && (params.headers?.cached ?? true)) {
 				const folder = vault.getAbstractFileByPath(path);
 				if (folder instanceof TFolder) {
 					folder.children.forEach((child) =>
