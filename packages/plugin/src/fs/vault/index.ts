@@ -101,7 +101,6 @@ export default class VaultFs implements RootFs {
 		let completed = 1;
 		let total = 1;
 		const visit = async (dir: string) => {
-			// Obsidian's cached file tree omits hidden entries
 			// https://github.com/hesprs/sync-engine/issues/222
 			const { files, folders } = await this.request({
 				headers: { cached: false },

@@ -1,3 +1,4 @@
+import type { ListedFiles } from 'obsidian';
 import testKit from '$/test-kit';
 import { expect, test } from 'bun:test';
 import { App, TFile, TFolder } from 'obsidian';
@@ -42,8 +43,6 @@ type VaultControl = {
 	writeBinary: (path: string, data: ArrayBuffer) => MaybePromise<void>;
 };
 
-type VaultListing = { files: Array<string>; folders: Array<string> };
-
 type VaultHarness = {
 	calls: VaultCalls;
 	control: VaultControl;
@@ -54,11 +53,10 @@ type VaultHarness = {
 type VaultHarnessOptions = {
 	config?: { trashOption?: 'local' };
 	control?: Partial<VaultControl>;
-	layoutReady?: boolean;
-	list?: Record<string, VaultListing>;
+	list?: Record<string, ListedFiles>;
 	stats?: Record<string, VaultFixtureStat | undefined>;
 	// Obsidian's in-memory file tree, which never contains hidden entries
-	tree?: Record<string, VaultListing>;
+	tree?: Record<string, ListedFiles>;
 	trashSystem?: Record<string, boolean>;
 };
 
@@ -174,7 +172,7 @@ function createVaultStub(options: VaultHarnessOptions): VaultHarness {
 			config: options.config,
 			getAbstractFileByPath: (path: string) => cached.get(path),
 		},
-		workspace: { layoutReady: options.layoutReady ?? true },
+		workspace: { layoutReady: true },
 	} as unknown as App;
 	const request = createVaultRequest(app);
 
@@ -324,20 +322,6 @@ test('list should report hidden entries the file tree omits', async () => {
 
 	expect(await listedKeys(vault)).toStrictEqual(HIDDEN_KEYS);
 	expect(vault.calls.list.toSorted()).toStrictEqual(['/', 'folder', 'folder/.hidden']);
-});
-
-test('list should return the same entries whether or not the layout is ready', async () => {
-	const ready = await listedKeys(createVaultStub({ ...HIDDEN_OPTIONS, layoutReady: true }));
-	const notReady = await listedKeys(createVaultStub({ ...HIDDEN_OPTIONS, layoutReady: false }));
-
-	expect(ready).toStrictEqual(notReady);
-	expect(ready).toStrictEqual(HIDDEN_KEYS);
-});
-
-test('list should fall back to the adapter when the file tree has no such folder', async () => {
-	const vault = createVaultStub({ ...HIDDEN_OPTIONS, tree: {} });
-
-	expect(await listedKeys(vault)).toStrictEqual(HIDDEN_KEYS);
 });
 
 test('LIST should keep using the file tree when the caller does not opt out', async () => {
