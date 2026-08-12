@@ -3,6 +3,7 @@ import { Show, createEffect } from 'solid-js';
 import { compare } from 'verkit';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { MaybePromise } from '@/types';
+import { OFFICIAL_SOURCE } from '@/modules/Extensibility';
 import type { ModuleManagementContext, PendingAction } from './index';
 import ModuleEditorModal from '../ModuleEditorModal';
 
@@ -36,7 +37,7 @@ export default function Card(props: {
 	};
 
 	return (
-		<div class="flex min-h-40 flex-col gap-3 rounded-md border border-[--background-modifier-border] px-4 py-3 bg-[--background-primary-alt]">
+		<div class="sync-engine-card flex min-h-40 flex-col gap-3 rounded-[--radius-s] border border-[--background-modifier-border] px-4 py-3 bg-[--background-primary-alt]">
 			<div class="flex items-start justify-between gap-3">
 				<div class="flex min-w-0 text-base font-semibold text-[--text-normal] break-words">
 					<span
@@ -50,20 +51,14 @@ export default function Card(props: {
 
 			<div class="flex flex-1 flex-col gap-2">
 				<div class="flex flex-wrap gap-2 text-xs text-[--text-muted]">
-					<span>
-						{isInstalled()
-							? props.ctx.translate('installed')
-							: props.ctx.translate('notInstalled')}
-					</span>
+					<Show when={props.module.source === OFFICIAL_SOURCE}>
+						<span class="flair prominent">{props.ctx.translate('official')}</span>
+					</Show>
 					<Show when={isInstalled()}>
-						<span>
-							{props.isLoaded
-								? props.ctx.translate('enabled')
-								: props.ctx.translate('disabled')}
-						</span>
+						<span class="flair">{props.ctx.translate('installed')}</span>
 					</Show>
 					<Show when={hasUpdate()}>
-						<span>{props.ctx.translate('updateAvailable')}</span>
+						<span class="flair">{props.ctx.translate('updateAvailable')}</span>
 					</Show>
 				</div>
 				<div class="flex-1 text-sm text-[--text-muted] break-words">

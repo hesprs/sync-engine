@@ -42,6 +42,8 @@ export default class ModulesModal extends Modal {
 	) {
 		super(ctx.app);
 		this.t = ctx.translate;
+		this.containerEl.getElementsByClassName('modal-bg')[0].addClass('opacity-0!');
+		this.modalEl.addClasses(['sync-engine-large-modal', 'shadow-none!']);
 	}
 
 	declare readonly i18n: ModulesModalTranslations;
@@ -53,15 +55,7 @@ export default class ModulesModal extends Modal {
 	};
 
 	onOpen() {
-		this.containerEl.getElementsByClassName('modal-bg')[0].addClass('opacity-0!');
 		this.setTitle(this.t('moduleManagement'));
-		this.modalEl.addClasses([
-			'w-[--modal-width]',
-			'h-[--modal-height]',
-			'max-w-[--modal-max-width]',
-			'max-h-[--modal-max-height]',
-			'shadow-none!',
-		]);
 		const controlsEl = this.contentEl.createDiv('flex items-center gap-2 pb-4');
 		const searchEl = controlsEl.createDiv('min-w-0 flex-1');
 		const listEl = this.contentEl.createDiv('min-h-0 overflow-y-auto');

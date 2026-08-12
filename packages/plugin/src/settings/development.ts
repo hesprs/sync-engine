@@ -1,3 +1,5 @@
+import type { Settings } from '@';
+import { normalizeBaseDir } from '@repo/shared/path';
 import { Notice, Setting } from 'obsidian';
 import type { Translate } from '@/modules/I18n';
 import type { MaybePromise } from '@/sdk';
@@ -10,6 +12,7 @@ export type DevelopmentSettingTranslations = {
 	clearRecordsDescription: string;
 	export: string;
 	exportLogsDescription: string;
+	exportLogsDirectoryPlaceholder: string;
 	exportLogsToFile: string;
 };
 
@@ -19,9 +22,11 @@ export default function developmentSettings(
 		translate: Translate<DevelopmentSettingTranslations>;
 		deleteRecordStore: (namespace?: string) => MaybePromise<void>;
 		exportLogs: () => Promise<void>;
+		settings: Settings;
+		saveSettings: () => Promise<void>;
 	},
 ) {
-	const { translate, exportLogs, deleteRecordStore } = ctx;
+	const { translate, exportLogs, deleteRecordStore, settings, saveSettings } = ctx;
 	new Setting(el).setName(translate('development')).setHeading();
 
 	new Setting(el)
@@ -40,6 +45,19 @@ export default function developmentSettings(
 	new Setting(el)
 		.setName(translate('exportLogsToFile'))
 		.setDesc(translate('exportLogsDescription'))
+		.addText((text) =>
+			text
+				.setValue(settings.exportLogsDirectory)
+				.setPlaceholder(translate('exportLogsDirectoryPlaceholder'))
+				.inputEl.addEventListener('blur', () => {
+					const normalized = normalizeBaseDir(text.getValue().trim());
+					if (settings.exportLogsDirectory !== normalized) {
+						settings.exportLogsDirectory = normalized;
+						void saveSettings();
+					}
+					text.setValue(normalized);
+				}),
+		)
 		.addButton((button) => {
 			button.setButtonText(translate('export')).onClick(exportLogs);
 		});

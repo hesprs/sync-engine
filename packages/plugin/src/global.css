@@ -56,3 +56,24 @@ input[type='checkbox']:indeterminate {
 		flex-direction: column;
 	}
 }
+
+.sync-engine-large-modal {
+	width: var(--modal-width);
+	height: var(--modal-height);
+	max-width: var(--modal-max-width);
+	max-height: var(--modal-max-height);
+}
+
+.is-phone .sync-engine-large-modal {
+	height: 100%;
+	margin-top: auto;
+}
+
+.sync-engine-card .flair {
+	margin: 0;
+}
+
+.sync-engine-card .flair.prominent {
+	--flair-background: var(--color-accent);
+	--flair-color: var(--text-on-accent);
+}

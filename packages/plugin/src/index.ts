@@ -7,7 +7,7 @@ import type { AddRibbonIcon } from './modules/Observability';
 import type { GlobMatchRule } from './types';
 import Bootstrap from './modules/Bootstrap';
 import EventBus from './modules/EventBus';
-import Extensibility from './modules/Extensibility';
+import Extensibility, { OFFICIAL_SOURCE } from './modules/Extensibility';
 import I18n from './modules/I18n';
 import ModulesModal from './modules/ModulesModal';
 import Observability from './modules/Observability';
@@ -16,10 +16,6 @@ import Registrar from './modules/Registrar';
 import Scheduler from './modules/Scheduler';
 import Storage from './modules/Storage';
 import Sync from './modules/Sync';
-
-function createGlobMatchOptions(expr: string) {
-	return { caseSensitive: false, expr };
-}
 
 const internalModules = [
 	EventBus,
@@ -84,14 +80,15 @@ export default class SyncEngine extends Plugin {
 				'**/~$*.xlsx',
 				'.trash',
 				this.app.vault.configDir,
-			].map(createGlobMatchOptions),
+			].map((expr) => ({ caseSensitive: false, expr })),
+			exportLogsDirectory: 'Sync Engine Logs/',
 			inclusionRules: [],
 			maxFileSize: { enabled: false, value: 31_457_280 },
 			maxMemoryConsumption: { enabled: true, value: 100 * 1024 ** 2 },
 			maxRequestConcurrency: { enabled: true, value: 50 },
 			minRequestInterval: { enabled: false, value: 0 },
 			moduleAutoUpdate: true,
-			moduleSources: ['https://sync.consensia.cc/modules.json'],
+			moduleSources: [OFFICIAL_SOURCE],
 			modules: {},
 			noticeStatusOnMobile: true,
 			realtimeSync: { enabled: false, value: 5000 },

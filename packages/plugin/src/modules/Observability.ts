@@ -1,5 +1,5 @@
 import type { Events, Translations } from '@';
-import type { App, Command, IconName } from 'obsidian';
+import type { App, Command, DataAdapter, IconName } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import { Notice, Platform, setIcon } from 'obsidian';
 import { computed, ref } from 'synthkernel';
@@ -65,7 +65,7 @@ export default class Observability {
 		},
 	);
 
-	declare readonly settings: { noticeStatusOnMobile: boolean };
+	declare readonly settings: { noticeStatusOnMobile: boolean; exportLogsDirectory: string };
 	declare readonly i18n: {
 		startSync: string;
 		startNonInteractiveSync: string;
@@ -290,11 +290,10 @@ export default class Observability {
 		const log = getLogs();
 		const timestamp = new Date().toISOString().replaceAll(/[:.]/gv, '-');
 		const fileName = `${timestamp}.md`;
-		const dirPath = 'Sync Engine Logs';
-		const filePath = `${dirPath}/${fileName}`;
+		const { exportLogsDirectory } = this.settings;
+		const filePath = `${exportLogsDirectory === '/' ? '' : exportLogsDirectory}${fileName}`;
 		try {
-			const folderExists = app.vault.getFolderByPath(dirPath);
-			if (!folderExists) await app.vault.createFolder(dirPath);
+			await mkdirRecursive(app.vault.adapter, exportLogsDirectory);
 			const file = await app.vault.create(filePath, log);
 			await app.workspace.getLeaf().openFile(file);
 		} catch (error) {
@@ -315,4 +314,14 @@ export default class Observability {
 		syncStage: this.syncStage,
 		walkProgress: this.walkProgress,
 	};
+}
+
+async function mkdirRecursive(adapter: DataAdapter, path: string): Promise<void> {
+	const parts = path.split('/');
+	let currentPath = '';
+	for (const part of parts) {
+		if (!part) return;
+		currentPath = currentPath ? `${currentPath}/${part}` : part;
+		if (!(await adapter.exists(currentPath))) await adapter.mkdir(currentPath);
+	}
 }

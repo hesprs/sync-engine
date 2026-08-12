@@ -9,20 +9,18 @@ export type PendingAction = 'delete' | 'disable' | 'download' | 'enable' | 'edit
 
 export type ModuleManagementTranslations = {
 	disableModule: string;
-	disabled: string;
 	downloadModule: string;
 	enableModule: string;
-	enabled: string;
 	installed: string;
 	loadingModules: string;
 	noInstalledModulesFound: string;
 	noMatchingModulesFound: string;
 	noModulesAvailable: string;
-	notInstalled: string;
 	updateAvailable: string;
 	updateModule: string;
 	deleteModule: string;
 	editModuleInformation: string;
+	official: string;
 };
 
 export type ModuleManagementHooks = {

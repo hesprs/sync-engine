@@ -44,6 +44,7 @@ export type AugmentedModuleMeta = ModuleMeta & {
 
 const MODULE_EXTENSION = '.js';
 const AUTO_UPDATE_DELAY = 200;
+export const OFFICIAL_SOURCE = 'https://sync.consensia.cc/modules.json';
 
 export default class Extensibility {
 	private readonly moduleDir: string;
@@ -397,7 +398,7 @@ function isValidMeta(meta: unknown): meta is ModuleMeta {
 	);
 }
 
-// TODO: remove after August 12
+// TODO: remove after August 16
 async function migrateModules({
 	moduleStore,
 	fileList,

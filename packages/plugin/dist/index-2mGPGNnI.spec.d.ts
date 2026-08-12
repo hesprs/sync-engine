@@ -948,20 +948,18 @@ declare class Bootstrap {
 //#region src/components/module-management/index.d.ts
 type ModuleManagementTranslations = {
   disableModule: string;
-  disabled: string;
   downloadModule: string;
   enableModule: string;
-  enabled: string;
   installed: string;
   loadingModules: string;
   noInstalledModulesFound: string;
   noMatchingModulesFound: string;
   noModulesAvailable: string;
-  notInstalled: string;
   updateAvailable: string;
   updateModule: string;
   deleteModule: string;
   editModuleInformation: string;
+  official: string;
 };
 //#endregion
 //#region src/components/SourceEditorModal.d.ts

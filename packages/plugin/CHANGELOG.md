@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.0.5 - 2026-08-12
+
+- Fixed the bug that non-root hidden files and folders cannot be discovered in syncing by @pedrovillalobos.
+- Improved module card display and adjusted panel size on mobile by @hesprs.
+- Made log export directory configurable by @hesprs.
+
 ## Sync Engine v3.0.4 - 2026-08-10
 
 - Fixed the bug that "Rename and keep both" conflict resolution strategy duplicates content locally instead of propagate over remote.
