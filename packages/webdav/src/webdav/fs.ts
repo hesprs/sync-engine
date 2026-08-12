@@ -130,7 +130,12 @@ function toStat(endpoint: string, { propstat, href }: WebDAVResponseItem): Stat 
 
 	const mtime = new Date(getDavText(validPropstat.prop.getlastmodified) ?? '').valueOf();
 	const size = Number.parseInt(getDavText(validPropstat.prop.getcontentlength) ?? '0', 10);
-	const uid = getDavText(validPropstat.prop.getetag) ?? `${mtime}~${size}`;
+
+	// https://www.rfc-editor.org/rfc/rfc9110.html#section-8.8.3
+	// https://github.com/hesprs/sync-engine/issues/225
+	let etag = getDavText(validPropstat.prop.getetag);
+	if (etag?.startsWith('W/')) etag = etag.slice(2);
+	const uid = etag ?? `${mtime}~${size}`;
 
 	return { isDir: false, key, mtime, size, uid };
 }

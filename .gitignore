@@ -3,6 +3,7 @@ test-files
 .ignore
 .obsidian
 .trash
+.agents
 .obsidianignore
 Sync Engine Logs
 .vscode

@@ -141,7 +141,7 @@ test('stat parses dav fields and prefers etag for uid', async () => {
 			propstat: {
 				prop: {
 					getcontentlength: { '#text': '12' },
-					getetag: 'etag-123',
+					getetag: 'W/"etag-123"',
 					getlastmodified: { '#text': 'Mon, 01 Jan 2024 00:00:00 GMT' },
 					resourcetype: {},
 				},
@@ -164,7 +164,7 @@ test('stat parses dav fields and prefers etag for uid', async () => {
 		key: 'Notes/file.md',
 		mtime: sharedDate,
 		size: 12,
-		uid: 'etag-123',
+		uid: '"etag-123"',
 	});
 });
 
