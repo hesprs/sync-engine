@@ -102,9 +102,9 @@ function mergeRecursive(params: MergeSegments, options: MergeOptions): string {
 			const originalOIndex = o.index;
 			const originalBIndex = b.index;
 			mergeResult.merged.forEach((token, index) => {
-				let aJoint: string | undefined,
-					bJoint: string | undefined,
-					oJoint: string | undefined;
+				let aJoint: string | undefined;
+				let bJoint: string | undefined;
+				let oJoint: string | undefined;
 				if (chunkA[index]) {
 					aJoint = a.joints[a.index];
 					a.index++;

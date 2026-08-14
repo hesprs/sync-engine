@@ -29,7 +29,7 @@
 	{
 		"id": "i18n-zh",
 		"name": "I18n 简体中文",
-		"version": "0.0.11",
+		"version": "0.0.12",
 		"description": "Simplified Chinese UI language pack. / 简体中文介面语言包。",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-zh.js",
@@ -38,7 +38,7 @@
 	{
 		"id": "i18n-zh-TW",
 		"name": "I18n 繁體中文",
-		"version": "0.0.3",
+		"version": "0.0.4",
 		"description": "Traditional Chinese UI language pack. / 繁體中文介面語言包。",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-zh-TW.js",
@@ -47,7 +47,7 @@
 	{
 		"id": "i18n-ru",
 		"name": "I18n Русский",
-		"version": "0.0.3",
+		"version": "0.0.4",
 		"description": "Russian UI language pack. / Пакет русского интерфейса.",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-ru.js",

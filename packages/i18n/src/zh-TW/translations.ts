@@ -182,6 +182,8 @@ const zhTW: Translations = {
 	minRequestIntervalDescription:
 		'限制同步過程中連續請求之間的最小時間間隔。此選項適用於有請求速率限制的服務。請在欄位中修改間隔時間。',
 	minRequestIntervalPlaceholder: '輸入間隔時間（例如 1s, 500ms）',
+	mirrorLocal: '鏡像本機',
+	mirrorRemote: '鏡像遠端',
 	miscellaneous: '雜項設定',
 	moduleAutoUpdate: '自動更新模組',
 	moduleAutoUpdateDescription: '自動從模組來源更新已安裝的模組。',

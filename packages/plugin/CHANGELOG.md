@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.0.6 - 2026-08-14
+
+- Added **Mirror remote** and **Mirror local** sync strategies.
+
 ## Sync Engine v3.0.5 - 2026-08-12
 
 - Fixed the bug that non-root hidden files and folders cannot be discovered in syncing by @pedrovillalobos.

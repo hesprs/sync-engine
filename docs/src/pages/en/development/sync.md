@@ -39,9 +39,9 @@ type DeciderInput = {
 type Decider = (input: DeciderInput) => Array<BaseTask>;
 ```
 
-Use `taskFactory` instead of constructing task classes directly — their constructors require internal sync infrastructure. For the built-in bidirectional decider logic, see [deep dive: sync](../deep-dive/sync#decider).
+Use `taskFactory` instead of constructing task classes directly — their constructors require internal sync infrastructure. Built-in deciders include bidirectional, mirror-local, and mirror-remote; see [deep dive: sync](../deep-dive/sync#decider) for their behavior.
 
-Example: [bidirectional decider](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/sync/decision/bidirectional.ts).
+Examples: [bidirectional decider](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/sync/decision/bidirectional.ts) and [mirror deciders](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/sync/decision/mirror.ts).
 
 ### Registering a Decider
 

@@ -169,6 +169,8 @@ const zh: Translations = {
 	minRequestIntervalDescription:
 		'限制同步过程中连续请求之间的最小时间间隔。此选项对于有请求频率限制的服务非常有用。在输入框中修改间隔。',
 	minRequestIntervalPlaceholder: '输入间隔（例如 1s, 500ms）',
+	mirrorLocal: '镜像本地',
+	mirrorRemote: '镜像远程',
 	miscellaneous: '杂项',
 	moduleAutoUpdate: '自动更新模块',
 	moduleAutoUpdateDescription: '从模块源自动更新已安装的模块。',

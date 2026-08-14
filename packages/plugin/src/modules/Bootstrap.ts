@@ -36,6 +36,8 @@ import headSettings from '@/settings/head';
 import miscellaneousSettings from '@/settings/miscellaneous';
 import {
 	bidirectionalDecider,
+	mirrorLocalDecider,
+	mirrorRemoteDecider,
 	keepLocalResolver,
 	keepRemoteResolver,
 	latestSurviveResolver,
@@ -85,6 +87,8 @@ export default class Bootstrap {
 
 	declare readonly i18n: {
 		bidirectional: string;
+		mirrorLocal: string;
+		mirrorRemote: string;
 		latestSurvive: string;
 		keepLocal: string;
 		keepRemote: string;
@@ -359,6 +363,14 @@ export default class Bootstrap {
 		registerDecider('bidirectional', {
 			decider: bidirectionalDecider,
 			prettyName: () => t('bidirectional'),
+		});
+		registerDecider('mirrorLocal', {
+			decider: mirrorLocalDecider,
+			prettyName: () => t('mirrorLocal'),
+		});
+		registerDecider('mirrorRemote', {
+			decider: mirrorRemoteDecider,
+			prettyName: () => t('mirrorRemote'),
 		});
 
 		registerConflictResolver('renameAndKeepBoth', {

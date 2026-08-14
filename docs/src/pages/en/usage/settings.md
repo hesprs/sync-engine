@@ -22,7 +22,13 @@ Automatically update installed modules from their configured sources. Enabled by
 
 ### Sync Strategy
 
-Choose how Sync Engine decides what to do when local and remote files differ. The default **Bidirectional** strategy can apply changes in both local and remote side. Other strategies may be supplied by modules.
+Choose how Sync Engine decides what to do when local and remote files differ:
+
+- **Bidirectional** is the default. It can apply changes on both sides and asks the selected conflict resolver to handle simultaneous file changes.
+- **Mirror local** makes local vault authoritative. It copies local entries to remote and removes remote-only entries.
+- **Mirror remote** makes remote storage authoritative. It copies remote entries to local and removes local-only entries.
+
+Mirror strategies overwrite changes on the non-authoritative side without conflict resolution. Other strategies may be supplied by modules.
 
 ### Conflict Resolve Strategy
 

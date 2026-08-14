@@ -283,8 +283,8 @@ export default function asymmetricStorageWrapper(
 const SAFE_81 = " !$'(),-.0123456789;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{}";
 
 function generateId(str: string): string {
-	let h1 = Math.trunc(0xde_ad_be_ef),
-		h2 = Math.trunc(0x41_c6_ce_57);
+	let h1 = Math.trunc(0xde_ad_be_ef);
+	let h2 = Math.trunc(0x41_c6_ce_57);
 	for (const char of str) {
 		const ch = char.codePointAt(0) as number;
 		h1 = Math.imul(h1 ^ ch, 2_654_435_761);

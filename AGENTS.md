@@ -53,6 +53,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - Excluding main plugin, shared utils and documentation site, all packages are Sync Engine modules, they use the SDK and follow unified module structure.
 - `null` forbidden, use `undefined` consistently.
 - Lint warnings must be cleared, except time-bounded ones (TODO with date, deprecated API for compat)
+- SDK types (`**/*.d.ts` in `packages/plugin/dist/`) are committed to satisfy Obsidian automated linting. You must not touch these types.
 
 ## Documentation
 

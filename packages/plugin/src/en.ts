@@ -189,6 +189,8 @@ const en: Translations = {
 	minRequestIntervalDescription:
 		'Limit the minimum time between consecutive requests during synchronization. This option is useful for services with request rate limits. Alter the interval in the field.',
 	minRequestIntervalPlaceholder: 'Enter interval (e.g. 1s, 500ms)',
+	mirrorLocal: 'Mirror local',
+	mirrorRemote: 'Mirror remote',
 	miscellaneous: 'Miscellaneous',
 	moduleAutoUpdate: 'Auto-update modules',
 	moduleAutoUpdateDescription: 'Automatically update installed modules from module sources.',

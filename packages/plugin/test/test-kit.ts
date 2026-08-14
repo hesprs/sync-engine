@@ -1,6 +1,16 @@
 import type { Fs, ListReporter, RootFs } from '@/fs';
 import type { Request, RequestParam } from '@/modules/Registrar';
-import type { Stat, Binary, FileStat, FolderStat } from '@/types';
+import type { Decider, TaskFactory, TaskNames, TaskOptions } from '@/sync';
+import type {
+	Binary,
+	FileStat,
+	FolderStat,
+	RecordStat,
+	RecordStatsMap,
+	Stat,
+	StatsMap,
+} from '@/types';
+import { taskMap } from '@/sync';
 
 type FsCalls = {
 	delete: Array<string>;
@@ -31,6 +41,13 @@ type RequestHarness = {
 	request: Request;
 };
 
+type ExtractedTask = {
+	key: string;
+	local?: Stat;
+	name: TaskNames;
+	remote?: Stat;
+};
+
 const textEncoder = new TextEncoder();
 
 function bytes(value: string): Binary {
@@ -47,6 +64,60 @@ function file(
 
 function folder(key: string): FolderStat {
 	return { isDir: true, key };
+}
+
+function fileRecord(local: string, remote: string): RecordStat {
+	return { isDir: false, local, remote };
+}
+
+function folderRecord(): RecordStat {
+	return { isDir: true };
+}
+
+function runDecider(
+	decider: Decider,
+	input: { localStats?: StatsMap; remoteStats?: StatsMap; records?: RecordStatsMap },
+): Array<ExtractedTask> {
+	const localStats = input.localStats ?? new Map<string, Stat>();
+	const remoteStats = input.remoteStats ?? new Map<string, Stat>();
+	const records = input.records ?? new Map<string, RecordStat>();
+	const tasks: Array<ExtractedTask> = [];
+	const taskFactory = ((name: TaskNames, options: TaskOptions) => {
+		const Task = taskMap[name];
+		const task = new Task({
+			...options,
+			localFs: {} as never,
+			record: {} as never,
+			remoteFs: {} as never,
+		} as never);
+		task.name = name;
+		task.prettyName = name;
+		tasks.push({
+			key: options.key,
+			name,
+			...(options.local !== undefined && { local: options.local }),
+			...(options.remote !== undefined && { remote: options.remote }),
+		});
+		return task;
+	}) as TaskFactory;
+
+	decider({ localStats, logger: () => {}, records, remoteStats, taskFactory });
+	return tasks;
+}
+
+function taskNames(tasks: Array<ExtractedTask>): Array<string> {
+	return tasks.map((task) => task.name);
+}
+
+function taskKeys(tasks: Array<ExtractedTask>): Array<string> {
+	return tasks.map((task) => task.key);
+}
+
+function findTask(tasks: Array<ExtractedTask>, key: string): ExtractedTask {
+	const matching = tasks.filter((task) => task.key === key);
+	if (matching.length !== 1)
+		throw new Error(`Expected one task for ${key}, found ${matching.length}.`);
+	return matching[0];
 }
 
 function defaultStat(key: string): Stat {
@@ -181,6 +252,21 @@ function fs(options: FsOptions = {}): FsHarness {
 	return { calls, control, fs: rootFs };
 }
 
-const testKit = { bytes, deferred, file, flush, folder, fs, request, stream };
+const testKit = {
+	bytes,
+	deferred,
+	file,
+	fileRecord,
+	findTask,
+	flush,
+	folder,
+	folderRecord,
+	fs,
+	request,
+	runDecider,
+	stream,
+	taskKeys,
+	taskNames,
+};
 
 export default testKit;

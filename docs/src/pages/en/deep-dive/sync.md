@@ -34,11 +34,17 @@ If the remote root does not exist, the full lister recreates it, clears records 
 
 ## Decider
 
-The selected decider receives filtered local stats, filtered remote stats, persistent records, a task factory, and a logger. The built-in bidirectional decider unions all keys found in either side or in the records. The selected [sync strategy](../usage/settings#sync-strategy) can be supplied by a module.
+The selected decider receives filtered local stats, filtered remote stats, persistent records, a task factory, and a logger. Built-in deciders union all keys found in either side or in the records. The selected [sync strategy](../usage/settings#sync-strategy) can be supplied by a module.
+
+**Bidirectional sync strategy**:
 
 For files, it compares current stats with recorded local and remote UIDs. It creates upload, download, local removal, remote removal, record, or conflict tasks according to which side exists and changed. When both sides exist without a record, equal-size files only create a record; unequal-size files become conflicts. Missing entries on both sides produce record-removal tasks.
 
 Folders produce directory creation, removal, or record tasks. A local/remote file-folder mismatch replaces the changed side when it can be determined; an unresolvable mismatch fails planning.
+
+**Mirror local / Mirror remote sync strategy**:
+
+These two deciders make one side authoritative. They copy authoritative files, create authoritative folders, remove entries present only on the other side, and replace file-folder mismatches. A matching record avoids a redundant file transfer. Unrecorded files with matching keys and sizes receive a record; other unrecorded files are copied from the authoritative side.
 
 ## Move Detection
 

@@ -72,7 +72,7 @@ Sync Engine fits the gap: you want to choose your own storage, you want the plug
 
 ### Core Functions
 
-- Bidirectional syncing.
+- Bidirectional / mirror remote / mirror local syncing.
 - Startup / periodic / save-on-change syncing.
 - Conflict resolution strategies (keep both / latest survive / keep remote / keep local / skip).
 - Rate / memory control options.
@@ -138,6 +138,7 @@ Sync Engine also has a [wishlist of features](https://github.com/hesprs/sync-eng
 
 - [x] v3.0: Rewrite entirely, dynamic module loading, module store, asymmetric storage, and rebrand
 - [ ] v3.1: Migrate settings to Obsidian v1.13 API
+- [ ] v3.2: Granular sync strategy selection / exclusion inclusion rule refactor based on ordered glob match rules.
 
 ## License
 

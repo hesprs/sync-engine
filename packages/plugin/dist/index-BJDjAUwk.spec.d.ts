@@ -908,6 +908,8 @@ declare class Bootstrap {
   private remoteFs?;
   readonly i18n: {
     bidirectional: string;
+    mirrorLocal: string;
+    mirrorRemote: string;
     latestSurvive: string;
     keepLocal: string;
     keepRemote: string;

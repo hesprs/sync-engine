@@ -27,6 +27,7 @@ export { taskMap } from './decision/interface';
 export { getTaskColor, getTaskIcon } from './tasks/interface';
 export { default as detectMoves } from './utils/detect-moves';
 export { default as bidirectionalDecider } from './decision/bidirectional';
+export { mirrorLocalDecider, mirrorRemoteDecider } from './decision/mirror';
 export { default as keepRemoteResolver } from './conflict-resolve/keep-remote';
 export { default as keepLocalResolver } from './conflict-resolve/keep-local';
 export { default as latestSurviveResolver } from './conflict-resolve/latest-survive';

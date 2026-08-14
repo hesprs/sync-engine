@@ -120,7 +120,8 @@
 		"eslint/no-loop-func": "off",
 		"eslint/radix": "off",
 		"unicorn/import-style": "off",
-		"unicorn/no-process-exit": "off"
+		"unicorn/no-process-exit": "off",
+		"eslint/one-var": ["warn", "never"]
 	},
 	"env": {
 		"builtin": true,

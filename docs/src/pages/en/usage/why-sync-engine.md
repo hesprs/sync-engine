@@ -23,7 +23,7 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 
 ### Core Functions
 
-- Bidirectional syncing.
+- Bidirectional / mirror local / mirror-remote syncing.
 - Startup / periodic / save-on-change syncing.
 - Conflict resolution strategies (keep both / latest survive / keep remote / keep local / skip).
 - Rate / memory control options.

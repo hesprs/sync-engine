@@ -189,6 +189,8 @@ const ru: Translations = {
 	minRequestIntervalDescription:
 		'Ограничить минимальное время между последовательными запросами во время синхронизации. Полезно для сервисов с ограничением частоты запросов. Измените интервал в поле ниже.',
 	minRequestIntervalPlaceholder: 'Введите интервал (например, 1s, 500ms)',
+	mirrorLocal: 'Зеркало локального хранилища',
+	mirrorRemote: 'Зеркало удалённого хранилища',
 	miscellaneous: 'Разное',
 	moduleAutoUpdate: 'Автообновление модулей',
 	moduleAutoUpdateDescription: 'Автоматически обновлять установленные модули из их источников.',
