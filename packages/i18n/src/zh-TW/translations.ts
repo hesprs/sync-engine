@@ -112,8 +112,20 @@ const zhTW: Translations = {
 	enable: '啟用',
 	enableModule: '啟用模組',
 	exclusionRules: '排除規則',
-	exclusionRulesDescription:
-		'符合這些 Glob 萬用字元模式的檔案或資料夾將不會進行同步。若要排除特定檔案，請記得加上副檔名（例如 .md）。',
+	exclusionRulesDescription: (frag) => {
+		frag.appendText(
+			'符合這些 Glob 萬用字元模式的檔案或資料夾將不會進行同步。若要排除特定檔案，請記得加上副檔名（例如 ',
+		);
+		frag.createEl('code', { text: '.md' });
+		frag.appendText('）。請參閱 ');
+		frag.createEl('a', {
+			attr: {
+				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+			},
+			text: '設定文件',
+		});
+		frag.appendText('以瞭解設定指南。');
+	},
 	executing: '執行中',
 	export: '匯出',
 	exportLogsDescription: '將外掛程式紀錄匯出至儲存庫中的檔案。請在欄位中設定紀錄匯出目錄。',
@@ -144,8 +156,18 @@ const zhTW: Translations = {
 	iconPlaceholder: '輸入 Lucide Icons 代碼（例如 puzzle）',
 	idle: '待命',
 	inclusionRules: '包含規則',
-	inclusionRulesDescription:
-		'即使符合排除規則，只要符合這些 Glob 萬用字元模式的檔案或資料夾仍會進行同步。',
+	inclusionRulesDescription: (frag) => {
+		frag.appendText(
+			'即使符合排除規則，只要符合這些 Glob 萬用字元模式的檔案或資料夾仍會進行同步。請參閱 ',
+		);
+		frag.createEl('a', {
+			attr: {
+				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+			},
+			text: '設定文件',
+		});
+		frag.appendText('以瞭解設定指南。');
+	},
 	installed: '已安裝',
 	integrityVerification: '完整性驗證',
 	integrityVerificationDescription: (frag) => {
