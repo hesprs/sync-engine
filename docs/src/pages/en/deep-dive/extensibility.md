@@ -22,6 +22,14 @@ The loader guards against:
 
 Module source URLs are stored in `settings.moduleSources`. The default source is `https://sync.consensia.cc/modules.json`, this is the official source hosted on GitHub pages, fully transparent.
 
+Sync Engine officially hosts an alternative source `https://github.com/hesprs/sync-engine/raw/refs/heads/gh-pages/modules-alternative.json`. This source is identical to the main source except replaced all `sync.consensia.cc` to `hesprs.github.io/sync-engine`. Use this source when your firewall flags `sync.consensia.cc` as unsafe.
+
+::: warning
+
+Please avoid using two sources simultaneously, if you have decided to use `https://github.com/hesprs/sync-engine/raw/refs/heads/gh-pages/modules-alternative.json`, delete `https://sync.consensia.cc/modules.json` in the sources list.
+
+:::
+
 The Module Management UI allows users to add and remove source URLs. It accepts `http:` and `https:` URLs. HTTP sources display an insecure-protocol warning but remain valid.
 
 Plugin fetches every configured source with Obsidian `requestUrl()`. A source must contain a JSON array. Each accepted entry must contain string values for:

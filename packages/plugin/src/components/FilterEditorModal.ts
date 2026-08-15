@@ -1,5 +1,5 @@
 import { App, Modal, setIcon, Setting, setTooltip } from 'obsidian';
-import type { Translate } from '@/modules/I18n';
+import type { Fragment, Translate } from '@/modules/I18n';
 import type { GlobMatchRule } from '@/types';
 
 type FilterType = 'include' | 'exclude';
@@ -11,8 +11,8 @@ export type FilterEditorTranslations = {
 	add: string;
 	inclusionRules: string;
 	exclusionRules: string;
-	inclusionRulesDescription: string;
-	exclusionRulesDescription: string;
+	inclusionRulesDescription: Fragment;
+	exclusionRulesDescription: Fragment;
 	filterPlaceholder: string;
 };
 

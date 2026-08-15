@@ -84,7 +84,7 @@ The function is toggled via the **Encryption** setting. The password is stored i
 On each sync, generate a promise to obtain _root file key_ and _name key_ that will be resolved and cached on demand:
 
 - starting check: if found the user password is an empty string or undefined, throw directly
-- generate _master salt_: `SHA256` of `<server URL>.<account name>.<remote base directory>` truncated to 16B.
+- generate _master salt_: `SHA256` of **distinguishing data of the configured backend account that is often safe to disclose (like account name + server URL + directory prefix)** truncated to 16B.
 - generate _master key_ using `Argon2id` with 32MB memory, 3 iterations, and 1 thread on the _user password_ with _master salt_
 - derive _root file key_ (info: `root-file-key-v1`, no salt) and _name key_ (info: `name-key-v1`, no salt) using `HKDF-SHA-256`
 - resolve with _root file key_ and _name key_

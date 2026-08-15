@@ -100,8 +100,20 @@ const zh: Translations = {
 	enable: '启用',
 	enableModule: '启用模块',
 	exclusionRules: '排除规则',
-	exclusionRulesDescription:
-		'匹配这些 Glob 模式的文件 / 文件夹将不会被同步。如果您想排除文件，请记得添加文件扩展名（例如 .md）。',
+	exclusionRulesDescription: (frag) => {
+		frag.appendText(
+			'匹配这些 Glob 模式的文件 / 文件夹将不会被同步。如果您想排除文件，请记得添加文件扩展名（例如 ',
+		);
+		frag.createEl('code', { text: '.md' });
+		frag.appendText('）。请参阅 ');
+		frag.createEl('a', {
+			attr: {
+				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+			},
+			text: '设置文档',
+		});
+		frag.appendText('了解配置指南。');
+	},
 	executing: '正在执行',
 	export: '导出',
 	exportLogsDescription: '将插件日志导出到仓库中的文件。请在输入框中设置日志导出目录。',
@@ -132,7 +144,16 @@ const zh: Translations = {
 	iconPlaceholder: '输入 Lucide 图标代码（例如 puzzle）',
 	idle: '空闲',
 	inclusionRules: '包含规则',
-	inclusionRulesDescription: '匹配排除规则但同时也匹配这些 Glob 模式的文件 / 文件夹仍会被同步。',
+	inclusionRulesDescription: (frag) => {
+		frag.appendText('匹配排除规则但同时也匹配这些 Glob 模式的文件 / 文件夹仍会被同步。请参阅 ');
+		frag.createEl('a', {
+			attr: {
+				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+			},
+			text: '设置文档',
+		});
+		frag.appendText('了解配置指南。');
+	},
 	installed: '已安装',
 	integrityVerification: '完整性验证',
 	integrityVerificationDescription: (frag) => {

@@ -78,6 +78,7 @@ export default class SyncEngine extends Plugin {
 				'**/~$*.pptx',
 				'**/~$*.xls',
 				'**/~$*.xlsx',
+				`${this.app.vault.configDir}/plugins/sync-engine/modules`,
 				'.trash',
 				this.app.vault.configDir,
 			].map((expr) => ({ caseSensitive: false, expr })),

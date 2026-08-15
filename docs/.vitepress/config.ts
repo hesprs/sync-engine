@@ -189,9 +189,9 @@ export default defineConfig<ThemeConfig>({
 		logoLarge: { alt: 'Website large logo', src: '/logo.svg' },
 		search: { provider: 'local' },
 		socialLinks: [
-			{ icon: 'npm', link: 'https://www.npmjs.com/~hesprs' },
-			{ icon: 'github', link: 'https://github.com/hesprs' },
-			{ icon: 'x', link: 'https://x.com/Hesprs' },
+			{ icon: 'npm', link: 'https://www.npmjs.com/package/@hesprs/sync-engine-sdk' },
+			{ icon: 'github', link: 'https://github.com/hesprs/sync-engine' },
+			{ icon: 'obsidian', link: 'https://community.obsidian.md/plugins/sync-engine' },
 		],
 	},
 	vite: {

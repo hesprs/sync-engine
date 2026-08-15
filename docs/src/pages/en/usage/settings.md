@@ -149,6 +149,12 @@ private/other.md  does not sync
 
 An included file can be inside several excluded folders. Add an inclusion rule for the file you want to keep.
 
+::: warning
+
+If you sync Obsidian's plugin directory, you need to **exclude Sync Engine's modules folder in any situation (always ensure `.obsidian/plugins/sync-engine/modules` exists in your exclusion rules)**. [Due to security considerations](../deep-dive/extensibility), all untracked modifications in that folder (including sync runs) will trigger Sync Engine's security protection mechanism. And will cause the modules fail to load.
+
+:::
+
 ### Writing Rules
 
 Rules are written as [`glob` expressions](<https://en.wikipedia.org/wiki/Glob_(programming)>). These are common examples:

@@ -835,8 +835,8 @@ type FilterEditorTranslations = {
   add: string;
   inclusionRules: string;
   exclusionRules: string;
-  inclusionRulesDescription: string;
-  exclusionRulesDescription: string;
+  inclusionRulesDescription: Fragment;
+  exclusionRulesDescription: Fragment;
   filterPlaceholder: string;
 };
 //#endregion

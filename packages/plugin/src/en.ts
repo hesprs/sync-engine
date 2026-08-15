@@ -114,8 +114,20 @@ const en: Translations = {
 	enable: 'Enable',
 	enableModule: 'Enable module',
 	exclusionRules: 'Exclusion rules',
-	exclusionRulesDescription:
-		'Files / folders matching these glob patterns will not be synced. Please remember to add file extensions (for example, .md) if you want to exclude files.',
+	exclusionRulesDescription: (frag) => {
+		frag.appendText(
+			'Files / folders matching these Glob patterns will not be synced. Please remember to add file extensions (E.g. ',
+		);
+		frag.createEl('code', { text: '.md' });
+		frag.appendText(') if you want to exclude files. Refer to ');
+		frag.createEl('a', {
+			attr: {
+				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+			},
+			text: 'settings documentation',
+		});
+		frag.appendText(' for configuration guide.');
+	},
 	executing: 'Executing',
 	export: 'Export',
 	exportLogsDescription:
@@ -149,8 +161,18 @@ const en: Translations = {
 	iconPlaceholder: 'Enter Lucide Icons code (e.g. puzzle)',
 	idle: 'Idle',
 	inclusionRules: 'Inclusion rules',
-	inclusionRulesDescription:
-		'Files / folders matching exclusion rules but also matching these glob patterns will still be synced.',
+	inclusionRulesDescription: (frag) => {
+		frag.appendText(
+			'Files / folders matching exclusion rules but also matching these glob patterns will still be synced. Refer to ',
+		);
+		frag.createEl('a', {
+			attr: {
+				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+			},
+			text: 'settings documentation',
+		});
+		frag.appendText(' for configuration guide.');
+	},
 	installed: 'Installed',
 	integrityVerification: 'Integrity verification',
 	integrityVerificationDescription: (frag) => {

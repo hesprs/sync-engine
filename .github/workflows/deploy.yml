@@ -1,4 +1,4 @@
-name: Deploy modules and docs to GitHub Pages
+name: Deploy modules and docs
 
 on:
   push:
@@ -10,8 +10,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   group: "pages"
@@ -21,7 +19,7 @@ jobs:
   deploy:
     runs-on: ubuntu-slim
     environment:
-      name: github-pages
+      name: modules
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
@@ -45,11 +43,7 @@ jobs:
       - name: Build docs
         run: bun build:docs
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v5
+      - name: Deploy docs
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: "./docs/dist"
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+          folder: './docs/dist'

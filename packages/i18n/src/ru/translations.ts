@@ -114,8 +114,20 @@ const ru: Translations = {
 	enable: 'Включить',
 	enableModule: 'Включить модуль',
 	exclusionRules: 'Правила исключения',
-	exclusionRulesDescription:
-		'Файлы и папки, соответствующие этим glob-шаблонам, не будут синхронизироваться. Не забудьте указать расширения файлов (например, .md), если хотите исключить файлы.',
+	exclusionRulesDescription: (frag) => {
+		frag.appendText(
+			'Файлы и папки, соответствующие этим glob-шаблонам, не будут синхронизироваться. Не забудьте указать расширения файлов (например, ',
+		);
+		frag.createEl('code', { text: '.md' });
+		frag.appendText('), если хотите исключить файлы. См. ');
+		frag.createEl('a', {
+			attr: {
+				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+			},
+			text: 'документацию по настройкам',
+		});
+		frag.appendText(' для руководства по настройке.');
+	},
 	executing: 'Выполняется',
 	export: 'Экспорт',
 	exportLogsDescription:
@@ -149,8 +161,18 @@ const ru: Translations = {
 	iconPlaceholder: 'Введите код Lucide Icons (например, puzzle)',
 	idle: 'В ожидании',
 	inclusionRules: 'Правила включения',
-	inclusionRulesDescription:
-		'Файлы и папки, подпадающие под правила исключения, но соответствующие этим glob-шаблонам, всё равно будут синхронизированы.',
+	inclusionRulesDescription: (frag) => {
+		frag.appendText(
+			'Файлы и папки, подпадающие под правила исключения, но соответствующие этим glob-шаблонам, всё равно будут синхронизированы. См. ',
+		);
+		frag.createEl('a', {
+			attr: {
+				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+			},
+			text: 'документацию по настройкам',
+		});
+		frag.appendText(' для руководства по настройке.');
+	},
 	installed: 'Установлено',
 	integrityVerification: 'Проверка целостности',
 	integrityVerificationDescription: (frag) => {

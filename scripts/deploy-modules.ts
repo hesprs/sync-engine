@@ -18,6 +18,7 @@ const ROOT = `${import.meta.dir}/..`;
 const PUBLIC_DIR = `${ROOT}/docs/public`;
 const PUBLIC_MODULES_DIR = `${PUBLIC_DIR}/modules`;
 const PUBLIC_MODULES_PATH = `${PUBLIC_DIR}/modules.json`;
+const PUBLIC_ALTERNATIVE_MODULES_PATH = `${PUBLIC_DIR}/modules-alternative.json`;
 
 async function listMatches(pattern: string): Promise<Array<string>> {
 	const matches: Array<string> = [];
@@ -53,7 +54,16 @@ async function main(): Promise<void> {
 	);
 
 	const result = deployed.filter((entry): entry is ModuleMeta => entry !== undefined);
-	await Bun.write(PUBLIC_MODULES_PATH, JSON.stringify(result));
+	const source = JSON.stringify(result);
+	await Bun.write(PUBLIC_MODULES_PATH, source);
+	// https://github.com/hesprs/sync-engine/issues/229
+	await Bun.write(
+		PUBLIC_ALTERNATIVE_MODULES_PATH,
+		source.replaceAll(
+			'sync.consensia.cc',
+			'github.com/hesprs/sync-engine/raw/refs/heads/gh-pages',
+		),
+	);
 	console.log(`Wrote modules.json with ${result.length} module(s)`);
 }
 
