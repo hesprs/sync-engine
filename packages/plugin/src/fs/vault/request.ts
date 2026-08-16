@@ -43,9 +43,14 @@ function toKey(vaultPath: string, isDir: boolean): string {
 	return isDir ? `${vaultPath}/` : vaultPath;
 }
 
-function getTrashOption(vault: Vault): 'local' | 'system' | undefined {
-	const configuredVault = vault as { config?: { trashOption?: 'local' | 'system' } };
-	return configuredVault.config?.trashOption;
+// Obsidian trashOption mapping:
+// "none": permanent
+// "system" / undefined: system
+// "local": local
+function getTrashOption(vault: Vault): 'local' | 'system' | 'permanent' {
+	const option = (vault as { config?: { trashOption?: 'local' | 'system' | 'none' } }).config
+		?.trashOption;
+	return option ? (option === 'none' ? 'permanent' : option) : 'system';
 }
 
 export default function createVaultRequest(app: App): VaultRequest {
@@ -73,8 +78,10 @@ export default function createVaultRequest(app: App): VaultRequest {
 		if (method === 'APPEND')
 			return adapter.appendBinary(path, toArrayBuffer(params.value), params.headers) as never;
 		if (method === 'DELETE') {
-			if (params.headers?.permanent) return adapter.remove(path) as never;
-			if (getTrashOption(vault) === 'local' || !(await adapter.trashSystem(path)))
+			const trashOption = getTrashOption(vault);
+			if (trashOption === 'permanent' || params.headers?.permanent)
+				return adapter.remove(path) as never;
+			if (trashOption === 'local' || !(await adapter.trashSystem(path)))
 				await adapter.trashLocal(path);
 			return undefined as never;
 		}
