@@ -150,7 +150,7 @@ So simply run `bun dev`, and your module will be rebuilt inside the right folder
 
 After rebuilding, you need to reload the module in module management UI to apply latest changes. Or you can use the [Hot Reload](https://github.com/pjeby/hot-reload) plugin to reload Sync Engine on each build, so your module will also be reloaded.
 
-To reliably reload Sync Engine modules without triggering its integrity protection, you need to manually disable integrity verification in the module editor interface in [module management panel](../deep-dive/module-management-panel). Make sure you only disable the verification of the module you are developing, see [Security](../usage/security) for security implications.
+To reliably reload Sync Engine modules without triggering its integrity protection, you need to manually disable integrity verification in the module editor interface in [module management page](../deep-dive/module-management-page). Make sure you only disable the verification of the module you are developing, see [Security](../usage/security) for security implications.
 
 ## Load CSS in a Module
 

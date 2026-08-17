@@ -1,7 +1,8 @@
-import type { Context, Settings } from '@';
-import { Setting } from 'obsidian';
+import type { Settings } from '@';
+import type { App, SettingDefinitionItem } from 'obsidian';
 import type { Translate } from '@/modules/I18n';
 import HeadersEditorModal from '@/components/HeadersEditorModal';
+import { heading } from './utils';
 
 export type MiscellaneousSettingTranslations = {
 	miscellaneous: string;
@@ -20,62 +21,51 @@ export type MiscellaneousSettingTranslations = {
 	edit: string;
 };
 
-export default function miscellaneousSettings(
-	el: HTMLElement,
-	ctx: {
-		translate: Translate<MiscellaneousSettingTranslations>;
-		saveSettings: () => Promise<void>;
-		settings: Settings;
-	},
-) {
-	const { translate, saveSettings, settings } = ctx;
-
-	new Setting(el).setName(translate('miscellaneous')).setHeading();
-
-	new Setting(el)
-		.setName(translate('customHeaders'))
-		.setDesc(translate('customHeadersDescription'))
-		.addButton((button) => {
-			button.setButtonText(translate('edit'));
-			button.onClick(() => {
-				new HeadersEditorModal(
-					(headers) => {
-						settings.customHeaders = headers;
-						void saveSettings();
-					},
-					ctx as Context,
-					settings.customHeaders,
-				).open();
-			});
-		});
-
-	new Setting(el)
-		.setName(translate('noticeStatusOnMobile'))
-		.setDesc(translate('noticeStatusOnMobileDescription'))
-		.addToggle((toggle) =>
-			toggle.setValue(settings.noticeStatusOnMobile).onChange((value) => {
-				settings.noticeStatusOnMobile = value;
-				void saveSettings();
-			}),
-		);
-
-	new Setting(el)
-		.setName(translate('confirmTasksInSync'))
-		.setDesc(translate('confirmTasksInSyncDescription'))
-		.addToggle((toggle) =>
-			toggle.setValue(settings.confirmTasksInSync).onChange((value) => {
-				settings.confirmTasksInSync = value;
-				void saveSettings();
-			}),
-		);
-
-	new Setting(el)
-		.setName(translate('confirmDeleteInAutoSync'))
-		.setDesc(translate('confirmDeleteInAutoSyncDescription'))
-		.addToggle((toggle) =>
-			toggle.setValue(settings.confirmDeleteInAutoSync).onChange((value) => {
-				settings.confirmDeleteInAutoSync = value;
-				void saveSettings();
-			}),
-		);
+export default function miscellaneousSettings({
+	translate,
+	saveSettings,
+	settings,
+	app,
+}: {
+	translate: Translate<MiscellaneousSettingTranslations>;
+	saveSettings: () => Promise<void>;
+	settings: Settings;
+	app: App;
+}): Array<SettingDefinitionItem> {
+	return [
+		heading(translate('miscellaneous')),
+		{
+			desc: translate('customHeadersDescription'),
+			name: translate('customHeaders'),
+			render: (setting) => {
+				setting.addButton((button) => {
+					button.setButtonText(translate('edit')).onClick(() => {
+						new HeadersEditorModal(
+							(headers) => {
+								settings.customHeaders = headers;
+								void saveSettings();
+							},
+							{ app, translate },
+							settings.customHeaders,
+						).open();
+					});
+				});
+			},
+		},
+		{
+			control: { key: 'noticeStatusOnMobile', type: 'toggle' },
+			desc: translate('noticeStatusOnMobileDescription'),
+			name: translate('noticeStatusOnMobile'),
+		},
+		{
+			control: { key: 'confirmTasksInSync', type: 'toggle' },
+			desc: translate('confirmTasksInSyncDescription'),
+			name: translate('confirmTasksInSync'),
+		},
+		{
+			control: { key: 'confirmDeleteInAutoSync', type: 'toggle' },
+			desc: translate('confirmDeleteInAutoSyncDescription'),
+			name: translate('confirmDeleteInAutoSync'),
+		},
+	];
 }

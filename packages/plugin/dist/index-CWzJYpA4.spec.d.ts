@@ -1,4 +1,4 @@
-import { App, Command, EventRef, IconName, ListedFiles, Modal, Plugin, RequestUrlParam, Stat, ToggleComponent } from "obsidian";
+import { App, Command, EventRef, IconName, ListedFiles, Modal, Plugin, RequestUrlParam, SettingDefinitionItem, Stat, ToggleComponent } from "obsidian";
 //#region test/e2e-utils.d.ts
 type General$1 = any;
 //#endregion
@@ -852,7 +852,6 @@ type HeadSettingTranslations = {
   moduleAutoUpdateDescription: string;
   moduleManagement: string;
   moduleManagementDescription: string;
-  openPanel: string;
   backend: string;
   backendDescription: string;
   syncStrategy: string;
@@ -880,6 +879,45 @@ type MiscellaneousSettingTranslations = {
   customHeaders: string;
   customHeadersDescription: string;
   edit: string;
+};
+//#endregion
+//#region src/components/module-management/index.d.ts
+type ModuleManagementTranslations = {
+  disableModule: string;
+  downloadModule: string;
+  enableModule: string;
+  installed: string;
+  loadingModules: string;
+  noInstalledModulesFound: string;
+  noMatchingModulesFound: string;
+  noModulesAvailable: string;
+  updateAvailable: string;
+  updateModule: string;
+  deleteModule: string;
+  editModuleInformation: string;
+  official: string;
+};
+//#endregion
+//#region src/components/SourceEditorModal.d.ts
+type SourceEditorTranslations = {
+  add: string;
+  cancel: string;
+  editSources: string;
+  omittedInvalidEntry: string;
+  moduleSourcePlaceholder: string;
+  remove: string;
+  save: string;
+  sourcesDescription: string;
+  httpInsecureWarning: string;
+};
+//#endregion
+//#region src/settings/module-management.d.ts
+type ModulesManagementTranslations = ModuleManagementTranslations & SourceEditorTranslations & {
+  searchModules: string;
+  editSources: string;
+  moduleManagement: string;
+  showInstalledOnly: string;
+  configurations: string;
 };
 //#endregion
 //#region src/modules/Bootstrap.d.ts
@@ -915,7 +953,7 @@ declare class Bootstrap {
     keepRemote: string;
     renameAndKeepBoth: string;
     skip: string;
-  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & HeadersEditorTranslations & UnknownModuleTranslations & ModuleEditorTranslations & FileTreeTranslations;
+  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & HeadersEditorTranslations & UnknownModuleTranslations & ModuleEditorTranslations & FileTreeTranslations & ModulesManagementTranslations;
   readonly settings: {
     maxMemoryConsumption: TogglableValue;
     maxRequestConcurrency: TogglableValue;
@@ -923,6 +961,7 @@ declare class Bootstrap {
     realtimeSyncFastMode: boolean;
     asymmetricStorage: boolean;
     customHeaders: CustomHeaders;
+    moduleSources: Array<string>;
   };
   constructor(ctx: {
     app: App;
@@ -947,79 +986,6 @@ declare class Bootstrap {
   });
   readonly start: () => void;
   readonly dispose: () => void;
-}
-//#endregion
-//#region src/components/module-management/index.d.ts
-type ModuleManagementTranslations = {
-  disableModule: string;
-  downloadModule: string;
-  enableModule: string;
-  installed: string;
-  loadingModules: string;
-  noInstalledModulesFound: string;
-  noMatchingModulesFound: string;
-  noModulesAvailable: string;
-  updateAvailable: string;
-  updateModule: string;
-  deleteModule: string;
-  editModuleInformation: string;
-  official: string;
-};
-//#endregion
-//#region src/components/SourceEditorModal.d.ts
-type SourceEditorTranslations = {
-  add: string;
-  cancel: string;
-  editSources: string;
-  omittedInvalidEntry: string;
-  moduleSourcePlaceholder: string;
-  remove: string;
-  save: string;
-  sourcesDescription: string;
-  httpInsecureWarning: string;
-};
-//#endregion
-//#region src/modules/ModulesModal.d.ts
-type ModulesModalTranslations = ModuleManagementTranslations & SourceEditorTranslations & {
-  searchModules: string;
-  editSources: string;
-  moduleManagement: string;
-  showInstalledOnly: string;
-  configurations: string;
-};
-declare class ModulesModal extends Modal {
-  private readonly ctx;
-  private readonly t;
-  private readonly modalCleanup;
-  private sourceEditorModal?;
-  private showInstalledOnly;
-  constructor(ctx: {
-    app: App;
-    translate: Translate<ModulesModalTranslations>;
-    saveSettings: () => Promise<void>;
-    fetchSources: (manual?: boolean) => Promise<Array<AugmentedModuleMeta>>;
-    discoveredModules: Map<string, AugmentedModuleMeta>;
-    loadedModules: Map<string, unknown>;
-    downloadModule: (meta: AugmentedModuleMeta) => Promise<void>;
-    deleteModule: (id: string) => Promise<void>;
-    loadModule: (meta: AugmentedModuleMeta, start?: boolean) => Promise<void>;
-    unloadModule: (id: string) => void;
-    enableModule: (id: string) => Promise<void>;
-    disableModule: (id: string) => void;
-    updateModuleMeta: (meta: AugmentedModuleMeta) => Promise<void>;
-  });
-  readonly i18n: ModulesModalTranslations;
-  readonly settings: {
-    moduleSources: Array<string>;
-  };
-  root: {
-    closeModuleManagement: () => void;
-    openModuleManagement: () => void;
-  };
-  onOpen(): void;
-  onClose(): void;
-  private readonly openSourceEditorModal;
-  dispose(): void;
 }
 //#endregion
 //#region src/modules/ProgressModal.d.ts
@@ -1114,7 +1080,7 @@ declare class Scheduler {
 }
 //#endregion
 //#region src/index.d.ts
-declare const internalModules: readonly [typeof EventBus, typeof I18n, typeof Storage, typeof Extensibility, typeof Registrar, typeof Sync, typeof Observability, typeof Scheduler, typeof ProgressModal, typeof ModulesModal, typeof Bootstrap];
+declare const internalModules: readonly [typeof EventBus, typeof I18n, typeof Storage, typeof Extensibility, typeof Registrar, typeof Sync, typeof Observability, typeof Scheduler, typeof ProgressModal, typeof Bootstrap];
 type InternalModules = typeof internalModules;
 type MergeKeys = 'settings' | 'root' | 'events' | 'i18n';
 type Context = Context$1<InternalModules, MergeKeys, {
@@ -1171,7 +1137,7 @@ type RemoteListerEntry = OrderedApplyEntry<RemoteLister>;
 type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
 type SettingEntry = {
   priority: number;
-  apply: (el: HTMLElement) => void;
+  apply: () => Array<SettingDefinitionItem>;
 };
 type RequestParam = Omit<RequestUrlParam, 'body'> & {
   body?: string | Binary;

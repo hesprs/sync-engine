@@ -1,16 +1,14 @@
 import type { Context, Events, Translations } from '@';
-import type { App, DataAdapter } from 'obsidian';
+import type { App } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { StoreOperations } from 'uni-kv';
 import loadModule from '$/e2e-utils';
 import hash from '@repo/shared/crypto';
-import { encodeURIComponent3986 } from '@repo/shared/path';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
 import type { DatabaseAsync, StoreAsync } from '@/sdk';
 import type { General } from '@/types';
 import UnknownModuleModal from '@/components/UnknownModuleModal';
-import sha256 from '@/utils/sha-256';
 import toErrorMessage from '@/utils/to-error-message';
 import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
@@ -122,19 +120,6 @@ export default class Extensibility {
 			adapter.list(this.moduleDir),
 			this.moduleStore.entries().then((result) => new Map(result)),
 		]);
-
-		const legacyValues = Object.values(this.settings.modules);
-		if (
-			files.some((str) => str.includes('~')) &&
-			(!legacyValues.length || legacyValues.some((value) => typeof value === 'boolean'))
-		)
-			await migrateModules({
-				adapter,
-				baseDir: this.moduleDir,
-				fileList: files,
-				moduleStore: this.moduleStore,
-				settings: this.settings,
-			});
 
 		folders.forEach((path) => factory.delete(path));
 		const foundModules = new Set<string>();
@@ -286,11 +271,9 @@ export default class Extensibility {
 				content.forEach((meta: unknown) => {
 					if (!isValidMeta(meta)) return;
 					const { id, minPluginVersion, icon } = meta;
-					if (
-						(minPluginVersion && compare(VERSION, minPluginVersion) === -1) ||
-						seenId.has(id)
-					)
-						return;
+					if (minPluginVersion && compare(VERSION, minPluginVersion) === -1)
+						this.root.pluginOutdated = true;
+					if (seenId.has(id)) return;
 					seenId.add(id);
 					modules.push({
 						...meta,
@@ -371,6 +354,7 @@ export default class Extensibility {
 		loadAllModules: this.loadAllModules,
 		loadModule: this.loadModule,
 		loadedModules: this.loadedModules,
+		pluginOutdated: false,
 		unloadModule: this.unloadModule,
 		updateModuleMeta: this.updateModuleMeta,
 		updateModules: this.updateModules,
@@ -396,77 +380,4 @@ function isValidMeta(meta: unknown): meta is ModuleMeta {
 		meta.integrity.length === 64 &&
 		/^[0-9a-f]*$/v.test(meta.integrity)
 	);
-}
-
-// TODO: remove after August 16
-async function migrateModules({
-	moduleStore,
-	fileList,
-	adapter,
-	baseDir,
-	settings,
-}: {
-	moduleStore: StoreAsync<AugmentedModuleMeta>;
-	fileList: Array<string>;
-	adapter: DataAdapter;
-	baseDir: string;
-	settings: { modules: Record<string, object> };
-}) {
-	const moduleIdMap: Record<string, string> = {
-		Encryption: 'encryption',
-		'I18n Русский': 'i18n-ru',
-		'I18n 简体中文': 'i18n-zh',
-		'I18n 繁體中文': 'i18n-zh-TW',
-		'Smart Merge': 'smart-merge',
-		WebDAV: 'webdav',
-	};
-	const legacySettings = settings as unknown as {
-		modules: Record<string, boolean>;
-	} & Record<string, object>;
-	function parseModulePath(path: string) {
-		const name = path.slice(baseDir.length + 1, -MODULE_EXTENSION.length);
-		const segments = name.split('~').map((segment) => segment.normalize('NFC'));
-		return { name: segments[0], version: segments[1] };
-	}
-	const getModulePath = (name: string) => `${baseDir}/${name}${MODULE_EXTENSION}`;
-	const dbWrites: Array<{ key: string; value: AugmentedModuleMeta }> = [];
-	const operations: Array<() => Promise<unknown>> = [
-		() =>
-			moduleStore.batch(
-				dbWrites.map((write): StoreOperations<AugmentedModuleMeta> =>
-					Object.assign(write, { type: 'set' } as const),
-				),
-			),
-	];
-	await Promise.all(
-		fileList.map(async (path) => {
-			if (!path.includes('~')) return;
-			const { name, version } = parseModulePath(path);
-			const file = await adapter.read(path);
-			const key = moduleIdMap[name] ?? name;
-			const id = moduleIdMap[name] ?? name;
-			dbWrites.push({
-				key,
-				value: {
-					description: '',
-					enabled: legacySettings.modules[name] ?? false,
-					icon: 'puzzle',
-					id,
-					integrity: await sha256(file),
-					main: `https://sync.consensia.cc/modules/${encodeURIComponent3986(name)}.js`,
-					name,
-					source: 'https://sync.consensia.cc/modules.json',
-					version,
-				},
-			});
-			settings.modules[id] = legacySettings[name];
-			delete legacySettings[name];
-			delete settings.modules[name];
-			operations.push(
-				() => adapter.remove(path),
-				() => adapter.write(getModulePath(id), file),
-			);
-		}),
-	);
-	await Promise.all(operations.map((fn) => fn()));
 }

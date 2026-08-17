@@ -70,7 +70,7 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 It is simple to start using Sync Engine:
 
 1. Download and enable `Sync Engine` from Obsidian plugin store.
-2. Open "Module management" panel, install needed translations, backends and optional features.
+2. Open "Module management" page, install needed translations, backends and optional features.
 3. Fill the necessary information about your cloud service in the settings interface.
 4. Start your first sync from command palette or ribbon button.
 5. Review the sync tasks that will be performed.

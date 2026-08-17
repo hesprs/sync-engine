@@ -1,5 +1,5 @@
 import type { Events } from '@';
-import type { App, Plugin, RequestUrlParam } from 'obsidian';
+import type { App, Plugin, RequestUrlParam, SettingDefinitionItem } from 'obsidian';
 import type { StoreAsync } from 'uni-kv';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import hash from '@repo/shared/crypto';
@@ -41,7 +41,7 @@ export type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
 
 export type SettingEntry = {
 	priority: number;
-	apply: (el: HTMLElement) => void;
+	apply: () => Array<SettingDefinitionItem>;
 };
 
 export type RequestParam = Omit<RequestUrlParam, 'body'> & { body?: string | Binary };
@@ -169,7 +169,7 @@ export default class Registrar {
 		this.settingTab = new SettingTab(plugin, this.settingRegistry);
 		plugin.addSettingTab(this.settingTab);
 	};
-	private readonly rerenderSettingTab = () => this.settingTab?.display();
+	private readonly rerenderSettingTab = () => this.settingTab?.update();
 
 	root = {
 		addSettingTab: this.addSettingTab,
@@ -219,11 +219,11 @@ class SettingTab extends PluginSettingTab {
 		this.icon = 'cpu';
 	}
 
-	display(): void {
+	getSettingDefinitions() {
 		this.containerEl.empty();
-		const sorted: Record<number, (el: HTMLElement) => void> = {};
+		const sorted: Record<number, () => Array<SettingDefinitionItem>> = {};
 		for (const { priority, apply } of this.settingRegistry) sorted[priority] = apply;
-		for (const render of Object.values(sorted)) render(this.containerEl);
+		return Object.values(sorted).flatMap((render) => render());
 	}
 }
 

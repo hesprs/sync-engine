@@ -13,6 +13,7 @@ import type { FeaturesSettingTranslations } from '@/settings/features';
 import type { FilterSettingTranslations } from '@/settings/filter';
 import type { HeadSettingTranslations } from '@/settings/head';
 import type { MiscellaneousSettingTranslations } from '@/settings/miscellaneous';
+import type { ModulesTranslations } from '@/settings/module-management';
 import type { Stat, TogglableValue } from '@/types';
 import en from '@/en';
 import {
@@ -103,7 +104,8 @@ export default class Bootstrap {
 		HeadersEditorTranslations &
 		UnknownModuleTranslations &
 		ModuleEditorTranslations &
-		FileTreeTranslations;
+		FileTreeTranslations &
+		ModulesTranslations;
 	declare readonly settings: {
 		maxMemoryConsumption: TogglableValue;
 		maxRequestConcurrency: TogglableValue;
@@ -394,22 +396,22 @@ export default class Bootstrap {
 			resolver: () => {},
 		});
 
-		registerSetting({ apply: (el) => headSettings(el, this.ctx as Context), priority: 0 });
+		registerSetting({ apply: () => headSettings(this.ctx as Context), priority: 0 });
 		registerSetting({
-			apply: (el) => featuresSettings(el, this.ctx as Context),
+			apply: () => featuresSettings(this.ctx as Context),
 			priority: 1000,
 		});
 		registerSetting({
-			apply: (el) => controlsSettings(el, this.ctx as Context),
+			apply: () => controlsSettings(this.ctx as Context),
 			priority: 2000,
 		});
-		registerSetting({ apply: (el) => filterSettings(el, this.ctx as Context), priority: 3000 });
+		registerSetting({ apply: () => filterSettings(this.ctx as Context), priority: 3000 });
 		registerSetting({
-			apply: (el) => miscellaneousSettings(el, this.ctx as Context),
+			apply: () => miscellaneousSettings(this.ctx as Context),
 			priority: 4000,
 		});
 		registerSetting({
-			apply: (el) => developmentSettings(el, this.ctx as Context),
+			apply: () => developmentSettings(this.ctx as Context),
 			priority: 5000,
 		});
 

@@ -64,7 +64,6 @@ const en: Translations = {
 		'Sync Engine records sync states to resolve sync operations between local and remote files. This option allows you to clear records. Warning: this action is likely to cause changes in sync decisions.',
 	completed: 'Completed',
 	completedNoop: 'Already synced',
-	configurations: 'Configurations',
 	configure: 'Configure',
 	confirm: 'Confirm',
 	confirmDeleteDescription:
@@ -150,7 +149,7 @@ const en: Translations = {
 	icon: 'Icon',
 	iconDescription: (frag) => {
 		frag.appendText(
-			'Set the icon for this module to be displayed in the module management panel, full icons can be found in ',
+			'Set the icon for this module to be displayed in the module management page, full icons can be found in ',
 		);
 		frag.createEl('a', {
 			attr: { href: 'https://lucide.dev/icons/' },
@@ -218,8 +217,11 @@ const en: Translations = {
 	moduleAutoUpdateDescription: 'Automatically update installed modules from module sources.',
 	moduleManagement: 'Module management',
 	moduleManagementDescription:
-		'Manage modules in a dedicated panel. You can install, uninstall, update, enable, disable, edit modules, or edit module sources.',
+		'Manage modules in a dedicated page. You can install, uninstall, update, enable, disable, and edit modules.',
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
+	moduleSources: 'Module Sources',
+	moduleSourcesDescription:
+		'Edit module sources from which the module catalog is obtained. In this way you can install third-party Sync Engine modules.',
 	moveLocal: 'Move local',
 	moveRemote: 'Move remote',
 	name: 'Name',
@@ -227,13 +229,13 @@ const en: Translations = {
 	noInstalledModulesFound: 'No installed modules found.',
 	noMatchingModulesFound: 'No matching modules found.',
 	noModulesAvailable: 'No modules available.',
+	noSourceConfigured: 'No source configured',
 	none: 'None',
 	noticeStatusOnMobile: 'Notice sync status on mobile',
 	noticeStatusOnMobileDescription:
 		'Display a notice on mobile devices when synchronization is in progress. Replaces the status bar on desktop.',
 	official: 'Official',
 	omittedInvalidEntry: 'Omitted {{count}} invalid entry(s).',
-	openPanel: 'Open panel',
 	realtimeSync: 'Realtime sync',
 	realtimeSyncDescription:
 		'Trigger syncs automatically as soon as files are modified. Alter the delay between a file being modified and the sync being triggered in the field.',
@@ -259,6 +261,8 @@ const en: Translations = {
 	showInstalledOnly: 'Show installed only',
 	showProgress: 'Show progress',
 	skip: 'Skip',
+	someModulesHidden:
+		'Some modules are hidden since Sync Engine plugin is outdated, update to explore the full module catalog.',
 	sourcesDescription: 'Add module source URLs. Empty and invalid rows are omitted when saved.',
 	startMigration: 'Start migration',
 	startNonInteractiveSync: 'Start non-interactive sync',
@@ -279,7 +283,7 @@ const en: Translations = {
 		p1.appendText('Sync Engine detected an installed module named ');
 		p1.createEl('code', { text: fileName });
 		p1.appendText(
-			' in its module directory. This module is neither installed in Sync Engine module panel, nor registered anywhere to be exempt from provenance validation. ',
+			' in its module directory. This module is neither installed in Sync Engine module management page, nor registered anywhere to be exempt from provenance validation. ',
 		);
 		p1.createEl('strong', { text: 'Please review following information before proceeding:' });
 		const ul = frag
@@ -318,6 +322,7 @@ const en: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: 'Upload',
 	walkingRemote: 'Discovering remote files',
+	xEnabled: '{{x}} enabled',
 };
 
 export default en;

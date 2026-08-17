@@ -61,7 +61,7 @@ async function main(): Promise<void> {
 		PUBLIC_ALTERNATIVE_MODULES_PATH,
 		source.replaceAll(
 			'sync.consensia.cc',
-			'github.com/hesprs/sync-engine/raw/refs/heads/gh-pages',
+			'raw.githubusercontent.com/hesprs/sync-engine/refs/heads/gh-pages',
 		),
 	);
 	console.log(`Wrote modules.json with ${result.length} module(s)`);

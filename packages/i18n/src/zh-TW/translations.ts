@@ -225,7 +225,6 @@ const zhTW: Translations = {
 	noticeStatusOnMobileDescription: '同步進行時於行動裝置上顯示通知訊息（取代桌面版的狀態列）。',
 	official: '官方',
 	omittedInvalidEntry: '已忽略 {{count}} 項無效條目。',
-	openPanel: '開啟面板',
 	realtimeSync: '即時同步',
 	realtimeSyncDescription:
 		'當檔案經修改後立即自動觸發同步。請在欄位中修改檔案變更到觸發同步之間的延遲時間。',

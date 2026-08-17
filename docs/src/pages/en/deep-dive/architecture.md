@@ -71,7 +71,7 @@ The dependency direction is intentionally visible in the constructors. For examp
 
 External modules extend this same context at runtime. `Extensibility` verifies and imports an approved constructor, adds it to SynthKernel, merges its `moduleSettings`, and adds it to `allModules` so it participates in startup and disposal. Unloading invokes `dispose()`, removes the constructor, and dispatches `moduleUnloaded`.
 
-The module loader is also a security boundary because modules are executable code. Trust, integrity verification, enablement, storage, and runtime privileges are specified in the [Extensibility Contract](./extensibility); module-management UI behavior is covered in [Module Management UI](./module-management-panel).
+The module loader is also a security boundary because modules are executable code. Trust, integrity verification, enablement, storage, and runtime privileges are specified in the [Extensibility Contract](./extensibility); module-management UI behavior is covered in [Module Management UI](./module-management-page).
 
 ## Registration Pattern
 

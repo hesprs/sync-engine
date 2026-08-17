@@ -142,8 +142,8 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 							items: [
 								{ link: `${deepDive}/file-tree`, text: t('fileTree') },
 								{
-									link: `${deepDive}/module-management-panel`,
-									text: t('moduleManagementPanel'),
+									link: `${deepDive}/module-management-page`,
+									text: t('moduleManagementPage'),
 								},
 							],
 							text: t('userInterface'),

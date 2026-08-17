@@ -1,76 +1,59 @@
 import type { Translate } from '@hesprs/sync-engine-sdk';
-import { Setting } from 'obsidian';
+import type { SettingDefinitionItem, TextComponent } from 'obsidian';
 import type { SmartMergeTranslations } from './i18n';
 import type { MergeOptions } from './utils/merge';
 
 export type SmartMergeSettings = MergeOptions;
 
 export default function smartMergeSetting(
-	el: HTMLElement,
-	ctx: { translate: Translate<SmartMergeTranslations>; saveSettings: () => Promise<void> },
+	{
+		translate,
+		saveSettings,
+	}: { translate: Translate<SmartMergeTranslations>; saveSettings: () => Promise<void> },
 	settings: SmartMergeSettings,
-) {
-	const { translate, saveSettings } = ctx;
-
-	new Setting(el).setName(translate('smartMerge')).setHeading();
-
-	new Setting(el)
-		.setName(translate('conflictOursMarkers'))
-		.setDesc(translate('conflictOursMarkersDescription'))
-		.addText((text) => {
-			text.setValue(settings.conflictAStart)
-				.setPlaceholder(translate('start'))
-				.onChange((value) => {
-					settings.conflictAStart = value;
+): Array<SettingDefinitionItem> {
+	const marker =
+		(key: keyof SmartMergeSettings, placeholder: string) => (text: TextComponent) => {
+			text.setValue(settings[key])
+				.setPlaceholder(placeholder)
+				.onChange((value: string) => {
+					settings[key] = value;
 					void saveSettings();
 				});
-		})
-		.addText((text) => {
-			text.setValue(settings.conflictAEnd)
-				.setPlaceholder(translate('end'))
-				.onChange((value) => {
-					settings.conflictAEnd = value;
-					void saveSettings();
-				});
-		});
-
-	new Setting(el)
-		.setName(translate('conflictTheirsMarkers'))
-		.setDesc(translate('conflictTheirsMarkersDescription'))
-		.addText((text) => {
-			text.setValue(settings.conflictBStart)
-				.setPlaceholder(translate('start'))
-				.onChange((value) => {
-					settings.conflictBStart = value;
-					void saveSettings();
-				});
-		})
-		.addText((text) => {
-			text.setValue(settings.conflictBEnd)
-				.setPlaceholder(translate('end'))
-				.onChange((value) => {
-					settings.conflictBEnd = value;
-					void saveSettings();
-				});
-		});
-
-	new Setting(el)
-		.setName(translate('deletionMarkers'))
-		.setDesc(translate('deletionMarkersDescription'))
-		.addText((text) => {
-			text.setValue(settings.deletionStart)
-				.setPlaceholder(translate('start'))
-				.onChange((value) => {
-					settings.deletionStart = value;
-					void saveSettings();
-				});
-		})
-		.addText((text) => {
-			text.setValue(settings.deletionEnd)
-				.setPlaceholder(translate('end'))
-				.onChange((value) => {
-					settings.deletionEnd = value;
-					void saveSettings();
-				});
-		});
+		};
+	return [
+		{
+			name: translate('smartMerge'),
+			render: (setting) => {
+				setting.setHeading();
+			},
+		},
+		{
+			desc: translate('conflictOursMarkersDescription'),
+			name: translate('conflictOursMarkers'),
+			render: (setting) => {
+				setting
+					.addText(marker('conflictAStart', translate('start')))
+					.addText(marker('conflictAEnd', translate('end')));
+			},
+		},
+		{
+			desc: translate('conflictTheirsMarkersDescription'),
+			name: translate('conflictTheirsMarkers'),
+			render: (setting) => {
+				setting
+					.addText(marker('conflictBStart', translate('start')))
+					.addText(marker('conflictBEnd', translate('end')));
+			},
+		},
+		{
+			desc: translate('deletionMarkersDescription'),
+			name: translate('deletionMarkers'),
+			render: (setting) => {
+				setting
+					.addText(marker('deletionStart', translate('start')))
+					.addText(marker('deletionEnd', translate('end')));
+			},
+		},
+	];
 }

@@ -1,7 +1,8 @@
 import type { WebdavSettings } from '@';
 import type { Translate, Translations } from '@hesprs/sync-engine-sdk';
+import type { App, SettingDefinitionItem } from 'obsidian';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
-import { App, SecretComponent, Setting } from 'obsidian';
+import { SecretComponent } from 'obsidian';
 import handleInput from './handle-input';
 
 export type WebdavTranslations = {
@@ -24,98 +25,125 @@ export type WebdavTranslations = {
 };
 
 export default function webdavSetting(
-	el: HTMLElement,
-	ctx: {
+	{
+		translate,
+		saveSettings,
+		app,
+	}: {
 		translate: Translate<WebdavTranslations & Translations>;
 		saveSettings: () => Promise<void>;
 		app: App;
 	},
 	settings: WebdavSettings,
-) {
-	const { translate, saveSettings, app } = ctx;
+): Array<SettingDefinitionItem> {
 	const invalidValue = translate('invalidValue');
-	new Setting(el).setName(translate('webdav')).setHeading();
-
-	new Setting(el)
-		.setName(translate('endpoint'))
-		.setDesc(translate('endpointDescription'))
-		.addText((text) => {
-			text.setPlaceholder(translate('endpointPlaceholder')).setValue(settings.endpoint);
-			handleInput({
-				invalidValue,
-				key: 'endpoint',
-				processValue: (value) => {
-					try {
-						return normalizeUrl(value);
-					} catch {
-						return false;
-					}
-				},
-				saveSettings,
-				settings,
-				text,
-			});
-		});
-
-	new Setting(el)
-		.setName(translate('username'))
-		.setDesc(translate('usernameDescription'))
-		.addText((text) => {
-			text.setPlaceholder(translate('usernamePlaceholder')).setValue(settings.username);
-			handleInput({
-				invalidValue,
-				key: 'username',
-				processValue: (value) => value.trim(),
-				saveSettings,
-				settings,
-				text,
-			});
-		});
-
-	new Setting(el)
-		.setName(translate('password'))
-		.setDesc(translate('passwordDescription'))
-		.addComponent((element) =>
-			new SecretComponent(app, element).setValue(settings.password).onChange((password) => {
-				settings.password = password;
-				void saveSettings();
-			}),
-		);
-
-	new Setting(el)
-		.setName(translate('baseDirectory'))
-		.setDesc(translate('baseDirectoryDescription'))
-		.addText((text) => {
-			text.setPlaceholder(translate('baseDirectoryPlaceholder')).setValue(
-				settings.baseDirectory,
-			);
-			handleInput({
-				invalidValue,
-				key: 'baseDirectory',
-				processValue: (original) => normalizeBaseDir(original.trim()),
-				saveSettings,
-				settings,
-				text,
-			});
-		});
-
-	new Setting(el)
-		.setName(translate('depthInfinity'))
-		.setDesc(translate('depthInfinityDescription'))
-		.addToggle((toggle) => {
-			toggle.setValue(settings.depthInfinity).onChange((value) => {
-				settings.depthInfinity = value;
-				void saveSettings();
-			});
-		});
-
-	new Setting(el)
-		.setName(translate('chunkedUpload'))
-		.setDesc(translate('chunkedUploadDescription'))
-		.addToggle((toggle) => {
-			toggle.setValue(settings.chunkedUpload).onChange((value) => {
-				settings.chunkedUpload = value;
-				void saveSettings();
-			});
-		});
+	return [
+		{
+			name: translate('webdav'),
+			render: (setting) => {
+				setting.setHeading();
+			},
+		},
+		{
+			desc: translate('endpointDescription'),
+			name: translate('endpoint'),
+			render: (setting) => {
+				setting.addText((text) => {
+					text.setPlaceholder(translate('endpointPlaceholder')).setValue(
+						settings.endpoint,
+					);
+					handleInput({
+						invalidValue,
+						key: 'endpoint',
+						processValue: (value) => {
+							try {
+								return normalizeUrl(value);
+							} catch {
+								return false;
+							}
+						},
+						saveSettings,
+						settings,
+						text,
+					});
+				});
+			},
+		},
+		{
+			desc: translate('usernameDescription'),
+			name: translate('username'),
+			render: (setting) => {
+				setting.addText((text) => {
+					text.setPlaceholder(translate('usernamePlaceholder')).setValue(
+						settings.username,
+					);
+					handleInput({
+						invalidValue,
+						key: 'username',
+						processValue: (value) => value.trim(),
+						saveSettings,
+						settings,
+						text,
+					});
+				});
+			},
+		},
+		{
+			desc: translate('passwordDescription'),
+			name: translate('password'),
+			render: (setting) => {
+				setting.addComponent((element) =>
+					new SecretComponent(app, element)
+						.setValue(settings.password)
+						.onChange((password) => {
+							settings.password = password;
+							void saveSettings();
+						}),
+				);
+			},
+		},
+		{
+			desc: translate('baseDirectoryDescription'),
+			name: translate('baseDirectory'),
+			render: (setting) => {
+				setting.addText((text) => {
+					text.setPlaceholder(translate('baseDirectoryPlaceholder')).setValue(
+						settings.baseDirectory,
+					);
+					handleInput({
+						invalidValue,
+						key: 'baseDirectory',
+						processValue: (original) => normalizeBaseDir(original.trim()),
+						saveSettings,
+						settings,
+						text,
+					});
+				});
+			},
+		},
+		{
+			desc: translate('depthInfinityDescription'),
+			name: translate('depthInfinity'),
+			render: (setting) => {
+				setting.addToggle((toggle) =>
+					toggle.setValue(settings.depthInfinity).onChange((value) => {
+						settings.depthInfinity = value;
+						void saveSettings();
+					}),
+				);
+			},
+		},
+		{
+			desc: translate('chunkedUploadDescription'),
+			name: translate('chunkedUpload'),
+			render: (setting) => {
+				setting.addToggle((toggle) =>
+					toggle.setValue(settings.chunkedUpload).onChange((value) => {
+						settings.chunkedUpload = value;
+						void saveSettings();
+					}),
+				);
+			},
+		},
+	];
 }

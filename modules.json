@@ -6,7 +6,7 @@
 		"description": "WebDAV backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/webdav.js",
-		"minPluginVersion": "3.0.0"
+		"minPluginVersion": "3.1.0"
 	},
 	{
 		"id": "s3",
@@ -15,7 +15,7 @@
 		"description": "S3 and S3-compatible backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/s3.js",
-		"minPluginVersion": "3.0.0"
+		"minPluginVersion": "3.1.0"
 	},
 	{
 		"id": "encryption",
@@ -24,7 +24,7 @@
 		"description": "Client-side encrypt vault files before uploading to backend.",
 		"icon": "key-round",
 		"main": "https://sync.consensia.cc/modules/encryption.js",
-		"minPluginVersion": "3.0.0"
+		"minPluginVersion": "3.1.0"
 	},
 	{
 		"id": "i18n-zh",
@@ -60,6 +60,6 @@
 		"description": "Smart merge conflict resolution strategy that applies recursive three-way merge.",
 		"icon": "combine",
 		"main": "https://sync.consensia.cc/modules/smart-merge.js",
-		"minPluginVersion": "3.0.0"
+		"minPluginVersion": "3.1.0"
 	}
 ]

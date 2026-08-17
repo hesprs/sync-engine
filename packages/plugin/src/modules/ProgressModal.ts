@@ -135,7 +135,7 @@ export default class ProgressModal extends Modal {
 			.addButton((button) => {
 				button
 					.setButtonText(this.t('stopSync'))
-					.setWarning()
+					.setDestructive()
 					.onClick(() => {
 						this.dispatch('syncCanceled');
 						return new Promise<void>((resolve) => {
@@ -157,7 +157,7 @@ export default class ProgressModal extends Modal {
 			.addButton((button) => {
 				button
 					.setButtonText(this.t('cancel'))
-					.setWarning()
+					.setDestructive()
 					.onClick(() => this.close());
 			})
 			.addButton((button) =>

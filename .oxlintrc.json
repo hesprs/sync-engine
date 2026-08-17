@@ -121,7 +121,8 @@
 		"eslint/radix": "off",
 		"unicorn/import-style": "off",
 		"unicorn/no-process-exit": "off",
-		"eslint/one-var": ["warn", "never"]
+		"eslint/one-var": ["warn", "never"],
+		"unicorn/max-nested-calls": ["warn", { "max": 5 }]
 	},
 	"env": {
 		"builtin": true,

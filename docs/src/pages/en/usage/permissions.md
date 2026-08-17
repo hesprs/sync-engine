@@ -29,7 +29,7 @@ Sync Engine only makes network requests for the two purposes below:
 
 Requests made for syncing purpose only happen during sync runs.
 
-Module sources are fetched only when automatic module update starts or user opens the module management panel. Sync Engine only fetches module sources defined in the "Module sources" setting. Modules are only downloaded when the user manually downloads a module or during module auto update.
+Module sources are fetched only when automatic module update starts or user opens the module management page. Sync Engine only fetches module sources defined in the "Module sources" setting. Modules are only downloaded when the user manually downloads a module or during module auto update.
 
 The only default module source is `https://sync.consensia.cc/modules.json`, `sync.consensia.cc` is hosted on GitHub pages, whose source code is 100% transparent and verifiable in Sync Engine GitHub repository.
 

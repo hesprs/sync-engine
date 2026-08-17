@@ -80,7 +80,7 @@ export default class UnknownModuleModal extends Modal {
 			.addButton((button) =>
 				button
 					.setButtonText(translate('delete'))
-					.setWarning()
+					.setDestructive()
 					.setCta()
 					.onClick(async () => {
 						await app.vault.adapter.remove(path);

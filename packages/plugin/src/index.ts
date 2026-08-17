@@ -9,7 +9,6 @@ import Bootstrap from './modules/Bootstrap';
 import EventBus from './modules/EventBus';
 import Extensibility, { OFFICIAL_SOURCE } from './modules/Extensibility';
 import I18n from './modules/I18n';
-import ModulesModal from './modules/ModulesModal';
 import Observability from './modules/Observability';
 import ProgressModal from './modules/ProgressModal';
 import Registrar from './modules/Registrar';
@@ -27,7 +26,6 @@ const internalModules = [
 	Observability,
 	Scheduler,
 	ProgressModal,
-	ModulesModal,
 	Bootstrap,
 ] as const;
 
@@ -119,11 +117,11 @@ export default class SyncEngine extends Plugin {
 		}).__assign__({ settings });
 		this.settings = this.context.settings;
 		await this.context.loadAllModules();
-		this.context.addSettingTab(this);
 		for (const module of this.allModules) {
 			const instance = this.context.__getModule__(module);
 			if ('start' in instance) instance.start();
 		}
+		this.context.addSettingTab(this);
 	}
 
 	onunload() {

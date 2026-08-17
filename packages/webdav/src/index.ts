@@ -5,7 +5,6 @@ import type {
 	Translations,
 	SelectFromContext,
 	SettingEntry,
-	Context,
 	ObsidianLanguageCode,
 	TranslationResource,
 	Settings,
@@ -38,6 +37,7 @@ export default class Webdav {
 			registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => void;
 			registerSetting: (entry: SettingEntry) => () => void;
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
+			saveSettings: () => Promise<void>;
 		}>,
 	) {
 		if (!this.moduleSettings.baseDirectory)
@@ -96,7 +96,7 @@ export default class Webdav {
 				priority: 6318,
 			}),
 			registerSetting({
-				apply: (el) => webdavSetting(el, this.ctx as Context, this.moduleSettings),
+				apply: () => webdavSetting(this.ctx, this.moduleSettings),
 				priority: 749,
 			}),
 		);

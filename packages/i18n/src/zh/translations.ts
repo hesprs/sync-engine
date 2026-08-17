@@ -212,7 +212,6 @@ const zh: Translations = {
 		'同步进行时在移动设备上显示通知提示。在桌面端则会替换状态栏显示。',
 	official: '官方',
 	omittedInvalidEntry: '已忽略 {{count}} 条无效条目。',
-	openPanel: '打开面板',
 	realtimeSync: '实时同步',
 	realtimeSyncDescription:
 		'文件一旦修改即刻自动触发同步。在输入框中修改文件修改到触发同步之间的延迟时间。',

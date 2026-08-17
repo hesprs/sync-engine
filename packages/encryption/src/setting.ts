@@ -1,8 +1,8 @@
 import type { EncryptionSettings } from '@';
 import type { Context, Fragment, MaybePromise, Translate } from '@hesprs/sync-engine-sdk';
-import type { App } from 'obsidian';
+import type { App, SettingDefinitionItem } from 'obsidian';
 import { setNeedMigration } from '@hesprs/sync-engine-sdk';
-import { SecretComponent, Setting } from 'obsidian';
+import { SecretComponent } from 'obsidian';
 
 export type EncryptionTranslations = {
 	encryption: string;
@@ -11,7 +11,6 @@ export type EncryptionTranslations = {
 };
 
 export default function encryptionSetting(
-	el: HTMLElement,
 	ctx: {
 		translate: Translate<EncryptionTranslations>;
 		app: App;
@@ -19,27 +18,35 @@ export default function encryptionSetting(
 		recordStoreExists: () => MaybePromise<boolean>;
 	},
 	settings: EncryptionSettings,
-) {
+): Array<SettingDefinitionItem> {
 	const { translate, app, saveSettings, recordStoreExists } = ctx;
-
-	new Setting(el)
-		.setName(translate('encryption'))
-		.setDesc(translate('encryptionDescription'))
-		.addComponent((element) =>
-			new SecretComponent(app, element).setValue(settings.password).onChange((value) => {
-				settings.password = value;
-				void saveSettings();
-			}),
-		)
-		.addToggle((toggle) =>
-			setNeedMigration(ctx as Context, {
-				apply: (value) => {
-					settings.enabled = value;
-					void saveSettings();
-				},
-				content: (value) => translate('encryptionMigration', value ? 'enable' : 'disable'),
-				needMigration: recordStoreExists,
-				toggle: toggle.setValue(settings.enabled),
-			}),
-		);
+	return [
+		{
+			desc: translate('encryptionDescription'),
+			name: translate('encryption'),
+			render: (setting) => {
+				setting
+					.addComponent((element) =>
+						new SecretComponent(app, element)
+							.setValue(settings.password)
+							.onChange((value) => {
+								settings.password = value;
+								void saveSettings();
+							}),
+					)
+					.addToggle((toggle) =>
+						setNeedMigration(ctx as Context, {
+							apply: (value) => {
+								settings.enabled = value;
+								void saveSettings();
+							},
+							content: (value) =>
+								translate('encryptionMigration', value ? 'enable' : 'disable'),
+							needMigration: recordStoreExists,
+							toggle: toggle.setValue(settings.enabled),
+						}),
+					);
+			},
+		},
+	];
 }

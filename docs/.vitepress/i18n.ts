@@ -29,7 +29,7 @@ const en = {
 		'All content licensed under the <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> License.',
 	migrateFromV2: 'Migrate from V2',
 	miscellaneous: 'Miscellaneous',
-	moduleManagementPanel: 'Module Management Panel',
+	moduleManagementPage: 'Module Management Page',
 	modules: 'Modules',
 	nativeName: 'English',
 	permissions: 'Permissions',
