@@ -1,10 +1,10 @@
 import type { Context, Settings } from '@';
-import type { SettingDefinitionItem } from 'obsidian';
 import type { DatabaseSync } from 'uni-kv';
 import { ExtraButtonComponent, Notice } from 'obsidian';
 import type { ModuleCtor } from '@/modules/Extensibility';
 import type { Translate } from '@/modules/I18n';
 import type {
+	CallableOrObjectTree,
 	CheckConnectionResult,
 	ConflictResolverEntry,
 	DeciderEntry,
@@ -13,6 +13,7 @@ import type {
 import type { General, MaybePromise } from '@/types';
 import toErrorMessage from '@/utils/to-error-message';
 import ModuleManagement from './module-management';
+import { s } from './utils';
 
 const CHECK_CONNECTION_INTERVAL = 10_000;
 
@@ -45,7 +46,7 @@ export default function headSettings(ctx: {
 	getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
 	memoryDB: CheckConnectionDB;
 	loadedModules: Map<string, ModuleCtor>;
-}): Array<SettingDefinitionItem> {
+}): CallableOrObjectTree {
 	const {
 		loadedModules,
 		translate,
@@ -57,8 +58,8 @@ export default function headSettings(ctx: {
 		memoryDB,
 		conflictResolverRegistry,
 	} = ctx;
-	return [
-		{
+	return {
+		10: s(() => ({
 			desc: translate('backendDescription'),
 			name: translate('backend'),
 			render: (setting) => {
@@ -90,23 +91,20 @@ export default function headSettings(ctx: {
 					});
 				return cleanup;
 			},
-		},
-		{
+		})),
+		20: s(() => ({
 			desc: translate('moduleManagementDescription'),
 			displayValue: translate('xEnabled', { x: loadedModules.size }),
 			name: translate('moduleManagement'),
 			page: () => new ModuleManagement(ctx as Context),
 			type: 'page',
-		},
-		{
-			control: {
-				key: 'moduleAutoUpdate',
-				type: 'toggle',
-			},
+		})),
+		30: s(() => ({
+			control: { key: 'moduleAutoUpdate', type: 'toggle' },
 			desc: translate('moduleAutoUpdateDescription'),
 			name: translate('moduleAutoUpdate'),
-		},
-		{
+		})),
+		40: s(() => ({
 			control: {
 				key: 'decider',
 				options: Object.fromEntries(
@@ -116,8 +114,8 @@ export default function headSettings(ctx: {
 			},
 			desc: translate('syncStrategyDescription'),
 			name: translate('syncStrategy'),
-		},
-		{
+		})),
+		50: s(() => ({
 			control: {
 				key: 'conflictResolver',
 				options: Object.fromEntries(
@@ -130,8 +128,8 @@ export default function headSettings(ctx: {
 			},
 			desc: translate('conflictResolveStrategyDescription'),
 			name: translate('conflictResolveStrategy'),
-		},
-	];
+		})),
+	};
 }
 
 function setupCheckConnection({

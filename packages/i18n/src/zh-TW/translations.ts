@@ -64,7 +64,6 @@ const zhTW: Translations = {
 		'Sync Engine 會記錄同步狀態以處理本地與遠端檔案之間的變更。此選項允許您選擇性地清除紀錄。警告：此操作可能會導致資料遺失。',
 	completed: '已完成',
 	completedNoop: '已是最新狀態',
-	configurations: '設定項目',
 	configure: '設定',
 	confirm: '確認',
 	confirmDeleteDescription: '請確認要刪除的檔案，未勾選的任務將會重新上傳。',
@@ -213,6 +212,8 @@ const zhTW: Translations = {
 	moduleManagementDescription:
 		'在專屬面板中管理模組。您可以進行安裝、卸載、更新、啟用、停用、編輯模組或編輯模組來源。',
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
+	moduleSources: '模組來源',
+	moduleSourcesDescription: '編輯取得模組目錄的模組來源，以便安裝第三方 Sync Engine 模組。',
 	moveLocal: '移動本地',
 	moveRemote: '移動遠端',
 	name: '名稱',
@@ -249,6 +250,8 @@ const zhTW: Translations = {
 	showInstalledOnly: '僅顯示已安裝',
 	showProgress: '顯示進度',
 	skip: '跳過',
+	someModulesHidden:
+		'由於 Sync Engine 外掛程式版本過舊，部分模組已隱藏。請更新外掛程式以查看完整模組目錄。',
 	sourcesDescription: '新增模組來源 URL。儲存時將自動忽略空白與無效的資料列。',
 	startMigration: '開始遷移',
 	startNonInteractiveSync: '啟動非互動式同步',
@@ -306,6 +309,7 @@ const zhTW: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: '上傳',
 	walkingRemote: '正在掃描遠端檔案',
+	xEnabled: '已啟用 {{x}} 個模組',
 };
 
 export default zhTW;

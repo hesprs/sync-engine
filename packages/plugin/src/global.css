@@ -54,19 +54,14 @@ input[type='checkbox']:indeterminate {
 @container (max-width: 500px) {
 	.sync-engine-togglable-value {
 		flex-direction: column;
+		.setting-item-control {
+			width: 100%;
+			justify-content: center;
+			input[type='text'] {
+				flex: 1;
+			}
+		}
 	}
-}
-
-.sync-engine-large-modal {
-	width: var(--modal-width);
-	height: var(--modal-height);
-	max-width: var(--modal-max-width);
-	max-height: var(--modal-max-height);
-}
-
-.is-phone .sync-engine-large-modal {
-	height: 100%;
-	margin-top: auto;
 }
 
 .sync-engine-card .flair {

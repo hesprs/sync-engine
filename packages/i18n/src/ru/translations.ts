@@ -64,7 +64,6 @@ const ru: Translations = {
 		'Sync Engine записывает состояния синхронизации для разрешения операций между локальными и удалёнными файлами. Эта опция позволяет выборочно очищать записи. Внимание: это действие может привести к потере данных.',
 	completed: 'Завершено',
 	completedNoop: 'Уже синхронизировано',
-	configurations: 'Конфигурации',
 	configure: 'Настроить',
 	confirm: 'Подтвердить',
 	confirmDeleteDescription:
@@ -220,6 +219,9 @@ const ru: Translations = {
 	moduleManagementDescription:
 		'Управление модулями в специальной панели. Вы можете устанавливать, удалять, обновлять, включать, отключать и редактировать модули, а также их источники.',
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
+	moduleSources: 'Источники модулей',
+	moduleSourcesDescription:
+		'Редактируйте источники модулей, из которых формируется каталог. Это позволяет устанавливать сторонние модули Sync Engine.',
 	moveLocal: 'Переместить локальный файл',
 	moveRemote: 'Переместить удалённый файл',
 	name: 'Название',
@@ -258,6 +260,8 @@ const ru: Translations = {
 	showInstalledOnly: 'Только установленные',
 	showProgress: 'Показывать прогресс',
 	skip: 'Пропустить',
+	someModulesHidden:
+		'Некоторые модули скрыты, поскольку плагин Sync Engine устарел. Обновите его, чтобы просмотреть полный каталог модулей.',
 	sourcesDescription:
 		'Добавьте URL-адреса источников модулей. Пустые и недействительные строки будут пропущены при сохранении.',
 	startMigration: 'Начать миграцию',
@@ -320,6 +324,7 @@ const ru: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: 'Загрузить',
 	walkingRemote: 'Сканирование удалённых файлов',
+	xEnabled: 'Включено модулей: {{x}}',
 };
 
 export default ru;

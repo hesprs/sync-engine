@@ -53,6 +53,8 @@ class MigrationModal extends Modal {
 		},
 	) {
 		super(ctx.app);
+		this.contentEl.addClass('markdown-rendered');
+		this.setTitle(ctx.translate('remoteMigration'));
 	}
 
 	onOpen() {
@@ -61,10 +63,7 @@ class MigrationModal extends Modal {
 			options: { content, apply },
 		} = this;
 		const { translate } = this.ctx;
-
 		contentEl.empty();
-		contentEl.addClass('markdown-rendered');
-		this.setTitle(translate('remoteMigration'));
 
 		if (typeof content === 'string')
 			contentEl.createEl('p', { cls: 'whitespace-pre-wrap', text: content });

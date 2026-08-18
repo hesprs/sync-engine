@@ -96,7 +96,7 @@ export default class Webdav {
 				priority: 6318,
 			}),
 			registerSetting({
-				apply: () => webdavSetting(this.ctx, this.moduleSettings),
+				apply: webdavSetting(this.ctx, this.moduleSettings),
 				priority: 749,
 			}),
 		);

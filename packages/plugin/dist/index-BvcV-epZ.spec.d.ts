@@ -1,4 +1,4 @@
-import { App, Command, EventRef, IconName, ListedFiles, Modal, Plugin, RequestUrlParam, SettingDefinitionItem, Stat, ToggleComponent } from "obsidian";
+import { App, Command, EventRef, IconName, ListedFiles, Modal, Plugin, RequestUrlParam, Setting, SettingDefinitionItem, Stat, ToggleComponent } from "obsidian";
 //#region test/e2e-utils.d.ts
 type General$1 = any;
 //#endregion
@@ -650,6 +650,9 @@ declare function pipe({ from, to, stat, key }: {
 declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promise<Binary | ReadableStream<Binary> | undefined>;
 declare function writeWithValue(fs: Fs, key: string, value: Binary | ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
 //#endregion
+//#region src/settings/utils.d.ts
+declare function s(parent: (self: SettingTree) => SettingDefinitionItem, children?: CallableOrObjectTree): CallableOrObjectTree;
+//#endregion
 //#region src/sdk/index.d.ts
 declare function digOriginal(wrapped: Fs): RootFs;
 type SelectFromContext<O extends object> = Context extends O ? O : never;
@@ -734,6 +737,7 @@ declare class Extensibility {
     loadAllModules: () => Promise<void>;
     loadModule: (meta: AugmentedModuleMeta, start?: boolean, module?: string) => Promise<void>;
     loadedModules: Map<string, ModuleCtor>;
+    pluginOutdated: boolean;
     unloadModule: (id: string) => void;
     updateModuleMeta: (meta: AugmentedModuleMeta) => Promise<void>;
     updateModules: () => Promise<void>;
@@ -794,6 +798,19 @@ type ControlsSettingTranslations = {
   invalidValue: string;
 };
 //#endregion
+//#region src/components/SourceEditorModal.d.ts
+type SourceEditorTranslations = {
+  add: string;
+  cancel: string;
+  editSources: string;
+  omittedInvalidEntry: string;
+  moduleSourcePlaceholder: string;
+  remove: string;
+  save: string;
+  sourcesDescription: string;
+  httpInsecureWarning: string;
+};
+//#endregion
 //#region src/settings/development.d.ts
 type DevelopmentSettingTranslations = {
   development: string;
@@ -805,7 +822,10 @@ type DevelopmentSettingTranslations = {
   exportLogsDescription: string;
   exportLogsDirectoryPlaceholder: string;
   exportLogsToFile: string;
-};
+  moduleSources: string;
+  moduleSourcesDescription: string;
+  edit: string;
+} & SourceEditorTranslations;
 //#endregion
 //#region src/settings/features.d.ts
 type FeaturesSettingTranslations = {
@@ -861,6 +881,7 @@ type HeadSettingTranslations = {
   checkConnection: string;
   conflictResolveStrategy: string;
   conflictResolveStrategyDescription: string;
+  xEnabled: string;
 };
 //#endregion
 //#region src/settings/miscellaneous.d.ts
@@ -896,28 +917,14 @@ type ModuleManagementTranslations = {
   deleteModule: string;
   editModuleInformation: string;
   official: string;
-};
-//#endregion
-//#region src/components/SourceEditorModal.d.ts
-type SourceEditorTranslations = {
-  add: string;
-  cancel: string;
-  editSources: string;
-  omittedInvalidEntry: string;
-  moduleSourcePlaceholder: string;
-  remove: string;
-  save: string;
-  sourcesDescription: string;
-  httpInsecureWarning: string;
+  someModulesHidden: string;
 };
 //#endregion
 //#region src/settings/module-management.d.ts
-type ModulesManagementTranslations = ModuleManagementTranslations & SourceEditorTranslations & {
+type ModulesTranslations = ModuleManagementTranslations & {
   searchModules: string;
-  editSources: string;
   moduleManagement: string;
   showInstalledOnly: string;
-  configurations: string;
 };
 //#endregion
 //#region src/modules/Bootstrap.d.ts
@@ -953,7 +960,7 @@ declare class Bootstrap {
     keepRemote: string;
     renameAndKeepBoth: string;
     skip: string;
-  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & HeadersEditorTranslations & UnknownModuleTranslations & ModuleEditorTranslations & FileTreeTranslations & ModulesManagementTranslations;
+  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & HeadersEditorTranslations & UnknownModuleTranslations & ModuleEditorTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
     maxMemoryConsumption: TogglableValue;
     maxRequestConcurrency: TogglableValue;
@@ -961,7 +968,6 @@ declare class Bootstrap {
     realtimeSyncFastMode: boolean;
     asymmetricStorage: boolean;
     customHeaders: CustomHeaders;
-    moduleSources: Array<string>;
   };
   constructor(ctx: {
     app: App;
@@ -1135,9 +1141,20 @@ type RemoteLister = (info: Infras & {
 }) => MaybePromise<Array<Stat$1>>;
 type RemoteListerEntry = OrderedApplyEntry<RemoteLister>;
 type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
+type SettingTree = {
+  (self: SettingTree): SettingDefinitionItem;
+  [key: number]: SettingTree;
+};
+type NestedCallableTree = {
+  (self: SettingTree): SettingDefinitionItem;
+  [key: number]: CallableOrObjectTree;
+};
+type CallableOrObjectTree = NestedCallableTree | {
+  [key: number]: CallableOrObjectTree;
+};
 type SettingEntry = {
   priority: number;
-  apply: () => Array<SettingDefinitionItem>;
+  apply: CallableOrObjectTree;
 };
 type RequestParam = Omit<RequestUrlParam, 'body'> & {
   body?: string | Binary;
@@ -1296,4 +1313,4 @@ type VaultRequestResponseMap = {
 };
 type VaultRequest = <T extends VaultRequestParam>(params: T) => Promise<VaultRequestResponseMap[T['method']]>;
 //#endregion
-export { TranslationResource as $, SyncTerminateReason as A, MoveRemote as B, SelectFromContext as C, FolderStat as Ct, writeWithValue as D, RecordStatsMap as Dt, readWithSize as E, RecordStat as Et, Upload as F, BaseTask as G, Download as H, ResolveConflict as I, TaskNames as J, ConflictResolver as K, RemoveRemote as L, Decider as M, DeciderInput as N, prefixWrapper as O, Stat$1 as Ot, TaskFactory as P, Translate as Q, RemoveRecord as R, ModuleMeta as S, FileStat as St, pipe as T, Progress as Tt, CreateRemoteDir as U, MoveLocal as V, AddRecord as W, Fragment as X, RecordStore as Y, ObsidianLanguageCode as Z, Events as _, OutputAtom as _t, FsWrapperEntry as a, StoreOperations as at, ExistingMemoryDB as b, WriteAtom as bt, RemoteFsEntry as c, CustomAtom as ct, RemoteRequestMiddlewareEntry as d, InputAtom as dt, Dispatch as et, Request as f, ListReporter as ft, Context as g, OptimizerOutput as gt, SettingEntry as h, OptimizerInput as ht, DeciderEntry as i, StoreAsync as it, CreateLocalDir as j, setNeedMigration as k, StatsMap as kt, RemoteLister as l, DeleteAtom as lt, RequestResponse as m, MoveAtom as mt, CheckConnectionResult as n, DatabaseAsync as nt, LocalRequestMiddlewareEntry as o, StoreSync as ot, RequestParam as p, MkdirAtom as pt, ConflictResolverPayload as q, ConflictResolverEntry as r, DatabaseSync as rt, OptimizerEntry as s, BatchOptimizer as st, VaultRequest as t, On as tt, RemoteListerEntry as u, Fs as ut, Settings as v, RootFs as vt, digOriginal as w, MaybePromise as wt, AugmentedModuleMeta as x, Binary as xt, Translations as y, WrappedFs as yt, RemoveLocal as z };
+export { Fragment as $, writeWithValue as A, RecordStatsMap as At, RemoveRemote as B, AugmentedModuleMeta as C, WriteAtom as Ct, s as D, MaybePromise as Dt, digOriginal as E, FolderStat as Et, Decider as F, Download as G, RemoveLocal as H, DeciderInput as I, BaseTask as J, CreateRemoteDir as K, TaskFactory as L, setNeedMigration as M, StatsMap as Mt, SyncTerminateReason as N, pipe as O, Progress as Ot, CreateLocalDir as P, RecordStore as Q, Upload as R, ExistingMemoryDB as S, WrappedFs as St, SelectFromContext as T, FileStat as Tt, MoveRemote as U, RemoveRecord as V, MoveLocal as W, ConflictResolverPayload as X, ConflictResolver as Y, TaskNames as Z, SettingTree as _, MoveAtom as _t, DeciderEntry as a, DatabaseAsync as at, Settings as b, OutputAtom as bt, OptimizerEntry as c, StoreOperations as ct, RemoteListerEntry as d, CustomAtom as dt, ObsidianLanguageCode as et, RemoteRequestMiddlewareEntry as f, DeleteAtom as ft, SettingEntry as g, MkdirAtom as gt, RequestResponse as h, ListReporter as ht, ConflictResolverEntry as i, On as it, prefixWrapper as j, Stat$1 as jt, readWithSize as k, RecordStat as kt, RemoteFsEntry as l, StoreSync as lt, RequestParam as m, InputAtom as mt, CallableOrObjectTree as n, TranslationResource as nt, FsWrapperEntry as o, DatabaseSync as ot, Request as p, Fs as pt, AddRecord as q, CheckConnectionResult as r, Dispatch as rt, LocalRequestMiddlewareEntry as s, StoreAsync as st, VaultRequest as t, Translate as tt, RemoteLister as u, BatchOptimizer as ut, Context as v, OptimizerInput as vt, ModuleMeta as w, Binary as wt, Translations as x, RootFs as xt, Events as y, OptimizerOutput as yt, ResolveConflict as z };

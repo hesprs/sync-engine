@@ -9,6 +9,7 @@ export function digOriginal(wrapped: Fs) {
 export { default as setNeedMigration } from '@/components/MigrationModal';
 export { default as prefixWrapper } from './prefix';
 export { pipe, readWithSize, writeWithValue } from '@/utils/pipe';
+export { s } from '@/settings/utils';
 
 export type {
 	Translate,
@@ -65,6 +66,8 @@ export type {
 	CheckConnectionResult,
 	RequestParam,
 	RequestResponse,
+	CallableOrObjectTree,
+	SettingTree,
 } from '@/modules/Registrar';
 export type { RecordStore } from '@/modules/Storage';
 export type { ModuleMeta, AugmentedModuleMeta } from '@/modules/Extensibility';

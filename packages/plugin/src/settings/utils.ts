@@ -1,19 +1,16 @@
 import type { Setting, SettingDefinitionItem } from 'obsidian';
+import type { CallableOrObjectTree, SettingTree } from '@/modules/Registrar';
 import type { TogglableValue } from '@/types';
 import { formatFileSize, formatTime, parseFileSize, parseTime } from '@/utils/unit-converter';
 
 type InputType = 'number' | 'time' | 'fileSize';
-
-const MAX_32BIT_VALUE = 2 ** 31 - 1;
 const WARNING_INTERVAL = 2000;
 
-export function heading(name: string): SettingDefinitionItem {
-	return {
-		name,
-		render: (setting) => {
-			setting.setHeading();
-		},
-	};
+export function s(
+	parent: (self: SettingTree) => SettingDefinitionItem,
+	children?: CallableOrObjectTree,
+): CallableOrObjectTree {
+	return children ? Object.assign(parent, children) : (parent as unknown as CallableOrObjectTree);
 }
 
 export function renderTogglableValue({
@@ -47,7 +44,6 @@ export function renderTogglableValue({
 						value === undefined ||
 						Number.isNaN(value) ||
 						value < 0 ||
-						value > MAX_32BIT_VALUE ||
 						(rejectZero && value === 0)
 					) {
 						text.inputEl.value = format(field.value, type);

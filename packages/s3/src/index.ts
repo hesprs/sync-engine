@@ -148,7 +148,7 @@ export default class S3 {
 				priority: 303,
 			}),
 			registerSetting({
-				apply: () => s3Setting(this.ctx, this.moduleSettings),
+				apply: s3Setting(this.ctx, this.moduleSettings),
 				priority: 604,
 			}),
 		);

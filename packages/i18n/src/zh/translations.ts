@@ -52,7 +52,6 @@ const zh: Translations = {
 		'Sync Engine 会记录同步状态，以便在本地和远程文件之间解析同步操作。此选项允许您选择性地清除记录。警告：此操作很可能会导致数据丢失。',
 	completed: '已完成',
 	completedNoop: '已是最新状态',
-	configurations: '配置',
 	configure: '配置',
 	confirm: '确认',
 	confirmDeleteDescription: '请确认将被删除的文件，未勾选的任务将会被重新上传。',
@@ -199,6 +198,8 @@ const zh: Translations = {
 	moduleManagementDescription:
 		'在专用面板中管理模块。您可以安装、卸载、更新、启用、禁用、编辑模块，或编辑模块源。',
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
+	moduleSources: '模块源',
+	moduleSourcesDescription: '编辑获取模块目录的模块源，以便安装第三方 Sync Engine 模块。',
 	moveLocal: '移动本地',
 	moveRemote: '移动远程',
 	name: '名称',
@@ -236,6 +237,8 @@ const zh: Translations = {
 	showInstalledOnly: '仅显示已安装',
 	showProgress: '显示进度',
 	skip: '跳过',
+	someModulesHidden:
+		'由于 Sync Engine 插件版本过旧，部分模块已隐藏。请更新插件以查看完整模块目录。',
 	sourcesDescription: '添加模块源 URL。保存时将忽略空白行和无效行。',
 	startMigration: '开始迁移',
 	startNonInteractiveSync: '开始静默同步',
@@ -292,6 +295,7 @@ const zh: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: '上传',
 	walkingRemote: '正在探测远程文件',
+	xEnabled: '已启用 {{x}} 个模块',
 };
 
 export default zh;

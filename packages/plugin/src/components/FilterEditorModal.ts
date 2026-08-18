@@ -30,6 +30,7 @@ export default class FilterEditorModal extends Modal {
 		filters: Array<GlobMatchRule> = [],
 	) {
 		super(ctx.app);
+		this.contentEl.addClass('markdown-rendered');
 		this.filters = structuredClone(filters);
 		this.t = ctx.translate;
 	}

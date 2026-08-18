@@ -219,7 +219,7 @@ const en: Translations = {
 	moduleManagementDescription:
 		'Manage modules in a dedicated page. You can install, uninstall, update, enable, disable, and edit modules.',
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
-	moduleSources: 'Module Sources',
+	moduleSources: 'Module sources',
 	moduleSourcesDescription:
 		'Edit module sources from which the module catalog is obtained. In this way you can install third-party Sync Engine modules.',
 	moveLocal: 'Move local',
@@ -229,7 +229,6 @@ const en: Translations = {
 	noInstalledModulesFound: 'No installed modules found.',
 	noMatchingModulesFound: 'No matching modules found.',
 	noModulesAvailable: 'No modules available.',
-	noSourceConfigured: 'No source configured',
 	none: 'None',
 	noticeStatusOnMobile: 'Notice sync status on mobile',
 	noticeStatusOnMobileDescription:
@@ -323,6 +322,7 @@ const en: Translations = {
 	upload: 'Upload',
 	walkingRemote: 'Discovering remote files',
 	xEnabled: '{{x}} enabled',
+	xSources: '{{x}} sources',
 };
 
 export default en;

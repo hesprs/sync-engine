@@ -77,7 +77,7 @@ export default class SmartMerge {
 				resolver: smartMergeResolver(this.moduleSettings, indexedDB, getNamespace),
 			}),
 			registerSetting({
-				apply: () => smartMergeSetting({ saveSettings, translate }, this.moduleSettings),
+				apply: smartMergeSetting({ saveSettings, translate }, this.moduleSettings),
 				priority: 4048,
 			}),
 		);

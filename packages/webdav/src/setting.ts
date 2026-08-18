@@ -1,6 +1,7 @@
 import type { WebdavSettings } from '@';
-import type { Translate, Translations } from '@hesprs/sync-engine-sdk';
-import type { App, SettingDefinitionItem } from 'obsidian';
+import type { CallableOrObjectTree, Translate, Translations } from '@hesprs/sync-engine-sdk';
+import type { App, SettingGroupItem } from 'obsidian';
+import { s } from '@hesprs/sync-engine-sdk';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
 import { SecretComponent } from 'obsidian';
 import handleInput from './handle-input';
@@ -35,115 +36,118 @@ export default function webdavSetting(
 		app: App;
 	},
 	settings: WebdavSettings,
-): Array<SettingDefinitionItem> {
+): CallableOrObjectTree {
 	const invalidValue = translate('invalidValue');
-	return [
-		{
-			name: translate('webdav'),
-			render: (setting) => {
-				setting.setHeading();
+	return {
+		749: s(
+			(self) => ({
+				heading: translate('webdav'),
+				items: Object.values(self).map((node) => node(node) as SettingGroupItem),
+				type: 'group',
+			}),
+			{
+				1000: s(() => ({
+					desc: translate('endpointDescription'),
+					name: translate('endpoint'),
+					render: (setting) => {
+						setting.addText((text) => {
+							text.setPlaceholder(translate('endpointPlaceholder')).setValue(
+								settings.endpoint,
+							);
+							handleInput({
+								invalidValue,
+								key: 'endpoint',
+								processValue: (value) => {
+									try {
+										return normalizeUrl(value);
+									} catch {
+										return false;
+									}
+								},
+								saveSettings,
+								settings,
+								text,
+							});
+						});
+					},
+				})),
+				2000: s(() => ({
+					desc: translate('usernameDescription'),
+					name: translate('username'),
+					render: (setting) => {
+						setting.addText((text) => {
+							text.setPlaceholder(translate('usernamePlaceholder')).setValue(
+								settings.username,
+							);
+							handleInput({
+								invalidValue,
+								key: 'username',
+								processValue: (value) => value.trim(),
+								saveSettings,
+								settings,
+								text,
+							});
+						});
+					},
+				})),
+				3000: s(() => ({
+					desc: translate('passwordDescription'),
+					name: translate('password'),
+					render: (setting) => {
+						setting.addComponent((element) =>
+							new SecretComponent(app, element)
+								.setValue(settings.password)
+								.onChange((password) => {
+									settings.password = password;
+									void saveSettings();
+								}),
+						);
+					},
+				})),
+				4000: s(() => ({
+					desc: translate('baseDirectoryDescription'),
+					name: translate('baseDirectory'),
+					render: (setting) => {
+						setting.addText((text) => {
+							text.setPlaceholder(translate('baseDirectoryPlaceholder')).setValue(
+								settings.baseDirectory,
+							);
+							handleInput({
+								invalidValue,
+								key: 'baseDirectory',
+								processValue: (original) => normalizeBaseDir(original.trim()),
+								saveSettings,
+								settings,
+								text,
+							});
+						});
+					},
+				})),
+				5000: s(() => ({
+					desc: translate('depthInfinityDescription'),
+					name: translate('depthInfinity'),
+					render: (setting) => {
+						setting.addToggle((toggle) =>
+							toggle.setValue(settings.depthInfinity).onChange((value) => {
+								settings.depthInfinity = value;
+								void saveSettings();
+							}),
+						);
+					},
+				})),
+				6000: s(() => ({
+					desc: translate('chunkedUploadDescription'),
+					name: translate('chunkedUpload'),
+					render: (setting) => {
+						setting.addToggle((toggle) =>
+							toggle.setValue(settings.chunkedUpload).onChange((value) => {
+								settings.chunkedUpload = value;
+								void saveSettings();
+							}),
+						);
+					},
+				})),
 			},
-		},
-		{
-			desc: translate('endpointDescription'),
-			name: translate('endpoint'),
-			render: (setting) => {
-				setting.addText((text) => {
-					text.setPlaceholder(translate('endpointPlaceholder')).setValue(
-						settings.endpoint,
-					);
-					handleInput({
-						invalidValue,
-						key: 'endpoint',
-						processValue: (value) => {
-							try {
-								return normalizeUrl(value);
-							} catch {
-								return false;
-							}
-						},
-						saveSettings,
-						settings,
-						text,
-					});
-				});
-			},
-		},
-		{
-			desc: translate('usernameDescription'),
-			name: translate('username'),
-			render: (setting) => {
-				setting.addText((text) => {
-					text.setPlaceholder(translate('usernamePlaceholder')).setValue(
-						settings.username,
-					);
-					handleInput({
-						invalidValue,
-						key: 'username',
-						processValue: (value) => value.trim(),
-						saveSettings,
-						settings,
-						text,
-					});
-				});
-			},
-		},
-		{
-			desc: translate('passwordDescription'),
-			name: translate('password'),
-			render: (setting) => {
-				setting.addComponent((element) =>
-					new SecretComponent(app, element)
-						.setValue(settings.password)
-						.onChange((password) => {
-							settings.password = password;
-							void saveSettings();
-						}),
-				);
-			},
-		},
-		{
-			desc: translate('baseDirectoryDescription'),
-			name: translate('baseDirectory'),
-			render: (setting) => {
-				setting.addText((text) => {
-					text.setPlaceholder(translate('baseDirectoryPlaceholder')).setValue(
-						settings.baseDirectory,
-					);
-					handleInput({
-						invalidValue,
-						key: 'baseDirectory',
-						processValue: (original) => normalizeBaseDir(original.trim()),
-						saveSettings,
-						settings,
-						text,
-					});
-				});
-			},
-		},
-		{
-			desc: translate('depthInfinityDescription'),
-			name: translate('depthInfinity'),
-			render: (setting) => {
-				setting.addToggle((toggle) =>
-					toggle.setValue(settings.depthInfinity).onChange((value) => {
-						settings.depthInfinity = value;
-						void saveSettings();
-					}),
-				);
-			},
-		},
-		{
-			desc: translate('chunkedUploadDescription'),
-			name: translate('chunkedUpload'),
-			render: (setting) => {
-				setting.addToggle((toggle) =>
-					toggle.setValue(settings.chunkedUpload).onChange((value) => {
-						settings.chunkedUpload = value;
-						void saveSettings();
-					}),
-				);
-			},
-		},
-	];
+		),
+	};
 }

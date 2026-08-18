@@ -43,7 +43,6 @@ jobs:
         with:
           subject-path: |
             dist/main.js
-            dist/manifest.json
             dist/styles.css
 
       - name: Create release

@@ -24,10 +24,7 @@ export type RemoteFsEntry = {
 	checkConnection: (request: Request) => MaybePromise<CheckConnectionResult>;
 };
 export type DeciderEntry = { decider: Decider; prettyName: () => string };
-export type ConflictResolverEntry = {
-	prettyName: () => string;
-	resolver: ConflictResolver;
-};
+export type ConflictResolverEntry = { prettyName: () => string; resolver: ConflictResolver };
 
 type GeneralFn = (...args: ReadonlyArray<General>) => unknown;
 type RejectableApply<F extends GeneralFn> = (...input: Parameters<F>) => ReturnType<F> | undefined;
@@ -39,10 +36,16 @@ export type RemoteLister = (
 export type RemoteListerEntry = OrderedApplyEntry<RemoteLister>;
 export type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
 
-export type SettingEntry = {
-	priority: number;
-	apply: () => Array<SettingDefinitionItem>;
+export type SettingTree = {
+	(self: SettingTree): SettingDefinitionItem;
+	[key: number]: SettingTree;
 };
+type NestedCallableTree = {
+	(self: SettingTree): SettingDefinitionItem;
+	[key: number]: CallableOrObjectTree;
+};
+export type CallableOrObjectTree = NestedCallableTree | { [key: number]: CallableOrObjectTree };
+export type SettingEntry = { priority: number; apply: CallableOrObjectTree };
 
 export type RequestParam = Omit<RequestUrlParam, 'body'> & { body?: string | Binary };
 export type RequestResponse = {
@@ -221,9 +224,12 @@ class SettingTab extends PluginSettingTab {
 
 	getSettingDefinitions() {
 		this.containerEl.empty();
-		const sorted: Record<number, () => Array<SettingDefinitionItem>> = {};
+		const sorted: Record<number, CallableOrObjectTree> = {};
 		for (const { priority, apply } of this.settingRegistry) sorted[priority] = apply;
-		return Object.values(sorted).flatMap((render) => render());
+		const rootTree = (tree: SettingTree) => Object.values(tree).map((node) => node(node));
+		const tree = rootTree as unknown as SettingTree;
+		for (const patch of Object.values(sorted)) mergeSettingTree(tree, patch);
+		return rootTree(tree);
 	}
 }
 
@@ -272,3 +278,43 @@ function mapRegister<T>(registry: Map<string, T>) {
 		return () => registry.delete(key);
 	};
 }
+
+function toTree(node: CallableOrObjectTree): SettingTree {
+	const root = (
+		typeof node === 'function' ? (self: SettingTree) => node(self) : dummy()
+	) as SettingTree;
+	for (const k of Object.keys(node)) {
+		const key = Number(k);
+		root[key] = toTree(node[key]);
+	}
+	return root;
+}
+
+function resolveChild(
+	existing: SettingTree | undefined,
+	incoming: CallableOrObjectTree,
+): SettingTree {
+	if (!existing) return toTree(incoming);
+	return typeof incoming === 'function'
+		? mergeReversed(incoming, existing)
+		: mergeSettingTree(existing, incoming);
+}
+
+function mergeSettingTree(a: SettingTree, b: CallableOrObjectTree): SettingTree {
+	for (const k of Object.keys(b)) {
+		const key = Number(k);
+		a[key] = resolveChild(a[key], b[key]);
+	}
+	return a;
+}
+
+function mergeReversed(a: NestedCallableTree, b: SettingTree): SettingTree {
+	const result = toTree(a);
+	for (const k of Object.keys(b)) {
+		const index = Number(k);
+		result[index] = result[index] ? resolveChild(b[index], result[index]) : toTree(b[index]);
+	}
+	return result;
+}
+
+const dummy = () => (() => ({ name: 'dummy' })) as unknown as SettingTree;
