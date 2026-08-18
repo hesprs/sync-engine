@@ -438,7 +438,7 @@ function synthesizeHeaders(headers: CustomHeaders, secret: SecretStorage): Recor
 	return Object.fromEntries(
 		headers.map(({ key, type, value }) => {
 			if (type === 'plaintext') return [key, value];
-			const secretValue = secret.getSecret(key);
+			const secretValue = secret.getSecret(value);
 			if (!secretValue) throw new Error(`Custom secret header not found: "${key}".`);
 			return [key, secretValue];
 		}),
