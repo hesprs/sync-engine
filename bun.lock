@@ -5,6 +5,7 @@
     "": {
       "name": "sync-engine",
       "devDependencies": {
+        "@obsidian-typings/obsidian-public-latest": "^6.32.0",
         "@tsdown/css": "^0.22.14",
         "@types/bun": "^1.3.14",
         "obsidian": "^1.13.1",
@@ -51,7 +52,7 @@
     },
     "packages/plugin": {
       "name": "@hesprs/sync-engine-sdk",
-      "version": "3.0.5",
+      "version": "3.0.6",
       "dependencies": {
         "obsidian": "^1.13.1",
       },
@@ -182,6 +183,10 @@
     "@needle-di/core": ["@needle-di/core@1.1.3", "", {}, "sha512-Jeals0rTBlC9rP0LjgEX3xaD9FCZykCMmiCBxvjaL6UjNRyd8fpp64kFgQi1IYt/6aeNOrjm4ElK9PdIlPKqLQ=="],
 
     "@noble/ciphers": ["@noble/ciphers@2.3.0", "", {}, "sha512-Clu/xdfgVTf9o7ngLOURaxePwR0j8sjclKEtVij10/jGulwFsPWCvvRgG/XjUVf8Nei+jLG6uwyXzUTGY1DQrw=="],
+
+    "@obsidian-typings/obsidian-public-1.13.7": ["@obsidian-typings/obsidian-public-1.13.7@1.1.0", "", { "peerDependencies": { "@types/node": ">=16.0.0" } }, "sha512-laF2gpvOjiJDMoDiSbiXDJyNjE8aZExWgEDLScU12bVRPCVl/N6g8NKp4oa4O3IiZsOMO7x/K+dVopXHXevtug=="],
+
+    "@obsidian-typings/obsidian-public-latest": ["@obsidian-typings/obsidian-public-latest@6.32.0", "", { "dependencies": { "@obsidian-typings/obsidian-public-1.13.7": "^1.1.0" } }, "sha512-1prfi8ipUt4TATr1Sj//+n2yydpoOwcfuURQzd/a2GDyRt4qsGh7DM5khWnRmOAzWxKtvAH280pbD/lVqVdUgA=="],
 
     "@oxc-parser/binding-android-arm-eabi": ["@oxc-parser/binding-android-arm-eabi@0.131.0", "", { "os": "android", "cpu": "arm" }, "sha512-t2xicr9pfzkSRYx5aPqZqlLaayIwJTqgQ81Jor31Xep2nGyL2Aq3d0K5wOfeR7VevaSdxaS9dzSQP9xDwn8fDg=="],
 

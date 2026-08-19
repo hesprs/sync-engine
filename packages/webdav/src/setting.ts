@@ -98,7 +98,7 @@ export default function webdavSetting(
 							new SecretComponent(app, element)
 								.setValue(settings.password)
 								.onChange((password) => {
-									settings.password = password;
+									settings.password = password ?? '';
 									void saveSettings();
 								}),
 						);

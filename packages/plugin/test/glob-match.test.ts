@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import type { GlobMatchRule } from '@/types';
 import type { GlobMatchResult } from '@/utils/glob-match';
-import { prepareGlobMatch } from '@/utils/glob-match';
+import { normalizeGlob, prepareGlobMatch } from '@/utils/glob-match';
 
 const rule = (expr: string, caseSensitive = false): GlobMatchRule => ({
 	caseSensitive,
@@ -10,6 +10,17 @@ const rule = (expr: string, caseSensitive = false): GlobMatchRule => ({
 
 const results = (paths: Array<string>, matcher: (path: string) => GlobMatchResult) =>
 	Object.fromEntries(paths.map((path) => [path, matcher(path)]));
+
+test('normalizes glob separators and preserves boundary semantics', () => {
+	expect(normalizeGlob(String.raw`  \foo//bar///  `)).toBe('/foo/bar/');
+	expect(normalizeGlob('///foo/bar')).toBe('/foo/bar');
+	expect(normalizeGlob('foo/bar///')).toBe('foo/bar/');
+});
+
+test('rejects empty and unparseable globs', () => {
+	for (const glob of ['', '   ', '/', '///', 'foo/[', 'foo/[]', 'foo/[!]'])
+		expect(normalizeGlob(glob)).toBeUndefined();
+});
 
 test('includes files and advances through directories without rules', () => {
 	const match = prepareGlobMatch();

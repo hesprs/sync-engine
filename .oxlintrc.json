@@ -135,7 +135,8 @@
 		"process": "readonly",
 		"activeWindow": "readonly",
 		"createFragment": "readonly",
-		"createEl": "readonly"
+		"createEl": "readonly",
+		"createDiv": "readonly"
 	},
 	"overrides": [
 		{

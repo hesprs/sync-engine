@@ -1,9 +1,12 @@
 import type { Translations } from '@hesprs/sync-engine-sdk';
 
 const zh: Translations = {
-	add: '添加',
+	addExclusionRule: '添加排除规则',
+	addHeader: '添加请求头',
+	addInclusionRule: '添加包含规则',
 	addRecord: '添加记录',
 	addSecretHeader: '添加机密请求头',
+	addSource: '添加源',
 	asymmetricStorage: '非对称存储',
 	asymmetricStorageDescription: (frag) => {
 		frag.appendText('使用 ');
@@ -43,6 +46,7 @@ const zh: Translations = {
 	bidirectional: '双向同步',
 	cancel: '取消',
 	cancelled: '已取消',
+	caseSensitive: '区分大小写',
 	checkConnection: '测试连接',
 	checkConnectionFailed: '测试连接失败',
 	checkConnectionSuccess: '测试连接成功',
@@ -93,9 +97,7 @@ const zh: Translations = {
 	download: '下载',
 	downloadModule: '下载模块',
 	edit: '编辑',
-	editHeaders: '编辑请求头',
 	editModuleInformation: '编辑模块信息',
-	editSources: '编辑源',
 	enable: '启用',
 	enableModule: '启用模块',
 	exclusionRules: '排除规则',
@@ -130,7 +132,6 @@ const zh: Translations = {
 	headerKeyPlaceholder: '请求头键',
 	headerValuePlaceholder: '请求头值',
 	hide: '隐藏',
-	httpInsecureWarning: '请避免使用不安全的 HTTP 协议。',
 	icon: '图标',
 	iconDescription: (frag) => {
 		frag.appendText('设置此模块在模块管理面板中显示的图标，完整图标可在 ');
@@ -204,15 +205,17 @@ const zh: Translations = {
 	moveRemote: '移动远程',
 	name: '名称',
 	namePlaceholder: '输入模块显示名称',
+	noHeaderConfigured: '未配置请求头。',
 	noInstalledModulesFound: '未找到已安装的模块。',
 	noMatchingModulesFound: '未找到匹配的模块。',
 	noModulesAvailable: '没有可用模块。',
+	noRuleConfigured: '未配置规则。',
+	noSourceConfigured: '未配置源。',
 	none: '无',
 	noticeStatusOnMobile: '移动端同步状态提示',
 	noticeStatusOnMobileDescription:
 		'同步进行时在移动设备上显示通知提示。在桌面端则会替换状态栏显示。',
 	official: '官方',
-	omittedInvalidEntry: '已忽略 {{count}} 条无效条目。',
 	realtimeSync: '实时同步',
 	realtimeSyncDescription:
 		'文件一旦修改即刻自动触发同步。在输入框中修改文件修改到触发同步之间的延迟时间。',
@@ -222,7 +225,6 @@ const zh: Translations = {
 	realtimeSyncPlaceholder: '输入同步延迟（例如 500ms, 5s）',
 	recordsCleared: '记录已清除',
 	remoteMigration: '远程迁移',
-	remove: '移除',
 	removeLocal: '移除本地',
 	removeRecord: '移除记录',
 	removeRemote: '移除远程',
@@ -239,7 +241,6 @@ const zh: Translations = {
 	skip: '跳过',
 	someModulesHidden:
 		'由于 Sync Engine 插件版本过旧，部分模块已隐藏。请更新插件以查看完整模块目录。',
-	sourcesDescription: '添加模块源 URL。保存时将忽略空白行和无效行。',
 	startMigration: '开始迁移',
 	startNonInteractiveSync: '开始静默同步',
 	startSync: '开始同步',
@@ -295,6 +296,7 @@ const zh: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: '上传',
 	walkingRemote: '正在探测远程文件',
+	xConfigured: '已配置 {{x}} 项',
 	xEnabled: '已启用 {{x}} 个模块',
 };
 

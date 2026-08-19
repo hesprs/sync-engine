@@ -23,7 +23,6 @@ export type FeaturesSettingTranslations = {
 	asymmetricStorage: string;
 	asymmetricStorageDescription: Fragment;
 	asymmetricStorageMigration: Fragment<'enable' | 'disable'>;
-	invalidValue: string;
 } & MigrationModalTranslations;
 
 export default function featuresSettings(ctx: {
@@ -42,7 +41,6 @@ export default function featuresSettings(ctx: {
 		settings,
 		recordStoreExists,
 	} = ctx;
-	const invalidValue = translate('invalidValue');
 	return {
 		1000: s(
 			(self) => ({
@@ -56,7 +54,6 @@ export default function featuresSettings(ctx: {
 					name: translate('realtimeSync'),
 					render: renderTogglableValue({
 						field: settings.realtimeSync,
-						invalidValue,
 						placeholder: translate('realtimeSyncPlaceholder'),
 						saveSettings,
 						type: 'time',
@@ -67,7 +64,6 @@ export default function featuresSettings(ctx: {
 					name: translate('startupSync'),
 					render: renderTogglableValue({
 						field: settings.startupSync,
-						invalidValue,
 						placeholder: translate('startupSyncPlaceholder'),
 						saveSettings,
 						type: 'time',
@@ -78,7 +74,6 @@ export default function featuresSettings(ctx: {
 					name: translate('scheduledSync'),
 					render: renderTogglableValue({
 						field: settings.scheduledSync,
-						invalidValue,
 						onChange: () => {
 							stopScheduledSync();
 							startScheduledSync();

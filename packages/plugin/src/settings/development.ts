@@ -1,18 +1,12 @@
 import type { Settings } from '@';
-import type {
-	App,
-	SettingDefinitionGroup,
-	SettingDefinitionItem,
-	SettingGroupItem,
-} from 'obsidian';
-import { normalizeBaseDir } from '@repo/shared/path';
+import type { SettingGroupItem } from 'obsidian';
+import type { DatabaseSync } from 'uni-kv';
+import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
 import { Notice } from 'obsidian';
-import type { SourceEditorTranslations } from '@/components/SourceEditorModal';
 import type { Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Registrar';
 import type { MaybePromise } from '@/sdk';
-import ModuleSourceEditorModal from '@/components/SourceEditorModal';
-import { s } from './utils';
+import { generateEditableList, reactivelyValidate, s } from './utils';
 
 export type DevelopmentSettingTranslations = {
 	development: string;
@@ -27,9 +21,11 @@ export type DevelopmentSettingTranslations = {
 	moduleSources: string;
 	moduleSourcesDescription: string;
 	edit: string;
-	xSources: string;
+	xConfigured: string;
 	addSource: string;
-} & SourceEditorTranslations;
+	noSourceConfigured: string;
+	moduleSourcePlaceholder: string;
+};
 
 export default function developmentSettings({
 	translate,
@@ -37,14 +33,16 @@ export default function developmentSettings({
 	deleteRecordStore,
 	settings,
 	saveSettings,
-	app,
+	memoryDB,
+	rerenderSettingTab,
 }: {
 	translate: Translate<DevelopmentSettingTranslations>;
 	deleteRecordStore: (namespace?: string) => MaybePromise<void>;
 	exportLogs: () => Promise<void>;
 	settings: Settings;
 	saveSettings: () => Promise<void>;
-	app: App;
+	memoryDB: DatabaseSync;
+	rerenderSettingTab: () => void;
 }): CallableOrObjectTree {
 	return {
 		5000: s(
@@ -92,52 +90,64 @@ export default function developmentSettings({
 							});
 					},
 				})),
-				3000: s(() => ({
-					desc: translate('moduleSourcesDescription'),
-					name: translate('moduleSources'),
-					render: (setting) => {
-						setting.addButton((button) => {
-							button.setButtonText(translate('edit')).onClick(() =>
-								new ModuleSourceEditorModal(
-									(sources) => {
-										settings.moduleSources = sources;
-										void saveSettings();
-									},
-									{ app, translate },
-									settings.moduleSources,
-								).open(),
-							);
-						});
-					},
-				})),
-				4000: s(
+				3000: s(
 					(self) => ({
 						desc: translate('moduleSourcesDescription'),
-						displayValue: translate('xSources', { x: settings.moduleSources.length }),
+						displayValue: () =>
+							translate('xConfigured', { x: settings.moduleSources.length }),
 						items: Object.values(self).map((node) => node(node)),
 						name: translate('moduleSources'),
 						type: 'page',
 					}),
 					{
-						1000: s(() => ({
-							addItem: {
-								action: () => {},
-								name: translate('addSource'),
-							},
-							items: settings.moduleSources.map(generateEditableItem),
-							type: 'list',
-						})),
+						1000: s(() =>
+							generateEditableList({
+								defaultValue: '',
+								identifier: 'moduleSources',
+								items: settings.moduleSources,
+								memoryDB,
+								render: (setting, item, save) => {
+									setting.addText((text) => {
+										text.setPlaceholder(
+											translate('moduleSourcePlaceholder'),
+										).setValue(item.value);
+										reactivelyValidate<string>({
+											immediate: true,
+											onSave: (value) => {
+												item.value = value;
+												save();
+											},
+											parse: (value) => {
+												try {
+													item.value = value;
+													const url = normalizeUrl(value);
+													item.valid = true;
+													return url;
+												} catch {
+													if (!item.valid) return;
+													item.valid = false;
+													save();
+												}
+											},
+											text,
+										});
+										if (item.new) {
+											item.new = false;
+											text.inputEl.focus();
+										}
+									});
+								},
+								rerenderSettingTab,
+								saveSettings,
+								translations: {
+									add: translate('addSource'),
+									empty: translate('noSourceConfigured'),
+								},
+							}),
+						),
 					},
 				),
 			},
 		),
-	};
-}
-
-function generateEditableItem(source: string): SettingGroupItem {
-	return {
-		name: '',
-		render: (setting) => {},
-		searchable: false,
 	};
 }

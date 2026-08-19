@@ -132,7 +132,7 @@ export default function s3Setting(
 							new SecretComponent(app, element)
 								.setValue(settings.secretAccessKey)
 								.onChange((value) => {
-									settings.secretAccessKey = value;
+									settings.secretAccessKey = value ?? '';
 									void saveSettings();
 								}),
 						);

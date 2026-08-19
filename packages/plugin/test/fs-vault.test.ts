@@ -169,7 +169,7 @@ function createVaultStub(options: VaultHarnessOptions): VaultHarness {
 	const app = {
 		vault: {
 			adapter,
-			config: options.config,
+			config: { ...options.config },
 			getAbstractFileByPath: (path: string) => cached.get(path),
 		},
 		workspace: { layoutReady: true },

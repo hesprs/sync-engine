@@ -1,9 +1,12 @@
 import type { Translations } from '@';
 
 const en: Translations = {
-	add: 'Add',
+	addExclusionRule: 'Add exclusion rule',
+	addHeader: 'Add header',
+	addInclusionRule: 'Add inclusion rule',
 	addRecord: 'Add record',
 	addSecretHeader: 'Add secret header',
+	addSource: 'Add source',
 	asymmetricStorage: 'Asymmetric storage',
 	asymmetricStorageDescription: (frag) => {
 		frag.appendText('Use ');
@@ -55,6 +58,7 @@ const en: Translations = {
 	bidirectional: 'Bidirectional',
 	cancel: 'Cancel',
 	cancelled: 'Cancelled',
+	caseSensitive: 'Case sensitive',
 	checkConnection: 'Check connection',
 	checkConnectionFailed: 'Check connection failed',
 	checkConnectionSuccess: 'Check connection succeeded',
@@ -107,9 +111,7 @@ const en: Translations = {
 	download: 'Download',
 	downloadModule: 'Download module',
 	edit: 'Edit',
-	editHeaders: 'Edit headers',
 	editModuleInformation: 'Edit module information',
-	editSources: 'Edit sources',
 	enable: 'Enable',
 	enableModule: 'Enable module',
 	exclusionRules: 'Exclusion rules',
@@ -145,7 +147,6 @@ const en: Translations = {
 	headerKeyPlaceholder: 'Header key',
 	headerValuePlaceholder: 'Header value',
 	hide: 'Hide',
-	httpInsecureWarning: 'Please avoid using insecure HTTP protocol.',
 	icon: 'Icon',
 	iconDescription: (frag) => {
 		frag.appendText(
@@ -182,7 +183,7 @@ const en: Translations = {
 			text: 'It is strongly discouraged to turn off integrity verification, since it will expose you to a large attack surface.',
 		});
 	},
-	invalidValue: 'Invalid value, reverted to original.',
+	invalidValue: 'Invalid value!',
 	keepLocal: 'Keep local',
 	keepRemote: 'Keep remote',
 	latestSurvive: 'Latest survives',
@@ -226,15 +227,17 @@ const en: Translations = {
 	moveRemote: 'Move remote',
 	name: 'Name',
 	namePlaceholder: 'Enter module display name',
+	noHeaderConfigured: 'No header configured.',
 	noInstalledModulesFound: 'No installed modules found.',
 	noMatchingModulesFound: 'No matching modules found.',
 	noModulesAvailable: 'No modules available.',
+	noRuleConfigured: 'No rule configured.',
+	noSourceConfigured: 'No source configured.',
 	none: 'None',
 	noticeStatusOnMobile: 'Notice sync status on mobile',
 	noticeStatusOnMobileDescription:
 		'Display a notice on mobile devices when synchronization is in progress. Replaces the status bar on desktop.',
 	official: 'Official',
-	omittedInvalidEntry: 'Omitted {{count}} invalid entry(s).',
 	realtimeSync: 'Realtime sync',
 	realtimeSyncDescription:
 		'Trigger syncs automatically as soon as files are modified. Alter the delay between a file being modified and the sync being triggered in the field.',
@@ -244,7 +247,6 @@ const en: Translations = {
 	realtimeSyncPlaceholder: 'Enter sync delay (e.g. 500ms, 5s)',
 	recordsCleared: 'Records cleared',
 	remoteMigration: 'Remote migration',
-	remove: 'Remove',
 	removeLocal: 'Remove local',
 	removeRecord: 'Remove record',
 	removeRemote: 'Remove remote',
@@ -262,7 +264,6 @@ const en: Translations = {
 	skip: 'Skip',
 	someModulesHidden:
 		'Some modules are hidden since Sync Engine plugin is outdated, update to explore the full module catalog.',
-	sourcesDescription: 'Add module source URLs. Empty and invalid rows are omitted when saved.',
 	startMigration: 'Start migration',
 	startNonInteractiveSync: 'Start non-interactive sync',
 	startSync: 'Start sync',
@@ -321,8 +322,8 @@ const en: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: 'Upload',
 	walkingRemote: 'Discovering remote files',
+	xConfigured: '{{x}} configured',
 	xEnabled: '{{x}} enabled',
-	xSources: '{{x}} sources',
 };
 
 export default en;

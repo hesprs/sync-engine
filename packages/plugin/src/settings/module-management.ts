@@ -5,7 +5,6 @@ import type { ModuleManagementTranslations } from '@/components/module-managemen
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Translate } from '@/modules/I18n';
 import { mountModuleManagementList } from '@/components/module-management';
-import ModuleSourceEditorModal from '@/components/SourceEditorModal';
 
 export type ModulesTranslations = ModuleManagementTranslations & {
 	searchModules: string;
@@ -16,7 +15,6 @@ export type ModulesTranslations = ModuleManagementTranslations & {
 export default class ModuleManagement extends SettingPage {
 	private readonly t: Translate<ModulesTranslations>;
 	private readonly cleanup: Array<() => void> = [];
-	private sourceEditorModal?: ModuleSourceEditorModal;
 	private showInstalledOnly = false;
 
 	constructor(
@@ -81,8 +79,6 @@ export default class ModuleManagement extends SettingPage {
 	}
 
 	hide() {
-		this.sourceEditorModal?.close();
-		this.sourceEditorModal = undefined;
 		this.cleanup.splice(0).forEach((fn) => fn());
 		this.containerEl.empty();
 	}

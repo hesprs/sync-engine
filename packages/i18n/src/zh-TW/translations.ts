@@ -1,9 +1,12 @@
 import type { Translations } from '@hesprs/sync-engine-sdk';
 
 const zhTW: Translations = {
-	add: '新增',
+	addExclusionRule: '新增排除規則',
+	addHeader: '新增標頭',
+	addInclusionRule: '新增包含規則',
 	addRecord: '新增紀錄',
 	addSecretHeader: '新增加密標頭',
+	addSource: '新增來源',
 	asymmetricStorage: '非對稱儲存',
 	asymmetricStorageDescription: (frag) => {
 		frag.appendText('使用');
@@ -55,6 +58,7 @@ const zhTW: Translations = {
 	bidirectional: '雙向同步',
 	cancel: '取消',
 	cancelled: '已取消',
+	caseSensitive: '區分大小寫',
 	checkConnection: '測試連線',
 	checkConnectionFailed: '連線測試失敗',
 	checkConnectionSuccess: '連線測試成功',
@@ -105,9 +109,7 @@ const zhTW: Translations = {
 	download: '下載',
 	downloadModule: '下載模組',
 	edit: '編輯',
-	editHeaders: '編輯標頭',
 	editModuleInformation: '編輯模組資訊',
-	editSources: '編輯來源',
 	enable: '啟用',
 	enableModule: '啟用模組',
 	exclusionRules: '排除規則',
@@ -142,7 +144,6 @@ const zhTW: Translations = {
 	headerKeyPlaceholder: '標頭名稱',
 	headerValuePlaceholder: '標頭數值',
 	hide: '隱藏',
-	httpInsecureWarning: '請避免使用不安全的 HTTP 協定。',
 	icon: '圖示',
 	iconDescription: (frag) => {
 		frag.appendText('設定此模組顯示於模組管理面板中的圖示，完整圖示清單可參考 ');
@@ -218,14 +219,16 @@ const zhTW: Translations = {
 	moveRemote: '移動遠端',
 	name: '名稱',
 	namePlaceholder: '輸入模組顯示名稱',
+	noHeaderConfigured: '尚未設定標頭。',
 	noInstalledModulesFound: '未找到已安裝的模組。',
 	noMatchingModulesFound: '未找到符合條件的模組。',
 	noModulesAvailable: '無可用模組。',
+	noRuleConfigured: '尚未設定規則。',
+	noSourceConfigured: '尚未設定來源。',
 	none: '無',
 	noticeStatusOnMobile: '行動裝置同步狀態通知',
 	noticeStatusOnMobileDescription: '同步進行時於行動裝置上顯示通知訊息（取代桌面版的狀態列）。',
 	official: '官方',
-	omittedInvalidEntry: '已忽略 {{count}} 項無效條目。',
 	realtimeSync: '即時同步',
 	realtimeSyncDescription:
 		'當檔案經修改後立即自動觸發同步。請在欄位中修改檔案變更到觸發同步之間的延遲時間。',
@@ -235,7 +238,6 @@ const zhTW: Translations = {
 	realtimeSyncPlaceholder: '輸入同步延遲（例如 500ms, 5s）',
 	recordsCleared: '紀錄已清除',
 	remoteMigration: '遠端遷移',
-	remove: '移除',
 	removeLocal: '移除本地',
 	removeRecord: '移除紀錄',
 	removeRemote: '移除遠端',
@@ -252,7 +254,6 @@ const zhTW: Translations = {
 	skip: '跳過',
 	someModulesHidden:
 		'由於 Sync Engine 外掛程式版本過舊，部分模組已隱藏。請更新外掛程式以查看完整模組目錄。',
-	sourcesDescription: '新增模組來源 URL。儲存時將自動忽略空白與無效的資料列。',
 	startMigration: '開始遷移',
 	startNonInteractiveSync: '啟動非互動式同步',
 	startSync: '開始同步',
@@ -309,6 +310,7 @@ const zhTW: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: '上傳',
 	walkingRemote: '正在掃描遠端檔案',
+	xConfigured: '已設定 {{x}} 項',
 	xEnabled: '已啟用 {{x}} 個模組',
 };
 

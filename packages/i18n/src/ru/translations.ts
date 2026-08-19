@@ -1,9 +1,12 @@
 import type { Translations } from '@hesprs/sync-engine-sdk';
 
 const ru: Translations = {
-	add: 'Добавить',
+	addExclusionRule: 'Добавить правило исключения',
+	addHeader: 'Добавить заголовок',
+	addInclusionRule: 'Добавить правило включения',
 	addRecord: 'Добавить запись',
 	addSecretHeader: 'Добавить секретный заголовок',
+	addSource: 'Добавить источник',
 	asymmetricStorage: 'Асимметричное хранилище',
 	asymmetricStorageDescription: (frag) => {
 		frag.appendText('Используйте ');
@@ -55,6 +58,7 @@ const ru: Translations = {
 	bidirectional: 'Двунаправленная',
 	cancel: 'Отмена',
 	cancelled: 'Отменено',
+	caseSensitive: 'С учётом регистра',
 	checkConnection: 'Проверить соединение',
 	checkConnectionFailed: 'Ошибка проверки соединения',
 	checkConnectionSuccess: 'Соединение успешно проверено',
@@ -107,9 +111,7 @@ const ru: Translations = {
 	download: 'Скачать',
 	downloadModule: 'Скачать модуль',
 	edit: 'Редактировать',
-	editHeaders: 'Редактировать заголовки',
 	editModuleInformation: 'Редактировать информацию о модуле',
-	editSources: 'Редактировать источники',
 	enable: 'Включить',
 	enableModule: 'Включить модуль',
 	exclusionRules: 'Правила исключения',
@@ -145,7 +147,6 @@ const ru: Translations = {
 	headerKeyPlaceholder: 'Ключ заголовка',
 	headerValuePlaceholder: 'Значение заголовка',
 	hide: 'Скрыть',
-	httpInsecureWarning: 'Пожалуйста, избегайте использования незащищённого протокола HTTP.',
 	icon: 'Иконка',
 	iconDescription: (frag) => {
 		frag.appendText(
@@ -226,15 +227,17 @@ const ru: Translations = {
 	moveRemote: 'Переместить удалённый файл',
 	name: 'Название',
 	namePlaceholder: 'Введите отображаемое имя модуля',
+	noHeaderConfigured: 'Заголовок не настроен.',
 	noInstalledModulesFound: 'Установленные модули не найдены.',
 	noMatchingModulesFound: 'Подходящие модули не найдены.',
 	noModulesAvailable: 'Нет доступных модулей.',
+	noRuleConfigured: 'Правило не настроено.',
+	noSourceConfigured: 'Источник не настроен.',
 	none: 'Нет',
 	noticeStatusOnMobile: 'Уведомления о статусе на мобильных устройствах',
 	noticeStatusOnMobileDescription:
 		'Отображать всплывающее уведомление на мобильных устройствах во время синхронизации. Заменяет строку состояния, используемую на ПК.',
 	official: 'Официальный',
-	omittedInvalidEntry: 'Пропущено недействительных записей: {{count}}.',
 	realtimeSync: 'Синхронизация в реальном времени',
 	realtimeSyncDescription:
 		'Запускать синхронизацию автоматически сразу после изменения файлов. Измените задержку между изменением файла и запуском синхронизации в поле ниже.',
@@ -244,7 +247,6 @@ const ru: Translations = {
 	realtimeSyncPlaceholder: 'Введите задержку (например, 500ms, 5s)',
 	recordsCleared: 'Записи очищены',
 	remoteMigration: 'Миграция удалённого хранилища',
-	remove: 'Удалить',
 	removeLocal: 'Удалить локальный файл',
 	removeRecord: 'Удалить запись',
 	removeRemote: 'Удалить удалённый файл',
@@ -262,8 +264,6 @@ const ru: Translations = {
 	skip: 'Пропустить',
 	someModulesHidden:
 		'Некоторые модули скрыты, поскольку плагин Sync Engine устарел. Обновите его, чтобы просмотреть полный каталог модулей.',
-	sourcesDescription:
-		'Добавьте URL-адреса источников модулей. Пустые и недействительные строки будут пропущены при сохранении.',
 	startMigration: 'Начать миграцию',
 	startNonInteractiveSync: 'Запустить фоновую синхронизацию',
 	startSync: 'Запустить синхронизацию',
@@ -324,6 +324,7 @@ const ru: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: 'Загрузить',
 	walkingRemote: 'Сканирование удалённых файлов',
+	xConfigured: 'Настроено: {{x}}',
 	xEnabled: 'Включено модулей: {{x}}',
 };
 

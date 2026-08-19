@@ -587,20 +587,6 @@ type FileTreeTranslations = {
   selectAll: string;
 };
 //#endregion
-//#region src/components/HeadersEditorModal.d.ts
-type HeadersEditorTranslations = {
-  add: string;
-  cancel: string;
-  addSecretHeader: string;
-  remove: string;
-  save: string;
-  customHeadersDescription: string;
-  editHeaders: string;
-  headerKeyPlaceholder: string;
-  headerValuePlaceholder: string;
-  omittedInvalidEntry: string;
-};
-//#endregion
 //#region src/components/MigrationModal.d.ts
 type MigrationModalTranslations = {
   cancel: string;
@@ -795,20 +781,6 @@ type ControlsSettingTranslations = {
   maxMemoryConsumption: string;
   maxMemoryConsumptionDescription: string;
   maxMemoryConsumptionPlaceholder: string;
-  invalidValue: string;
-};
-//#endregion
-//#region src/components/SourceEditorModal.d.ts
-type SourceEditorTranslations = {
-  add: string;
-  cancel: string;
-  editSources: string;
-  omittedInvalidEntry: string;
-  moduleSourcePlaceholder: string;
-  remove: string;
-  save: string;
-  sourcesDescription: string;
-  httpInsecureWarning: string;
 };
 //#endregion
 //#region src/settings/development.d.ts
@@ -825,7 +797,11 @@ type DevelopmentSettingTranslations = {
   moduleSources: string;
   moduleSourcesDescription: string;
   edit: string;
-} & SourceEditorTranslations;
+  xConfigured: string;
+  addSource: string;
+  noSourceConfigured: string;
+  moduleSourcePlaceholder: string;
+};
 //#endregion
 //#region src/settings/features.d.ts
 type FeaturesSettingTranslations = {
@@ -844,27 +820,22 @@ type FeaturesSettingTranslations = {
   asymmetricStorage: string;
   asymmetricStorageDescription: Fragment;
   asymmetricStorageMigration: Fragment<'enable' | 'disable'>;
-  invalidValue: string;
 } & MigrationModalTranslations;
-//#endregion
-//#region src/components/FilterEditorModal.d.ts
-type FilterEditorTranslations = {
-  cancel: string;
-  remove: string;
-  save: string;
-  add: string;
-  inclusionRules: string;
-  exclusionRules: string;
-  inclusionRulesDescription: Fragment;
-  exclusionRulesDescription: Fragment;
-  filterPlaceholder: string;
-};
 //#endregion
 //#region src/settings/filter.d.ts
 type FilterSettingTranslations = {
   filterRules: string;
-  edit: string;
-} & FilterEditorTranslations;
+  inclusionRules: string;
+  inclusionRulesDescription: Fragment;
+  exclusionRules: string;
+  exclusionRulesDescription: Fragment;
+  xConfigured: string;
+  addInclusionRule: string;
+  addExclusionRule: string;
+  noRuleConfigured: string;
+  filterPlaceholder: string;
+  caseSensitive: string;
+};
 //#endregion
 //#region src/settings/head.d.ts
 type HeadSettingTranslations = {
@@ -900,6 +871,12 @@ type MiscellaneousSettingTranslations = {
   customHeaders: string;
   customHeadersDescription: string;
   edit: string;
+  xConfigured: string;
+  addHeader: string;
+  noHeaderConfigured: string;
+  headerKeyPlaceholder: string;
+  headerValuePlaceholder: string;
+  addSecretHeader: string;
 };
 //#endregion
 //#region src/components/module-management/index.d.ts
@@ -960,7 +937,7 @@ declare class Bootstrap {
     keepRemote: string;
     renameAndKeepBoth: string;
     skip: string;
-  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & HeadersEditorTranslations & UnknownModuleTranslations & ModuleEditorTranslations & FileTreeTranslations & ModulesTranslations;
+  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UnknownModuleTranslations & ModuleEditorTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
     maxMemoryConsumption: TogglableValue;
     maxRequestConcurrency: TogglableValue;
@@ -1041,7 +1018,10 @@ declare class ProgressModal extends Modal {
   private readonly hideDetails;
   onOpen(): void;
   root: {
-    hideProgress: () => void;
+    hideProgress: {
+      (): void;
+      (): void;
+    };
     showProgress: () => void;
   };
   onClose(): void;

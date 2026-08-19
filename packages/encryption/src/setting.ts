@@ -38,7 +38,7 @@ export default function encryptionSetting(
 							new SecretComponent(app, element)
 								.setValue(settings.password)
 								.onChange((value) => {
-									settings.password = value;
+									settings.password = value ?? '';
 									void saveSettings();
 								}),
 						)

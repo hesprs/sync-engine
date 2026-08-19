@@ -15,6 +15,7 @@ import Registrar from './modules/Registrar';
 import Scheduler from './modules/Scheduler';
 import Storage from './modules/Storage';
 import Sync from './modules/Sync';
+import { normalizeGlob } from './utils/glob-match';
 
 const internalModules = [
 	EventBus,
@@ -99,6 +100,7 @@ export default class SyncEngine extends Plugin {
 		};
 
 		migrateGlobMatchRules(settings);
+		void this.saveSettings();
 
 		// https://github.com/microsoft/TypeScript/issues/62995
 		const preMerge = {
@@ -136,15 +138,28 @@ export default class SyncEngine extends Plugin {
 	readonly saveSettings = () => this.saveData(this.settings);
 }
 
-// TODO: remove after August 20
+// TODO: remove after November 20
 function migrateGlobMatchRules(settings: Settings) {
 	const { inclusionRules, exclusionRules } = settings;
-	const migrateRules = (rules: Array<GlobMatchRule>) =>
-		rules.forEach((rule) => {
-			if (!('options' in rule)) return;
-			rule.caseSensitive = (rule.options as { caseSensitive: boolean }).caseSensitive;
+	const migrateRules = (rules: Array<GlobMatchRule>) => {
+		const typedRules = rules as Array<{
+			expr: string;
+			caseSensitive: boolean;
+			invalid?: true;
+			options?: { caseSensitive: boolean };
+		}>;
+		typedRules.forEach((rule) => {
+			const normalized = normalizeGlob(rule.expr);
+			if (normalized) rule.expr = normalized;
+			else rule.invalid = true;
+			if (!rule.options) return;
+			rule.caseSensitive = rule.options.caseSensitive;
 			delete rule.options;
 		});
+		const rulesCopy = structuredClone(typedRules);
+		rules.length = 0;
+		rules.push(...rulesCopy.filter(({ invalid }) => !invalid));
+	};
 	migrateRules(inclusionRules);
 	migrateRules(exclusionRules);
 }

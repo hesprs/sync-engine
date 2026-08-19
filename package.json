@@ -22,6 +22,7 @@
 		"tests": "bun --bun turbo run tests"
 	},
 	"devDependencies": {
+		"@obsidian-typings/obsidian-public-latest": "^6.32.0",
 		"@tsdown/css": "^0.22.14",
 		"@types/bun": "^1.3.14",
 		"obsidian": "^1.13.1",

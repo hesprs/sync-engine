@@ -18,7 +18,6 @@ export type ControlsSettingTranslations = {
 	maxMemoryConsumption: string;
 	maxMemoryConsumptionDescription: string;
 	maxMemoryConsumptionPlaceholder: string;
-	invalidValue: string;
 };
 
 export default function controlsSettings({
@@ -30,7 +29,6 @@ export default function controlsSettings({
 	saveSettings: () => Promise<void>;
 	settings: Settings;
 }): CallableOrObjectTree {
-	const invalidValue = translate('invalidValue');
 	return {
 		2000: s(
 			(self) => ({
@@ -44,7 +42,6 @@ export default function controlsSettings({
 					name: translate('maxFileSize'),
 					render: renderTogglableValue({
 						field: settings.maxFileSize,
-						invalidValue,
 						placeholder: translate('maxFileSizePlaceholder'),
 						rejectZero: true,
 						saveSettings,
@@ -56,7 +53,6 @@ export default function controlsSettings({
 					name: translate('maxRequestConcurrency'),
 					render: renderTogglableValue({
 						field: settings.maxRequestConcurrency,
-						invalidValue,
 						placeholder: translate('maxRequestConcurrencyPlaceholder'),
 						rejectZero: true,
 						saveSettings,
@@ -68,7 +64,6 @@ export default function controlsSettings({
 					name: translate('minRequestInterval'),
 					render: renderTogglableValue({
 						field: settings.minRequestInterval,
-						invalidValue,
 						placeholder: translate('minRequestIntervalPlaceholder'),
 						saveSettings,
 						type: 'time',
@@ -79,7 +74,6 @@ export default function controlsSettings({
 					name: translate('maxMemoryConsumption'),
 					render: renderTogglableValue({
 						field: settings.maxMemoryConsumption,
-						invalidValue,
 						placeholder: translate('maxMemoryConsumptionPlaceholder'),
 						rejectZero: true,
 						saveSettings,

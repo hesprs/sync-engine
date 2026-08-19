@@ -64,6 +64,16 @@ input[type='checkbox']:indeterminate {
 	}
 }
 
+input[type='text'].sync-engine-invalid-input {
+	border-color: var(--text-warning);
+	--background-modifier-border-focus: var(--text-warning);
+	background-image: var(--sync-engine-warning);
+	background-repeat: no-repeat;
+	background-position: right calc(var(--input-height) * 0.5 - 0.5rem) center;
+	background-size: 1rem 1rem;
+	padding-right: var(--input-height);
+}
+
 .sync-engine-card .flair {
 	margin: 0;
 }
@@ -71,4 +81,16 @@ input[type='checkbox']:indeterminate {
 .sync-engine-card .flair.prominent {
 	--flair-background: var(--color-accent);
 	--flair-color: var(--text-on-accent);
+}
+
+.sync-engine-editable-list {
+	.setting-item-info {
+		display: none;
+	}
+	.setting-item-control {
+		width: 100%;
+		input[type='text'] {
+			flex: 1;
+		}
+	}
 }

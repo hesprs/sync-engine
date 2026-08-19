@@ -48,8 +48,7 @@ function toKey(vaultPath: string, isDir: boolean): string {
 // "system" / undefined: system
 // "local": local
 function getTrashOption(vault: Vault): 'local' | 'system' | 'permanent' {
-	const option = (vault as { config?: { trashOption?: 'local' | 'system' | 'none' } }).config
-		?.trashOption;
+	const option = vault.config.trashOption;
 	return option ? (option === 'none' ? 'permanent' : option) : 'system';
 }
 
