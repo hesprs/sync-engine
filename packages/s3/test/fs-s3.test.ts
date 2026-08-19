@@ -57,9 +57,9 @@ function assertSignedRequest(params: RequestParam, method: string) {
 	expect(params.headers).toMatchObject({
 		'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
 	});
-	expect(params.headers?.['x-amz-date']).toMatch(/^\d{8}T\d{6}Z$/v);
+	expect(params.headers?.['x-amz-date']).toMatch(/^\d{8}T\d{6}Z$/u);
 	expect(params.headers?.authorization).toMatch(
-		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/v,
+		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/u,
 	);
 }
 
@@ -289,7 +289,7 @@ test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async 
 		const url = new URL(params.url);
 		expect(url.searchParams.has('delete')).toBe(true);
 		expect(params.headers?.['Content-Type']).toBe('application/xml');
-		expect(params.headers?.['Content-MD5']).toMatch(/^[A-Za-z0-9+\/]{22}==$/v);
+		expect(params.headers?.['Content-MD5']).toMatch(/^[A-Za-z0-9+/]{22}==$/u);
 		parsedResponse =
 			bodies.length === 0
 				? {
@@ -313,8 +313,8 @@ test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async 
 	const result = await s3.fs.batchDelete(keys);
 	expect(bodies).toHaveLength(2);
 	expect(bodies[0]).toContain('<Key>a&lt;&amp;&quot;&apos;</Key>');
-	expect((bodies[0]?.match(/<Object>/gv) ?? []).length).toBe(1000);
-	expect((bodies[1]?.match(/<Object>/gv) ?? []).length).toBe(1);
+	expect((bodies[0]?.match(/<Object>/gu) ?? []).length).toBe(1000);
+	expect((bodies[1]?.match(/<Object>/gu) ?? []).length).toBe(1);
 	expect(result['a<&"\'']).toBe('S3 AccessDenied: no permission');
 	expect(result['key-0']).toBe(true);
 });

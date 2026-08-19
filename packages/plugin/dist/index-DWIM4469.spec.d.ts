@@ -585,6 +585,7 @@ declare class Observability {
 //#region src/components/file-tree/index.d.ts
 type FileTreeTranslations = {
   selectAll: string;
+  xSelected: string;
 };
 //#endregion
 //#region src/components/MigrationModal.d.ts
@@ -976,6 +977,12 @@ type DeleteConfirmReturn = {
   delete: Array<RemoveLocal>;
   reupload: Array<RemoveLocal>;
 };
+type TaskCounts = {
+  total: number;
+  deleteLocal: number;
+  deleteRemote: number;
+  conflict: number;
+};
 declare class ProgressModal extends Modal {
   private readonly ctx;
   private readonly moduleCleanupCallbacks;
@@ -1004,7 +1011,7 @@ declare class ProgressModal extends Modal {
     completed: string;
     failedTasksDescription: string;
     confirmDeleteDescription: string;
-    confirmTasksDescription: Fragment;
+    confirmTasksDescription: Fragment<TaskCounts>;
     hide: string;
     confirm: string;
     cancel: string;

@@ -70,22 +70,21 @@ const zhTW: Translations = {
 	completedNoop: '已是最新狀態',
 	configure: '設定',
 	confirm: '確認',
-	confirmDeleteDescription: '請確認要刪除的檔案，未勾選的任務將會重新上傳。',
+	confirmDeleteDescription: '請確認將被刪除的 {{x}} 個本地檔案，未勾選的檔案將會重新上傳。',
 	confirmDeleteInAutoSync: '自動同步時確認刪除',
 	confirmDeleteInAutoSyncDescription:
 		'在自動同步過程中刪除本地檔案前顯示確認視窗。您可以選擇刪除或重新上傳。',
-	confirmTasksDescription: (frag) => {
-		frag.appendText('請確認以下操作：');
-		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: '綠色' });
-		frag.appendText('圖示代表本地操作；');
-		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: '藍色' });
-		frag.appendText('代表遠端操作；');
-		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: '紅色' });
-		frag.appendText('代表本地刪除；');
-		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: '粉紅色' });
-		frag.appendText('代表遠端刪除；而');
-		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: '黃色' });
-		frag.appendText('則代表衝突解決。');
+	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+		const deleteOr = deleteLocal + deleteRemote !== 0;
+		frag.appendText(`同步總共將執行 ${total} 個操作`);
+		if (conflict + deleteLocal + deleteRemote !== 0) frag.appendText('，包含');
+		if (deleteOr) frag.appendText('刪除');
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 個本地檔案`);
+		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' 以及');
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 個遠端檔案`);
+		if (deleteOr && conflict !== 0) frag.appendText('，並');
+		if (conflict !== 0) frag.appendText(`解決 ${conflict} 個衝突`);
+		frag.appendText('：');
 	},
 	confirmTasksInSync: '手動同步時確認操作',
 	confirmTasksInSyncDescription: '顯示待處理的操作，並在您確認後執行（不影響自動同步）。',
@@ -134,7 +133,7 @@ const zhTW: Translations = {
 	exportLogsFailed: '匯出紀錄失敗',
 	exportLogsToFile: '匯出紀錄至檔案',
 	failed: '失敗',
-	failedTasksDescription: '以下任務在同步過程中失敗：',
+	failedTasksDescription: '同步過程中有 {{x}} 個任務失敗：',
 	failedToDownloadModule: '下載模組 "{{name}}" 失敗',
 	failedToFetchSource: '無法從 "{{url}}" 取得來源',
 	failedToLoadModule: '載入模組 "{{name}}" 失敗',
@@ -312,6 +311,7 @@ const zhTW: Translations = {
 	walkingRemote: '正在掃描遠端檔案',
 	xConfigured: '已設定 {{x}} 項',
 	xEnabled: '已啟用 {{x}} 個模組',
+	xSelected: '（已選擇 {{x}} 項）',
 };
 
 export default zhTW;

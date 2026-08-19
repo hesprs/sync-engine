@@ -51,7 +51,7 @@ function getAmzDate(date: Date): string {
 		.toISOString()
 		.replaceAll(':', '')
 		.replaceAll('-', '')
-		.replaceAll(/\.\d{3}/gv, '');
+		.replaceAll(/\.\d{3}/gu, '');
 }
 
 function getDateStamp(date: Date): string {
@@ -88,7 +88,7 @@ function buildCanonicalHeaders(headers: Record<string, string>): {
 } {
 	const normalized: Array<[string, string]> = [];
 	for (const [key, value] of Object.entries(headers))
-		normalized.push([key.toLowerCase().trim(), value.trim().replaceAll(/\s+/gv, ' ')]);
+		normalized.push([key.toLowerCase().trim(), value.trim().replaceAll(/\s+/gu, ' ')]);
 	normalized.sort(([a], [b]) => a.localeCompare(b));
 
 	const canonicalHeadersStr = normalized.map(([key, value]) => `${key}:${value}\n`).join('');
@@ -141,9 +141,9 @@ export async function signRequest(
 	const credential = `${credentials.accessKeyId}/${credentialScope}`;
 	headers.authorization = `AWS4-HMAC-SHA256 Credential=${credential}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-	// Strips host from actually sent headers
-	const { host: _, ...restHeaders } = headers;
-	return { body, headers: restHeaders, method, url };
+	// Strips host from actually sent headers to prevent Electron from throwing
+	delete headers.host;
+	return { body, headers, method, url };
 }
 
 export function sigv4Middleware(request: Request, credentials: SigV4Options): Request {
@@ -159,6 +159,6 @@ export function sigv4Middleware(request: Request, credentials: SigV4Options): Re
 export async function md5Base64(data: Binary | string): Promise<string> {
 	const bytes = typeof data === 'string' ? textToUint8Array(data) : data;
 	const hexDigest = await md5(bytes);
-	const raw = (hexDigest.match(/.{2}/gv) as Array<string>).map((h) => Number.parseInt(h, 16));
+	const raw = (hexDigest.match(/.{2}/gu) as Array<string>).map((h) => Number.parseInt(h, 16));
 	return btoa(String.fromCodePoint(...raw));
 }

@@ -15,7 +15,7 @@ const preserveMarkdownSymlinks = {
 	enforce: 'pre',
 	name: 'preserve-markdown-symlinks',
 	resolveId(id: string) {
-		const [requestPath, suffix = ''] = id.split(/(?<suffix>[?#].*)/v, 2);
+		const [requestPath, suffix = ''] = id.split(/(?<suffix>[?#].*)/u, 2);
 		const path = requestPath.startsWith(srcDir)
 			? requestPath
 			: requestPath.startsWith('/')

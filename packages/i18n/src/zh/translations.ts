@@ -58,22 +58,21 @@ const zh: Translations = {
 	completedNoop: '已是最新状态',
 	configure: '配置',
 	confirm: '确认',
-	confirmDeleteDescription: '请确认将被删除的文件，未勾选的任务将会被重新上传。',
+	confirmDeleteDescription: '请确认即将被删除的 {{x}} 个本地文件，未选中的文件将被重新上传。',
 	confirmDeleteInAutoSync: '自动同步时确认删除',
 	confirmDeleteInAutoSyncDescription:
 		'在自动触发的同步过程中，显示将被删除的本地文件的确认提示。您可以选择删除或重新上传它们。',
-	confirmTasksDescription: (frag) => {
-		frag.appendText('请确认以下操作：');
-		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: '绿色' });
-		frag.appendText(' 图标表示本地操作；');
-		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: '蓝色' });
-		frag.appendText(' 表示远程操作；');
-		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: '红色' });
-		frag.appendText(' 表示本地删除；');
-		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: '粉色' });
-		frag.appendText(' 表示远程删除；');
-		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: '黄色' });
-		frag.appendText(' 则表示冲突解决。');
+	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+		const deleteOr = deleteLocal + deleteRemote !== 0;
+		frag.appendText(`同步总共将执行 ${total} 项操作`);
+		if (conflict + deleteLocal + deleteRemote !== 0) frag.appendText('，其中包括');
+		if (deleteOr) frag.appendText('删除');
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 个本地文件`);
+		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText('以及');
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 个远程文件`);
+		if (deleteOr && conflict !== 0) frag.appendText('，并');
+		if (conflict !== 0) frag.appendText(`解决 ${conflict} 个冲突`);
+		frag.appendText('：');
 	},
 	confirmTasksInSync: '手动同步时确认操作',
 	confirmTasksInSyncDescription: '显示待处理的操作并在确认后执行（不影响自动同步）。',
@@ -122,7 +121,7 @@ const zh: Translations = {
 	exportLogsFailed: '导出日志失败',
 	exportLogsToFile: '导出日志到文件',
 	failed: '失败',
-	failedTasksDescription: '以下任务在同步过程中失败：',
+	failedTasksDescription: '同步期间有 {{x}} 个任务失败：',
 	failedToDownloadModule: '下载模块 “{{name}}” 失败',
 	failedToFetchSource: '从 “{{url}}” 获取源失败',
 	failedToLoadModule: '加载模块 “{{name}}” 失败',
@@ -298,6 +297,7 @@ const zh: Translations = {
 	walkingRemote: '正在探测远程文件',
 	xConfigured: '已配置 {{x}} 项',
 	xEnabled: '已启用 {{x}} 个模块',
+	xSelected: '（已选择 {{x}} 项）',
 };
 
 export default zh;

@@ -85,7 +85,7 @@ function isCollectionResource(resourcetype: WebDAVProp['resourcetype']) {
 
 function isSuccessStatus(status: string | undefined) {
 	if (!status) return true;
-	const match = /\s(?<code>\d{3})(?:\s|$)/v.exec(status);
+	const match = /\s(?<code>\d{3})(?:\s|$)/u.exec(status);
 	if (!match) return false;
 	const code = Number.parseInt(match.groups?.code ?? '', 10);
 	return code >= 200 && code < 300;
@@ -141,7 +141,7 @@ function toStat(endpoint: string, { propstat, href }: WebDAVResponseItem): Stat 
 }
 
 function extractNextLink(linkHeader: string): string | undefined {
-	const matches = /<(?<href>[^>]+)>;\s*rel="next"/v.exec(linkHeader);
+	const matches = /<(?<href>[^>]+)>;\s*rel="next"/u.exec(linkHeader);
 	return matches?.groups?.href;
 }
 

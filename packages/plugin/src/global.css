@@ -94,3 +94,7 @@ input[type='text'].sync-engine-invalid-input {
 		}
 	}
 }
+
+.sync-engine-cropped-icon {
+	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M0 0H100V50H75A25 25 0 0 0 50 75V100H0Z' fill='white'/%3E%3C/svg%3E");
+}

@@ -376,8 +376,8 @@ function isValidMeta(meta: unknown): meta is ModuleMeta {
 	};
 	if (!isMetaShape(meta)) return false;
 	return (
-		!/[<>:"\/\\\|?*]/v.test(meta.id) &&
+		!/[<>:"/\\|?*]/u.test(meta.id) &&
 		meta.integrity.length === 64 &&
-		/^[0-9a-f]*$/v.test(meta.integrity)
+		/^[0-9a-f]*$/u.test(meta.integrity)
 	);
 }

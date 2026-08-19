@@ -26,7 +26,7 @@ function parsePath(path: string): Path {
 }
 
 function escapeRegExpCharacter(character: string): string {
-	return /[\\\(\)\[\]\{\}\|^$.*+?]/v.test(character) ? `\\${character}` : character;
+	return /[\\()[\]{}|^$.*+?]/u.test(character) ? `\\${character}` : character;
 }
 
 function compileSegment(pattern: string, flags: string): SegmentMatcher {
@@ -68,7 +68,7 @@ export function normalizeGlob(glob: string): string | undefined {
 	if (!expression || expression === '/') return;
 	const anchored = expression.startsWith('/');
 	const directoryOnly = expression.endsWith('/');
-	const body = expression.replaceAll(/^\/+|\/+$/gv, '');
+	const body = expression.replaceAll(/^\/+|\/+$/gu, '');
 	if (!body) return;
 	const parts = body.split('/').filter(Boolean);
 	for (const part of parts)

@@ -71,22 +71,21 @@ const en: Translations = {
 	configure: 'Configure',
 	confirm: 'Confirm',
 	confirmDeleteDescription:
-		'Please confirm files that will be deleted, unselected tasks will be re-uploaded.',
+		'Please confirm the {{x}} local files that will be deleted, unselected files will be re-uploaded.',
 	confirmDeleteInAutoSync: 'Confirm deletions during auto-sync',
 	confirmDeleteInAutoSyncDescription:
 		'Show a confirmation of local files that will be deleted during auto-triggered syncs. You can choose to delete or re-upload them.',
-	confirmTasksDescription: (frag) => {
-		frag.appendText('Please confirm the operations below: a ');
-		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: 'green' });
-		frag.appendText(' icon means local operation; ');
-		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: 'blue' });
-		frag.appendText(' means remote operation; ');
-		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: 'red' });
-		frag.appendText(' means local deletion; ');
-		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: 'pink' });
-		frag.appendText(' means remote deletion; and ');
-		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: 'yellow' });
-		frag.appendText(' means conflict resolution.');
+	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+		const deleteOr = deleteLocal + deleteRemote !== 0;
+		frag.appendText(`Sync will execute ${total} operations in total`);
+		if (deleteOr || conflict !== 0) frag.appendText('. Including');
+		if (deleteOr) frag.appendText(' deleting');
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} local file(s)`);
+		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' plus');
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} remote file(s)`);
+		if (deleteOr && conflict !== 0) frag.appendText(', and');
+		if (conflict !== 0) frag.appendText(` resolving ${conflict} conflict(s)`);
+		frag.appendText(':');
 	},
 	confirmTasksInSync: 'Confirm operations in manual sync',
 	confirmTasksInSyncDescription:
@@ -137,7 +136,7 @@ const en: Translations = {
 	exportLogsFailed: 'Failed to export logs',
 	exportLogsToFile: 'Export logs to file',
 	failed: 'Failed',
-	failedTasksDescription: 'The following tasks failed during sync:',
+	failedTasksDescription: '{{x}} task(s) failed during sync:',
 	failedToDownloadModule: 'Failed to download module "{{name}}"',
 	failedToFetchSource: 'Failed to fetch source from "{{url}}"',
 	failedToLoadModule: 'Failed to load module "{{name}}"',
@@ -183,7 +182,7 @@ const en: Translations = {
 			text: 'It is strongly discouraged to turn off integrity verification, since it will expose you to a large attack surface.',
 		});
 	},
-	invalidValue: 'Invalid value!',
+	invalidValue: 'Invalid value, reverted to original.',
 	keepLocal: 'Keep local',
 	keepRemote: 'Keep remote',
 	latestSurvive: 'Latest survives',
@@ -324,6 +323,7 @@ const en: Translations = {
 	walkingRemote: 'Discovering remote files',
 	xConfigured: '{{x}} configured',
 	xEnabled: '{{x}} enabled',
+	xSelected: '({{x}} selected)',
 };
 
 export default en;

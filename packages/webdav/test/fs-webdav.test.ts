@@ -234,7 +234,7 @@ test('chunked writeStream uses exact Nextcloud urls and headers', async () => {
 		{ method: 'MOVE', url: `${uploadFolderUrl}.file` },
 	]);
 	expect(uploadFolderUrl).toMatch(
-		/^https:\/\/dav\.example\.com\/remote\.php\/dav\/uploads\/alice\/[^\/]+\/$/v,
+		/^https:\/\/dav\.example\.com\/remote\.php\/dav\/uploads\/alice\/[^/]+\/$/u,
 	);
 });
 

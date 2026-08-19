@@ -123,7 +123,7 @@ export default class I18n {
 
 function interpolate(template: string, params?: InterpolationValues): string {
 	if (params === undefined) return template;
-	return template.replaceAll(/\{\{\s*(?<key>[^\{\}\s]+)\s*\}\}/gv, (match, key: string) => {
+	return template.replaceAll(/\{\{\s*(?<key>[^{}\s]+)\s*\}\}/gu, (match, key: string) => {
 		const value = params[key];
 		return value === undefined ? match : String(value);
 	});

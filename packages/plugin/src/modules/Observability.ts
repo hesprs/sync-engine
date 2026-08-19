@@ -288,7 +288,7 @@ export default class Observability {
 	private readonly exportLogs = async () => {
 		const { getLogs, app, dispatch, translate } = this.ctx;
 		const log = getLogs();
-		const timestamp = new Date().toISOString().replaceAll(/[:.]/gv, '-');
+		const timestamp = new Date().toISOString().replaceAll(/[:.]/gu, '-');
 		const fileName = `${timestamp}.md`;
 		const { exportLogsDirectory } = this.settings;
 		const filePath = `${exportLogsDirectory === '/' ? '' : exportLogsDirectory}${fileName}`;

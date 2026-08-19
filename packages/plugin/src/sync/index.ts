@@ -24,7 +24,6 @@ export type {
 	DeciderInput,
 } from './decision/interface';
 export { taskMap } from './decision/interface';
-export { getTaskColor, getTaskIcon } from './tasks/interface';
 export { default as detectMoves } from './utils/detect-moves';
 export { default as bidirectionalDecider } from './decision/bidirectional';
 export { mirrorLocalDecider, mirrorRemoteDecider } from './decision/mirror';

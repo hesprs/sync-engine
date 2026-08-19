@@ -105,7 +105,7 @@
 		"typescript/no-confusing-void-expression": "off",
 		"eslint/max-classes-per-file": "off",
 		"typescript/strict-boolean-expressions": "off",
-		"eslint/require-unicode-regexp": ["warn", { "requireFlag": "v" }],
+		"eslint/require-unicode-regexp": ["warn", { "requireFlag": "u" }],
 		"typescript/strict-void-return": "off",
 		"unicorn/explicit-length-check": "off",
 		"eslint/max-lines": ["warn", { "max": 500 }],
@@ -122,7 +122,7 @@
 		"unicorn/import-style": "off",
 		"unicorn/no-process-exit": "off",
 		"eslint/one-var": ["warn", "never"],
-		"unicorn/max-nested-calls": ["warn", { "max": 5 }]
+		"unicorn/max-nested-calls": ["warn", { "max": 5 }],
 	},
 	"env": {
 		"builtin": true,

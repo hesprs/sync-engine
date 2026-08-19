@@ -108,7 +108,7 @@ export default function featuresSettings(ctx: {
 										'asymmetricStorageMigration',
 										value ? 'enable' : 'disable',
 									),
-								needMigration: recordStoreExists,
+								needMigration: () => recordStoreExists(),
 								toggle: toggle.setValue(settings.asymmetricStorage),
 							}),
 						);

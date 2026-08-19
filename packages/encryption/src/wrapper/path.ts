@@ -96,7 +96,7 @@ function normalizeBasename(basename: string) {
 
 function encodeBase64Url(bytes: Binary): string {
 	const binary = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join('');
-	return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/v, '');
+	return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/u, '');
 }
 
 function decodeBase64Url(value: string): Binary {

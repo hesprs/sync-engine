@@ -71,22 +71,21 @@ const ru: Translations = {
 	configure: 'Настроить',
 	confirm: 'Подтвердить',
 	confirmDeleteDescription:
-		'Пожалуйста, подтвердите файлы, которые будут удалены. Невыбранные задачи будут загружены повторно.',
+		'Пожалуйста, подтвердите удаление локальных файлов (всего {{x}}). Невыбранные файлы будут загружены повторно.',
 	confirmDeleteInAutoSync: 'Подтверждать удаления при автосинхронизации',
 	confirmDeleteInAutoSyncDescription:
 		'Показывать подтверждение для локальных файлов, которые будут удалены во время автоматической синхронизации. Вы сможете выбрать: удалить их или загрузить повторно.',
-	confirmTasksDescription: (frag) => {
-		frag.appendText('Пожалуйста, подтвердите операции ниже: ');
-		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: 'зелёный' });
-		frag.appendText(' значок означает локальную операцию; ');
-		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: 'синий' });
-		frag.appendText(' — удалённую операцию; ');
-		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: 'красный' });
-		frag.appendText(' — локальное удаление; ');
-		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: 'розовый' });
-		frag.appendText(' — удалённое удаление; а ');
-		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: 'жёлтый' });
-		frag.appendText(' — разрешение конфликта.');
+	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+		const deleteOr = deleteLocal + deleteRemote !== 0;
+		frag.appendText(`Всего при синхронизации будет выполнено операций: ${total}`);
+		if (conflict + deleteLocal + deleteRemote !== 0) frag.appendText('. В том числе');
+		if (deleteOr) frag.appendText(' удаление');
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} локальных файл(а/ов)`);
+		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' и');
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} удалённых файл(а/ов)`);
+		if (deleteOr && conflict !== 0) frag.appendText(', а также');
+		if (conflict !== 0) frag.appendText(` разрешение конфликтов: ${conflict}`);
+		frag.appendText(':');
 	},
 	confirmTasksInSync: 'Подтверждать операции при ручной синхронизации',
 	confirmTasksInSyncDescription:
@@ -137,7 +136,7 @@ const ru: Translations = {
 	exportLogsFailed: 'Не удалось экспортировать логи',
 	exportLogsToFile: 'Экспортировать логи в файл',
 	failed: 'Ошибка',
-	failedTasksDescription: 'Следующие задачи завершились ошибкой во время синхронизации:',
+	failedTasksDescription: 'Не удалось выполнить задач во время синхронизации: {{x}}:',
 	failedToDownloadModule: 'Не удалось скачать модуль «{{name}}»',
 	failedToFetchSource: 'Не удалось получить источник из «{{url}}»',
 	failedToLoadModule: 'Не удалось загрузить модуль «{{name}}»',
@@ -326,6 +325,7 @@ const ru: Translations = {
 	walkingRemote: 'Сканирование удалённых файлов',
 	xConfigured: 'Настроено: {{x}}',
 	xEnabled: 'Включено модулей: {{x}}',
+	xSelected: '(выбрано: {{x}})',
 };
 
 export default ru;

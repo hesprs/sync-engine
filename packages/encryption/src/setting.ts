@@ -50,7 +50,7 @@ export default function encryptionSetting(
 								},
 								content: (value) =>
 									translate('encryptionMigration', value ? 'enable' : 'disable'),
-								needMigration: recordStoreExists,
+								needMigration: () => recordStoreExists(),
 								toggle: toggle.setValue(settings.enabled),
 							}),
 						);
