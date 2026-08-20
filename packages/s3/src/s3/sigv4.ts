@@ -8,6 +8,7 @@ export type UrlStyle = 'virtualHosted' | 'path';
 export type SigV4Options = {
 	accessKeyId: string;
 	secretAccessKey: string;
+	sessionToken?: string;
 	region: string;
 	service: string;
 };
@@ -108,6 +109,7 @@ export async function signRequest(
 	headers.host ??= host;
 	headers['x-amz-date'] = getAmzDate(date);
 	headers['x-amz-content-sha256'] = 'UNSIGNED-PAYLOAD';
+	if (credentials.sessionToken) headers['x-amz-security-token'] = credentials.sessionToken;
 
 	const { canonicalUri, canonicalQuery } = canonicalizeUrl(url);
 	const { canonicalHeaders: canonicalHeadersStr, signedHeaders } = buildCanonicalHeaders(headers);

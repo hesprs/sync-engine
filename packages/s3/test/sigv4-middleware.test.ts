@@ -16,6 +16,7 @@ function createTransport() {
 function assertSignature(params: RequestParam) {
 	expect(params.headers?.['x-amz-content-sha256']).toBe('UNSIGNED-PAYLOAD');
 	expect(params.headers?.['x-amz-date']).toMatch(/^\d{8}T\d{6}Z$/v);
+	expect(params.headers?.['x-amz-security-token']).toBe('session-token');
 	expect(params.headers?.authorization).toMatch(
 		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/v,
 	);
@@ -39,6 +40,16 @@ test('middleware signs request parameters without changing body or URL', async (
 	expect(call.url).toBe('https://s3.example.com/vault/file.bin');
 	expect(call.headers?.['Content-Type']).toBe('application/octet-stream');
 	assertSignature(call);
+});
+
+test('middleware signs temporary session credentials with the security token', async () => {
+	const { calls, transport } = createTransport();
+	await sigv4Middleware(transport, defaultCredentials)('https://s3.example.com/vault/file.md');
+
+	const call = calls[0];
+	if (!call) throw new Error('Expected transport request');
+	expect(call.headers?.['x-amz-security-token']).toBe('session-token');
+	expect(call.headers?.authorization).toContain('x-amz-security-token');
 });
 
 test('middleware treats string requests as GET requests', async () => {

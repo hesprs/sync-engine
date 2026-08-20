@@ -27,6 +27,7 @@ export type S3Settings = {
 	region: string;
 	accessKeyId: string;
 	secretAccessKey: string;
+	sessionToken: string;
 	bucket: string;
 	urlStyle: UrlStyle;
 	prefix: string;
@@ -70,6 +71,7 @@ export default class S3 {
 		},
 		region: 'us-east-1',
 		secretAccessKey: '',
+		sessionToken: '',
 		urlStyle: 'virtualHosted',
 	};
 
@@ -88,9 +90,27 @@ export default class S3 {
 		const resolveConfig = () => {
 			const { endpoint, region, accessKeyId, bucket, urlStyle, prefix } = this.moduleSettings;
 			const secretAccessKey = secretStorage.getSecret(this.moduleSettings.secretAccessKey);
-			if (secretAccessKey === null || !endpoint || !bucket)
+			const sessionTokenKey = this.moduleSettings.sessionToken;
+			const sessionToken = sessionTokenKey
+				? secretStorage.getSecret(sessionTokenKey)
+				: undefined;
+			if (
+				secretAccessKey === null ||
+				(sessionTokenKey && sessionToken === null) ||
+				!endpoint ||
+				!bucket
+			)
 				throw new Error('Please configure S3 account!');
-			return { accessKeyId, bucket, endpoint, prefix, region, secretAccessKey, urlStyle };
+			return {
+				accessKeyId,
+				bucket,
+				endpoint,
+				prefix,
+				region,
+				secretAccessKey,
+				sessionToken: sessionToken || undefined,
+				urlStyle,
+			};
 		};
 		const resolvePublicConfig = () => {
 			const { secretAccessKey: _, ...config } = resolveConfig();
@@ -116,12 +136,13 @@ export default class S3 {
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
 					if (this.ctx.settings.remoteFs !== 's3') return;
-					const { accessKeyId, region, secretAccessKey } = resolveConfig();
+					const { accessKeyId, region, secretAccessKey, sessionToken } = resolveConfig();
 					return sigv4Middleware(request, {
 						accessKeyId,
 						region,
 						secretAccessKey,
 						service: 's3',
+						sessionToken,
 					});
 				},
 				priority: 304,

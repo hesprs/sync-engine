@@ -18,6 +18,8 @@ export type S3Translations = {
 	accessKeyIdPlaceholder: string;
 	secretAccessKey: string;
 	secretAccessKeyDescription: string;
+	sessionToken: string;
+	sessionTokenDescription: string;
 	bucket: string;
 	bucketDescription: string;
 	bucketPlaceholder: string;
@@ -107,6 +109,16 @@ export default function s3Setting(
 					settings.secretAccessKey = value;
 					void saveSettings();
 				}),
+		);
+
+	new Setting(el)
+		.setName(translate('sessionToken'))
+		.setDesc(translate('sessionTokenDescription'))
+		.addComponent((element) =>
+			new SecretComponent(app, element).setValue(settings.sessionToken).onChange((value) => {
+				settings.sessionToken = value;
+				void saveSettings();
+			}),
 		);
 
 	new Setting(el)

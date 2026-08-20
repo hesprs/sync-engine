@@ -16,6 +16,7 @@ export const defaultS3Options = {
 	endpoint: 'https://s3.example.com',
 	region: 'us-east-1',
 	secretAccessKey: 'secret-key',
+	sessionToken: 'session-token',
 	urlStyle: 'path',
 } as const;
 
@@ -24,6 +25,7 @@ export const defaultCredentials = {
 	region: defaultS3Options.region,
 	secretAccessKey: defaultS3Options.secretAccessKey,
 	service: 's3',
+	sessionToken: defaultS3Options.sessionToken,
 } as const;
 
 export function response(
