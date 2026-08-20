@@ -5,8 +5,7 @@ export const en: S3Translations = {
 	accessKeyIdDescription: 'Enter your S3 access key ID.',
 	accessKeyIdPlaceholder: 'E.g. AKIAI...',
 	sessionToken: 'Session token',
-	sessionTokenDescription:
-		'Optional temporary AWS session token. It is stored in Obsidian keychain and sent as x-amz-security-token.',
+	sessionTokenDescription: 'Optional AWS session token, stored in Obsidian keychain.',
 	bucket: 'Bucket name',
 	bucketDescription: 'Enter the name of your S3 bucket.',
 	bucketPlaceholder: 'my-bucket',
@@ -45,8 +44,7 @@ export const zh: S3Translations = {
 	accessKeyIdDescription: '请输入您的 S3 Access Key ID。',
 	accessKeyIdPlaceholder: '例如：AKIAI...',
 	sessionToken: 'Session Token',
-	sessionTokenDescription:
-		'可选的 AWS 临时会话令牌。它将安全地存储在 Obsidian 密钥环中，并作为 x-amz-security-token 发送。',
+	sessionTokenDescription: '可选的 AWS 临时会话令牌，存储在 Obsidian 密钥环中。',
 	bucket: '存储桶名称（Bucket）',
 	bucketDescription: '请输入您的 S3 存储桶名称。',
 	bucketPlaceholder: 'my-bucket',
@@ -83,8 +81,7 @@ export const ru: S3Translations = {
 	accessKeyIdDescription: 'Введите ваш идентификатор ключа доступа S3.',
 	accessKeyIdPlaceholder: 'Например, AKIAI...',
 	sessionToken: 'Токен сессии',
-	sessionTokenDescription:
-		'Необязательный временный токен сессии AWS. Он хранится в связке ключей Obsidian и отправляется как x-amz-security-token.',
+	sessionTokenDescription: 'Необязательный токен сессии AWS хранится в связке ключей Obsidian.',
 	bucket: 'Имя бакета',
 	bucketDescription: 'Введите имя вашего бакета S3.',
 	bucketPlaceholder: 'my-bucket',
@@ -123,8 +120,7 @@ export const zhTW: S3Translations = {
 	accessKeyIdDescription: '輸入您的 S3 存取金鑰 ID。',
 	accessKeyIdPlaceholder: '例如 AKIAI...',
 	sessionToken: '工作階段權杖',
-	sessionTokenDescription:
-		'可選的 AWS 臨時工作階段權杖。其將安全地儲存於 Obsidian 金鑰圈，並以 x-amz-security-token 傳送。',
+	sessionTokenDescription: '可選的 AWS 臨時工作階段權杖，儲存於 Obsidian 金鑰圈。',
 	bucket: '儲存桶名稱',
 	bucketDescription: '輸入您的 S3 儲存桶名稱。',
 	bucketPlaceholder: 'my-bucket',
