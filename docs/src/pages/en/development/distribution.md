@@ -50,7 +50,7 @@ The plugin reads module sources from URLs stored in settings:
 moduleSources: ['https://sync.consensia.cc/modules.json'];
 ```
 
-Users can add or remove source URLs via the **Edit sources** modal in the Module Management UI. Any HTTP(S) URL serving a valid JSON source works.
+Users can add or remove source URLs in ["Module sources" setting](../usage/settings#module-sources). Any HTTP(S) URL serving a valid JSON source works.
 
 ## Local Storage
 
@@ -78,7 +78,7 @@ For modules not part of the official monorepo:
 2. Host a module source JSON file at a stable URL (e.g., `https://my-modules.example.com/modules.json`).
 3. Host each module's `.js` file at the URL specified in its `main` field.
 4. Any static hosting works: JsDelivr, GitHub Releases, Cloudflare Pages, etc.
-5. Users add your registry URL in the **Edit Sources** modal within the Module Management UI.
+5. Users add your registry URL in **Settings > Sync Engine > Development > Module sources**.
 
 It is highly recommended to contribute your module to the Sync Engine monorepo if you think your module can benefic more people, see [contributing](../usage/contributing#module-contribution).
 

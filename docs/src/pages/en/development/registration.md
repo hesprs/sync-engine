@@ -8,10 +8,8 @@ export default class MyModule {
   constructor(private readonly ctx: Context) {}
 
   start(): void {
-    this.cleanup.push(
-      this.ctx.registerRemoteFsWrapper(/* ... */),
-      this.ctx.registerI18n('en', { hello: 'Hello' }),
-    );
+    this.cleanup.push(this.ctx.registerRemoteFsWrapper(/* ... */));
+    this.ctx.registerI18n('en', { hello: 'Hello' });
   }
 
   dispose(): void {
@@ -43,7 +41,7 @@ Register a remote backend implementation. See [file system: RootFs](./file-syste
 type CheckConnectionResult = { success: true } | { success: false; reason: string };
 
 type RemoteFsEntry = {
-  prettyName: string;
+  prettyName: () => string;
   instantiate: (request: Request) => RootFs;
   checkConnection: (request: Request) => MaybePromise<CheckConnectionResult>;
 };
@@ -109,7 +107,7 @@ ctx.registerRemoteLister(entry: RemoteListerEntry): () => boolean;
 Register a sync decision strategy. See [sync: decider](./sync#decider).
 
 ```ts
-type DeciderEntry = { decider: Decider; prettyName: string };
+type DeciderEntry = { decider: Decider; prettyName: () => string };
 ```
 
 ```ts
@@ -121,35 +119,16 @@ ctx.registerDecider(id: string, entry: DeciderEntry): () => boolean;
 Register a conflict resolution strategy. See [sync: conflict resolver](./sync#conflict-resolver).
 
 ```ts
-type ConflictResolverEntry = { prettyName: string; resolver: ConflictResolver };
+type ConflictResolverEntry = { prettyName: () => string; resolver: ConflictResolver };
 ```
 
 ```ts
 ctx.registerConflictResolver(id: string, entry: ConflictResolverEntry): () => boolean;
 ```
 
-## Settings
+## Settings And UI
 
-Register a setting section rendered in the settings tab. Sections render in ascending `priority`.
-
-```ts
-type SettingEntry = { priority: number; apply: (el: HTMLElement) => void };
-```
-
-```ts
-ctx.registerSetting(entry: SettingEntry): () => boolean;
-```
-
-Core setting sections use these priorities — choose a value between them for specific placement:
-
-| Section           | Priority | Contents                                                                   |
-| ----------------- | -------: | -------------------------------------------------------------------------- |
-| Top configuration |      `0` | Backend, module management, decider, conflict resolver.                    |
-| Features          |   `1000` | Realtime, startup, scheduled sync; realtime fast mode; asymmetric storage. |
-| Controls          |   `2000` | File-size, request-concurrency, request-interval, memory limits.           |
-| Filter rules      |   `3000` | Inclusion and exclusion glob rules.                                        |
-| Miscellaneous     |   `4000` | Custom headers, mobile notices, task confirmation, deletion confirmation.  |
-| Development       |   `5000` | Record cleanup and log export tools.                                       |
+Register nested setting definitions, translations, and migration-aware controls as described in [Settings And UI](./settings-and-ui).
 
 ## CSS
 
@@ -158,14 +137,6 @@ ctx.registerCss(css: string): () => void;
 ```
 
 Injects CSS into the document. Returns a callback that removes the injected style element.
-
-## I18n
-
-Register translation resources for one `ObsidianLanguageCode`. See [i18n](./i18n).
-
-```ts
-ctx.registerI18n(code: ObsidianLanguageCode, resource: TranslationResource): void;
-```
 
 ## Events
 

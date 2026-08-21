@@ -96,7 +96,10 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 								{ link: `${development}/registration`, text: t('registration') },
 								{ link: `${development}/events`, text: t('events') },
 								{ link: `${development}/storage`, text: t('storage') },
-								{ link: `${development}/i18n`, text: t('i18n') },
+								{
+									link: `${development}/settings-and-ui`,
+									text: t('settingsAndUI'),
+								},
 								{ link: `${development}/miscellaneous`, text: t('miscellaneous') },
 							],
 							text: t('API'),

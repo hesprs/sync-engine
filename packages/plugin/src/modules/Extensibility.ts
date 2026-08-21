@@ -270,8 +270,10 @@ export default class Extensibility {
 				content.forEach((meta: unknown) => {
 					if (!isValidMeta(meta)) return;
 					const { id, minPluginVersion, icon } = meta;
-					if (minPluginVersion && compare(VERSION, minPluginVersion) === -1)
+					if (minPluginVersion && compare(VERSION, minPluginVersion) === -1) {
 						this.root.pluginOutdated = true;
+						return;
+					}
 					if (seenId.has(id)) return;
 					seenId.add(id);
 					modules.push({

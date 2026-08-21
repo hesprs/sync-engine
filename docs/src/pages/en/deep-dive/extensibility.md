@@ -30,7 +30,7 @@ Please avoid using two sources simultaneously, if you have decided to use `https
 
 :::
 
-The Module Management UI allows users to add and remove source URLs. It accepts `http:` and `https:` URLs. HTTP sources display an insecure-protocol warning but remain valid.
+[Users add and remove source URLs in the setting page](../usage/settings#module-sources). The page accepts `http:` and `https:` URLs. Use HTTPS for sources whenever possible.
 
 Plugin fetches every configured source with Obsidian `requestUrl()`. A source must contain a JSON array. Each accepted entry must contain string values for:
 
@@ -47,7 +47,7 @@ type ModuleMeta = {
 };
 ```
 
-Optional `icon` and `minPluginVersion` values are also supported. Entries requiring a newer plugin version are skipped. IDs containing common filename separators or metacharacters are skipped, and the integrity string must contain 64 hexadecimal characters.
+Optional `icon` and `minPluginVersion` values are also supported. Entries requiring a newer plugin version remain identifiable in the catalog and mark the plugin as outdated; update the plugin before installing those modules. IDs containing common filename separators or metacharacters are skipped, and the integrity string must contain 64 hexadecimal characters.
 
 Source contents are cached for automatic update checks during the current plugin lifetime. Duplicate IDs are filtered within each source.
 
@@ -55,7 +55,7 @@ The source entry supplies both the module download URL (`main`) and the expected
 
 ## Local Module Storage
 
-Module artifacts are stored in `<vault config directory>/plugins/sync-engine/modules/<id>.js`. The module directory is inside Obsidian's plugin configuration directory. The default exclusion rules exclude the vault config directory from synchronization.
+Module artifacts are stored in `<vault config directory>/plugins/sync-engine/modules/<id>.js`. The module directory is inside Obsidian's plugin configuration directory. New installations explicitly exclude this module directory, as well as the broader vault config directory, from synchronization.
 
 Installed module metadata is stored in a IndexedDB store whose name is derived from the vault name: `modules-<hash of vault name>`, so normal attacking method (e.g. compromised syncing backend) cannot arbitrarily modify module meta.
 

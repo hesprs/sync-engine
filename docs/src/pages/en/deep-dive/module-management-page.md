@@ -1,58 +1,35 @@
-# Module Management UI
+# Module Management Page
 
-Sync engine allows users to load custom modules from custom sources, so it needs an UI to allow users to configure modules.
+Sync Engine uses a native Obsidian settings page to manage executable modules from configured sources. Open it from [Module management](../usage/settings#module-management).
 
-## UI Composition and Functions
+## Page Layout
 
-Modal is a singleton module class accepting context in constructor, extending `Modal` class, with `open()` and `close()` injected into root context.
+`ModuleManagement` extends Obsidian's `SettingPage`. Its page contains:
 
-Modal frame uses Obsidian CSS variables for large modal:
+- a full-width search field;
+- an icon button that toggles **Show installed only**;
+- a Solid.js module-card list.
 
-```css
-width: var(--modal-width);
-height: var(--modal-height);
-max-width: var(--modal-max-width);
-max-height: var(--modal-max-height);
-```
+Module source URLs are edited separately on **Settings > Sync Engine > Development > Module sources**. Returning to Module management creates a new source snapshot and refreshes the catalog.
 
-Modal has two parts from up to down:
+The search field uses Obsidian's `SearchComponent`. An empty query sorts modules alphabetically. A non-empty query uses `prepareFuzzySearch()` against module names and descriptions, then sorts by match score and name.
 
-- Native Obsidian controls
-- Solid reactive list
+## Module Cards
 
-### Native Obsidian Controls
+Each card displays the module icon, name, version, source status, description, and available actions:
 
-A wide search bar at very top, with a small menu icon at right. The bar and the icon take full width of the modal.
+- **Download** installs a module that is not installed or has a newer advertised version.
+- **Edit** opens the module metadata and integrity settings.
+- **Delete** removes the installed module and its stored metadata.
+- **Enable** stores `enabled: true` and loads the module.
+- **Disable** unloads the module and stores `enabled: false`.
 
-The search bar uses Obsidian API `SearchComponent`, the menu icon uses Obsidian `setIcon` + `setTooltip`, clicking on it opens Obsidian `Menu`.
+Actions are disabled while another action for the same module is running. Running actions display a progress icon. Module cards are merged by module ID, with installed metadata taking precedence over source metadata.
 
-The menu contains only two items: `Show installed only`, and `Edit sources`.
+## Source And Compatibility State
 
-Clicking `Show installed only` toggles the flag, and becomes checked via `MenuItem.setChecked()`. Clicking `Edit sources` opens a new normal modal similar to `packages/plugin/src/components/FilterEditorModal.ts` that allows user to add and delete module sources.
+`fetchSources()` reads every configured source. Source responses are cached for automatic update checks and can be forced to refresh for manual operations. Duplicate IDs within a source are ignored.
 
-### Solid Reactive List
+If a source entry declares a `minPluginVersion` newer than the running plugin, the catalog marks the plugin as outdated. Update Sync Engine before installing modules that require the newer version.
 
-A solid reactive island also accepts `context`, majorly consumes `Extensibility` module APIs. Parent Module Management UI passes three SynthKernel hooks `onQuery`, `onShowInstalledOnlyChange`, and `onSourcesChange` during the reactive list instantiation.
-
-`onQuery` is fired each keystroke in the search bar carrying the user query. `onShowInstalledOnlyChange` fired each `Show installed only` toggle. `onSourcesChange` is fired each source edit save.
-
-Once mounted, the reactive list uses `fetchSources()` to obtain modules list. Then it renders modules as cards. The widths of cards and number of cards per row are adaptive according to current modal width. And cards in each row takes full width of that row. The height of each row depends on the tallest card.
-
-Each card has the following layout:
-
-- Top row: module name
-- Middle block: module description
-- Bottom row: right-aligned action buttons
-
-Action buttons use Obsidian `setIcon()` and `setTooltip()`, buttons have following combinations:
-
-- Download button: module not installed, or module has a new version. Clicking on the button triggers `downloadModule()`.
-- Delete button: module installed. Clicking on it triggers `deleteModule()`.
-- Enable button: module installed but not loaded. Clicking on triggers `enableModule()`.
-- Disable button: module installed and loaded. Clicking on triggers `disableModule()`.
-
-The modules are sorted alphabetically by default, or sorted in match score if last `onQuery` payload is non-empty string. Query matching uses Obsidian API `prepareFuzzySearch()`. Currently, since the module set is small, so no optimization needed.
-
-When `Show installed only` is selected, the list should only present installed modules.
-
-When `onSourcesChange` fires, the list `fetchSources()` again and updates.
+Newly downloaded modules are disabled by default. Automatic updates only apply to already-installed modules whose recorded source URL matches the advertised source URL.

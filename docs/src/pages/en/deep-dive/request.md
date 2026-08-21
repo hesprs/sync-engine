@@ -67,7 +67,7 @@ Before calling the adapter, `VaultRequest` removes a trailing slash from every n
 - `GET_STREAM`: fetches `adapter.getResourcePath(path)` and returns `response.body`; throws when no body is available. File read streaming is achieved in this way.
 - `PUT`: `adapter.writeBinary()`, converting `Binary` to `ArrayBuffer` and forwarding optional `mtime`/`ctime` headers.
 - `APPEND`: `adapter.appendBinary()` with the same conversion and headers.
-- `DELETE`: permanent deletes call `adapter.remove()`. Otherwise it follows the vault trash setting, falling back to `trashLocal()` when `trashSystem()` fails.
+- `DELETE`: calls `adapter.remove()`, `adapter.trashLocal()`, `adapter.trashSystem()` according to user trash options.
 - `MOVE`: `adapter.rename()` to the normalized destination path.
 - `MKDIR`: calls `adapter.mkdir()`. Creating `/` is a no-op.
 - `EXISTS`: checks `vault.getAbstractFileByPath()` first, then fallback to `adapter.exists(path, true)`.

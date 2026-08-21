@@ -12,9 +12,9 @@ Choose the installed module that connects Sync Engine to your storage service. T
 
 ### Module Management
 
-Open the module management page. From there, you can install, update, enable, disable, remove, or edit modules, and manage their update sources. Modules provide storage backends and extra sync strategies. Review [Security](./security) before installing modules from sources you do not control.
+Open the module management page. From there, you can install, update, enable, disable, remove, or edit modules. Modules provide storage backends and extra sync strategies. Review [Security](./security) before installing modules from sources you do not control.
 
-The [module management page](../deep-dive/module-management-page) consists of a top bar and the module card list. You can select to show installed only and edit module sources at the hamburger button beside the search bar.
+The [module management page](../deep-dive/module-management-page) contains a search bar, an installed-only filter, and module cards. Module source URLs are edited in the **Module sources** page under Development.
 
 ### Auto-Update Modules
 
@@ -116,38 +116,31 @@ Enabled by default with a limit of `100MB`.
 - File sizes accept `B`, `KB`, `MB`, `GB`, or `TB`, for example `10MB` or `0.5GB`.
 - Time values accept `ms`, `s`, `min`, `h`, or `d`, for example `500ms`, `5s`, or `1h`.
 - Numeric values such as request concurrency accept a number, for example `50`.
-- Values must be zero or greater. Settings that represent a limit or interval may reject zero. Invalid values are restored to the previous value.
+- Values must be zero or greater. Settings that represent a limit or interval may reject zero. Invalid values remain marked with a warning and are not saved until corrected.
 
 ## Inclusion and Exclusion Rules
 
-Use these rules to control which files and folders Sync Engine synchronizes.
+Use glob rules to control which files and folders Sync Engine synchronizes.
 
 - **Exclusion rules** stop matching files and folders from syncing.
 - **Inclusion rules** make exceptions to exclusion rules.
-- Files and folders that match neither list sync normally.
+- Files and folders matching neither list sync normally.
 
-Sync Engine checks each file and folder against both lists:
+Sync Engine evaluates each file and folder against both lists:
 
-1. If an inclusion rule matches, the item syncs, even when an exclusion rule also matches it.
-2. If an item is inside an excluded folder, it stays excluded unless an inclusion rule matches that item or the content you want to keep.
-3. If only an exclusion rule matches, the item does not sync.
-4. If no rule matches, the item syncs.
+1. A matching inclusion rule takes precedence, even when an exclusion rule also matches.
+2. An item inside an excluded folder remains excluded unless an inclusion rule matches that item or a descendant that should be kept.
+3. An item matching only an exclusion rule does not sync.
+4. An item matching neither list syncs.
 
-For example, these rules keep one note from a private folder:
+Example:
 
 ```text
 Exclusion rule: private/
 Inclusion rule: private/keep.md
 ```
 
-The result is:
-
-```text
-private/keep.md   syncs
-private/other.md  does not sync
-```
-
-An included file can be inside several excluded folders. Add an inclusion rule for the file you want to keep.
+`private/keep.md` syncs; other files under `private/` remain excluded. Add inclusion rules for files or subtrees that should pass through excluded folders.
 
 ::: warning
 
@@ -157,7 +150,7 @@ If you sync Obsidian's plugin directory, you need to **exclude Sync Engine's mod
 
 ### Writing Rules
 
-Rules are written as [`glob` expressions](<https://en.wikipedia.org/wiki/Glob_(programming)>). These are common examples:
+Rules use [`glob` expressions](<https://en.wikipedia.org/wiki/Glob_(programming)>):
 
 | Rule              | Matches                                           |
 | ----------------- | ------------------------------------------------- |
@@ -166,59 +159,17 @@ Rules are written as [`glob` expressions](<https://en.wikipedia.org/wiki/Glob_(p
 | `notes/**/*.md`   | Markdown files inside `notes` and its subfolders  |
 | `test-files/**/*` | Everything inside `test-files` and its subfolders |
 | `**/.trash/`      | Any folder named `.trash`                         |
-| `/.obsidian/`     | `.obsidian` at the vault root                     |
+| `/.obsidian/`     | `.obsidian` at vault root                         |
 
-An asterisk (`*`) matches any part of a file or folder name. Two asterisks (`**`) also include subfolders. A question mark (`?`) matches one character.
+`*` matches within one path segment. `**` also crosses subfolders. `?` matches one character. Add `/` at the end to match folders. Rules are case-insensitive by default; use the case-sensitive button in the rule editor when needed. Start a rule with `/` to anchor it at the vault root.
 
-Use a slash at the end when you mean a folder, such as `cache/`. Without the slash, a rule can also match an extension-less file with the same name.
+::: tip
 
-Rules are not case-sensitive by default. In the rule editor, use the case-sensitive button for rules where uppercase and lowercase letters must differ.
+Sync Engine avoids walking excluded subtrees. When an excluded folder cannot contain anything matched by an inclusion rule, traversal stops at that folder. If an inclusion rule could match a descendant, Sync Engine probes that folder to find the included content.
 
-### Common Setups
+Anchor inclusion rules when their location is known. For example, use `/projects/current/**/*` instead of `projects/current/**/*` when `projects` is at the vault root. An anchored rule narrows the possible path immediately, reducing probes through unrelated excluded folders. Unanchored rules can match the same path shape at any depth, so they may require more traversal.
 
-**Exclude a few folders**:
-
-Leave inclusion rules empty. Add folders to the exclusion list:
-
-```text
-.obsidian
-node_modules
-.git
-```
-
-Everything else syncs normally.
-
-**Exclude temporary files**:
-
-Add these to the exclusion list:
-
-```text
-*.tmp
-*.log
-temp/
-```
-
-**Keep one file from an excluded folder**:
-
-Add the folder to exclusions and the file to inclusions:
-
-```text
-Exclusion rule: private/
-Inclusion rule: private/important.md
-```
-
-Only `private/important.md` is kept from that excluded folder. Other files remain excluded.
-
-**Sync one folder as an exception**:
-
-To keep a folder inside an excluded area, add both the folder and its contents to the inclusion list:
-
-```text
-Exclusion rule: projects/
-Inclusion rule: projects/current/**/*
-```
-
-This keeps files inside `projects/current` while other project files stay excluded.
+:::
 
 ## Miscellaneous
 
@@ -263,3 +214,9 @@ These actions do not directly delete files, but the next sync will have less his
 ### Export Logs to File
 
 Write Sync Engine's logs to a file in `<vault root>/Sync Engine Logs/` folder. Use this when reporting a failed sync or investigating a connection problem. Logs can contain paths and service details, so review the file before sharing it.
+
+### Module Sources
+
+Edit the URLs Sync Engine uses to obtain the module catalog. URLs must use `http:` or `https:` and invalid entries are marked until corrected; use HTTPS whenever possible.
+
+The default source is `https://sync.consensia.cc/modules.json`. An alternative GitHub-hosted source `https://raw.githubusercontent.com/hesprs/sync-engine/refs/heads/gh-pages/modules-alternative.json` is available for networks that cannot reach the default source. Use one official source at a time to avoid duplicate module entries.
