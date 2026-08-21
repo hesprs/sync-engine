@@ -11,7 +11,7 @@
 	{
 		"id": "s3",
 		"name": "S3",
-		"version": "0.0.3",
+		"version": "0.1.0",
 		"description": "S3 and S3-compatible backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/s3.js",

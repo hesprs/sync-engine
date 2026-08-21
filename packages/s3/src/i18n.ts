@@ -4,8 +4,6 @@ export const en: S3Translations = {
 	accessKeyId: 'Access key ID',
 	accessKeyIdDescription: 'Enter your S3 access key ID.',
 	accessKeyIdPlaceholder: 'E.g. AKIAI...',
-	sessionToken: 'Session token',
-	sessionTokenDescription: 'Optional AWS session token, stored in Obsidian keychain.',
 	bucket: 'Bucket name',
 	bucketDescription: 'Enter the name of your S3 bucket.',
 	bucketPlaceholder: 'my-bucket',
@@ -17,16 +15,16 @@ export const en: S3Translations = {
 		'Configure the key prefix that your vault will be synced to. "/" stands for the root of the bucket.',
 	prefixPlaceholder: 'E.g. my-vault/',
 	proxyUrl: 'Proxy URL',
-	proxyUrlDescription:
-		'Optional proxy URL to route S3 requests through. Leave empty to connect directly.',
+	proxyUrlDescription: 'Route S3 requests through an optional proxy URL.',
 	proxyUrlPlaceholder: 'E.g. https://proxy.example.com',
 	region: 'Region',
 	regionDescription: 'Enter the region of your S3 bucket.',
 	regionPlaceholder: 'E.g. us-east-1',
 	s3: 'S3',
 	secretAccessKey: 'Secret access key',
-	secretAccessKeyDescription:
-		'Enter your S3 secret access key. It is stored in Obsidian keychain.',
+	secretAccessKeyDescription: 'Enter your S3 secret access key, stored in Obsidian keychain.',
+	sessionToken: 'Session token',
+	sessionTokenDescription: 'Configure optional AWS session token, stored in Obsidian keychain.',
 	urlStyle: 'URL style',
 	urlStyleDescription: (frag) => {
 		frag.appendText('Select the URL style for your S3 service. Virtual-hosted style: ');
@@ -43,8 +41,6 @@ export const zh: S3Translations = {
 	accessKeyId: 'Access Key ID',
 	accessKeyIdDescription: '请输入您的 S3 Access Key ID。',
 	accessKeyIdPlaceholder: '例如：AKIAI...',
-	sessionToken: 'Session Token',
-	sessionTokenDescription: '可选的 AWS 临时会话令牌，存储在 Obsidian 密钥环中。',
 	bucket: '存储桶名称（Bucket）',
 	bucketDescription: '请输入您的 S3 存储桶名称。',
 	bucketPlaceholder: 'my-bucket',
@@ -55,7 +51,7 @@ export const zh: S3Translations = {
 	prefixDescription: '配置 Vault 将同步到的键前缀。"/" 代表存储桶根目录。',
 	prefixPlaceholder: '例如：my-vault/',
 	proxyUrl: '代理 URL',
-	proxyUrlDescription: '可选的代理 URL，用于路由 S3 请求。留空则直接连接。',
+	proxyUrlDescription: '通过可选的代理 URL 路由 S3 请求。',
 	proxyUrlPlaceholder: '例如：https://proxy.example.com',
 	region: '区域',
 	regionDescription: '请输入您的 S3 存储桶所在的区域。',
@@ -64,6 +60,8 @@ export const zh: S3Translations = {
 	secretAccessKey: 'Secret Access Key',
 	secretAccessKeyDescription:
 		'请输入您的 S3 Secret Access Key。它将安全地存储在 Obsidian 密钥环中。',
+	sessionToken: 'Session Token',
+	sessionTokenDescription: '配置可选的 AWS 临时会话令牌，存储在 Obsidian 密钥环中。',
 	urlStyle: 'URL 样式',
 	urlStyleDescription: (frag) => {
 		frag.appendText('选择适用于您的 S3 服务的 URL 样式。虚拟主机样式（Virtual-hosted）：');
@@ -80,8 +78,6 @@ export const ru: S3Translations = {
 	accessKeyId: 'Идентификатор ключа доступа',
 	accessKeyIdDescription: 'Введите ваш идентификатор ключа доступа S3.',
 	accessKeyIdPlaceholder: 'Например, AKIAI...',
-	sessionToken: 'Токен сессии',
-	sessionTokenDescription: 'Необязательный токен сессии AWS хранится в связке ключей Obsidian.',
 	bucket: 'Имя бакета',
 	bucketDescription: 'Введите имя вашего бакета S3.',
 	bucketPlaceholder: 'my-bucket',
@@ -93,8 +89,7 @@ export const ru: S3Translations = {
 		'Настройте префикс ключа, с которым будет синхронизироваться ваше хранилище. «/» обозначает корень бакета.',
 	prefixPlaceholder: 'Например, my-vault/',
 	proxyUrl: 'URL-адрес прокси',
-	proxyUrlDescription:
-		'Необязательный URL-адрес прокси для маршрутизации запросов S3. Оставьте пустым для прямого подключения.',
+	proxyUrlDescription: 'Маршрутизация запросов S3 через необязательный URL-адрес прокси.',
 	proxyUrlPlaceholder: 'Например, https://proxy.example.com',
 	region: 'Регион',
 	regionDescription: 'Введите регион вашего бакета S3.',
@@ -103,6 +98,9 @@ export const ru: S3Translations = {
 	secretAccessKey: 'Секретный ключ доступа',
 	secretAccessKeyDescription:
 		'Введите ваш секретный ключ доступа S3. Он хранится в связке ключей Obsidian keychain.',
+	sessionToken: 'Токен сессии',
+	sessionTokenDescription:
+		'Настройте необязательный токен сессии AWS. Хранится в связке ключей Obsidian keychain.',
 	urlStyle: 'Стиль URL',
 	urlStyleDescription: (frag) => {
 		frag.appendText('Выберите стиль URL для вашего сервиса S3. Стиль виртуального хостинга: ');
@@ -119,8 +117,6 @@ export const zhTW: S3Translations = {
 	accessKeyId: '存取金鑰 ID',
 	accessKeyIdDescription: '輸入您的 S3 存取金鑰 ID。',
 	accessKeyIdPlaceholder: '例如 AKIAI...',
-	sessionToken: '工作階段權杖',
-	sessionTokenDescription: '可選的 AWS 臨時工作階段權杖，儲存於 Obsidian 金鑰圈。',
 	bucket: '儲存桶名稱',
 	bucketDescription: '輸入您的 S3 儲存桶名稱。',
 	bucketPlaceholder: 'my-bucket',
@@ -131,7 +127,7 @@ export const zhTW: S3Translations = {
 	prefixDescription: '設定儲存庫同步目標的 Key 前綴路徑。「/」代表儲存桶的根目錄。',
 	prefixPlaceholder: '例如 my-vault/',
 	proxyUrl: '代理伺服器 URL',
-	proxyUrlDescription: '可選的代理伺服器 URL，用來轉發 S3 請求。若留空則為直連。',
+	proxyUrlDescription: '透過可選的代理伺服器 URL 轉發 S3 請求。',
 	proxyUrlPlaceholder: '例如 https://proxy.example.com',
 	region: '區域',
 	regionDescription: '輸入您 S3 儲存桶所在的區域。',
@@ -139,6 +135,8 @@ export const zhTW: S3Translations = {
 	s3: 'S3',
 	secretAccessKey: '私密存取金鑰',
 	secretAccessKeyDescription: '輸入您的 S3 私密存取金鑰。其將儲存於 Obsidian 金鑰圈中。',
+	sessionToken: '工作階段權杖',
+	sessionTokenDescription: '設定可選的 AWS 臨時工作階段權杖，儲存於 Obsidian 金鑰圈。',
 	urlStyle: 'URL 樣式',
 	urlStyleDescription: (frag) => {
 		frag.appendText('選擇您 S3 服務的 URL 樣式。虛擬主機樣式（Virtual-hosted style）：');

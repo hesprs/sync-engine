@@ -144,6 +144,27 @@ export default function s3Setting(
 					},
 				})),
 				5000: s(() => ({
+					desc: translate('sessionTokenDescription'),
+					name: translate('sessionToken'),
+					render: (setting) => {
+						setting
+							.addComponent((element) =>
+								new SecretComponent(app, element)
+									.setValue(settings.sessionToken.value)
+									.onChange((value) => {
+										settings.sessionToken.value = value ?? '';
+										void saveSettings();
+									}),
+							)
+							.addToggle((toggle) =>
+								toggle.setValue(settings.sessionToken.enabled).onChange((value) => {
+									settings.sessionToken.enabled = value;
+									void saveSettings();
+								}),
+							);
+					},
+				})),
+				6000: s(() => ({
 					desc: translate('bucketDescription'),
 					labels: [matchLabel()],
 					name: translate('bucket'),
@@ -163,7 +184,7 @@ export default function s3Setting(
 						});
 					},
 				})),
-				6000: s(() => ({
+				7000: s(() => ({
 					desc: translate('urlStyleDescription'),
 					name: translate('urlStyle'),
 					render: (setting) => {
@@ -179,7 +200,7 @@ export default function s3Setting(
 						);
 					},
 				})),
-				7000: s(() => ({
+				8000: s(() => ({
 					desc: translate('prefixDescription'),
 					labels: [matchLabel()],
 					name: translate('prefix'),
@@ -199,7 +220,7 @@ export default function s3Setting(
 						});
 					},
 				})),
-				8000: s(() => ({
+				9000: s(() => ({
 					desc: translate('proxyUrlDescription'),
 					name: translate('proxyUrl'),
 					render: (setting) => {

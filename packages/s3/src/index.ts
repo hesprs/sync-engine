@@ -11,6 +11,8 @@ import type {
 	OptimizerEntry,
 	RemoteRequestMiddlewareEntry,
 	Context,
+	DatabaseSync,
+	Binary,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
@@ -28,7 +30,10 @@ export type S3Settings = {
 	region: string;
 	accessKeyId: string;
 	secretAccessKey: string;
-	sessionToken: string;
+	sessionToken: {
+		enabled: boolean;
+		value: string;
+	};
 	bucket: string;
 	urlStyle: UrlStyle;
 	prefix: string;
@@ -37,6 +42,11 @@ export type S3Settings = {
 		value: string;
 	};
 };
+
+export type S3DB = DatabaseSync<
+	Record<string, unknown>,
+	{ signingKey: Binary; signingKeyMarker: string }
+>;
 
 export default class S3 {
 	private readonly cleanup: Array<() => void> = [];
@@ -51,6 +61,7 @@ export default class S3 {
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
 			registerRemoteOptimizer: (entry: OptimizerEntry) => () => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
+			memoryDB: S3DB;
 		}>,
 	) {
 		ctx.registerI18n('en', en);
@@ -70,7 +81,10 @@ export default class S3 {
 		},
 		region: 'us-east-1',
 		secretAccessKey: '',
-		sessionToken: '',
+		sessionToken: {
+			enabled: false,
+			value: '',
+		},
 		urlStyle: 'virtualHosted',
 	};
 
@@ -80,45 +94,16 @@ export default class S3 {
 		const {
 			translate,
 			registerRemoteFs,
-			app: { secretStorage },
 			registerRemoteFsWrapper,
 			registerSetting,
 			registerRemoteOptimizer,
 			registerRemoteRequestMiddleware,
+			memoryDB,
 		} = this.ctx;
-		const resolveConfig = () => {
-			const { endpoint, region, accessKeyId, bucket, urlStyle, prefix } = this.moduleSettings;
-			const secretAccessKey = secretStorage.getSecret(this.moduleSettings.secretAccessKey);
-			const sessionTokenKey = this.moduleSettings.sessionToken;
-			const sessionToken = sessionTokenKey
-				? secretStorage.getSecret(sessionTokenKey)
-				: undefined;
-			if (
-				secretAccessKey === null ||
-				(sessionTokenKey && sessionToken === null) ||
-				!endpoint ||
-				!bucket
-			)
-				throw new Error('Please configure S3 account!');
-			return {
-				accessKeyId,
-				bucket,
-				endpoint,
-				prefix,
-				region,
-				secretAccessKey,
-				sessionToken: sessionToken || undefined,
-				urlStyle,
-			};
-		};
-		const resolvePublicConfig = () => {
-			const { secretAccessKey: _, ...config } = resolveConfig();
-			return config;
-		};
 		this.cleanup.push(
 			registerRemoteFs('s3', {
-				checkConnection: (request) => checkConnection(resolvePublicConfig(), request),
-				instantiate: (request) => new S3Fs({ ...resolvePublicConfig(), request }),
+				checkConnection: (request) => checkConnection(this.resolveConfig(), request),
+				instantiate: (request) => new S3Fs({ ...this.resolveConfig(), request }),
 				prettyName: () => translate('s3'),
 			}),
 			registerRemoteFsWrapper({
@@ -134,15 +119,20 @@ export default class S3 {
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
-					if (this.ctx.settings.remoteFs !== 's3') return;
-					const { accessKeyId, region, secretAccessKey, sessionToken } = resolveConfig();
-					return sigv4Middleware(request, {
-						accessKeyId,
-						region,
-						secretAccessKey,
-						service: 's3',
-						sessionToken,
-					});
+					if (this.settings.remoteFs !== 's3') return;
+					const { accessKeyId, region, secretAccessKey, sessionToken } =
+						this.resolveConfig();
+					return sigv4Middleware(
+						request,
+						{
+							accessKeyId,
+							region,
+							secretAccessKey,
+							service: 's3',
+							sessionToken,
+						},
+						memoryDB,
+					);
 				},
 				priority: 304,
 			}),
@@ -172,6 +162,36 @@ export default class S3 {
 				priority: 604,
 			}),
 		);
+	};
+
+	private readonly resolveConfig = () => {
+		const {
+			endpoint,
+			region,
+			accessKeyId,
+			bucket,
+			urlStyle,
+			prefix,
+			secretAccessKey: _secretAccessKey,
+			sessionToken: { value, enabled },
+		} = this.moduleSettings;
+		const { secretStorage } = this.ctx.app;
+		const secretAccessKey = secretStorage.getSecret(_secretAccessKey);
+		const sessionToken = (enabled ? secretStorage.getSecret(value) : undefined) as
+			| string
+			| undefined;
+		if (!secretAccessKey || (enabled && !sessionToken) || !endpoint || !bucket)
+			throw new Error('Please configure S3 account!');
+		return {
+			accessKeyId,
+			bucket,
+			endpoint,
+			prefix,
+			region,
+			secretAccessKey,
+			sessionToken,
+			urlStyle,
+		};
 	};
 
 	readonly dispose = () => {

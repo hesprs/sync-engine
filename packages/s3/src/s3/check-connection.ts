@@ -1,6 +1,6 @@
 import type { CheckConnectionResult, Request } from '@hesprs/sync-engine-sdk';
 import type { UrlStyle } from './sigv4';
-import { buildUrlWithQuery } from './url';
+import { buildUrl } from './url';
 
 export type S3ConnectionOptions = {
 	endpoint: string;
@@ -14,16 +14,13 @@ export async function checkConnection(
 	request: Request,
 ): Promise<CheckConnectionResult> {
 	try {
-		const url = buildUrlWithQuery(
-			{
-				bucket: options.bucket,
-				endpoint: options.endpoint,
-				key: '/',
-				urlStyle: options.urlStyle,
-			},
-			{ 'list-type': '2', 'max-keys': '1' },
-		);
-		const response = await request({ method: 'GET', url });
+		const url = buildUrl({
+			bucket: options.bucket,
+			endpoint: options.endpoint,
+			key: '/',
+			urlStyle: options.urlStyle,
+		});
+		const response = await request({ method: 'HEAD', url });
 		if (response.status >= 200 && response.status < 300) return { success: true } as const;
 		return {
 			reason: `HTTP ${response.status}`,

@@ -1,7 +1,13 @@
 import type { Request, RequestParam } from '@hesprs/sync-engine-sdk';
-import { expect, test } from 'bun:test';
+import { beforeEach, expect, test } from 'bun:test';
 import { sigv4Middleware } from '@/s3/sigv4';
-import { defaultCredentials, defaultResponse } from './helpers';
+import { defaultCredentials, defaultResponse, emptyBinary, memoryDB } from './helpers';
+
+beforeEach(() => {
+	memoryDB.clearStores();
+	memoryDB.setMeta('signingKey', emptyBinary);
+	memoryDB.setMeta('signingKeyMarker', '');
+});
 
 function createTransport() {
 	const calls: Array<RequestParam> = [];
@@ -15,7 +21,7 @@ function createTransport() {
 
 function assertSignature(params: RequestParam) {
 	expect(params.headers?.['x-amz-content-sha256']).toBe('UNSIGNED-PAYLOAD');
-	expect(params.headers?.['x-amz-date']).toMatch(/^\d{8}T\d{6}Z$/v);
+	expect(params.headers?.['x-amz-date']).toMatch(/^\d{8}T\d{6}Z$/u);
 	expect(params.headers?.['x-amz-security-token']).toBe('session-token');
 	expect(params.headers?.authorization).toMatch(
 		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/u,
@@ -24,7 +30,7 @@ function assertSignature(params: RequestParam) {
 
 test('middleware signs request parameters without changing body or URL', async () => {
 	const { calls, transport } = createTransport();
-	const request = sigv4Middleware(transport, defaultCredentials);
+	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);
 	const body = new Uint8Array([1, 2, 3]);
 
 	await request({
@@ -44,7 +50,11 @@ test('middleware signs request parameters without changing body or URL', async (
 
 test('middleware signs temporary session credentials with the security token', async () => {
 	const { calls, transport } = createTransport();
-	await sigv4Middleware(transport, defaultCredentials)('https://s3.example.com/vault/file.md');
+	await sigv4Middleware(
+		transport,
+		defaultCredentials,
+		memoryDB,
+	)('https://s3.example.com/vault/file.md');
 
 	const call = calls[0];
 	if (!call) throw new Error('Expected transport request');
@@ -54,7 +64,7 @@ test('middleware signs temporary session credentials with the security token', a
 
 test('middleware treats string requests as GET requests', async () => {
 	const { calls, transport } = createTransport();
-	const request = sigv4Middleware(transport, defaultCredentials);
+	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);
 
 	await request('https://s3.example.com/vault/file.md');
 
@@ -77,7 +87,7 @@ test('middleware signs custom headers before proxy rewrites the URL', async () =
 				url: `https://proxy.example.com${original.pathname}${original.search}`,
 			});
 		};
-	const signed = sigv4Middleware(proxy(transport), defaultCredentials);
+	const signed = sigv4Middleware(proxy(transport), defaultCredentials, memoryDB);
 
 	await signed({
 		headers: { 'x-custom': 'value' },
@@ -90,6 +100,20 @@ test('middleware signs custom headers before proxy rewrites the URL', async () =
 	expect(call.url).toBe('https://proxy.example.com/vault/file.md');
 	expect(call.headers?.['x-custom']).toBe('value');
 	expect(call.headers?.authorization).toContain(
-		'SignedHeaders=host;x-amz-content-sha256;x-amz-date;x-custom',
+		'SignedHeaders=host;x-amz-content-sha256;x-amz-date;x-amz-security-token;x-custom',
 	);
+});
+
+test('middleware reuses signing key for matching credentials and date', async () => {
+	const { transport } = createTransport();
+	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);
+
+	await request('https://s3.example.com/vault/first.md');
+	const signingKey = memoryDB.getMeta('signingKey');
+	if (!signingKey) throw new Error('Expected signing key cache entry');
+
+	await request('https://s3.example.com/vault/second.md');
+
+	expect(memoryDB.getMeta('signingKey')).toBe(signingKey);
+	expect(memoryDB.getMeta('signingKeyMarker')).toMatch(/^secret-key~\d{8}~us-east-1~s3$/u);
 });
