@@ -85,7 +85,7 @@ function isCollectionResource(resourcetype: WebDAVProp['resourcetype']) {
 
 function isSuccessStatus(status: string | undefined) {
 	if (!status) return true;
-	const match = /\s(?<code>\d{3})(?:\s|$)/v.exec(status);
+	const match = /\s(?<code>\d{3})(?:\s|$)/u.exec(status);
 	if (!match) return false;
 	const code = Number.parseInt(match.groups?.code ?? '', 10);
 	return code >= 200 && code < 300;
@@ -119,6 +119,10 @@ function toKey(href: string, endpoint: string, isDir: boolean) {
 	return normalizeKey(normalizeChar(stripped), isDir);
 }
 
+function normalizeEtag(raw: string) {
+	return raw.startsWith('W/') ? raw.slice(2) : raw;
+}
+
 function toStat(endpoint: string, { propstat, href }: WebDAVResponseItem): Stat | undefined {
 	const propstats = propstat ? asArray(propstat) : [];
 	const validPropstat = propstats.find(({ status, prop }) => isSuccessStatus(status) && prop);
@@ -133,15 +137,14 @@ function toStat(endpoint: string, { propstat, href }: WebDAVResponseItem): Stat 
 
 	// https://www.rfc-editor.org/rfc/rfc9110.html#section-8.8.3
 	// https://github.com/hesprs/sync-engine/issues/225
-	let etag = getDavText(validPropstat.prop.getetag);
-	if (etag?.startsWith('W/')) etag = etag.slice(2);
-	const uid = etag ?? `${mtime}~${size}`;
+	const etag = getDavText(validPropstat.prop.getetag);
+	const uid = etag ? normalizeEtag(etag) : `${mtime}~${size}`;
 
 	return { isDir: false, key, mtime, size, uid };
 }
 
 function extractNextLink(linkHeader: string): string | undefined {
-	const matches = /<(?<href>[^>]+)>;\s*rel="next"/v.exec(linkHeader);
+	const matches = /<(?<href>[^>]+)>;\s*rel="next"/u.exec(linkHeader);
 	return matches?.groups?.href;
 }
 
@@ -252,11 +255,8 @@ export default class WebdavFs implements RootFs {
 			method: 'PUT',
 			url: buildUrl(this.endpoint, key),
 		});
-
 		const etag = getHeader(response.headers, 'etag');
-		if (etag) return etag;
-
-		return getFileUid(await this.stat(key), key);
+		return etag ? normalizeEtag(etag) : getFileUid(await this.stat(key), key);
 	}
 
 	async writeStream(key: string, value: ReadableStream<Binary>, { size }: FileStat) {

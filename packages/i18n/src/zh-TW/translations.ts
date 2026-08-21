@@ -1,9 +1,12 @@
 import type { Translations } from '@hesprs/sync-engine-sdk';
 
 const zhTW: Translations = {
-	add: '新增',
+	addExclusionRule: '新增排除規則',
+	addHeader: '新增標頭',
+	addInclusionRule: '新增包含規則',
 	addRecord: '新增紀錄',
 	addSecretHeader: '新增加密標頭',
+	addSource: '新增來源',
 	asymmetricStorage: '非對稱儲存',
 	asymmetricStorageDescription: (frag) => {
 		frag.appendText('使用');
@@ -55,6 +58,7 @@ const zhTW: Translations = {
 	bidirectional: '雙向同步',
 	cancel: '取消',
 	cancelled: '已取消',
+	caseSensitive: '區分大小寫',
 	checkConnection: '測試連線',
 	checkConnectionFailed: '連線測試失敗',
 	checkConnectionSuccess: '連線測試成功',
@@ -64,25 +68,23 @@ const zhTW: Translations = {
 		'Sync Engine 會記錄同步狀態以處理本地與遠端檔案之間的變更。此選項允許您選擇性地清除紀錄。警告：此操作可能會導致資料遺失。',
 	completed: '已完成',
 	completedNoop: '已是最新狀態',
-	configurations: '設定項目',
 	configure: '設定',
 	confirm: '確認',
-	confirmDeleteDescription: '請確認要刪除的檔案，未勾選的任務將會重新上傳。',
+	confirmDeleteDescription: '請確認將被刪除的 {{x}} 個本地檔案，未勾選的檔案將會重新上傳。',
 	confirmDeleteInAutoSync: '自動同步時確認刪除',
 	confirmDeleteInAutoSyncDescription:
 		'在自動同步過程中刪除本地檔案前顯示確認視窗。您可以選擇刪除或重新上傳。',
-	confirmTasksDescription: (frag) => {
-		frag.appendText('請確認以下操作：');
-		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: '綠色' });
-		frag.appendText('圖示代表本地操作；');
-		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: '藍色' });
-		frag.appendText('代表遠端操作；');
-		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: '紅色' });
-		frag.appendText('代表本地刪除；');
-		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: '粉紅色' });
-		frag.appendText('代表遠端刪除；而');
-		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: '黃色' });
-		frag.appendText('則代表衝突解決。');
+	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+		const deleteOr = deleteLocal + deleteRemote !== 0;
+		frag.appendText(`同步總共將執行 ${total} 個操作`);
+		if (conflict + deleteLocal + deleteRemote !== 0) frag.appendText('，包含');
+		if (deleteOr) frag.appendText('刪除');
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 個本地檔案`);
+		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' 以及');
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 個遠端檔案`);
+		if (deleteOr && conflict !== 0) frag.appendText('，並');
+		if (conflict !== 0) frag.appendText(`解決 ${conflict} 個衝突`);
+		frag.appendText('：');
 	},
 	confirmTasksInSync: '手動同步時確認操作',
 	confirmTasksInSyncDescription: '顯示待處理的操作，並在您確認後執行（不影響自動同步）。',
@@ -106,9 +108,7 @@ const zhTW: Translations = {
 	download: '下載',
 	downloadModule: '下載模組',
 	edit: '編輯',
-	editHeaders: '編輯標頭',
 	editModuleInformation: '編輯模組資訊',
-	editSources: '編輯來源',
 	enable: '啟用',
 	enableModule: '啟用模組',
 	exclusionRules: '排除規則',
@@ -133,7 +133,7 @@ const zhTW: Translations = {
 	exportLogsFailed: '匯出紀錄失敗',
 	exportLogsToFile: '匯出紀錄至檔案',
 	failed: '失敗',
-	failedTasksDescription: '以下任務在同步過程中失敗：',
+	failedTasksDescription: '同步過程中有 {{x}} 個任務失敗：',
 	failedToDownloadModule: '下載模組 "{{name}}" 失敗',
 	failedToFetchSource: '無法從 "{{url}}" 取得來源',
 	failedToLoadModule: '載入模組 "{{name}}" 失敗',
@@ -143,7 +143,6 @@ const zhTW: Translations = {
 	headerKeyPlaceholder: '標頭名稱',
 	headerValuePlaceholder: '標頭數值',
 	hide: '隱藏',
-	httpInsecureWarning: '請避免使用不安全的 HTTP 協定。',
 	icon: '圖示',
 	iconDescription: (frag) => {
 		frag.appendText('設定此模組顯示於模組管理面板中的圖示，完整圖示清單可參考 ');
@@ -181,6 +180,8 @@ const zhTW: Translations = {
 	keepRemote: '保留遠端',
 	latestSurvive: '以最新修改為主',
 	loadingModules: '正在載入模組…',
+	match: '匹配',
+	matchLabelDescription: '此設定必須在所有裝置上保持一致。',
 	maxFileSize: '檔案大小上限',
 	maxFileSizeDescription:
 		'同步時跳過超過此大小的檔案。此選項適用於有容量限制的雲端服務。請在欄位中修改限制大小。',
@@ -213,19 +214,22 @@ const zhTW: Translations = {
 	moduleManagementDescription:
 		'在專屬面板中管理模組。您可以進行安裝、卸載、更新、啟用、停用、編輯模組或編輯模組來源。',
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
+	moduleSources: '模組來源',
+	moduleSourcesDescription: '編輯取得模組目錄的模組來源，以便安裝第三方 Sync Engine 模組。',
 	moveLocal: '移動本地',
 	moveRemote: '移動遠端',
 	name: '名稱',
 	namePlaceholder: '輸入模組顯示名稱',
+	noHeaderConfigured: '尚未設定標頭。',
 	noInstalledModulesFound: '未找到已安裝的模組。',
 	noMatchingModulesFound: '未找到符合條件的模組。',
 	noModulesAvailable: '無可用模組。',
+	noRuleConfigured: '尚未設定規則。',
+	noSourceConfigured: '尚未設定來源。',
 	none: '無',
 	noticeStatusOnMobile: '行動裝置同步狀態通知',
 	noticeStatusOnMobileDescription: '同步進行時於行動裝置上顯示通知訊息（取代桌面版的狀態列）。',
 	official: '官方',
-	omittedInvalidEntry: '已忽略 {{count}} 項無效條目。',
-	openPanel: '開啟面板',
 	realtimeSync: '即時同步',
 	realtimeSyncDescription:
 		'當檔案經修改後立即自動觸發同步。請在欄位中修改檔案變更到觸發同步之間的延遲時間。',
@@ -235,7 +239,6 @@ const zhTW: Translations = {
 	realtimeSyncPlaceholder: '輸入同步延遲（例如 500ms, 5s）',
 	recordsCleared: '紀錄已清除',
 	remoteMigration: '遠端遷移',
-	remove: '移除',
 	removeLocal: '移除本地',
 	removeRecord: '移除紀錄',
 	removeRemote: '移除遠端',
@@ -247,10 +250,28 @@ const zhTW: Translations = {
 	scheduledSyncPlaceholder: '輸入間隔時間（例如 10min, 0.5h）',
 	searchModules: '搜尋模組',
 	selectAll: '全選',
+	settingTips: (frag, { labels, addLabel }) => {
+		const p = frag.createEl('p', { text: '感謝您選擇 Sync Engine！請參閱 ' });
+		p.createEl('a', {
+			attr: { href: 'https://sync.consensia.cc/usage/settings' },
+			text: '文件',
+		});
+		p.appendText('以瞭解各項設定的詳細說明。設定標籤：');
+		const ul = frag.createEl('ul', 'list-none ps-0!');
+		for (const label of labels) {
+			const li = ul.createEl('li');
+			const flair = addLabel(li, label);
+			flair.addClass('m-0');
+			li.appendText(` ${flair.ariaLabel}`);
+		}
+	},
 	showInstalledOnly: '僅顯示已安裝',
 	showProgress: '顯示進度',
 	skip: '跳過',
-	sourcesDescription: '新增模組來源 URL。儲存時將自動忽略空白與無效的資料列。',
+	someModulesHidden:
+		'由於 Sync Engine 外掛程式版本過舊，部分模組已隱藏。請更新外掛程式以查看完整模組目錄。',
+	speed: '速度',
+	speedLabelDescription: '正確設定此選項可能會提升同步速度。',
 	startMigration: '開始遷移',
 	startNonInteractiveSync: '啟動非互動式同步',
 	startSync: '開始同步',
@@ -307,6 +328,9 @@ const zhTW: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: '上傳',
 	walkingRemote: '正在掃描遠端檔案',
+	xConfigured: '已設定 {{x}} 項',
+	xEnabled: '已啟用 {{x}} 個模組',
+	xSelected: '（已選擇 {{x}} 項）',
 };
 
 export default zhTW;

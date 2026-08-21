@@ -1,15 +1,20 @@
-import type { Settings } from '@';
+import type { Context, Settings } from '@';
 import type { DatabaseSync } from 'uni-kv';
-import { ExtraButtonComponent, Notice, Setting } from 'obsidian';
-import type { Translate } from '@/modules/I18n';
+import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
+import type { ModuleCtor } from '@/modules/Extensibility';
+import type { Fragment, Translate } from '@/modules/I18n';
 import type {
 	CheckConnectionResult,
 	ConflictResolverEntry,
 	DeciderEntry,
 	RemoteFsEntry,
 } from '@/modules/Registrar';
+import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { General, MaybePromise } from '@/types';
 import toErrorMessage from '@/utils/to-error-message';
+import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
+import ModuleManagement from './module-management';
+import { s } from './utils';
 
 const CHECK_CONNECTION_INTERVAL = 10_000;
 
@@ -18,7 +23,6 @@ export type HeadSettingTranslations = {
 	moduleAutoUpdateDescription: string;
 	moduleManagement: string;
 	moduleManagementDescription: string;
-	openPanel: string;
 	backend: string;
 	backendDescription: string;
 	syncStrategy: string;
@@ -28,57 +32,173 @@ export type HeadSettingTranslations = {
 	checkConnection: string;
 	conflictResolveStrategy: string;
 	conflictResolveStrategyDescription: string;
+	xEnabled: string;
+	settingTips: Fragment<{ labels: Array<LabelDefinition>; addLabel: typeof addLabel }>;
 };
 
+type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs: string }>;
+
 export default function headSettings(
-	el: HTMLElement,
 	ctx: {
 		translate: Translate<HeadSettingTranslations>;
 		saveSettings: () => Promise<void>;
 		settings: Settings;
-		openModuleManagement: () => void;
 		remoteFsRegistry: Map<string, RemoteFsEntry>;
 		deciderRegistry: Map<string, DeciderEntry>;
 		conflictResolverRegistry: Map<string, ConflictResolverEntry>;
 		getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
-		memoryDB: DatabaseSync<General, { lastCheckedFs: string }>;
+		memoryDB: CheckConnectionDB;
+		loadedModules: Map<string, ModuleCtor>;
+		matchLabel: () => LabelDefinition;
+		speedLabel: () => LabelDefinition;
 	},
-) {
+	getSettingTab: () => PluginSettingTab | undefined,
+): CallableOrObjectTree {
 	const {
+		loadedModules,
 		translate,
 		saveSettings,
 		settings,
-		openModuleManagement,
 		remoteFsRegistry,
 		deciderRegistry,
 		getCheckConnection,
 		memoryDB,
 		conflictResolverRegistry,
+		matchLabel,
+		speedLabel,
 	} = ctx;
+	return {
+		10: s(() => ({
+			desc: translate('settingTips', { addLabel, labels: [matchLabel(), speedLabel()] }),
+			name: 'dummy',
+			render: (setting) => {
+				setting.settingEl.addClass('sync-engine-setting-tip');
+				queueMicrotask(() => {
+					const tab = getSettingTab();
+					if (!tab) return;
+					const recurseLabel = (items: Array<AugmentedSettingDefinitionItem>) => {
+						for (const item of items) {
+							if ('labels' in item && item.labels) {
+								const name = tab
+									.getElementForDefinition(item)
+									?.querySelector('.setting-item-name');
+								if (!name) return;
+								for (const label of item.labels) addLabel(name, label);
+							}
+							if ('items' in item) recurseLabel(item.items as never);
+						}
+					};
+					recurseLabel(tab.settingItems);
+				});
+			},
+			search: false,
+		})),
+		20: s(() => ({
+			desc: translate('backendDescription'),
+			labels: [matchLabel()],
+			name: translate('backend'),
+			render: (setting) => {
+				let checks!: ReturnType<typeof setupCheckConnection>;
+				setting
+					.addExtraButton((button) => {
+						checks = setupCheckConnection({
+							button: button
+								.setTooltip(translate('checkConnection'))
+								.onClick(() => void checks.check(true)),
+							getCheckConnection,
+							memoryDB,
+							settings,
+							translate,
+						});
+						void checks.check(false);
+					})
+					.addDropdown((dropdown) => {
+						for (const [key, { prettyName }] of remoteFsRegistry)
+							dropdown.addOption(key, prettyName());
+						dropdown.setValue(settings.remoteFs).onChange((value) => {
+							settings.remoteFs = value;
+							void checks.check();
+							void saveSettings();
+						});
+					});
+				return checks.cleanup;
+			},
+		})),
+		30: s(() => ({
+			desc: translate('moduleManagementDescription'),
+			displayValue: translate('xEnabled', { x: loadedModules.size }),
+			name: translate('moduleManagement'),
+			page: () => new ModuleManagement(ctx as Context),
+			type: 'page',
+		})),
+		40: s(() => ({
+			control: { key: 'moduleAutoUpdate', type: 'toggle' },
+			desc: translate('moduleAutoUpdateDescription'),
+			name: translate('moduleAutoUpdate'),
+		})),
+		50: s(() => ({
+			control: {
+				key: 'decider',
+				options: Object.fromEntries(
+					[...deciderRegistry].map(([key, { prettyName }]) => [key, prettyName()]),
+				),
+				type: 'dropdown',
+			},
+			desc: translate('syncStrategyDescription'),
+			name: translate('syncStrategy'),
+		})),
+		60: s(() => ({
+			control: {
+				key: 'conflictResolver',
+				options: Object.fromEntries(
+					[...conflictResolverRegistry].map(([key, { prettyName }]) => [
+						key,
+						prettyName(),
+					]),
+				),
+				type: 'dropdown',
+			},
+			desc: translate('conflictResolveStrategyDescription'),
+			name: translate('conflictResolveStrategy'),
+		})),
+	};
+}
 
-	let statusButton: ExtraButtonComponent | undefined;
-
+function setupCheckConnection({
+	memoryDB,
+	getCheckConnection,
+	settings,
+	translate,
+	button,
+}: {
+	memoryDB: CheckConnectionDB;
+	getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
+	settings: Settings;
+	translate: Translate<HeadSettingTranslations>;
+	button: ExtraButtonComponent;
+}) {
+	let timeout: number | undefined;
 	const possibleClasses = [
 		'color-[--color-green]',
 		'color-[--color-red]',
-		'color-neutral-600',
+		'color-[-text-faint]',
 		'animate-spin',
 	];
-	const setChecking = (button: ExtraButtonComponent) => {
+	const setChecking = () => {
 		button.setIcon('loader-circle');
 		const ele = button.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClasses(['animate-spin', 'color-neutral-600']);
+		ele.addClasses(['animate-spin', 'color-[-text-faint]']);
 	};
-	const setSuccess = (button: ExtraButtonComponent) => {
+	const setSuccess = () => {
 		button.setIcon('check');
 		const ele = button.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
 		ele.addClasses(['color-[--color-green]']);
 	};
-	const setError = (button: ExtraButtonComponent) => {
+	const setError = () => {
 		button.setIcon('cloud-off');
 		const ele = button.extraSettingsEl.firstElementChild;
 		if (!ele) return;
@@ -86,100 +206,53 @@ export default function headSettings(
 		ele.addClasses(['color-[--color-red]']);
 	};
 	const scheduleCheckConnection = () =>
-		window.setTimeout(() => void checkConnection(), CHECK_CONNECTION_INTERVAL);
+		(timeout = window.setTimeout(() => void check(), CHECK_CONNECTION_INTERVAL));
 
-	const checkConnection = async (force = false, skipGC = false) => {
-		if (!statusButton) return;
-		if (!statusButton.extraSettingsEl.isConnected && !skipGC) {
-			statusButton = undefined;
-			return;
-		}
+	const check = async (force = false) => {
 		if (memoryDB.getMeta('lastCheckedFs') === settings.remoteFs && !force) {
-			setSuccess(statusButton);
+			setSuccess();
 			return;
 		}
 		if (!settings.remoteFs) {
-			setError(statusButton);
+			setError();
 			return;
 		}
 
 		try {
-			setChecking(statusButton);
+			setChecking();
 			const result = await getCheckConnection()();
 			if (result.success) {
 				memoryDB.setMeta('lastCheckedFs', settings.remoteFs);
-				setSuccess(statusButton);
+				setSuccess();
 				if (force) new Notice(translate('checkConnectionSuccess'));
 			} else {
-				setError(statusButton);
+				setError();
 				if (force) new Notice(`${translate('checkConnectionFailed')}: ${result.reason}`);
 				else scheduleCheckConnection();
 			}
 		} catch (error) {
-			setError(statusButton);
+			setError();
 			if (force)
 				new Notice(`${translate('checkConnectionFailed')}: ${toErrorMessage(error)}`);
 			else scheduleCheckConnection();
 		}
 	};
 
-	new Setting(el)
-		.setName(translate('backend'))
-		.setDesc(translate('backendDescription'))
-		.addExtraButton((button) => {
-			statusButton = button
-				.setTooltip(translate('checkConnection'))
-				.onClick(() => void checkConnection(true));
-		})
-		.addDropdown((dropdown) => {
-			for (const [key, { prettyName }] of remoteFsRegistry)
-				dropdown.addOption(key, prettyName());
-			dropdown.setValue(settings.remoteFs).onChange((value) => {
-				settings.remoteFs = value;
-				void checkConnection();
-				void saveSettings();
-			});
-		});
-	void checkConnection(false, true);
+	return { check, cleanup: () => window.clearTimeout(timeout) };
+}
 
-	new Setting(el)
-		.setName(translate('moduleManagement'))
-		.setDesc(translate('moduleManagementDescription'))
-		.addButton((button) =>
-			button.setButtonText(translate('openPanel')).onClick(openModuleManagement).setCta(),
-		);
-
-	new Setting(el)
-		.setName(translate('moduleAutoUpdate'))
-		.setDesc(translate('moduleAutoUpdateDescription'))
-		.addToggle((toggle) =>
-			toggle.setValue(settings.moduleAutoUpdate).onChange((value) => {
-				settings.moduleAutoUpdate = value;
-				void saveSettings();
-			}),
-		);
-
-	new Setting(el)
-		.setName(translate('syncStrategy'))
-		.setDesc(translate('syncStrategyDescription'))
-		.addDropdown((dropdown) => {
-			for (const [key, { prettyName }] of deciderRegistry)
-				dropdown.addOption(key, prettyName());
-			dropdown.setValue(settings.decider).onChange((value) => {
-				settings.decider = value;
-				void saveSettings();
-			});
-		});
-
-	new Setting(el)
-		.setName(translate('conflictResolveStrategy'))
-		.setDesc(translate('conflictResolveStrategyDescription'))
-		.addDropdown((dropdown) => {
-			for (const [key, { prettyName }] of conflictResolverRegistry)
-				dropdown.addOption(key, prettyName());
-			dropdown.setValue(settings.conflictResolver).onChange((value) => {
-				settings.conflictResolver = value;
-				void saveSettings();
-			});
-		});
+function addLabel(
+	element: Element,
+	{
+		text,
+		tooltip,
+		color = 'var(--interactive-accent)',
+		textColor = 'var(--text-on-accent)',
+	}: LabelDefinition,
+) {
+	const tag = element.createSpan({ cls: 'flair', text });
+	setTooltip(tag, tooltip);
+	tag.style.setProperty('--flair-color', textColor);
+	tag.style.setProperty('--flair-background', color);
+	return tag;
 }

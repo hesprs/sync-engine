@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.1.0 - 2026-08-21
+
+### UI Modernization
+
+- Modernized the settings interface with Obsidian v1.13 declarative setting API. Sync Engine settings are now searchable in the search bar by @hesprs.
+- Use native sub-pages to replace previously modals for module management, module sources, inclusion and exclusion rules, and custom headers by @hesprs.
+- Added inline settings validation with clearer feedback for invalid values, malformed rules, URLs, and header entries by @hesprs.
+- Added **Match** and **Speed** labels to settings that should be consistent across devices or can affect synchronization performance by @hesprs.
+- Improved module management with clearer enabled-module counts, compatibility notices, and an alternative GitHub-hosted module source for restricted networks by @hesprs.
+- Improved sync confirmation and failure details with operation counts, selected-task counts, and clearer direction-aware task icons by @hesprs.
+- Improved compatibility on older devices by refactoring Unicode regular-expression usage by @hesprs.
+- Fixed secret custom headers not being resolved correctly from Obsidian's secret storage by @brycepollack.
+- Fixed file deletion to respect Obsidian's local trash, system trash, and permanent deletion settings by @hesprs.
+- Improved glob rules by normalizing valid patterns and rejecting malformed patterns during editing by @hesprs.
+- Added an explicit default exclusion for Sync Engine's module directory to reduce accidental synchronization of executable modules by @hesprs.
+
 ## Sync Engine v3.0.6 - 2026-08-14
 
 - Added **Mirror remote** and **Mirror local** sync strategies.

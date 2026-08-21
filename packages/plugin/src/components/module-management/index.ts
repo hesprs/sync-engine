@@ -21,12 +21,12 @@ export type ModuleManagementTranslations = {
 	deleteModule: string;
 	editModuleInformation: string;
 	official: string;
+	someModulesHidden: string;
 };
 
 export type ModuleManagementHooks = {
 	onQuery: Hook<[string]>;
 	onShowInstalledOnlyChange: Hook<[boolean]>;
-	onSourcesChange: Hook;
 };
 
 export type ModuleManagementContext = {
@@ -42,6 +42,7 @@ export type ModuleManagementContext = {
 	translate: Translate<ModuleManagementTranslations>;
 	updateModuleMeta: (meta: AugmentedModuleMeta) => Promise<void>;
 	app: ObsidianApp;
+	pluginOutdated: boolean;
 };
 
 export function mountModuleManagementList(

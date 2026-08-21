@@ -54,7 +54,7 @@ export default class Encryption {
 				priority: 7919,
 			}),
 			registerSetting({
-				apply: (el) => encryptionSetting(el, this.ctx as Context, this.moduleSettings),
+				apply: encryptionSetting(this.ctx as Context, this.moduleSettings),
 				priority: 1355,
 			}),
 		);

@@ -7,8 +7,8 @@ import smartMergeBaseTextWrapper from '@/wrapper';
 const { bytes, file, fs } = testKit;
 const db = openMemoryDB<{ baseText: string }>('smart-merge-wrapper-test');
 
-function store() {
-	return db.getStore('baseText') as unknown as StoreAsync<string>;
+function store(): StoreAsync<string> {
+	return db.getStore('baseText') as never;
 }
 
 beforeEach(() => {

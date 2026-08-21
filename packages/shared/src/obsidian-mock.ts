@@ -18,7 +18,7 @@ export const Platform = {
 };
 
 export function normalizePath(path: string) {
-	return path.replaceAll('\\', '/').replaceAll(/\/+/gv, '/');
+	return path.replaceAll('\\', '/').replaceAll(/\/+/gu, '/');
 }
 
 export class Notice {

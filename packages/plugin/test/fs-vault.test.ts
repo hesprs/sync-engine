@@ -166,14 +166,14 @@ function createVaultStub(options: VaultHarnessOptions): VaultHarness {
 	};
 
 	const cached = createCachedTree(options);
-	const app = {
+	const app: App = {
 		vault: {
 			adapter,
-			config: options.config,
+			config: { ...options.config },
 			getAbstractFileByPath: (path: string) => cached.get(path),
 		},
 		workspace: { layoutReady: true },
-	} as unknown as App;
+	} as never;
 	const request = createVaultRequest(app);
 
 	return {

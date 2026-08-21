@@ -56,7 +56,7 @@ If not all your devices have WebDAV Sync updated to 2.5.12 or later, you can go 
 
 Sync Engine is a revolutionary solution for vault syncing. Its not only a syncing plugin, it is a modular platform that everyone can build upon.
 
-The core ships the infrastructure, and all backends (WebDAV, S3, GDrive) and features (i18n, optimization, sync strategy) come from composable modules. You and your AI agents can build your own modules via convenient SDK, extend the plugin, contribute to community, all without modifying the source code.
+The core ships the infrastructure, and all backends (WebDAV, S3, GDrive) and features (i18n, optimization, sync strategy) come from composable modules. You can build your own modules via convenient SDK, extend the plugin, contribute to community, all without modifying the source code.
 
 Access Sync Engine documentation at [`sync.consensia.cc`](https://sync.consensia.cc), which contains usage guides, existing modules, permission claims, benchmarking, and documentation on how to build a module.
 
@@ -104,7 +104,7 @@ Sync Engine fits the gap: you want to choose your own storage, you want the plug
 ## Usage
 
 1. Download and enable `Sync Engine` from Obsidian plugin store.
-2. Open "Module management" panel, install needed translations, backends and optional features.
+2. Open "Module management" setting, install needed translations, backends and optional features.
 3. Fill the necessary information about your cloud service in the settings interface.
 4. Start your first sync from command palette or ribbon button.
 5. Review the sync tasks that will be performed.

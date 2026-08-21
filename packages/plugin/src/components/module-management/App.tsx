@@ -21,6 +21,7 @@ export default function App(props: {
 	const [showInstalledOnly, setShowInstalledOnlySignal] = createSignal(false);
 	const [hasLoaded, setHasLoaded] = createSignal(false);
 	const [isLoading, setIsLoading] = createSignal(false);
+	const [isPluginOutdated, setIsPluginOutdated] = createSignal(props.ctx.pluginOutdated);
 	const [pendingByName, setPendingByName] = createSignal<
 		Record<string, PendingAction | undefined>
 	>({});
@@ -35,11 +36,17 @@ export default function App(props: {
 		if (props.isUnmounted()) return;
 		setIsLoading(true);
 		try {
-			const modules = await props.ctx.fetchSources();
+			const seen = new Set<string>();
+			const modules = (await props.ctx.fetchSources()).filter(({ id }) => {
+				if (seen.has(id)) return false;
+				seen.add(id);
+				return true;
+			});
 			if (props.isUnmounted()) return;
 			setSourceModules(modules);
 			syncSnapshots();
 			setHasLoaded(true);
+			setIsPluginOutdated(props.ctx.pluginOutdated);
 		} finally {
 			if (!props.isUnmounted()) setIsLoading(false);
 		}
@@ -90,14 +97,10 @@ export default function App(props: {
 	const unsubscribeShowInstalledOnly = props.hooks.onShowInstalledOnlyChange.subscribe(
 		(enabled) => setShowInstalledOnlySignal(enabled),
 	);
-	const unsubscribeSourcesChange = props.hooks.onSourcesChange.subscribe(() => {
-		void refreshSources();
-	});
 
 	onCleanup(() => {
 		unsubscribeQuery();
 		unsubscribeShowInstalledOnly();
-		unsubscribeSourcesChange();
 	});
 
 	onMount(() => {
@@ -141,6 +144,11 @@ export default function App(props: {
 							/>
 						)}
 					</For>
+				</div>
+			</Show>
+			<Show when={isPluginOutdated()}>
+				<div class="text-center text-[--text-muted]">
+					{props.ctx.translate('someModulesHidden')}
 				</div>
 			</Show>
 		</div>

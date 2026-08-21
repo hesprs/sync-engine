@@ -18,7 +18,7 @@ function assertSignature(params: RequestParam) {
 	expect(params.headers?.['x-amz-date']).toMatch(/^\d{8}T\d{6}Z$/v);
 	expect(params.headers?.['x-amz-security-token']).toBe('session-token');
 	expect(params.headers?.authorization).toMatch(
-		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/v,
+		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/u,
 	);
 }
 

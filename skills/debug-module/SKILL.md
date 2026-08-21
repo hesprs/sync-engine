@@ -10,6 +10,7 @@ When writing a debug module, you need to produce a plain, self-contained JS ESM 
 - Register a request middleware to log raw request raw request and response.
 - Register a filesystem wrapper to trace the files.
 - Subscribe to Sync Engine events and (execute code to) gather information when event fires.
+- Wrap and reassign a property in `Context` to intercept calls.
 
 You must:
 

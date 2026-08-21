@@ -70,11 +70,17 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 It is simple to start using Sync Engine:
 
 1. Download and enable `Sync Engine` from Obsidian plugin store.
-2. Open "Module management" panel, install needed translations, backends and optional features.
+2. Open "Module management" page, install needed translations, backends and optional features.
 3. Fill the necessary information about your cloud service in the settings interface.
 4. Start your first sync from command palette or ribbon button.
 5. Review the sync tasks that will be performed.
 6. Click "Confirm", and your files will arrive the configured backend at the speed of light.
+
+::: tip
+
+Sync Engine requires minimum version of Obsidian v1.13.0. If you are on Android or iOS, the cutoff is Android System Webview 98 or iOS 15.4. It cannot function normally on devices below these thresholds.
+
+:::
 
 ## Development
 

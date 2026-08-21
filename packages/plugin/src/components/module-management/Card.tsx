@@ -37,7 +37,7 @@ export default function Card(props: {
 	};
 
 	return (
-		<div class="sync-engine-card flex min-h-40 flex-col gap-3 rounded-[--radius-s] border border-[--background-modifier-border] px-4 py-3 bg-[--background-primary-alt]">
+		<div class="flex min-h-40 flex-col gap-3 rounded-[--radius-s] border border-[--background-modifier-border] px-4 py-3 bg-[--background-primary-alt]">
 			<div class="flex items-start justify-between gap-3">
 				<div class="flex min-w-0 text-base font-semibold text-[--text-normal] break-words">
 					<span
@@ -52,13 +52,15 @@ export default function Card(props: {
 			<div class="flex flex-1 flex-col gap-2">
 				<div class="flex flex-wrap gap-2 text-xs text-[--text-muted]">
 					<Show when={props.module.source === OFFICIAL_SOURCE}>
-						<span class="flair prominent">{props.ctx.translate('official')}</span>
+						<span class="flair m-0 sync-engine-prominent">
+							{props.ctx.translate('official')}
+						</span>
 					</Show>
 					<Show when={isInstalled()}>
-						<span class="flair">{props.ctx.translate('installed')}</span>
+						<span class="flair m-0">{props.ctx.translate('installed')}</span>
 					</Show>
 					<Show when={hasUpdate()}>
-						<span class="flair">{props.ctx.translate('updateAvailable')}</span>
+						<span class="flair m-0">{props.ctx.translate('updateAvailable')}</span>
 					</Show>
 				</div>
 				<div class="flex-1 text-sm text-[--text-muted] break-words">

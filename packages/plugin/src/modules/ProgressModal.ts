@@ -19,6 +19,13 @@ export type DeleteConfirmReturn = {
 	reupload: Array<RemoveLocal>;
 };
 
+type TaskCounts = {
+	total: number;
+	deleteLocal: number;
+	deleteRemote: number;
+	conflict: number;
+};
+
 export default class ProgressModal extends Modal {
 	private readonly moduleCleanupCallbacks: Array<() => void> = [];
 	private readonly t: Translate<Translations>;
@@ -58,7 +65,9 @@ export default class ProgressModal extends Modal {
 					this.open();
 					this.renderDone();
 				}
-				this.description?.setText(this.t('failedTasksDescription'));
+				this.description?.setText(
+					this.t('failedTasksDescription', { x: failedTasks.length }),
+				);
 				renderFailedTasks(this.detailContainer as HTMLDivElement, failedTasks);
 				this.showDetails();
 				failedTasks.length = 0;
@@ -72,10 +81,10 @@ export default class ProgressModal extends Modal {
 				const { unmount, getState } = mountFileTree(
 					this.detailContainer as HTMLDivElement,
 					tasks,
-					this.t('selectAll'),
+					this.t,
 				);
 				const cleanupUnmount = this.modalCleanupCallbacks.subscribe(unmount);
-				this.description?.setText(this.t('confirmDeleteDescription'));
+				this.description?.setText(this.t('confirmDeleteDescription', { x: tasks.length }));
 				this.showDetails();
 				this.renderConfirmCancel(() => {
 					const { selected, deselected } = getState();
@@ -94,10 +103,20 @@ export default class ProgressModal extends Modal {
 				const { unmount, getState } = mountFileTree(
 					this.detailContainer as HTMLDivElement,
 					tasks,
-					this.t('selectAll'),
+					this.t,
 				);
 				const cleanupUnmount = this.modalCleanupCallbacks.subscribe(unmount);
-				this.description?.setText(this.t('confirmTasksDescription'));
+				const taskCounts: TaskCounts = {
+					conflict: 0,
+					deleteLocal: 0,
+					deleteRemote: 0,
+					total: tasks.length,
+				};
+				for (const { name } of tasks)
+					if (name === 'removeLocal') taskCounts.deleteLocal++;
+					else if (name === 'removeRemote') taskCounts.deleteRemote++;
+					else if (name === 'resolveConflict') taskCounts.conflict++;
+				this.description?.setText(this.t('confirmTasksDescription', taskCounts));
 				this.showDetails();
 				this.renderConfirmCancel(() => {
 					const { selected } = getState();
@@ -120,7 +139,7 @@ export default class ProgressModal extends Modal {
 		completed: string;
 		failedTasksDescription: string;
 		confirmDeleteDescription: string;
-		confirmTasksDescription: Fragment;
+		confirmTasksDescription: Fragment<TaskCounts>;
 		hide: string;
 		confirm: string;
 		cancel: string;
@@ -135,7 +154,7 @@ export default class ProgressModal extends Modal {
 			.addButton((button) => {
 				button
 					.setButtonText(this.t('stopSync'))
-					.setWarning()
+					.setDestructive()
 					.onClick(() => {
 						this.dispatch('syncCanceled');
 						return new Promise<void>((resolve) => {
@@ -157,7 +176,7 @@ export default class ProgressModal extends Modal {
 			.addButton((button) => {
 				button
 					.setButtonText(this.t('cancel'))
-					.setWarning()
+					.setDestructive()
 					.onClick(() => this.close());
 			})
 			.addButton((button) =>

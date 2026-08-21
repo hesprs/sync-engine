@@ -14,7 +14,7 @@ Sync Engine implements a series of mechanisms to minimize the attack surface bro
 
 Sync Engine accesses and modifies vault files for basic syncing and module management requirements.
 
-It obtains the last modified time and file size for each file to detect changes; reads files and uploads to configured syncing backend; and updates or deletes local files according to detected remote changes. Deleted files are moved to system or Obsidian trash folder.
+It obtains the last modified time and file size for each file to detect changes; reads files and uploads to configured syncing backend; and updates or deletes local files according to detected remote changes. Deleted files follow Obsidian's trash setting and can go to system trash, the vault trash folder, or be permanently deleted.
 
 Sync Engine only accesses and modifies vault files during sync runs, and it never tries to access files that are explicitly excluded by [inclusion and exclusion rules](./settings#inclusion-and-exclusion-rules).
 
@@ -29,7 +29,7 @@ Sync Engine only makes network requests for the two purposes below:
 
 Requests made for syncing purpose only happen during sync runs.
 
-Module sources are fetched only when automatic module update starts or user opens the module management panel. Sync Engine only fetches module sources defined in the "Module sources" setting. Modules are only downloaded when the user manually downloads a module or during module auto update.
+Module sources are fetched only when automatic module update starts or user opens the module management page. Sync Engine only fetches module sources defined in the "Module sources" setting. Modules are only downloaded when the user manually downloads a module or during module auto update.
 
 The only default module source is `https://sync.consensia.cc/modules.json`, `sync.consensia.cc` is hosted on GitHub pages, whose source code is 100% transparent and verifiable in Sync Engine GitHub repository.
 

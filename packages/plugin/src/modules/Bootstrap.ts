@@ -1,9 +1,8 @@
-import type { Context, Events, Translations } from '@';
+import type { Events, Translations } from '@';
 import type { App, SecretStorage } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { DatabaseSync } from 'uni-kv';
 import type { FileTreeTranslations } from '@/components/file-tree';
-import type { HeadersEditorTranslations } from '@/components/HeadersEditorModal';
 import type { ModuleEditorTranslations } from '@/components/ModuleEditorModal';
 import type { UnknownModuleTranslations } from '@/components/UnknownModuleModal';
 import type { BatchOptimizer, Fs, MemoryControlSharedState } from '@/fs';
@@ -13,6 +12,7 @@ import type { FeaturesSettingTranslations } from '@/settings/features';
 import type { FilterSettingTranslations } from '@/settings/filter';
 import type { HeadSettingTranslations } from '@/settings/head';
 import type { MiscellaneousSettingTranslations } from '@/settings/miscellaneous';
+import type { ModulesTranslations } from '@/settings/module-management';
 import type { Stat, TogglableValue } from '@/types';
 import en from '@/en';
 import {
@@ -28,12 +28,6 @@ import {
 	cancellationMiddleware,
 	optimizationCompanionWrapper,
 } from '@/fs';
-import controlsSettings from '@/settings/controls';
-import developmentSettings from '@/settings/development';
-import featuresSettings from '@/settings/features';
-import filterSettings from '@/settings/filter';
-import headSettings from '@/settings/head';
-import miscellaneousSettings from '@/settings/miscellaneous';
 import {
 	bidirectionalDecider,
 	mirrorLocalDecider,
@@ -50,7 +44,6 @@ import type {
 	DeciderEntry,
 	RemoteFsEntry,
 	OptimizerEntry,
-	SettingEntry,
 	FsWrapperEntry,
 	RemoteRequestMiddlewareEntry,
 	LocalRequestMiddlewareEntry,
@@ -100,10 +93,10 @@ export default class Bootstrap {
 		FilterSettingTranslations &
 		HeadSettingTranslations &
 		MiscellaneousSettingTranslations &
-		HeadersEditorTranslations &
 		UnknownModuleTranslations &
 		ModuleEditorTranslations &
-		FileTreeTranslations;
+		FileTreeTranslations &
+		ModulesTranslations;
 	declare readonly settings: {
 		maxMemoryConsumption: TogglableValue;
 		maxRequestConcurrency: TogglableValue;
@@ -130,7 +123,6 @@ export default class Bootstrap {
 			registerLocalOptimizer: (optimizer: OptimizerEntry) => void;
 			registerRemoteOptimizer: (optimizer: OptimizerEntry) => void;
 			registerRemoteLister: (entry: RemoteListerEntry) => () => boolean;
-			registerSetting: (entry: SettingEntry) => () => boolean;
 			registerConflictResolver: (id: string, entry: ConflictResolverEntry) => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => void;
 			registerLocalRequestMiddleware: (entry: LocalRequestMiddlewareEntry) => void;
@@ -151,7 +143,6 @@ export default class Bootstrap {
 			registerLocalOptimizer,
 			registerRemoteOptimizer,
 			registerRemoteLister,
-			registerSetting,
 			registerConflictResolver,
 			registerRemoteRequestMiddleware,
 			registerLocalRequestMiddleware,
@@ -392,25 +383,6 @@ export default class Bootstrap {
 		registerConflictResolver('skip', {
 			prettyName: () => t('skip'),
 			resolver: () => {},
-		});
-
-		registerSetting({ apply: (el) => headSettings(el, this.ctx as Context), priority: 0 });
-		registerSetting({
-			apply: (el) => featuresSettings(el, this.ctx as Context),
-			priority: 1000,
-		});
-		registerSetting({
-			apply: (el) => controlsSettings(el, this.ctx as Context),
-			priority: 2000,
-		});
-		registerSetting({ apply: (el) => filterSettings(el, this.ctx as Context), priority: 3000 });
-		registerSetting({
-			apply: (el) => miscellaneousSettings(el, this.ctx as Context),
-			priority: 4000,
-		});
-		registerSetting({
-			apply: (el) => developmentSettings(el, this.ctx as Context),
-			priority: 5000,
 		});
 
 		this.cleanupCallbacks.push(

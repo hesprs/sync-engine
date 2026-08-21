@@ -1,14 +1,12 @@
-import type { Events } from '@';
-import type { App, Plugin, RequestUrlParam } from 'obsidian';
+import type { App, RequestUrlParam } from 'obsidian';
 import type { StoreAsync } from 'uni-kv';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import hash from '@repo/shared/crypto';
-import { PluginSettingTab, requestUrl } from 'obsidian';
+import { requestUrl } from 'obsidian';
 import type { BatchOptimizer, Fs, ListReporter, RootFs, VaultRequest } from '@/fs';
 import type { ConflictResolver, Decider } from '@/sync';
 import type { General, MaybePromise, RecordStat, Stat, Binary } from '@/types';
 import { createVaultRequest, VaultFs } from '@/fs';
-import type { On } from './EventBus';
 import type { RecordStore } from './Storage';
 
 type RejectableWrapper<T> = (value: T) => T | undefined;
@@ -24,10 +22,7 @@ export type RemoteFsEntry = {
 	checkConnection: (request: Request) => MaybePromise<CheckConnectionResult>;
 };
 export type DeciderEntry = { decider: Decider; prettyName: () => string };
-export type ConflictResolverEntry = {
-	prettyName: () => string;
-	resolver: ConflictResolver;
-};
+export type ConflictResolverEntry = { prettyName: () => string; resolver: ConflictResolver };
 
 type GeneralFn = (...args: ReadonlyArray<General>) => unknown;
 type RejectableApply<F extends GeneralFn> = (...input: Parameters<F>) => ReturnType<F> | undefined;
@@ -38,11 +33,6 @@ export type RemoteLister = (
 ) => MaybePromise<Array<Stat>>;
 export type RemoteListerEntry = OrderedApplyEntry<RemoteLister>;
 export type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
-
-export type SettingEntry = {
-	priority: number;
-	apply: (el: HTMLElement) => void;
-};
 
 export type RequestParam = Omit<RequestUrlParam, 'body'> & { body?: string | Binary };
 export type RequestResponse = {
@@ -70,15 +60,12 @@ const request: Request = async (params: RequestParam | string) => {
 };
 
 export default class Registrar {
-	private settingTab?: SettingTab;
 	private readonly cleanupCallbacks: Array<() => void> = [];
-
 	private readonly localFsWrapperRegistry = new Set<FsWrapperEntry>();
 	private readonly remoteFsWrapperRegistry = new Set<FsWrapperEntry>();
 	private readonly localOptimizerRegistry = new Set<OptimizerEntry>();
 	private readonly remoteOptimizerRegistry = new Set<OptimizerEntry>();
 	private readonly remoteListerRegistry = new Set<RemoteListerEntry>();
-	private readonly settingRegistry = new Set<SettingEntry>();
 	private readonly remoteRequestMiddlewareRegistry = new Set<RemoteRequestMiddlewareEntry>();
 	private readonly localRequestMiddlewareRegistry = new Set<LocalRequestMiddlewareEntry>();
 	private readonly remoteFsRegistry = new Map<string, RemoteFsEntry>();
@@ -90,15 +77,9 @@ export default class Registrar {
 	constructor(
 		private readonly ctx: {
 			app: App;
-			on: On<Events>;
 			getRecordStore: (namespace?: string) => StoreAsync<RecordStat>;
 		},
-	) {
-		this.cleanupCallbacks.push(
-			ctx.on('moduleLoaded', this.rerenderSettingTab),
-			ctx.on('moduleUnloaded', this.rerenderSettingTab),
-		);
-	}
+	) {}
 
 	private readonly getVaultRequest = () =>
 		wrapInOrder(createVaultRequest(this.ctx.app), this.localRequestMiddlewareRegistry);
@@ -165,14 +146,7 @@ export default class Registrar {
 		return { localFs, record, remoteFs };
 	};
 
-	private readonly addSettingTab = (plugin: Plugin) => {
-		this.settingTab = new SettingTab(plugin, this.settingRegistry);
-		plugin.addSettingTab(this.settingTab);
-	};
-	private readonly rerenderSettingTab = () => this.settingTab?.display();
-
 	root = {
-		addSettingTab: this.addSettingTab,
 		conflictResolverRegistry: this.conflictResolverRegistry,
 		createLocalFs: this.createLocalFs,
 		createRemoteFs: this.createRemoteFs,
@@ -202,29 +176,10 @@ export default class Registrar {
 		registerRemoteLister: setRegister(this.remoteListerRegistry),
 		registerRemoteOptimizer: setRegister(this.remoteOptimizerRegistry),
 		registerRemoteRequestMiddleware: setRegister(this.remoteRequestMiddlewareRegistry),
-		registerSetting: setRegister(this.settingRegistry),
 		remoteFsRegistry: this.remoteFsRegistry,
-		rerenderSettingTab: this.rerenderSettingTab,
 	};
 
 	readonly dispose = () => this.cleanupCallbacks.splice(0).forEach((fn) => fn());
-}
-
-class SettingTab extends PluginSettingTab {
-	constructor(
-		plugin: Plugin,
-		private readonly settingRegistry: Set<SettingEntry>,
-	) {
-		super(plugin.app, plugin);
-		this.icon = 'cpu';
-	}
-
-	display(): void {
-		this.containerEl.empty();
-		const sorted: Record<number, (el: HTMLElement) => void> = {};
-		for (const { priority, apply } of this.settingRegistry) sorted[priority] = apply;
-		for (const render of Object.values(sorted)) render(this.containerEl);
-	}
 }
 
 function wrapInOrder<T>(initial: T, set: Set<OrderedWrapperEntry<T>>) {
@@ -259,7 +214,7 @@ function applyFirst<F extends GeneralFn>(set: Set<OrderedApplyEntry<F>>, ...inpu
 	throw new Error('No qualified apply found!');
 }
 
-function setRegister<T>(registry: Set<T>) {
+export function setRegister<T>(registry: Set<T>) {
 	return (entry: T) => {
 		registry.add(entry);
 		return () => registry.delete(entry);
