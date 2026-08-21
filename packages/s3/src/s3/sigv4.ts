@@ -2,12 +2,14 @@ import type { Binary, Request, RequestParam } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
 import { encodeURIComponent3986 } from '@repo/shared/path';
 import { md5 } from 'hash-wasm';
+import type { S3DB } from '..';
 
 export type UrlStyle = 'virtualHosted' | 'path';
 
 export type SigV4Options = {
 	accessKeyId: string;
 	secretAccessKey: string;
+	sessionToken?: string;
 	region: string;
 	service: string;
 };
@@ -97,17 +99,23 @@ function buildCanonicalHeaders(headers: Record<string, string>): {
 }
 
 export async function signRequest(
-	params: RequestParam & { method: string; headers: Record<string, string> },
-	credentials: SigV4Options,
+	{
+		method,
+		url,
+		headers: rawHeaders,
+		body,
+	}: RequestParam & { method: string; headers: Record<string, string> },
+	{ sessionToken, secretAccessKey, region, service, accessKeyId }: SigV4Options,
 	date: Date,
+	db: S3DB,
 ): Promise<InternalRequest> {
-	const { method, url, headers: rawHeaders, body } = params;
 	const host = new URL(url).host;
 
 	const headers: Record<string, string> = { ...rawHeaders };
 	headers.host ??= host;
 	headers['x-amz-date'] = getAmzDate(date);
 	headers['x-amz-content-sha256'] = 'UNSIGNED-PAYLOAD';
+	if (sessionToken) headers['x-amz-security-token'] = sessionToken;
 
 	const { canonicalUri, canonicalQuery } = canonicalizeUrl(url);
 	const { canonicalHeaders: canonicalHeadersStr, signedHeaders } = buildCanonicalHeaders(headers);
@@ -123,7 +131,7 @@ export async function signRequest(
 
 	const dateStamp = getDateStamp(date);
 	const amzDate = getAmzDate(date);
-	const credentialScope = `${dateStamp}/${credentials.region}/${credentials.service}/aws4_request`;
+	const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
 
 	const stringToSign = [
 		'AWS4-HMAC-SHA256',
@@ -132,27 +140,34 @@ export async function signRequest(
 		await sha256Hex(encoder.encode(canonicalRequest)),
 	].join('\n');
 
-	const kDate = await hmac(encoder.encode(`AWS4${credentials.secretAccessKey}`), dateStamp);
-	const kRegion = await hmac(kDate, credentials.region);
-	const kService = await hmac(kRegion, credentials.service);
-	const kSigning = await hmac(kService, 'aws4_request');
+	let kSigning: Binary;
+	const marker = `${secretAccessKey}~${dateStamp}~${region}~${service}`;
+	const cache = db.getMeta('signingKey');
+	if (db.getMeta('signingKeyMarker') === marker && cache) kSigning = cache;
+	else {
+		const kDate = await hmac(encoder.encode(`AWS4${secretAccessKey}`), dateStamp);
+		const kRegion = await hmac(kDate, region);
+		const kService = await hmac(kRegion, service);
+		kSigning = await hmac(kService, 'aws4_request');
+		db.setMeta('signingKeyMarker', marker);
+		db.setMeta('signingKey', kSigning);
+	}
 	const signature = toHex(await hmac(kSigning, stringToSign));
-
-	const credential = `${credentials.accessKeyId}/${credentialScope}`;
+	const credential = `${accessKeyId}/${credentialScope}`;
 	headers.authorization = `AWS4-HMAC-SHA256 Credential=${credential}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
-	// Strips host from actually sent headers to prevent Electron from throwing
+	// Strips host from actually sent headers to prevent Electron throwing
 	delete headers.host;
 	return { body, headers, method, url };
 }
 
-export function sigv4Middleware(request: Request, credentials: SigV4Options): Request {
+export function sigv4Middleware(request: Request, credentials: SigV4Options, db: S3DB): Request {
 	return async (params) => {
 		const input =
 			typeof params === 'string'
 				? { headers: {}, method: 'GET', url: params }
 				: { ...params, headers: params.headers ?? {}, method: params.method ?? 'GET' };
-		return request(await signRequest(input, credentials, new Date()));
+		return request(await signRequest(input, credentials, new Date(), db));
 	};
 }
 

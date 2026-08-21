@@ -12,7 +12,13 @@ import type { S3FsOptions } from '@/s3/fs';
 import s3BatchDeleteOptimizer from '@/optimizer';
 import S3Fs from '@/s3/fs';
 import { sigv4Middleware } from '@/s3/sigv4';
-import { defaultCredentials, defaultResponse, defaultS3Options, response } from './helpers';
+import {
+	defaultCredentials,
+	defaultResponse,
+	defaultS3Options,
+	memoryDB,
+	response,
+} from './helpers';
 
 const { bytes, deferred, file, stream: createStream } = testKit;
 
@@ -42,7 +48,7 @@ function createS3Fs(options: Partial<S3FsOptions> = {}): S3Harness {
 			calls.push(params);
 			return requestHandler(params);
 		});
-	const request = sigv4Middleware(transport, defaultCredentials);
+	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);
 	return {
 		calls,
 		fs: new S3Fs({ ...defaultOptions, ...options, request }),

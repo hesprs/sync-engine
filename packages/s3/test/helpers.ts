@@ -1,4 +1,10 @@
 import type { Binary, RequestResponse } from '@hesprs/sync-engine-sdk';
+import { openMemoryDB } from 'uni-kv';
+
+export const memoryDB = openMemoryDB<
+	Record<string, unknown>,
+	{ signingKey: Binary; signingKeyMarker: string }
+>('s3-test');
 
 export const emptyBinary: Binary = new Uint8Array(0);
 
@@ -16,6 +22,7 @@ export const defaultS3Options = {
 	endpoint: 'https://s3.example.com',
 	region: 'us-east-1',
 	secretAccessKey: 'secret-key',
+	sessionToken: 'session-token',
 	urlStyle: 'path',
 } as const;
 
@@ -24,6 +31,7 @@ export const defaultCredentials = {
 	region: defaultS3Options.region,
 	secretAccessKey: defaultS3Options.secretAccessKey,
 	service: 's3',
+	sessionToken: defaultS3Options.sessionToken,
 } as const;
 
 export function response(
