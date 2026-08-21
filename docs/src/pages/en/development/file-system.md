@@ -29,7 +29,7 @@ type RecordStat = { isDir: false; local: string; remote: string } | { isDir: tru
 type RecordStatsMap = Map<string, RecordStat>;
 ```
 
-In `FileStat`, `uid` is often Etagm MD5 hash or equivalent, whose equality means the file content is unchanged. `mtime` is Unix timestamp in milliseconds.
+In `FileStat`, `uid` is often Etag, MD5 hash or equivalent, whose equality means the file content is unchanged. `mtime` is Unix timestamp in milliseconds.
 
 ## `RootFs`
 

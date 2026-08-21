@@ -45,7 +45,7 @@ const pluginConfig = defineConfig({
 
 const sdkConfig = defineConfig({
 	...sharedConfig,
-	clean: !dev && dtsPass,
+	clean: dtsPass,
 	dts: dtsPass,
 	entry: { dev: 'src/sdk/dev.ts', index: 'src/sdk/index.ts' },
 	unbundle: !dtsPass,

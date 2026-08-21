@@ -26,12 +26,11 @@ function parsePath(path: string): Path {
 }
 
 function escapeRegExpCharacter(character: string): string {
-	return /[\\\(\)\[\]\{\}\|^$.*+?]/v.test(character) ? `\\${character}` : character;
+	return /[\\()[\]{}|^$.*+?]/u.test(character) ? `\\${character}` : character;
 }
 
 function compileSegment(pattern: string, flags: string): SegmentMatcher {
 	let source = '';
-
 	for (let index = 0; index < pattern.length; index++) {
 		const character = pattern[index];
 		if (character === '*') {
@@ -48,31 +47,44 @@ function compileSegment(pattern: string, flags: string): SegmentMatcher {
 		}
 
 		const end = pattern.indexOf(']', index + 1);
-		if (end === -1) {
-			source += String.raw`\[`;
-			continue;
-		}
-
-		let characterClass = pattern.slice(index + 1, end);
+		if (end === -1 || end === index + 1)
+			throw new Error(
+				`Invalid glob pattern: unclosed or empty character class at index ${index}`,
+			);
+		const characterClass = pattern.slice(index + 1, end);
 		const negated = characterClass.startsWith('!') || characterClass.startsWith('^');
-		if (negated) characterClass = characterClass.slice(1);
-		characterClass = characterClass.replaceAll('\\', String.raw`\\`);
-		source += `[${negated ? '^' : ''}${characterClass}]`;
+		if (negated && characterClass.length === 1)
+			throw new Error(
+				`Invalid glob pattern: empty negated character class at index ${index}`,
+			);
+		source += `[${negated ? '^' : ''}${negated ? characterClass.slice(1) : characterClass}]`;
 		index = end;
 	}
-
 	return new RegExp(`^${source}$`, flags);
 }
 
-function compileRule(rule: GlobMatchRule): CompiledRule | undefined {
-	const expression = rule.expr.trim().replaceAll('\\', '/');
-	if (!expression || expression === '/') return undefined;
-
+export function normalizeGlob(glob: string): string | undefined {
+	const expression = glob.trim().replaceAll('\\', '/');
+	if (!expression || expression === '/') return;
 	const anchored = expression.startsWith('/');
 	const directoryOnly = expression.endsWith('/');
-	const body = expression.replaceAll(/^\/+|\/+$/gv, '');
-	if (!body) return undefined;
+	const body = expression.replaceAll(/^\/+|\/+$/gu, '');
+	if (!body) return;
+	const parts = body.split('/').filter(Boolean);
+	for (const part of parts)
+		try {
+			compileSegment(part, '');
+		} catch {
+			return;
+		}
+	return `${anchored ? '/' : ''}${parts.join('/')}${directoryOnly ? '/' : ''}`;
+}
 
+function compileRule(rule: GlobMatchRule): CompiledRule {
+	const expression = rule.expr;
+	const anchored = expression.startsWith('/');
+	const directoryOnly = expression.endsWith('/');
+	const body = expression.slice(anchored ? 1 : 0, directoryOnly ? -1 : undefined);
 	const parts = body.split('/');
 	const flags = rule.caseSensitive ? '' : 'i';
 	const segments = parts.map((part) =>
@@ -85,15 +97,6 @@ function compileRule(rule: GlobMatchRule): CompiledRule | undefined {
 		hasSlash: parts.length > 1,
 		segments,
 	};
-}
-
-function compileRules(rules: Array<GlobMatchRule>): Array<CompiledRule> {
-	const compiled: Array<CompiledRule> = [];
-	for (const rule of rules) {
-		const result = compileRule(rule);
-		if (result) compiled.push(result);
-	}
-	return compiled;
 }
 
 function matchesSegments(
@@ -221,8 +224,8 @@ export function prepareGlobMatch(
 	inclusion: Array<GlobMatchRule> = [],
 	exclusion: Array<GlobMatchRule> = [],
 ): (path: string) => GlobMatchResult {
-	const inclusions = compileRules(inclusion);
-	const exclusions = compileRules(exclusion);
+	const inclusions = inclusion.map(compileRule);
+	const exclusions = exclusion.map(compileRule);
 
 	return (path) => {
 		const parsed = parsePath(path);

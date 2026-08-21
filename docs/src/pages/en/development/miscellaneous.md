@@ -4,34 +4,15 @@
 
 ### Root runtime exports
 
-| Export             | Description                                                                                         |
-| ------------------ | --------------------------------------------------------------------------------------------------- |
-| `digOriginal`      | Unwraps nested wrappers to root filesystem. See [file system](./file-system#digoriginal).           |
-| `prefixWrapper`    | Exposes a prefixed directory as an `Fs` root. See [file system](./file-system#prefixwrapper).       |
-| `setNeedMigration` | Adds migration confirmation behavior to a setting toggle.                                           |
-| `pipe`             | Transfer a file between two filesystems with auto-streaming. See [file system](./file-system#pipe). |
-| `readWithSize`     | Read a file with auto-streaming by size threshold. See [file system](./file-system#readwithsize).   |
-| `writeWithValue`   | Write a value with auto-streaming by input type. See [file system](./file-system#writewithvalue).   |
-
-### `setNeedMigration`
-
-`setNeedMigration` adds migration confirmation behavior to an Obsidian `ToggleComponent`. It is useful for settings whose existing value changes the remote file layout or representation.
-
-```ts
-import { setNeedMigration } from '@hesprs/sync-engine-sdk';
-
-setNeedMigration(ctx, {
-  toggle,
-  needMigration: (value) => recordStoreExists(),
-  content: (value) => (value ? 'Encryption will be enabled.' : 'Encryption will be disabled.'),
-  apply: async (value) => {
-    settings.enabled = value;
-    await ctx.saveSettings();
-  },
-});
-```
-
-When `needMigration` returns false or is omitted, `apply` runs immediately. When it returns true, the toggle is reverted until the user either starts migration or chooses to toggle without migration. The helper is the public API; its internal migration modal is not exported.
+| Export             | Description                                                                                                                                 |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `digOriginal`      | Unwraps nested wrappers to root filesystem. See [file system](./file-system#digoriginal).                                                   |
+| `prefixWrapper`    | Exposes a prefixed directory as an `Fs` root. See [file system](./file-system#prefixwrapper).                                               |
+| `setNeedMigration` | Adds migration confirmation behavior to a setting toggle; see [Settings And UI](./settings-and-ui#migration-aware-toggles).                 |
+| `pipe`             | Transfer a file between two filesystems with auto-streaming. See [file system](./file-system#pipe).                                         |
+| `readWithSize`     | Read a file with auto-streaming by size threshold. See [file system](./file-system#readwithsize).                                           |
+| `writeWithValue`   | Write a value with auto-streaming by input type. See [file system](./file-system#writewithvalue).                                           |
+| `s`                | Combines a parent setting definition with nested setting definitions. See [Settings And UI](./settings-and-ui#nested-setting-registration). |
 
 ### `/dev` runtime exports
 
@@ -50,9 +31,9 @@ When `needMigration` returns false or is omitted, `apply` runs immediately. When
 | Events               | `Dispatch`, `On`                                                                                                                                                                                                                                                                                             |
 | Core data            | `Binary`, `MaybePromise`, `Progress`, `FileStat`, `FolderStat`, `Stat`, `StatsMap`, `RecordStat`, `RecordStatsMap`                                                                                                                                                                                           |
 | Filesystem           | `RootFs`, `WrappedFs`, `Fs`, `WriteAtom`, `DeleteAtom`, `MoveAtom`, `MkdirAtom`, `InputAtom`, `CustomAtom`, `OutputAtom`, `OptimizerInput`, `OptimizerOutput`, `BatchOptimizer`                                                                                                                              |
-| Registration         | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `RemoteLister`, `RemoteListerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `ConflictResolverEntry`, `Request`, `CheckConnectionResult`                                                         |
+| Registration         | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `RemoteLister`, `RemoteListerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request`, `CheckConnectionResult`              |
 | Sync                 | `TaskNames`, `BaseTask`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
-| Storage              | `RecordStore`, `StoreAsync`, `StoreSync`, `DatabaseAsync`, `DatabaseSync`                                                                                                                                                                                                                                    |
+| Storage              | `RecordStore`, `StoreAsync`, `StoreSync`, `StoreOperations`, `DatabaseAsync`, `DatabaseSync`                                                                                                                                                                                                                 |
 | Modules              | `ModuleMeta`, `AugmentedModuleMeta`                                                                                                                                                                                                                                                                          |
 | Request              | `VaultRequest`, `RequestParam`, `RequestResponse` (the response type returned by `Request`)                                                                                                                                                                                                                  |
 | Internationalization | `ObsidianLanguageCode`, `Fragment`, `TranslationResource`, `Translate`                                                                                                                                                                                                                                       |
@@ -111,8 +92,6 @@ These Context members are not commonly used by modules. Explore source code to o
 | `disableModule(id)`        | Unloads and disables a module.                                                                     |
 | `updateModuleMeta(meta)`   | Updates stored module metadata.                                                                    |
 | `addSettingTab(plugin)`    | Adds Sync Engine setting tab to supplied Obsidian plugin.                                          |
-| `openModuleManagement()`   | Opens module-management UI.                                                                        |
-| `closeModuleManagement()`  | Closes module-management UI.                                                                       |
 
 ### Filesystem and Sync
 
@@ -152,22 +131,22 @@ These Context members are not commonly used by modules. Explore source code to o
 
 ### Core and Host
 
-| Member                    | Purpose                                                     |
-| ------------------------- | ----------------------------------------------------------- |
-| `settings`                | Merged `Settings` object.                                   |
-| `events`                  | Merged `Events` map.                                        |
-| `i18n`                    | Merged `Translations` resource map.                         |
-| `app`                     | Obsidian `App` instance.                                    |
-| `addCommand(cmd)`         | Registers Obsidian command and returns it.                  |
-| `registerEvent(ref)`      | Registers Obsidian `EventRef` for automatic cleanup.        |
-| `addRibbonIcon(...)`      | Adds ribbon icon and returns element.                       |
-| `addStatusBarItem()`      | Adds and returns status-bar element.                        |
-| `saveSettings()`          | Persists current `settings`.                                |
-| `on(key, cb)`             | Subscribes to typed SDK event. See [events](./events).      |
-| `dispatch(key, payload?)` | Dispatches typed SDK event. See [events](./events).         |
-| `isIdle`                  | SynthKernel `Ref<boolean>` for sync-idle state.             |
-| `translate`               | Translates a key from merged resources. See [i18n](./i18n). |
-| `rerenderSettingTab()`    | Renders contributed settings again.                         |
+| Member                    | Purpose                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `settings`                | Merged `Settings` object.                                                                              |
+| `events`                  | Merged `Events` map.                                                                                   |
+| `i18n`                    | Merged `Translations` resource map.                                                                    |
+| `app`                     | Obsidian `App` instance.                                                                               |
+| `addCommand(cmd)`         | Registers Obsidian command and returns it.                                                             |
+| `registerEvent(ref)`      | Registers Obsidian `EventRef` for automatic cleanup.                                                   |
+| `addRibbonIcon(...)`      | Adds ribbon icon and returns element.                                                                  |
+| `addStatusBarItem()`      | Adds and returns status-bar element.                                                                   |
+| `saveSettings()`          | Persists current `settings`.                                                                           |
+| `on(key, cb)`             | Subscribes to typed SDK event. See [events](./events).                                                 |
+| `dispatch(key, payload?)` | Dispatches typed SDK event. See [events](./events).                                                    |
+| `isIdle`                  | SynthKernel `Ref<boolean>` for sync-idle state.                                                        |
+| `translate`               | Translates a key from merged resources. See [Settings And UI](./settings-and-ui#internationalization). |
+| `rerenderSettingTab()`    | Renders contributed settings again.                                                                    |
 
 ### Framework Members
 

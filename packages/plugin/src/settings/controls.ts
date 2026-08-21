@@ -1,7 +1,9 @@
 import type { Settings } from '@';
-import { Setting } from 'obsidian';
+import type { SettingGroupItem } from 'obsidian';
 import type { Translate } from '@/modules/I18n';
-import { generateSettingEntry } from './generate-entry';
+import type { CallableOrObjectTree } from '@/modules/Setting';
+import type { LabelDefinition } from './utils';
+import { renderTogglableValue, s } from './utils';
 
 export type ControlsSettingTranslations = {
 	controls: string;
@@ -17,65 +19,74 @@ export type ControlsSettingTranslations = {
 	maxMemoryConsumption: string;
 	maxMemoryConsumptionDescription: string;
 	maxMemoryConsumptionPlaceholder: string;
-	invalidValue: string;
 };
 
-export default function controlsSettings(
-	el: HTMLElement,
-	ctx: {
-		translate: Translate<ControlsSettingTranslations>;
-		saveSettings: () => Promise<void>;
-		settings: Settings;
-	},
-) {
-	const { translate, saveSettings, settings } = ctx;
-	const invalidValue = translate('invalidValue');
-	new Setting(el).setName(translate('controls')).setHeading();
-
-	generateSettingEntry({
-		container: el,
-		desc: translate('maxFileSizeDescription'),
-		field: settings.maxFileSize,
-		invalidValue,
-		name: translate('maxFileSize'),
-		placeholder: translate('maxFileSizePlaceholder'),
-		rejectZero: true,
-		saveSettings,
-		type: 'fileSize',
-	});
-
-	generateSettingEntry({
-		container: el,
-		desc: translate('maxRequestConcurrencyDescription'),
-		field: settings.maxRequestConcurrency,
-		invalidValue,
-		name: translate('maxRequestConcurrency'),
-		placeholder: translate('maxRequestConcurrencyPlaceholder'),
-		rejectZero: true,
-		saveSettings,
-		type: 'number',
-	});
-
-	generateSettingEntry({
-		container: el,
-		desc: translate('minRequestIntervalDescription'),
-		field: settings.minRequestInterval,
-		invalidValue,
-		name: translate('minRequestInterval'),
-		placeholder: translate('minRequestIntervalPlaceholder'),
-		saveSettings,
-		type: 'time',
-	});
-
-	generateSettingEntry({
-		container: el,
-		desc: translate('maxMemoryConsumptionDescription'),
-		field: settings.maxMemoryConsumption,
-		invalidValue,
-		name: translate('maxMemoryConsumption'),
-		placeholder: translate('maxMemoryConsumptionPlaceholder'),
-		rejectZero: true,
-		saveSettings,
-		type: 'fileSize',
-	});
+export default function controlsSettings({
+	translate,
+	saveSettings,
+	settings,
+	speedLabel,
+}: {
+	translate: Translate<ControlsSettingTranslations>;
+	saveSettings: () => Promise<void>;
+	settings: Settings;
+	speedLabel: () => LabelDefinition;
+}): CallableOrObjectTree {
+	return {
+		2000: s(
+			(self) => ({
+				heading: translate('controls'),
+				items: Object.values(self).map((node) => node(node) as SettingGroupItem),
+				type: 'group',
+			}),
+			{
+				1000: s(() => ({
+					desc: translate('maxFileSizeDescription'),
+					name: translate('maxFileSize'),
+					render: renderTogglableValue({
+						field: settings.maxFileSize,
+						placeholder: translate('maxFileSizePlaceholder'),
+						rejectZero: true,
+						saveSettings,
+						type: 'fileSize',
+					}),
+				})),
+				2000: s(() => ({
+					desc: translate('maxRequestConcurrencyDescription'),
+					labels: [speedLabel()],
+					name: translate('maxRequestConcurrency'),
+					render: renderTogglableValue({
+						field: settings.maxRequestConcurrency,
+						placeholder: translate('maxRequestConcurrencyPlaceholder'),
+						rejectZero: true,
+						saveSettings,
+						type: 'number',
+					}),
+				})),
+				3000: s(() => ({
+					desc: translate('minRequestIntervalDescription'),
+					labels: [speedLabel()],
+					name: translate('minRequestInterval'),
+					render: renderTogglableValue({
+						field: settings.minRequestInterval,
+						placeholder: translate('minRequestIntervalPlaceholder'),
+						saveSettings,
+						type: 'time',
+					}),
+				})),
+				4000: s(() => ({
+					desc: translate('maxMemoryConsumptionDescription'),
+					labels: [speedLabel()],
+					name: translate('maxMemoryConsumption'),
+					render: renderTogglableValue({
+						field: settings.maxMemoryConsumption,
+						placeholder: translate('maxMemoryConsumptionPlaceholder'),
+						rejectZero: true,
+						saveSettings,
+						type: 'fileSize',
+					}),
+				})),
+			},
+		),
+	};
 }

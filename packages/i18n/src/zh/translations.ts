@@ -1,9 +1,12 @@
 import type { Translations } from '@hesprs/sync-engine-sdk';
 
 const zh: Translations = {
-	add: '添加',
+	addExclusionRule: '添加排除规则',
+	addHeader: '添加请求头',
+	addInclusionRule: '添加包含规则',
 	addRecord: '添加记录',
 	addSecretHeader: '添加机密请求头',
+	addSource: '添加源',
 	asymmetricStorage: '非对称存储',
 	asymmetricStorageDescription: (frag) => {
 		frag.appendText('使用 ');
@@ -43,6 +46,7 @@ const zh: Translations = {
 	bidirectional: '双向同步',
 	cancel: '取消',
 	cancelled: '已取消',
+	caseSensitive: '区分大小写',
 	checkConnection: '测试连接',
 	checkConnectionFailed: '测试连接失败',
 	checkConnectionSuccess: '测试连接成功',
@@ -52,25 +56,23 @@ const zh: Translations = {
 		'Sync Engine 会记录同步状态，以便在本地和远程文件之间解析同步操作。此选项允许您选择性地清除记录。警告：此操作很可能会导致数据丢失。',
 	completed: '已完成',
 	completedNoop: '已是最新状态',
-	configurations: '配置',
 	configure: '配置',
 	confirm: '确认',
-	confirmDeleteDescription: '请确认将被删除的文件，未勾选的任务将会被重新上传。',
+	confirmDeleteDescription: '请确认即将被删除的 {{x}} 个本地文件，未选中的文件将被重新上传。',
 	confirmDeleteInAutoSync: '自动同步时确认删除',
 	confirmDeleteInAutoSyncDescription:
 		'在自动触发的同步过程中，显示将被删除的本地文件的确认提示。您可以选择删除或重新上传它们。',
-	confirmTasksDescription: (frag) => {
-		frag.appendText('请确认以下操作：');
-		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: '绿色' });
-		frag.appendText(' 图标表示本地操作；');
-		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: '蓝色' });
-		frag.appendText(' 表示远程操作；');
-		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: '红色' });
-		frag.appendText(' 表示本地删除；');
-		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: '粉色' });
-		frag.appendText(' 表示远程删除；');
-		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: '黄色' });
-		frag.appendText(' 则表示冲突解决。');
+	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+		const deleteOr = deleteLocal + deleteRemote !== 0;
+		frag.appendText(`同步总共将执行 ${total} 项操作`);
+		if (conflict + deleteLocal + deleteRemote !== 0) frag.appendText('，其中包括');
+		if (deleteOr) frag.appendText('删除');
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 个本地文件`);
+		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText('以及');
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 个远程文件`);
+		if (deleteOr && conflict !== 0) frag.appendText('，并');
+		if (conflict !== 0) frag.appendText(`解决 ${conflict} 个冲突`);
+		frag.appendText('：');
 	},
 	confirmTasksInSync: '手动同步时确认操作',
 	confirmTasksInSyncDescription: '显示待处理的操作并在确认后执行（不影响自动同步）。',
@@ -94,9 +96,7 @@ const zh: Translations = {
 	download: '下载',
 	downloadModule: '下载模块',
 	edit: '编辑',
-	editHeaders: '编辑请求头',
 	editModuleInformation: '编辑模块信息',
-	editSources: '编辑源',
 	enable: '启用',
 	enableModule: '启用模块',
 	exclusionRules: '排除规则',
@@ -121,7 +121,7 @@ const zh: Translations = {
 	exportLogsFailed: '导出日志失败',
 	exportLogsToFile: '导出日志到文件',
 	failed: '失败',
-	failedTasksDescription: '以下任务在同步过程中失败：',
+	failedTasksDescription: '同步期间有 {{x}} 个任务失败：',
 	failedToDownloadModule: '下载模块 “{{name}}” 失败',
 	failedToFetchSource: '从 “{{url}}” 获取源失败',
 	failedToLoadModule: '加载模块 “{{name}}” 失败',
@@ -131,7 +131,6 @@ const zh: Translations = {
 	headerKeyPlaceholder: '请求头键',
 	headerValuePlaceholder: '请求头值',
 	hide: '隐藏',
-	httpInsecureWarning: '请避免使用不安全的 HTTP 协议。',
 	icon: '图标',
 	iconDescription: (frag) => {
 		frag.appendText('设置此模块在模块管理面板中显示的图标，完整图标可在 ');
@@ -167,6 +166,8 @@ const zh: Translations = {
 	keepRemote: '保留远程',
 	latestSurvive: '保留最新修改',
 	loadingModules: '正在加载模块…',
+	match: '匹配',
+	matchLabelDescription: '此设置必须在所有设备上保持一致。',
 	maxFileSize: '最大文件大小',
 	maxFileSizeDescription:
 		'在同步过程中跳过超过此大小的文件。此选项对于有存储空间限制的服务非常有用。在输入框中修改大小限制。',
@@ -199,20 +200,23 @@ const zh: Translations = {
 	moduleManagementDescription:
 		'在专用面板中管理模块。您可以安装、卸载、更新、启用、禁用、编辑模块，或编辑模块源。',
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
+	moduleSources: '模块源',
+	moduleSourcesDescription: '编辑获取模块目录的模块源，以便安装第三方 Sync Engine 模块。',
 	moveLocal: '移动本地',
 	moveRemote: '移动远程',
 	name: '名称',
 	namePlaceholder: '输入模块显示名称',
+	noHeaderConfigured: '未配置请求头。',
 	noInstalledModulesFound: '未找到已安装的模块。',
 	noMatchingModulesFound: '未找到匹配的模块。',
 	noModulesAvailable: '没有可用模块。',
+	noRuleConfigured: '未配置规则。',
+	noSourceConfigured: '未配置源。',
 	none: '无',
 	noticeStatusOnMobile: '移动端同步状态提示',
 	noticeStatusOnMobileDescription:
 		'同步进行时在移动设备上显示通知提示。在桌面端则会替换状态栏显示。',
 	official: '官方',
-	omittedInvalidEntry: '已忽略 {{count}} 条无效条目。',
-	openPanel: '打开面板',
 	realtimeSync: '实时同步',
 	realtimeSyncDescription:
 		'文件一旦修改即刻自动触发同步。在输入框中修改文件修改到触发同步之间的延迟时间。',
@@ -222,7 +226,6 @@ const zh: Translations = {
 	realtimeSyncPlaceholder: '输入同步延迟（例如 500ms, 5s）',
 	recordsCleared: '记录已清除',
 	remoteMigration: '远程迁移',
-	remove: '移除',
 	removeLocal: '移除本地',
 	removeRecord: '移除记录',
 	removeRemote: '移除远程',
@@ -234,10 +237,28 @@ const zh: Translations = {
 	scheduledSyncPlaceholder: '输入间隔（例如 10min, 0.5h）',
 	searchModules: '搜索模块',
 	selectAll: '全选',
+	settingTips: (frag, { addLabel, labels }) => {
+		const p = frag.createEl('p', { text: '感谢您选择 Sync Engine！访问 ' });
+		p.createEl('a', {
+			attr: { href: 'https://sync.consensia.cc/usage/settings' },
+			text: '文档',
+		});
+		p.appendText('以了解每个设置的详细说明。设置标签：');
+		const ul = frag.createEl('ul', 'list-none ps-0!');
+		for (const label of labels) {
+			const li = ul.createEl('li');
+			const flair = addLabel(li, label);
+			flair.addClass('m-0');
+			li.appendText(` ${flair.ariaLabel}`);
+		}
+	},
 	showInstalledOnly: '仅显示已安装',
 	showProgress: '显示进度',
 	skip: '跳过',
-	sourcesDescription: '添加模块源 URL。保存时将忽略空白行和无效行。',
+	someModulesHidden:
+		'由于 Sync Engine 插件版本过旧，部分模块已隐藏。请更新插件以查看完整模块目录。',
+	speed: '速度',
+	speedLabelDescription: '正确配置此设置可能会提高同步速度。',
 	startMigration: '开始迁移',
 	startNonInteractiveSync: '开始静默同步',
 	startSync: '开始同步',
@@ -293,6 +314,9 @@ const zh: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: '上传',
 	walkingRemote: '正在探测远程文件',
+	xConfigured: '已配置 {{x}} 项',
+	xEnabled: '已启用 {{x}} 个模块',
+	xSelected: '（已选择 {{x}} 项）',
 };
 
 export default zh;

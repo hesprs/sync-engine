@@ -234,7 +234,7 @@ test('chunked writeStream uses exact Nextcloud urls and headers', async () => {
 		{ method: 'MOVE', url: `${uploadFolderUrl}.file` },
 	]);
 	expect(uploadFolderUrl).toMatch(
-		/^https:\/\/dav\.example\.com\/remote\.php\/dav\/uploads\/alice\/[^\/]+\/$/v,
+		/^https:\/\/dav\.example\.com\/remote\.php\/dav\/uploads\/alice\/[^/]+\/$/u,
 	);
 });
 
@@ -444,10 +444,7 @@ test('list uses infinity when enabled', async () => {
 	});
 
 	expect(webdav.calls[0]).toMatchObject({
-		headers: expect.objectContaining({ Depth: 'infinity' }) as unknown as Record<
-			string,
-			string
-		>,
+		headers: expect.objectContaining({ Depth: 'infinity' }) as never,
 		method: 'PROPFIND',
 	});
 	expect(list).toStrictEqual([

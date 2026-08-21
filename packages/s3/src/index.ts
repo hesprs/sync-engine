@@ -10,6 +10,7 @@ import type {
 	Settings,
 	OptimizerEntry,
 	RemoteRequestMiddlewareEntry,
+	Context,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
@@ -49,8 +50,6 @@ export default class S3 {
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
 			registerRemoteOptimizer: (entry: OptimizerEntry) => () => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
-			saveSettings: () => Promise<void>;
-			settings: { remoteFs: string };
 		}>,
 	) {
 		ctx.registerI18n('en', en);
@@ -115,7 +114,7 @@ export default class S3 {
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
-					if (this.ctx.settings.remoteFs !== 's3') return;
+					if (this.settings.remoteFs !== 's3') return;
 					const { accessKeyId, region, secretAccessKey } = resolveConfig();
 					return sigv4Middleware(request, {
 						accessKeyId,
@@ -128,7 +127,7 @@ export default class S3 {
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
-					if (this.ctx.settings.remoteFs !== 's3') return;
+					if (this.settings.remoteFs !== 's3') return;
 					const { value, enabled } = this.moduleSettings.proxyUrl;
 					if (!enabled) return;
 					let proxy: URL;
@@ -148,7 +147,7 @@ export default class S3 {
 				priority: 303,
 			}),
 			registerSetting({
-				apply: (el) => s3Setting(el, this.ctx, this.moduleSettings),
+				apply: s3Setting(this.ctx as Context, this.moduleSettings),
 				priority: 604,
 			}),
 		);

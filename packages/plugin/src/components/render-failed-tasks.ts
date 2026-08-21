@@ -1,6 +1,6 @@
-import { setIcon, setTooltip } from 'obsidian';
+import { setTooltip } from 'obsidian';
 import type { FailedTaskInfo } from '@/modules/Sync';
-import { getTaskIcon } from '@/sync';
+import constructTaskIcon from './construct-task-icon';
 
 function renderFailedTaskRow(
 	itemEl: HTMLDivElement,
@@ -8,8 +8,8 @@ function renderFailedTaskRow(
 ) {
 	const row = itemEl.createDiv();
 	const main = row.createDiv('break-words flex items-center gap-2');
-	const icon = main.createSpan('w-4 h-4 color-[--color-red]');
-	setIcon(icon, getTaskIcon(name, isDir));
+	const icon = main.createSpan('w-[--icon-size] h-[--icon-size] color-[--color-red]');
+	constructTaskIcon(icon, name, isDir);
 	setTooltip(icon, prettyName);
 
 	main.createSpan({ cls: 'text-[--text-muted] whitespace-nowrap', text: prettyName });

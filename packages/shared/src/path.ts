@@ -38,7 +38,7 @@ export function basename(key: string): string {
 export function normalizeUrl(value: string) {
 	const parsedUrl = new URL(value);
 	if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error(`Invalid URL ${value}`);
-	return parsedUrl.toString().replace(/\/+$/v, '');
+	return parsedUrl.toString().replace(/\/+$/u, '');
 }
 
 export function encodeURIComponent3986(url: string) {

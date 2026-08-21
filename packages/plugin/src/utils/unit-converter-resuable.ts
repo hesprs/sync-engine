@@ -25,7 +25,7 @@ export default function createUnitConverter<T extends UnitMap>({
 			return `${round(scaled, 2)} ${entry[0]}`;
 		},
 		parse: (input: string): number | undefined => {
-			const match = /^(?<value>-?\d+(?:\.\d+)?)\s*(?<unit>[a-z]*)$/iv.exec(input.trim());
+			const match = /^(?<value>-?\d+(?:\.\d+)?)\s*(?<unit>[a-z]*)$/iu.exec(input.trim());
 			if (!match?.groups) return undefined;
 			const num = Number.parseFloat(match.groups.value);
 			if (!Number.isFinite(num) || num < 0) return undefined;

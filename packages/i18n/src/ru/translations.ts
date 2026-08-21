@@ -1,9 +1,12 @@
 import type { Translations } from '@hesprs/sync-engine-sdk';
 
 const ru: Translations = {
-	add: 'Добавить',
+	addExclusionRule: 'Добавить правило исключения',
+	addHeader: 'Добавить заголовок',
+	addInclusionRule: 'Добавить правило включения',
 	addRecord: 'Добавить запись',
 	addSecretHeader: 'Добавить секретный заголовок',
+	addSource: 'Добавить источник',
 	asymmetricStorage: 'Асимметричное хранилище',
 	asymmetricStorageDescription: (frag) => {
 		frag.appendText('Используйте ');
@@ -55,6 +58,7 @@ const ru: Translations = {
 	bidirectional: 'Двунаправленная',
 	cancel: 'Отмена',
 	cancelled: 'Отменено',
+	caseSensitive: 'С учётом регистра',
 	checkConnection: 'Проверить соединение',
 	checkConnectionFailed: 'Ошибка проверки соединения',
 	checkConnectionSuccess: 'Соединение успешно проверено',
@@ -64,26 +68,24 @@ const ru: Translations = {
 		'Sync Engine записывает состояния синхронизации для разрешения операций между локальными и удалёнными файлами. Эта опция позволяет выборочно очищать записи. Внимание: это действие может привести к потере данных.',
 	completed: 'Завершено',
 	completedNoop: 'Уже синхронизировано',
-	configurations: 'Конфигурации',
 	configure: 'Настроить',
 	confirm: 'Подтвердить',
 	confirmDeleteDescription:
-		'Пожалуйста, подтвердите файлы, которые будут удалены. Невыбранные задачи будут загружены повторно.',
+		'Пожалуйста, подтвердите удаление локальных файлов (всего {{x}}). Невыбранные файлы будут загружены повторно.',
 	confirmDeleteInAutoSync: 'Подтверждать удаления при автосинхронизации',
 	confirmDeleteInAutoSyncDescription:
 		'Показывать подтверждение для локальных файлов, которые будут удалены во время автоматической синхронизации. Вы сможете выбрать: удалить их или загрузить повторно.',
-	confirmTasksDescription: (frag) => {
-		frag.appendText('Пожалуйста, подтвердите операции ниже: ');
-		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: 'зелёный' });
-		frag.appendText(' значок означает локальную операцию; ');
-		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: 'синий' });
-		frag.appendText(' — удалённую операцию; ');
-		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: 'красный' });
-		frag.appendText(' — локальное удаление; ');
-		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: 'розовый' });
-		frag.appendText(' — удалённое удаление; а ');
-		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: 'жёлтый' });
-		frag.appendText(' — разрешение конфликта.');
+	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+		const deleteOr = deleteLocal + deleteRemote !== 0;
+		frag.appendText(`Всего при синхронизации будет выполнено операций: ${total}`);
+		if (conflict + deleteLocal + deleteRemote !== 0) frag.appendText('. В том числе');
+		if (deleteOr) frag.appendText(' удаление');
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} локальных файл(а/ов)`);
+		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' и');
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} удалённых файл(а/ов)`);
+		if (deleteOr && conflict !== 0) frag.appendText(', а также');
+		if (conflict !== 0) frag.appendText(` разрешение конфликтов: ${conflict}`);
+		frag.appendText(':');
 	},
 	confirmTasksInSync: 'Подтверждать операции при ручной синхронизации',
 	confirmTasksInSyncDescription:
@@ -108,9 +110,7 @@ const ru: Translations = {
 	download: 'Скачать',
 	downloadModule: 'Скачать модуль',
 	edit: 'Редактировать',
-	editHeaders: 'Редактировать заголовки',
 	editModuleInformation: 'Редактировать информацию о модуле',
-	editSources: 'Редактировать источники',
 	enable: 'Включить',
 	enableModule: 'Включить модуль',
 	exclusionRules: 'Правила исключения',
@@ -136,7 +136,7 @@ const ru: Translations = {
 	exportLogsFailed: 'Не удалось экспортировать логи',
 	exportLogsToFile: 'Экспортировать логи в файл',
 	failed: 'Ошибка',
-	failedTasksDescription: 'Следующие задачи завершились ошибкой во время синхронизации:',
+	failedTasksDescription: 'Не удалось выполнить задач во время синхронизации: {{x}}:',
 	failedToDownloadModule: 'Не удалось скачать модуль «{{name}}»',
 	failedToFetchSource: 'Не удалось получить источник из «{{url}}»',
 	failedToLoadModule: 'Не удалось загрузить модуль «{{name}}»',
@@ -146,7 +146,6 @@ const ru: Translations = {
 	headerKeyPlaceholder: 'Ключ заголовка',
 	headerValuePlaceholder: 'Значение заголовка',
 	hide: 'Скрыть',
-	httpInsecureWarning: 'Пожалуйста, избегайте использования незащищённого протокола HTTP.',
 	icon: 'Иконка',
 	iconDescription: (frag) => {
 		frag.appendText(
@@ -188,6 +187,8 @@ const ru: Translations = {
 	keepRemote: 'Оставить удалённую версию',
 	latestSurvive: 'Оставлять последнюю версию',
 	loadingModules: 'Загрузка модулей…',
+	match: 'Совпадение',
+	matchLabelDescription: 'Эта настройка должна быть одинаковой на всех устройствах.',
 	maxFileSize: 'Макс. размер файла',
 	maxFileSizeDescription:
 		'Пропускать файлы, превышающие этот размер, при синхронизации. Полезно для сервисов с ограничением по объёму хранилища. Измените лимит в поле ниже.',
@@ -220,20 +221,24 @@ const ru: Translations = {
 	moduleManagementDescription:
 		'Управление модулями в специальной панели. Вы можете устанавливать, удалять, обновлять, включать, отключать и редактировать модули, а также их источники.',
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
+	moduleSources: 'Источники модулей',
+	moduleSourcesDescription:
+		'Редактируйте источники модулей, из которых формируется каталог. Это позволяет устанавливать сторонние модули Sync Engine.',
 	moveLocal: 'Переместить локальный файл',
 	moveRemote: 'Переместить удалённый файл',
 	name: 'Название',
 	namePlaceholder: 'Введите отображаемое имя модуля',
+	noHeaderConfigured: 'Заголовок не настроен.',
 	noInstalledModulesFound: 'Установленные модули не найдены.',
 	noMatchingModulesFound: 'Подходящие модули не найдены.',
 	noModulesAvailable: 'Нет доступных модулей.',
+	noRuleConfigured: 'Правило не настроено.',
+	noSourceConfigured: 'Источник не настроен.',
 	none: 'Нет',
 	noticeStatusOnMobile: 'Уведомления о статусе на мобильных устройствах',
 	noticeStatusOnMobileDescription:
 		'Отображать всплывающее уведомление на мобильных устройствах во время синхронизации. Заменяет строку состояния, используемую на ПК.',
 	official: 'Официальный',
-	omittedInvalidEntry: 'Пропущено недействительных записей: {{count}}.',
-	openPanel: 'Открыть панель',
 	realtimeSync: 'Синхронизация в реальном времени',
 	realtimeSyncDescription:
 		'Запускать синхронизацию автоматически сразу после изменения файлов. Измените задержку между изменением файла и запуском синхронизации в поле ниже.',
@@ -243,7 +248,6 @@ const ru: Translations = {
 	realtimeSyncPlaceholder: 'Введите задержку (например, 500ms, 5s)',
 	recordsCleared: 'Записи очищены',
 	remoteMigration: 'Миграция удалённого хранилища',
-	remove: 'Удалить',
 	removeLocal: 'Удалить локальный файл',
 	removeRecord: 'Удалить запись',
 	removeRemote: 'Удалить удалённый файл',
@@ -256,11 +260,29 @@ const ru: Translations = {
 	scheduledSyncPlaceholder: 'Введите интервал (например, 10min, 0.5h)',
 	searchModules: 'Поиск модулей',
 	selectAll: 'Выбрать все',
+	settingTips: (frag, { addLabel, labels }) => {
+		const p = frag.createEl('p', { text: 'Спасибо, что выбрали Sync Engine! Откройте ' });
+		p.createEl('a', {
+			attr: { href: 'https://sync.consensia.cc/usage/settings' },
+			text: 'документацию',
+		});
+		p.appendText(' для подробного объяснения каждой настройки. Метки настроек:');
+		const ul = frag.createEl('ul', 'list-none ps-0!');
+		for (const label of labels) {
+			const li = ul.createEl('li');
+			const flair = addLabel(li, label);
+			flair.addClass('m-0');
+			li.appendText(` ${flair.ariaLabel}`);
+		}
+	},
 	showInstalledOnly: 'Только установленные',
 	showProgress: 'Показывать прогресс',
 	skip: 'Пропустить',
-	sourcesDescription:
-		'Добавьте URL-адреса источников модулей. Пустые и недействительные строки будут пропущены при сохранении.',
+	someModulesHidden:
+		'Некоторые модули скрыты, поскольку плагин Sync Engine устарел. Обновите его, чтобы просмотреть полный каталог модулей.',
+	speed: 'Скорость',
+	speedLabelDescription:
+		'Правильная настройка этого параметра может повысить скорость синхронизации.',
 	startMigration: 'Начать миграцию',
 	startNonInteractiveSync: 'Запустить фоновую синхронизацию',
 	startSync: 'Запустить синхронизацию',
@@ -321,6 +343,9 @@ const ru: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: 'Загрузить',
 	walkingRemote: 'Сканирование удалённых файлов',
+	xConfigured: 'Настроено: {{x}}',
+	xEnabled: 'Включено модулей: {{x}}',
+	xSelected: '(выбрано: {{x}})',
 };
 
 export default ru;

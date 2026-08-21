@@ -5,8 +5,8 @@
 	"license": "MIT",
 	"type": "module",
 	"scripts": {
-		"dev:docs": "vitepress dev",
-		"build:docs": "vitepress build",
+		"dev:docs": "bun --bun vitepress dev",
+		"build:docs": "bun --bun vitepress build",
 		"fix": "oxlint --fix --silent && oxfmt",
 		"check": "vue-tsc && oxlint && oxfmt --check"
 	},

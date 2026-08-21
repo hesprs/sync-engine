@@ -1,16 +1,16 @@
 import type { MergeSegment } from './merge';
 
-const HIRAGANA_KATAKANA_RE = /[\p{Script=Hiragana}\p{Script=Katakana}]/v;
-const HAN_RE = /\p{Script=Han}/v;
+const HIRAGANA_KATAKANA_RE = /[\p{Script=Hiragana}\p{Script=Katakana}]/u;
+const HAN_RE = /\p{Script=Han}/u;
 const PROBES: Array<[RegExp, string]> = [
-	[/\p{Script=Thai}/v, 'th'],
-	[/\p{Script=Lao}/v, 'lo'],
-	[/\p{Script=Khmer}/v, 'km'],
-	[/\p{Script=Myanmar}/v, 'my'],
-	[/\p{Script=Tibetan}/v, 'bo'],
+	[/\p{Script=Thai}/u, 'th'],
+	[/\p{Script=Lao}/u, 'lo'],
+	[/\p{Script=Khmer}/u, 'km'],
+	[/\p{Script=Myanmar}/u, 'my'],
+	[/\p{Script=Tibetan}/u, 'bo'],
 ];
 const SPACED_PATTERN =
-	/[\p{L}\p{N}\p{M}]+(?:['’\u02BC\-–][\p{L}\p{N}\p{M}]+)*|[^\p{L}\p{N}\p{M}\s]+|\s+/gv;
+	/[\p{L}\p{N}\p{M}]+(?:['’\u02BC\-–][\p{L}\p{N}\p{M}]+)*|[^\p{L}\p{N}\p{M}\s]+|\s+/gu;
 
 const segmenterCache = new Map<string, Intl.Segmenter>();
 function getSegmenter(locale: string): Intl.Segmenter {
@@ -39,7 +39,7 @@ function processSegments(segments: Array<string>): {
 	let hasTokens = false;
 
 	for (const segment of segments) {
-		if (/^\s+$/v.test(segment)) {
+		if (/^\s+$/u.test(segment)) {
 			if (hasTokens) currentJoint += segment;
 			continue;
 		}
@@ -76,9 +76,9 @@ export function proseSplitter(text: string): MergeSegment {
 }
 
 export function codeSplitter(text: string): MergeSegment {
-	const tokens: Array<string> = text.split(/\n+/v);
+	const tokens: Array<string> = text.split(/\n+/u);
 	return {
-		joints: text.match(/\n+/gv) ?? [],
+		joints: text.match(/\n+/gu) ?? [],
 		splitters: Array.from<undefined>({ length: tokens.length }),
 		tokens,
 	};
@@ -103,7 +103,7 @@ export function documentSplitter(text: string): MergeSegment {
 			continue;
 		}
 
-		const fenceMatch = /^(?<fence>```|~~~|\$\$)/v.exec(line);
+		const fenceMatch = /^(?<fence>```|~~~|\$\$)/u.exec(line);
 		flushJoint();
 
 		if (fenceMatch) {

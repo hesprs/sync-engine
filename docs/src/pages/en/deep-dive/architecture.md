@@ -57,13 +57,13 @@ SynthKernel also supplies reactive primitives used across module boundaries. `Re
 2. **`I18n`** selects translations for the current Obsidian language, registers resources from core and external modules, and provides typed string or `DocumentFragment` translation functions.
 3. **`Storage`** owns the Uni-KV memory database and IndexedDB database. It exposes persistent record stores, module metadata storage, and per-local/remote-pair namespaces.
 4. **`Extensibility`** discovers module metadata, validates sources and integrity, loads enabled JavaScript modules, persists metadata, and manages enable, disable, update, and unload operations. Its security and trust rules are documented in the [Extensibility Contract](./extensibility).
-5. **`Registrar`** is the capability and registry layer. It creates local and remote file systems, applies request middleware and wrappers, selects listers, optimizers, deciders, and conflict resolvers, and exposes registration functions to modules.
-6. **`Sync`** executes one sync run: initialize infrastructure, traverse both sides, filter stats, create and transform tasks, request confirmations, execute tasks, and publish lifecycle events. See [Core Sync Routine](./sync).
-7. **`Observability`** converts events into user-visible status, progress, notices, commands, ribbon controls, and exported logs. Its reactive values are consumed by the progress modal.
-8. **`Scheduler`** turns manual, startup, scheduled, realtime, and vault-change triggers into queued sync requests. It waits for idle state, batches pending requests, and resolves every request in a batch with the same result.
-9. **`ProgressModal`** handles progress display, task confirmation, deletion confirmation, cancellation, and failed-task details. SynthKernel `computed()` values and `hook()` cleanup keep modal state scoped to the modal lifecycle.
-10. **`ModulesModal`** provides the module-management UI. It consumes `Extensibility` APIs for source refresh, download, enablement, update, and deletion, and cleans up mounted reactive UI on close.
-11. **`Bootstrap`** installs the built-in capabilities through `Registrar`: the default decider and conflict resolvers, request middleware, file-system wrappers, optimizers, remote listers, settings, and English translations. It is last so every registration API it needs already exists.
+5. **`Setting`** owns the native Obsidian settings tab, nested setting-definition tree, module setting registration, labels, and settings-page refreshes.
+6. **`Registrar`** is the capability and registry layer. It creates local and remote file systems, applies request middleware and wrappers, selects listers, optimizers, deciders, and conflict resolvers, and exposes registration functions to modules.
+7. **`Sync`** executes one sync run: initialize infrastructure, traverse both sides, filter stats, create and transform tasks, request confirmations, execute tasks, and publish lifecycle events. See [Core Sync Routine](./sync).
+8. **`Observability`** converts events into user-visible status, progress, notices, commands, ribbon controls, and exported logs. Its reactive values are consumed by the progress modal.
+9. **`Scheduler`** turns manual, startup, scheduled, realtime, and vault-change triggers into queued sync requests. It waits for idle state, batches pending requests, and resolves every request in a batch with the same result.
+10. **`ProgressModal`** handles progress display, task confirmation, deletion confirmation, cancellation, and failed-task details. SynthKernel `computed()` values and `hook()` cleanup keep modal state scoped to the modal lifecycle.
+11. **`Bootstrap`** installs built-in sync capabilities through `Registrar` and supplies core translations. Settings are registered by `Setting`, which starts before `Bootstrap` completes the plugin lifecycle.
 
 The dependency direction is intentionally visible in the constructors. For example, `Sync` receives `initializeSync`, `listRemote`, `getDecider`, and `getConflictResolver`; it does not know which backend, wrapper, or middleware supplied them. `Bootstrap` assembles those policies without changing the sync algorithm.
 
@@ -71,7 +71,7 @@ The dependency direction is intentionally visible in the constructors. For examp
 
 External modules extend this same context at runtime. `Extensibility` verifies and imports an approved constructor, adds it to SynthKernel, merges its `moduleSettings`, and adds it to `allModules` so it participates in startup and disposal. Unloading invokes `dispose()`, removes the constructor, and dispatches `moduleUnloaded`.
 
-The module loader is also a security boundary because modules are executable code. Trust, integrity verification, enablement, storage, and runtime privileges are specified in the [Extensibility Contract](./extensibility); module-management UI behavior is covered in [Module Management UI](./module-management-panel).
+The module loader is also a security boundary because modules are executable code. Trust, integrity verification, enablement, storage, and runtime privileges are specified in the [Extensibility Contract](./extensibility); module-management UI behavior is covered in [Module Management UI](./module-management-page).
 
 ## Registration Pattern
 
@@ -89,7 +89,7 @@ Registration entries are consumed according to their role:
 - **Factories and ID maps:** the selected remote backend, decider, and conflict resolver are looked up by the ID in settings. Missing IDs fail with an explicit error.
 - **Wrappers:** request and file-system wrappers are grouped by numeric priority and applied in ascending priority order. Within one priority, the first wrapper that returns a replacement wins; returning `undefined` declines the current value.
 - **First-match pipelines:** listers and optimizers are also priority ordered. The first entry that returns a result supplies the implementation for that operation.
-- **Settings:** setting renderers are ordered by priority and render into the shared plugin settings tab.
+- **Settings:** setting-definition trees are ordered by priority and merged into the native plugin settings tab. See [Settings And UI](../development/settings-and-ui).
 
 Bootstrap uses these same APIs to build the production pipeline. For example, cancellation, rate limiting, retry, custom headers, memory control, optimization, context caching, and asymmetric storage are independent registrations layered around the base request and file-system implementations. Their behavior is specified in [Request Middleware](./request-middleware) and [File System Wrappers](./file-system-wrappers).
 

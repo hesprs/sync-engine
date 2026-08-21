@@ -27,7 +27,7 @@ test('checkConnection uses the request pipeline for signed list requests', async
 	expect(call.method).toBe('GET');
 	expect(call.headers?.['x-amz-content-sha256']).toBe('UNSIGNED-PAYLOAD');
 	expect(call.headers?.authorization).toMatch(
-		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/v,
+		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/u,
 	);
 	const url = new URL(call.url);
 	expect(url.pathname).toBe('/vault/');

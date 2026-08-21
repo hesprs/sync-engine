@@ -1,9 +1,12 @@
 import type { Translations } from '@';
 
 const en: Translations = {
-	add: 'Add',
+	addExclusionRule: 'Add exclusion rule',
+	addHeader: 'Add header',
+	addInclusionRule: 'Add inclusion rule',
 	addRecord: 'Add record',
 	addSecretHeader: 'Add secret header',
+	addSource: 'Add source',
 	asymmetricStorage: 'Asymmetric storage',
 	asymmetricStorageDescription: (frag) => {
 		frag.appendText('Use ');
@@ -55,6 +58,7 @@ const en: Translations = {
 	bidirectional: 'Bidirectional',
 	cancel: 'Cancel',
 	cancelled: 'Cancelled',
+	caseSensitive: 'Case sensitive',
 	checkConnection: 'Check connection',
 	checkConnectionFailed: 'Check connection failed',
 	checkConnectionSuccess: 'Check connection succeeded',
@@ -64,26 +68,24 @@ const en: Translations = {
 		'Sync Engine records sync states to resolve sync operations between local and remote files. This option allows you to clear records. Warning: this action is likely to cause changes in sync decisions.',
 	completed: 'Completed',
 	completedNoop: 'Already synced',
-	configurations: 'Configurations',
 	configure: 'Configure',
 	confirm: 'Confirm',
 	confirmDeleteDescription:
-		'Please confirm files that will be deleted, unselected tasks will be re-uploaded.',
+		'Please confirm the {{x}} local files that will be deleted, unselected files will be re-uploaded.',
 	confirmDeleteInAutoSync: 'Confirm deletions during auto-sync',
 	confirmDeleteInAutoSyncDescription:
 		'Show a confirmation of local files that will be deleted during auto-triggered syncs. You can choose to delete or re-upload them.',
-	confirmTasksDescription: (frag) => {
-		frag.appendText('Please confirm the operations below: a ');
-		frag.createSpan({ cls: 'color-[--color-green] font-bold', text: 'green' });
-		frag.appendText(' icon means local operation; ');
-		frag.createSpan({ cls: 'color-[--color-blue] font-bold', text: 'blue' });
-		frag.appendText(' means remote operation; ');
-		frag.createSpan({ cls: 'color-[--color-red] font-bold', text: 'red' });
-		frag.appendText(' means local deletion; ');
-		frag.createSpan({ cls: 'color-[--color-pink] font-bold', text: 'pink' });
-		frag.appendText(' means remote deletion; and ');
-		frag.createSpan({ cls: 'color-[--color-yellow] font-bold', text: 'yellow' });
-		frag.appendText(' means conflict resolution.');
+	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+		const deleteOr = deleteLocal + deleteRemote !== 0;
+		frag.appendText(`Sync will execute ${total} operation(s) in total`);
+		if (deleteOr || conflict !== 0) frag.appendText('. Including');
+		if (deleteOr) frag.appendText(' deleting');
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} local file(s)`);
+		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' plus');
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} remote file(s)`);
+		if (deleteOr && conflict !== 0) frag.appendText(', and');
+		if (conflict !== 0) frag.appendText(` resolving ${conflict} conflict(s)`);
+		frag.appendText(':');
 	},
 	confirmTasksInSync: 'Confirm operations in manual sync',
 	confirmTasksInSyncDescription:
@@ -108,9 +110,7 @@ const en: Translations = {
 	download: 'Download',
 	downloadModule: 'Download module',
 	edit: 'Edit',
-	editHeaders: 'Edit headers',
 	editModuleInformation: 'Edit module information',
-	editSources: 'Edit sources',
 	enable: 'Enable',
 	enableModule: 'Enable module',
 	exclusionRules: 'Exclusion rules',
@@ -136,7 +136,7 @@ const en: Translations = {
 	exportLogsFailed: 'Failed to export logs',
 	exportLogsToFile: 'Export logs to file',
 	failed: 'Failed',
-	failedTasksDescription: 'The following tasks failed during sync:',
+	failedTasksDescription: '{{x}} task(s) failed during sync:',
 	failedToDownloadModule: 'Failed to download module "{{name}}"',
 	failedToFetchSource: 'Failed to fetch source from "{{url}}"',
 	failedToLoadModule: 'Failed to load module "{{name}}"',
@@ -146,11 +146,10 @@ const en: Translations = {
 	headerKeyPlaceholder: 'Header key',
 	headerValuePlaceholder: 'Header value',
 	hide: 'Hide',
-	httpInsecureWarning: 'Please avoid using insecure HTTP protocol.',
 	icon: 'Icon',
 	iconDescription: (frag) => {
 		frag.appendText(
-			'Set the icon for this module to be displayed in the module management panel, full icons can be found in ',
+			'Set the icon for this module to be displayed in the module management page, full icons can be found in ',
 		);
 		frag.createEl('a', {
 			attr: { href: 'https://lucide.dev/icons/' },
@@ -188,6 +187,8 @@ const en: Translations = {
 	keepRemote: 'Keep remote',
 	latestSurvive: 'Latest survives',
 	loadingModules: 'Loading modules…',
+	match: 'Match',
+	matchLabelDescription: 'This setting must be kept the same on all devices.',
 	maxFileSize: 'Max file size',
 	maxFileSizeDescription:
 		'Skip files exceeding this size during synchronization. This option is useful for services with storage space limitations. Alter the size limit in the field.',
@@ -218,22 +219,26 @@ const en: Translations = {
 	moduleAutoUpdateDescription: 'Automatically update installed modules from module sources.',
 	moduleManagement: 'Module management',
 	moduleManagementDescription:
-		'Manage modules in a dedicated panel. You can install, uninstall, update, enable, disable, edit modules, or edit module sources.',
+		'Manage modules in a dedicated page. You can install, uninstall, update, enable, disable, and edit modules.',
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
+	moduleSources: 'Module sources',
+	moduleSourcesDescription:
+		'Edit module sources from which the module catalog is obtained. In this way you can install third-party Sync Engine modules.',
 	moveLocal: 'Move local',
 	moveRemote: 'Move remote',
 	name: 'Name',
 	namePlaceholder: 'Enter module display name',
+	noHeaderConfigured: 'No header configured.',
 	noInstalledModulesFound: 'No installed modules found.',
 	noMatchingModulesFound: 'No matching modules found.',
 	noModulesAvailable: 'No modules available.',
+	noRuleConfigured: 'No rule configured.',
+	noSourceConfigured: 'No source configured.',
 	none: 'None',
 	noticeStatusOnMobile: 'Notice sync status on mobile',
 	noticeStatusOnMobileDescription:
 		'Display a notice on mobile devices when synchronization is in progress. Replaces the status bar on desktop.',
 	official: 'Official',
-	omittedInvalidEntry: 'Omitted {{count}} invalid entry(s).',
-	openPanel: 'Open panel',
 	realtimeSync: 'Realtime sync',
 	realtimeSyncDescription:
 		'Trigger syncs automatically as soon as files are modified. Alter the delay between a file being modified and the sync being triggered in the field.',
@@ -243,7 +248,6 @@ const en: Translations = {
 	realtimeSyncPlaceholder: 'Enter sync delay (e.g. 500ms, 5s)',
 	recordsCleared: 'Records cleared',
 	remoteMigration: 'Remote migration',
-	remove: 'Remove',
 	removeLocal: 'Remove local',
 	removeRecord: 'Remove record',
 	removeRemote: 'Remove remote',
@@ -256,10 +260,28 @@ const en: Translations = {
 	scheduledSyncPlaceholder: 'Enter interval (e.g. 10min, 0.5h)',
 	searchModules: 'Search modules',
 	selectAll: 'Select all',
+	settingTips: (frag, { labels, addLabel }) => {
+		const p = frag.createEl('p', { text: 'Thanks for choosing Sync Engine! Access ' });
+		p.createEl('a', {
+			attr: { href: 'https://sync.consensia.cc/usage/settings' },
+			text: 'the documentation',
+		});
+		p.appendText(' for more detailed explanation of each setting. Labels on settings:');
+		const ul = frag.createEl('ul', 'list-none ps-0!');
+		for (const label of labels) {
+			const li = ul.createEl('li');
+			const flair = addLabel(li, label);
+			flair.addClass('m-0');
+			li.appendText(` ${flair.ariaLabel}`);
+		}
+	},
 	showInstalledOnly: 'Show installed only',
 	showProgress: 'Show progress',
 	skip: 'Skip',
-	sourcesDescription: 'Add module source URLs. Empty and invalid rows are omitted when saved.',
+	someModulesHidden:
+		'Some modules are hidden since Sync Engine plugin is outdated, update to explore the full module catalog.',
+	speed: 'Speed',
+	speedLabelDescription: 'Properly configuring this setting could improve sync speed.',
 	startMigration: 'Start migration',
 	startNonInteractiveSync: 'Start non-interactive sync',
 	startSync: 'Start sync',
@@ -279,7 +301,7 @@ const en: Translations = {
 		p1.appendText('Sync Engine detected an installed module named ');
 		p1.createEl('code', { text: fileName });
 		p1.appendText(
-			' in its module directory. This module is neither installed in Sync Engine module panel, nor registered anywhere to be exempt from provenance validation. ',
+			' in its module directory. This module is neither installed in Sync Engine module management page, nor registered anywhere to be exempt from provenance validation. ',
 		);
 		p1.createEl('strong', { text: 'Please review following information before proceeding:' });
 		const ul = frag
@@ -318,6 +340,9 @@ const en: Translations = {
 	updateSourcePlaceholder: 'https://example.com/modules.json',
 	upload: 'Upload',
 	walkingRemote: 'Discovering remote files',
+	xConfigured: '{{x}} configured',
+	xEnabled: '{{x}} enabled',
+	xSelected: '({{x}} selected)',
 };
 
 export default en;

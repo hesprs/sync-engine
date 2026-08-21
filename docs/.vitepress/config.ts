@@ -15,7 +15,7 @@ const preserveMarkdownSymlinks = {
 	enforce: 'pre',
 	name: 'preserve-markdown-symlinks',
 	resolveId(id: string) {
-		const [requestPath, suffix = ''] = id.split(/(?<suffix>[?#].*)/v, 2);
+		const [requestPath, suffix = ''] = id.split(/(?<suffix>[?#].*)/u, 2);
 		const path = requestPath.startsWith(srcDir)
 			? requestPath
 			: requestPath.startsWith('/')
@@ -96,7 +96,10 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 								{ link: `${development}/registration`, text: t('registration') },
 								{ link: `${development}/events`, text: t('events') },
 								{ link: `${development}/storage`, text: t('storage') },
-								{ link: `${development}/i18n`, text: t('i18n') },
+								{
+									link: `${development}/settings-and-ui`,
+									text: t('settingsAndUI'),
+								},
 								{ link: `${development}/miscellaneous`, text: t('miscellaneous') },
 							],
 							text: t('API'),
@@ -142,8 +145,8 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 							items: [
 								{ link: `${deepDive}/file-tree`, text: t('fileTree') },
 								{
-									link: `${deepDive}/module-management-panel`,
-									text: t('moduleManagementPanel'),
+									link: `${deepDive}/module-management-page`,
+									text: t('moduleManagementPage'),
 								},
 							],
 							text: t('userInterface'),

@@ -40,7 +40,7 @@ If you need a more transparent migration process to see what is going on around 
 1. Go into Obsidian, use WebDAV Sync to sync all your devices to ensure they have aligned copies of your data. If it shows the migration prompt, choose "cancel" directly.
 2. Disable and delete WebDAV Sync on every devices.
 3. Install Sync Engine from Obsidian plugin store.
-4. Install the `WebDAV` module from the module management panel in Sync Engine settings, configure your account on every devices.
+4. Install the `WebDAV` module from the module management page in Sync Engine settings, configure your account on every devices.
 5. If you previously **enabled encryption**, please download the Encryption module and configure the encryption password. The manually delete the remote base directory on your WebDAV management UI. Choose one of your devices with better internet connection to sync your encrypted full vault to the remote.
 6. If you are not using encryption previously, **go to Sync Engine settings and disable "Asymmetric storage", you do not need to delete any data anywhere.**
 7. Perform sync on all other devices, Sync Engine should scan the remote folder and picks up the aligned state, populates its internal records only and shows "Already synced".

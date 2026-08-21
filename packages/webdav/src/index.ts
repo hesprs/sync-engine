@@ -5,10 +5,10 @@ import type {
 	Translations,
 	SelectFromContext,
 	SettingEntry,
-	Context,
 	ObsidianLanguageCode,
 	TranslationResource,
 	Settings,
+	Context,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
@@ -96,7 +96,7 @@ export default class Webdav {
 				priority: 6318,
 			}),
 			registerSetting({
-				apply: (el) => webdavSetting(el, this.ctx as Context, this.moduleSettings),
+				apply: webdavSetting(this.ctx as Context, this.moduleSettings),
 				priority: 749,
 			}),
 		);
