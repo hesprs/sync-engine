@@ -140,16 +140,17 @@ export default class EventBus {
 			`Operating system: ${operatingSystem}`,
 			'',
 		];
-		for (const {
-			trigger,
-			started,
-			outcome,
-			ended,
-			totalTasks,
-			succeededTasks,
-			failedTasks,
-			logs,
-		} of this.syncLogs.toReversed()) {
+		for (let i = this.syncLogs.length - 1; i >= 0; i--) {
+			const {
+				trigger,
+				started,
+				outcome,
+				ended,
+				totalTasks,
+				succeededTasks,
+				failedTasks,
+				logs,
+			} = this.syncLogs[i];
 			lines.push(
 				'---',
 				'',

@@ -76,6 +76,12 @@ It is simple to start using Sync Engine:
 5. Review the sync tasks that will be performed.
 6. Click "Confirm", and your files will arrive the configured backend at the speed of light.
 
+::: tip
+
+Sync Engine requires minimum version of Obsidian v1.13.0. If you are on Android or iOS, the cutoff is Android System Webview 98 or iOS 15.4. It cannot function normally on devices below these thresholds.
+
+:::
+
 ## Development
 
 If you think Sync Engine basic features cannot satisfy what you need and want to customize, here's why we recommend you to create a Sync Engine module instead of creating your own plugin:
