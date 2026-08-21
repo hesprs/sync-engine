@@ -61,5 +61,14 @@
 		"icon": "combine",
 		"main": "https://sync.consensia.cc/modules/smart-merge.js",
 		"minPluginVersion": "3.1.0"
+	},
+	{
+		"id": "gdrive",
+		"name": "Google Drive",
+		"version": "0.1.0",
+		"description": "Google Drive backend support.",
+		"icon": "hard-drive",
+		"main": "https://sync.consensia.cc/modules/gdrive.js",
+		"minPluginVersion": "3.1.0"
 	}
 ]

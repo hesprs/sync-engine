@@ -43,6 +43,15 @@
         "uni-kv": "../../uni-kv.tgz",
       },
     },
+    "packages/gdrive": {
+      "name": "gdrive",
+      "version": "0.0.1",
+      "devDependencies": {
+        "@hesprs/sync-engine-sdk": "workspace:*",
+        "@repo/shared": "workspace:*",
+        "hash-wasm": "^4.12.0",
+      },
+    },
     "packages/i18n": {
       "name": "i18n",
       "version": "0.0.1",
@@ -686,6 +695,8 @@
     "focus-trap": ["focus-trap@8.2.2", "", { "dependencies": { "tabbable": "^6.5.0" } }, "sha512-qV0g8hRYBqgACcFOH3f9wXc4zPKhr/0z9RI2a6ZijZ72EeBi4g8oBy8zAWuUR1TsMpOzwpUMFvjdasrC41Joug=="],
 
     "fsevents": ["fsevents@2.3.3", "", { "os": "darwin" }, "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw=="],
+
+    "gdrive": ["gdrive@workspace:packages/gdrive"],
 
     "gensync": ["gensync@1.0.0-beta.2", "", {}, "sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg=="],
 
