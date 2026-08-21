@@ -2,6 +2,7 @@ import type { S3Settings } from '@';
 import type {
 	CallableOrObjectTree,
 	Fragment,
+	LabelDefinition,
 	Translate,
 	Translations,
 } from '@hesprs/sync-engine-sdk';
@@ -45,10 +46,12 @@ export default function s3Setting(
 		translate,
 		saveSettings,
 		app,
+		matchLabel,
 	}: {
 		translate: Translate<S3Translations & Translations>;
 		saveSettings: () => Promise<void>;
 		app: App;
+		matchLabel: () => LabelDefinition;
 	},
 	settings: S3Settings,
 ): CallableOrObjectTree {
@@ -140,6 +143,7 @@ export default function s3Setting(
 				})),
 				5000: s(() => ({
 					desc: translate('bucketDescription'),
+					labels: [matchLabel()],
 					name: translate('bucket'),
 					render: (setting) => {
 						setting.addText((text) => {
@@ -175,6 +179,7 @@ export default function s3Setting(
 				})),
 				7000: s(() => ({
 					desc: translate('prefixDescription'),
+					labels: [matchLabel()],
 					name: translate('prefix'),
 					render: (setting) => {
 						setting.addText((text) => {

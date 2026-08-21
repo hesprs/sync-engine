@@ -13,6 +13,7 @@ import Observability from './modules/Observability';
 import ProgressModal from './modules/ProgressModal';
 import Registrar from './modules/Registrar';
 import Scheduler from './modules/Scheduler';
+import Setting from './modules/Setting';
 import Storage from './modules/Storage';
 import Sync from './modules/Sync';
 import { normalizeGlob } from './utils/glob-match';
@@ -22,6 +23,7 @@ const internalModules = [
 	I18n,
 	Storage,
 	Extensibility,
+	Setting,
 	Registrar,
 	Sync,
 	Observability,

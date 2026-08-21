@@ -3,6 +3,7 @@ import type {
 	CallableOrObjectTree,
 	Context,
 	Fragment,
+	LabelDefinition,
 	MaybePromise,
 	Translate,
 } from '@hesprs/sync-engine-sdk';
@@ -22,14 +23,16 @@ export default function encryptionSetting(
 		app: App;
 		saveSettings: () => Promise<void>;
 		recordStoreExists: () => MaybePromise<boolean>;
+		matchLabel: () => LabelDefinition;
 	},
 	settings: EncryptionSettings,
 ): CallableOrObjectTree {
-	const { translate, app, saveSettings, recordStoreExists } = ctx;
+	const { translate, app, saveSettings, recordStoreExists, matchLabel } = ctx;
 	return {
 		1000: {
 			6037: s(() => ({
 				desc: translate('encryptionDescription'),
+				labels: [matchLabel()],
 				name: translate('encryption'),
 				render: (setting) => {
 					setting

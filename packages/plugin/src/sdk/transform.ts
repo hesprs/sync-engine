@@ -18,6 +18,7 @@ export default function syncEngineTransform() {
 		name: 'sync-engine-transform',
 		renderChunk(code: string) {
 			const transformed = code
+				.replaceAll(/^[ \t]*import\s+['"]obsidian['"]\s*;?[ \t]*$/gmu, '')
 				.replaceAll(
 					/^\s*import\s+(?<name>[A-Za-z_$][\w$]*)\s+from\s+(?<quote>['"])obsidian\k<quote>\s*;?\s*$/gmu,
 					(_, name: string) => `const ${name} = window.syncEngineApiBridge;`,

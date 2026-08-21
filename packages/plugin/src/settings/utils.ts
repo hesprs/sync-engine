@@ -1,14 +1,16 @@
 import type {
 	ExtraButtonComponent,
 	Setting,
-	SettingDefinitionItem,
+	SettingDefinition,
+	SettingDefinitionGroup,
 	SettingDefinitionList,
+	SettingDefinitionPage,
 	TextComponent,
 } from 'obsidian';
 import type { DatabaseSync } from 'uni-kv';
 import { encodeURIComponent3986 } from '@repo/shared/path';
 import { setIcon } from 'obsidian';
-import type { CallableOrObjectTree, SettingTree } from '@/modules/Registrar';
+import type { CallableOrObjectTree, SettingTree } from '@/modules/Setting';
 import type { General, TogglableValue } from '@/types';
 import { formatFileSize, formatTime, parseFileSize, parseTime } from '@/utils/unit-converter';
 
@@ -21,12 +23,23 @@ type EphemeralEditableItem<T> = {
 type EphemeralEditableListSchema = {
 	ephemeralEditableLists: Array<EphemeralEditableItem<General>>;
 };
+export type AugmentedSettingDefinitionItem<K extends string = string> =
+	| SettingDefinitionGroup<K>
+	| SettingDefinitionList<K>
+	| (SettingDefinitionPage<K> & { labels?: Array<LabelDefinition> })
+	| (SettingDefinition<K> & { labels?: Array<LabelDefinition> });
+export type LabelDefinition = {
+	text: string;
+	tooltip: string;
+	color?: string;
+	textColor?: string;
+};
 
 export function s(
-	parent: (self: SettingTree) => SettingDefinitionItem,
+	parent: (self: SettingTree) => AugmentedSettingDefinitionItem,
 	children?: CallableOrObjectTree,
 ): CallableOrObjectTree {
-	return children ? Object.assign(parent, children) : (parent as unknown as CallableOrObjectTree);
+	return children ? Object.assign(parent, children) : (parent as never);
 }
 
 function setWarningIfNotExist(): void {

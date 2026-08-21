@@ -1,17 +1,18 @@
 import type { Context, Settings } from '@';
 import type { DatabaseSync } from 'uni-kv';
-import { ExtraButtonComponent, Notice } from 'obsidian';
+import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
 import type { ModuleCtor } from '@/modules/Extensibility';
-import type { Translate } from '@/modules/I18n';
+import type { Fragment, Translate } from '@/modules/I18n';
 import type {
-	CallableOrObjectTree,
 	CheckConnectionResult,
 	ConflictResolverEntry,
 	DeciderEntry,
 	RemoteFsEntry,
 } from '@/modules/Registrar';
+import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { General, MaybePromise } from '@/types';
 import toErrorMessage from '@/utils/to-error-message';
+import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
 import ModuleManagement from './module-management';
 import { s } from './utils';
 
@@ -32,21 +33,27 @@ export type HeadSettingTranslations = {
 	conflictResolveStrategy: string;
 	conflictResolveStrategyDescription: string;
 	xEnabled: string;
+	settingTips: Fragment<{ labels: Array<LabelDefinition>; addLabel: typeof addLabel }>;
 };
 
 type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs: string }>;
 
-export default function headSettings(ctx: {
-	translate: Translate<HeadSettingTranslations>;
-	saveSettings: () => Promise<void>;
-	settings: Settings;
-	remoteFsRegistry: Map<string, RemoteFsEntry>;
-	deciderRegistry: Map<string, DeciderEntry>;
-	conflictResolverRegistry: Map<string, ConflictResolverEntry>;
-	getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
-	memoryDB: CheckConnectionDB;
-	loadedModules: Map<string, ModuleCtor>;
-}): CallableOrObjectTree {
+export default function headSettings(
+	ctx: {
+		translate: Translate<HeadSettingTranslations>;
+		saveSettings: () => Promise<void>;
+		settings: Settings;
+		remoteFsRegistry: Map<string, RemoteFsEntry>;
+		deciderRegistry: Map<string, DeciderEntry>;
+		conflictResolverRegistry: Map<string, ConflictResolverEntry>;
+		getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
+		memoryDB: CheckConnectionDB;
+		loadedModules: Map<string, ModuleCtor>;
+		matchLabel: () => LabelDefinition;
+		speedLabel: () => LabelDefinition;
+	},
+	getSettingTab: () => PluginSettingTab | undefined,
+): CallableOrObjectTree {
 	const {
 		loadedModules,
 		translate,
@@ -57,54 +64,79 @@ export default function headSettings(ctx: {
 		getCheckConnection,
 		memoryDB,
 		conflictResolverRegistry,
+		matchLabel,
+		speedLabel,
 	} = ctx;
 	return {
 		10: s(() => ({
+			desc: translate('settingTips', { addLabel, labels: [matchLabel(), speedLabel()] }),
+			name: 'dummy',
+			render: (setting) => {
+				setting.settingEl.addClass('sync-engine-setting-tip');
+				queueMicrotask(() => {
+					const tab = getSettingTab();
+					if (!tab) return;
+					const recurseLabel = (items: Array<AugmentedSettingDefinitionItem>) => {
+						for (const item of items) {
+							if ('labels' in item && item.labels) {
+								const name = tab
+									.getElementForDefinition(item)
+									?.querySelector('.setting-item-name');
+								if (!name) return;
+								for (const label of item.labels) addLabel(name, label);
+							}
+							if ('items' in item) recurseLabel(item.items as never);
+						}
+					};
+					recurseLabel(tab.settingItems);
+				});
+			},
+			search: false,
+		})),
+		20: s(() => ({
 			desc: translate('backendDescription'),
+			labels: [matchLabel()],
 			name: translate('backend'),
 			render: (setting) => {
-				let checkConnection: (force?: boolean) => Promise<void>;
-				let cleanup!: () => void;
+				let checks!: ReturnType<typeof setupCheckConnection>;
 				setting
 					.addExtraButton((button) => {
-						const checks = setupCheckConnection({
+						checks = setupCheckConnection({
 							button: button
 								.setTooltip(translate('checkConnection'))
-								.onClick(() => void checkConnection(true)),
+								.onClick(() => void checks.check(true)),
 							getCheckConnection,
 							memoryDB,
 							settings,
 							translate,
 						});
-						checkConnection = checks.checkConnection;
-						cleanup = checks.cleanup;
-						void checkConnection(false);
+						void checks.check(false);
 					})
 					.addDropdown((dropdown) => {
 						for (const [key, { prettyName }] of remoteFsRegistry)
 							dropdown.addOption(key, prettyName());
 						dropdown.setValue(settings.remoteFs).onChange((value) => {
 							settings.remoteFs = value;
-							void checkConnection();
+							void checks.check();
 							void saveSettings();
 						});
 					});
-				return cleanup;
+				return checks.cleanup;
 			},
 		})),
-		20: s(() => ({
+		30: s(() => ({
 			desc: translate('moduleManagementDescription'),
 			displayValue: translate('xEnabled', { x: loadedModules.size }),
 			name: translate('moduleManagement'),
 			page: () => new ModuleManagement(ctx as Context),
 			type: 'page',
 		})),
-		30: s(() => ({
+		40: s(() => ({
 			control: { key: 'moduleAutoUpdate', type: 'toggle' },
 			desc: translate('moduleAutoUpdateDescription'),
 			name: translate('moduleAutoUpdate'),
 		})),
-		40: s(() => ({
+		50: s(() => ({
 			control: {
 				key: 'decider',
 				options: Object.fromEntries(
@@ -115,7 +147,7 @@ export default function headSettings(ctx: {
 			desc: translate('syncStrategyDescription'),
 			name: translate('syncStrategy'),
 		})),
-		50: s(() => ({
+		60: s(() => ({
 			control: {
 				key: 'conflictResolver',
 				options: Object.fromEntries(
@@ -149,7 +181,7 @@ function setupCheckConnection({
 	const possibleClasses = [
 		'color-[--color-green]',
 		'color-[--color-red]',
-		'color-neutral-600',
+		'color-[-text-faint]',
 		'animate-spin',
 	];
 	const setChecking = () => {
@@ -157,7 +189,7 @@ function setupCheckConnection({
 		const ele = button.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClasses(['animate-spin', 'color-neutral-600']);
+		ele.addClasses(['animate-spin', 'color-[-text-faint]']);
 	};
 	const setSuccess = () => {
 		button.setIcon('check');
@@ -174,9 +206,9 @@ function setupCheckConnection({
 		ele.addClasses(['color-[--color-red]']);
 	};
 	const scheduleCheckConnection = () =>
-		(timeout = window.setTimeout(() => void checkConnection(), CHECK_CONNECTION_INTERVAL));
+		(timeout = window.setTimeout(() => void check(), CHECK_CONNECTION_INTERVAL));
 
-	const checkConnection = async (force = false) => {
+	const check = async (force = false) => {
 		if (memoryDB.getMeta('lastCheckedFs') === settings.remoteFs && !force) {
 			setSuccess();
 			return;
@@ -206,5 +238,21 @@ function setupCheckConnection({
 		}
 	};
 
-	return { checkConnection, cleanup: () => window.clearTimeout(timeout) };
+	return { check, cleanup: () => window.clearTimeout(timeout) };
+}
+
+function addLabel(
+	element: Element,
+	{
+		text,
+		tooltip,
+		color = 'var(--interactive-accent)',
+		textColor = 'var(--text-on-accent)',
+	}: LabelDefinition,
+) {
+	const tag = element.createSpan({ cls: 'flair', text });
+	setTooltip(tag, tooltip);
+	tag.style.setProperty('--flair-color', textColor);
+	tag.style.setProperty('--flair-background', color);
+	return tag;
 }

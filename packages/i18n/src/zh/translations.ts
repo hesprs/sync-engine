@@ -166,6 +166,8 @@ const zh: Translations = {
 	keepRemote: '保留远程',
 	latestSurvive: '保留最新修改',
 	loadingModules: '正在加载模块…',
+	match: '匹配',
+	matchLabelDescription: '此设置必须在所有设备上保持一致。',
 	maxFileSize: '最大文件大小',
 	maxFileSizeDescription:
 		'在同步过程中跳过超过此大小的文件。此选项对于有存储空间限制的服务非常有用。在输入框中修改大小限制。',
@@ -235,11 +237,28 @@ const zh: Translations = {
 	scheduledSyncPlaceholder: '输入间隔（例如 10min, 0.5h）',
 	searchModules: '搜索模块',
 	selectAll: '全选',
+	settingTips: (frag, { addLabel, labels }) => {
+		const p = frag.createEl('p', { text: '感谢您选择 Sync Engine！访问 ' });
+		p.createEl('a', {
+			attr: { href: 'https://sync.consensia.cc/usage/settings' },
+			text: '文档',
+		});
+		p.appendText('以了解每个设置的详细说明。设置标签：');
+		const ul = frag.createEl('ul', 'list-none ps-0!');
+		for (const label of labels) {
+			const li = ul.createEl('li');
+			const flair = addLabel(li, label);
+			flair.addClass('m-0');
+			li.appendText(` ${flair.ariaLabel}`);
+		}
+	},
 	showInstalledOnly: '仅显示已安装',
 	showProgress: '显示进度',
 	skip: '跳过',
 	someModulesHidden:
 		'由于 Sync Engine 插件版本过旧，部分模块已隐藏。请更新插件以查看完整模块目录。',
+	speed: '速度',
+	speedLabelDescription: '正确配置此设置可能会提高同步速度。',
 	startMigration: '开始迁移',
 	startNonInteractiveSync: '开始静默同步',
 	startSync: '开始同步',

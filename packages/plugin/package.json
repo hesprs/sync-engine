@@ -42,10 +42,10 @@
 		"provenance": true
 	},
 	"scripts": {
-		"dev:plugin": "MODE=dev BUILD=plugin tsdown",
-		"build:plugin": "BUILD=plugin tsdown",
-		"dev": "MODE=dev PASS=dts tsdown && MODE=dev tsdown",
-		"compile": "PASS=dts tsdown && tsdown",
+		"dev:plugin": "MODE=dev BUILD=plugin bun --bun tsdown",
+		"build:plugin": "BUILD=plugin bun --bun tsdown",
+		"dev": "MODE=dev PASS=dts bun --bun tsdown && MODE=dev bun --bun tsdown",
+		"compile": "PASS=dts bun --bun tsdown && bun --bun tsdown",
 		"fix": "oxlint --silent --fix && oxfmt",
 		"check": "tsc && oxlint && oxfmt --check",
 		"tests": "bun --preload=./test/mocks test"

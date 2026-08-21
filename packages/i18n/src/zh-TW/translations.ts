@@ -180,6 +180,8 @@ const zhTW: Translations = {
 	keepRemote: '保留遠端',
 	latestSurvive: '以最新修改為主',
 	loadingModules: '正在載入模組…',
+	match: '匹配',
+	matchLabelDescription: '此設定必須在所有裝置上保持一致。',
 	maxFileSize: '檔案大小上限',
 	maxFileSizeDescription:
 		'同步時跳過超過此大小的檔案。此選項適用於有容量限制的雲端服務。請在欄位中修改限制大小。',
@@ -248,11 +250,28 @@ const zhTW: Translations = {
 	scheduledSyncPlaceholder: '輸入間隔時間（例如 10min, 0.5h）',
 	searchModules: '搜尋模組',
 	selectAll: '全選',
+	settingTips: (frag, { labels, addLabel }) => {
+		const p = frag.createEl('p', { text: '感謝您選擇 Sync Engine！請參閱 ' });
+		p.createEl('a', {
+			attr: { href: 'https://sync.consensia.cc/usage/settings' },
+			text: '文件',
+		});
+		p.appendText('以瞭解各項設定的詳細說明。設定標籤：');
+		const ul = frag.createEl('ul', 'list-none ps-0!');
+		for (const label of labels) {
+			const li = ul.createEl('li');
+			const flair = addLabel(li, label);
+			flair.addClass('m-0');
+			li.appendText(` ${flair.ariaLabel}`);
+		}
+	},
 	showInstalledOnly: '僅顯示已安裝',
 	showProgress: '顯示進度',
 	skip: '跳過',
 	someModulesHidden:
 		'由於 Sync Engine 外掛程式版本過舊，部分模組已隱藏。請更新外掛程式以查看完整模組目錄。',
+	speed: '速度',
+	speedLabelDescription: '正確設定此選項可能會提升同步速度。',
 	startMigration: '開始遷移',
 	startNonInteractiveSync: '啟動非互動式同步',
 	startSync: '開始同步',

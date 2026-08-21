@@ -8,6 +8,7 @@ import type {
 	ObsidianLanguageCode,
 	TranslationResource,
 	Settings,
+	Context,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
@@ -37,7 +38,6 @@ export default class Webdav {
 			registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => void;
 			registerSetting: (entry: SettingEntry) => () => void;
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
-			saveSettings: () => Promise<void>;
 		}>,
 	) {
 		if (!this.moduleSettings.baseDirectory)
@@ -96,7 +96,7 @@ export default class Webdav {
 				priority: 6318,
 			}),
 			registerSetting({
-				apply: webdavSetting(this.ctx, this.moduleSettings),
+				apply: webdavSetting(this.ctx as Context, this.moduleSettings),
 				priority: 749,
 			}),
 		);

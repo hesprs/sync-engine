@@ -1,5 +1,10 @@
 import type { WebdavSettings } from '@';
-import type { CallableOrObjectTree, Translate, Translations } from '@hesprs/sync-engine-sdk';
+import type {
+	CallableOrObjectTree,
+	LabelDefinition,
+	Translate,
+	Translations,
+} from '@hesprs/sync-engine-sdk';
 import type { App, SettingGroupItem } from 'obsidian';
 import { s } from '@hesprs/sync-engine-sdk';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
@@ -30,10 +35,14 @@ export default function webdavSetting(
 		translate,
 		saveSettings,
 		app,
+		matchLabel,
+		speedLabel,
 	}: {
 		translate: Translate<WebdavTranslations & Translations>;
 		saveSettings: () => Promise<void>;
 		app: App;
+		matchLabel: () => LabelDefinition;
+		speedLabel: () => LabelDefinition;
 	},
 	settings: WebdavSettings,
 ): CallableOrObjectTree {
@@ -106,6 +115,7 @@ export default function webdavSetting(
 				})),
 				4000: s(() => ({
 					desc: translate('baseDirectoryDescription'),
+					labels: [matchLabel()],
 					name: translate('baseDirectory'),
 					render: (setting) => {
 						setting.addText((text) => {
@@ -125,6 +135,7 @@ export default function webdavSetting(
 				})),
 				5000: s(() => ({
 					desc: translate('depthInfinityDescription'),
+					labels: [speedLabel()],
 					name: translate('depthInfinity'),
 					render: (setting) => {
 						setting.addToggle((toggle) =>
@@ -137,6 +148,7 @@ export default function webdavSetting(
 				})),
 				6000: s(() => ({
 					desc: translate('chunkedUploadDescription'),
+					labels: [speedLabel()],
 					name: translate('chunkedUpload'),
 					render: (setting) => {
 						setting.addToggle((toggle) =>

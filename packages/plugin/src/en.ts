@@ -77,7 +77,7 @@ const en: Translations = {
 		'Show a confirmation of local files that will be deleted during auto-triggered syncs. You can choose to delete or re-upload them.',
 	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
 		const deleteOr = deleteLocal + deleteRemote !== 0;
-		frag.appendText(`Sync will execute ${total} operations in total`);
+		frag.appendText(`Sync will execute ${total} operation(s) in total`);
 		if (deleteOr || conflict !== 0) frag.appendText('. Including');
 		if (deleteOr) frag.appendText(' deleting');
 		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} local file(s)`);
@@ -187,6 +187,8 @@ const en: Translations = {
 	keepRemote: 'Keep remote',
 	latestSurvive: 'Latest survives',
 	loadingModules: 'Loading modules…',
+	match: 'Match',
+	matchLabelDescription: 'This setting must be kept the same on all devices.',
 	maxFileSize: 'Max file size',
 	maxFileSizeDescription:
 		'Skip files exceeding this size during synchronization. This option is useful for services with storage space limitations. Alter the size limit in the field.',
@@ -258,11 +260,28 @@ const en: Translations = {
 	scheduledSyncPlaceholder: 'Enter interval (e.g. 10min, 0.5h)',
 	searchModules: 'Search modules',
 	selectAll: 'Select all',
+	settingTips: (frag, { labels, addLabel }) => {
+		const p = frag.createEl('p', { text: 'Thanks for choosing Sync Engine! Access ' });
+		p.createEl('a', {
+			attr: { href: 'https://sync.consensia.cc/usage/settings' },
+			text: 'the documentation',
+		});
+		p.appendText(' for more detailed explanation of each setting. Labels on settings:');
+		const ul = frag.createEl('ul', 'list-none ps-0!');
+		for (const label of labels) {
+			const li = ul.createEl('li');
+			const flair = addLabel(li, label);
+			flair.addClass('m-0');
+			li.appendText(` ${flair.ariaLabel}`);
+		}
+	},
 	showInstalledOnly: 'Show installed only',
 	showProgress: 'Show progress',
 	skip: 'Skip',
 	someModulesHidden:
 		'Some modules are hidden since Sync Engine plugin is outdated, update to explore the full module catalog.',
+	speed: 'Speed',
+	speedLabelDescription: 'Properly configuring this setting could improve sync speed.',
 	startMigration: 'Start migration',
 	startNonInteractiveSync: 'Start non-interactive sync',
 	startSync: 'Start sync',

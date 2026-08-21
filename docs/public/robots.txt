@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sync.consensia.cc/sitemap.xml

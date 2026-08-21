@@ -1,12 +1,11 @@
 import type { Context, Events, Translations } from '@';
 import type { App } from 'obsidian';
 import type { Ref } from 'synthkernel';
-import type { StoreOperations } from 'uni-kv';
+import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
 import loadModule from '$/e2e-utils';
 import hash from '@repo/shared/crypto';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
-import type { DatabaseAsync, StoreAsync } from '@/sdk';
 import type { General } from '@/types';
 import UnknownModuleModal from '@/components/UnknownModuleModal';
 import toErrorMessage from '@/utils/to-error-message';
@@ -81,7 +80,7 @@ export default class Extensibility {
 		},
 	) {
 		this.moduleDir = `${ctx.app.vault.configDir}/plugins/sync-engine/modules`;
-		(window as unknown as WindowAugmentation).syncEngineApiBridge = obsidian;
+		(window as WindowAugmentation).syncEngineApiBridge = obsidian;
 		this.moduleStore = ctx.indexedDB.getStore(`modules-${hash(ctx.app.vault.getName())}`);
 	}
 
@@ -340,7 +339,7 @@ export default class Extensibility {
 
 	readonly dispose = () => {
 		window.clearTimeout(this.autoUpdateTimeout);
-		delete (window as unknown as WindowAugmentation).syncEngineApiBridge;
+		delete (window as WindowAugmentation).syncEngineApiBridge;
 		this.loadedModules.clear();
 	};
 

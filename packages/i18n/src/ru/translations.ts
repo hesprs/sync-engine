@@ -187,6 +187,8 @@ const ru: Translations = {
 	keepRemote: 'Оставить удалённую версию',
 	latestSurvive: 'Оставлять последнюю версию',
 	loadingModules: 'Загрузка модулей…',
+	match: 'Совпадение',
+	matchLabelDescription: 'Эта настройка должна быть одинаковой на всех устройствах.',
 	maxFileSize: 'Макс. размер файла',
 	maxFileSizeDescription:
 		'Пропускать файлы, превышающие этот размер, при синхронизации. Полезно для сервисов с ограничением по объёму хранилища. Измените лимит в поле ниже.',
@@ -258,11 +260,29 @@ const ru: Translations = {
 	scheduledSyncPlaceholder: 'Введите интервал (например, 10min, 0.5h)',
 	searchModules: 'Поиск модулей',
 	selectAll: 'Выбрать все',
+	settingTips: (frag, { addLabel, labels }) => {
+		const p = frag.createEl('p', { text: 'Спасибо, что выбрали Sync Engine! Откройте ' });
+		p.createEl('a', {
+			attr: { href: 'https://sync.consensia.cc/usage/settings' },
+			text: 'документацию',
+		});
+		p.appendText(' для подробного объяснения каждой настройки. Метки настроек:');
+		const ul = frag.createEl('ul', 'list-none ps-0!');
+		for (const label of labels) {
+			const li = ul.createEl('li');
+			const flair = addLabel(li, label);
+			flair.addClass('m-0');
+			li.appendText(` ${flair.ariaLabel}`);
+		}
+	},
 	showInstalledOnly: 'Только установленные',
 	showProgress: 'Показывать прогресс',
 	skip: 'Пропустить',
 	someModulesHidden:
 		'Некоторые модули скрыты, поскольку плагин Sync Engine устарел. Обновите его, чтобы просмотреть полный каталог модулей.',
+	speed: 'Скорость',
+	speedLabelDescription:
+		'Правильная настройка этого параметра может повысить скорость синхронизации.',
 	startMigration: 'Начать миграцию',
 	startNonInteractiveSync: 'Запустить фоновую синхронизацию',
 	startSync: 'Запустить синхронизацию',

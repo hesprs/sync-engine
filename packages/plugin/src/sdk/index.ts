@@ -60,15 +60,14 @@ export type {
 	RemoteLister,
 	RemoteListerEntry,
 	OptimizerEntry,
-	SettingEntry,
 	ConflictResolverEntry,
 	Request,
 	CheckConnectionResult,
 	RequestParam,
 	RequestResponse,
-	CallableOrObjectTree,
-	SettingTree,
 } from '@/modules/Registrar';
+export type { CallableOrObjectTree, SettingEntry } from '@/modules/Setting';
+export type { LabelDefinition } from '@/settings/utils';
 export type { RecordStore } from '@/modules/Storage';
 export type { ModuleMeta, AugmentedModuleMeta } from '@/modules/Extensibility';
 export type { SyncTerminateReason } from '@/modules/Sync';

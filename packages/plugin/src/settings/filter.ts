@@ -2,9 +2,10 @@ import type { Settings } from '@';
 import type { SettingGroupItem } from 'obsidian';
 import type { DatabaseSync } from 'uni-kv';
 import type { Fragment, Translate } from '@/modules/I18n';
-import type { CallableOrObjectTree } from '@/modules/Registrar';
+import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { GlobMatchRule } from '@/types';
 import { normalizeGlob } from '@/utils/glob-match';
+import type { LabelDefinition } from './utils';
 import { generateEditableList, reactivelyValidate, s } from './utils';
 
 export type FilterSettingTranslations = {
@@ -27,12 +28,14 @@ export default function filterSettings({
 	settings,
 	memoryDB,
 	rerenderSettingTab,
+	speedLabel,
 }: {
 	translate: Translate<FilterSettingTranslations>;
 	saveSettings: () => Promise<void>;
 	settings: Settings;
 	memoryDB: DatabaseSync;
 	rerenderSettingTab: () => void;
+	speedLabel: () => LabelDefinition;
 }): CallableOrObjectTree {
 	return {
 		3000: s(
@@ -48,6 +51,7 @@ export default function filterSettings({
 						displayValue: () =>
 							translate('xConfigured', { x: settings.inclusionRules.length }),
 						items: Object.values(self).map((node) => node(node)),
+						labels: [speedLabel()],
 						name: translate('inclusionRules'),
 						type: 'page',
 					}),
@@ -68,6 +72,7 @@ export default function filterSettings({
 						displayValue: () =>
 							translate('xConfigured', { x: settings.exclusionRules.length }),
 						items: Object.values(self).map((node) => node(node)),
+						labels: [speedLabel()],
 						name: translate('exclusionRules'),
 						type: 'page',
 					}),

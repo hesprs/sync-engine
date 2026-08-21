@@ -4,8 +4,8 @@ import type { DatabaseSync } from 'uni-kv';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
 import { Notice } from 'obsidian';
 import type { Translate } from '@/modules/I18n';
-import type { CallableOrObjectTree } from '@/modules/Registrar';
-import type { MaybePromise } from '@/sdk';
+import type { CallableOrObjectTree } from '@/modules/Setting';
+import type { MaybePromise } from '@/types';
 import { generateEditableList, reactivelyValidate, s } from './utils';
 
 export type DevelopmentSettingTranslations = {

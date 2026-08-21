@@ -1,4 +1,4 @@
-import type { Context, Events, Translations } from '@';
+import type { Events, Translations } from '@';
 import type { App, SecretStorage } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { DatabaseSync } from 'uni-kv';
@@ -28,12 +28,6 @@ import {
 	cancellationMiddleware,
 	optimizationCompanionWrapper,
 } from '@/fs';
-import controlsSettings from '@/settings/controls';
-import developmentSettings from '@/settings/development';
-import featuresSettings from '@/settings/features';
-import filterSettings from '@/settings/filter';
-import headSettings from '@/settings/head';
-import miscellaneousSettings from '@/settings/miscellaneous';
 import {
 	bidirectionalDecider,
 	mirrorLocalDecider,
@@ -50,7 +44,6 @@ import type {
 	DeciderEntry,
 	RemoteFsEntry,
 	OptimizerEntry,
-	SettingEntry,
 	FsWrapperEntry,
 	RemoteRequestMiddlewareEntry,
 	LocalRequestMiddlewareEntry,
@@ -130,7 +123,6 @@ export default class Bootstrap {
 			registerLocalOptimizer: (optimizer: OptimizerEntry) => void;
 			registerRemoteOptimizer: (optimizer: OptimizerEntry) => void;
 			registerRemoteLister: (entry: RemoteListerEntry) => () => boolean;
-			registerSetting: (entry: SettingEntry) => () => boolean;
 			registerConflictResolver: (id: string, entry: ConflictResolverEntry) => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => void;
 			registerLocalRequestMiddleware: (entry: LocalRequestMiddlewareEntry) => void;
@@ -151,7 +143,6 @@ export default class Bootstrap {
 			registerLocalOptimizer,
 			registerRemoteOptimizer,
 			registerRemoteLister,
-			registerSetting,
 			registerConflictResolver,
 			registerRemoteRequestMiddleware,
 			registerLocalRequestMiddleware,
@@ -393,13 +384,6 @@ export default class Bootstrap {
 			prettyName: () => t('skip'),
 			resolver: () => {},
 		});
-
-		registerSetting({ apply: headSettings(this.ctx as Context), priority: 0 });
-		registerSetting({ apply: featuresSettings(this.ctx as Context), priority: 1000 });
-		registerSetting({ apply: controlsSettings(this.ctx as Context), priority: 2000 });
-		registerSetting({ apply: filterSettings(this.ctx as Context), priority: 3000 });
-		registerSetting({ apply: miscellaneousSettings(this.ctx as Context), priority: 4000 });
-		registerSetting({ apply: developmentSettings(this.ctx as Context), priority: 5000 });
 
 		this.cleanupCallbacks.push(
 			on('syncStarted', ({ isCancelled }) => {

@@ -1,7 +1,8 @@
 import type { Settings } from '@';
 import type { SettingGroupItem } from 'obsidian';
 import type { Translate } from '@/modules/I18n';
-import type { CallableOrObjectTree } from '@/modules/Registrar';
+import type { CallableOrObjectTree } from '@/modules/Setting';
+import type { LabelDefinition } from './utils';
 import { renderTogglableValue, s } from './utils';
 
 export type ControlsSettingTranslations = {
@@ -24,10 +25,12 @@ export default function controlsSettings({
 	translate,
 	saveSettings,
 	settings,
+	speedLabel,
 }: {
 	translate: Translate<ControlsSettingTranslations>;
 	saveSettings: () => Promise<void>;
 	settings: Settings;
+	speedLabel: () => LabelDefinition;
 }): CallableOrObjectTree {
 	return {
 		2000: s(
@@ -50,6 +53,7 @@ export default function controlsSettings({
 				})),
 				2000: s(() => ({
 					desc: translate('maxRequestConcurrencyDescription'),
+					labels: [speedLabel()],
 					name: translate('maxRequestConcurrency'),
 					render: renderTogglableValue({
 						field: settings.maxRequestConcurrency,
@@ -61,6 +65,7 @@ export default function controlsSettings({
 				})),
 				3000: s(() => ({
 					desc: translate('minRequestIntervalDescription'),
+					labels: [speedLabel()],
 					name: translate('minRequestInterval'),
 					render: renderTogglableValue({
 						field: settings.minRequestInterval,
@@ -71,6 +76,7 @@ export default function controlsSettings({
 				})),
 				4000: s(() => ({
 					desc: translate('maxMemoryConsumptionDescription'),
+					labels: [speedLabel()],
 					name: translate('maxMemoryConsumption'),
 					render: renderTogglableValue({
 						field: settings.maxMemoryConsumption,

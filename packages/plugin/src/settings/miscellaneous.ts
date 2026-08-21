@@ -3,7 +3,7 @@ import type { App, SettingGroupItem } from 'obsidian';
 import type { DatabaseSync } from 'uni-kv';
 import { SecretComponent } from 'obsidian';
 import type { Translate } from '@/modules/I18n';
-import type { CallableOrObjectTree } from '@/modules/Registrar';
+import type { CallableOrObjectTree } from '@/modules/Setting';
 import { generateEditableList, reactivelyValidate, s } from './utils';
 
 export type MiscellaneousSettingTranslations = {

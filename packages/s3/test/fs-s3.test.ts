@@ -474,7 +474,7 @@ test('list returns files and prefixes, excludes queried key, reports exclusions,
 		{
 			isDir: false,
 			key: 'Notes/second.md',
-			mtime: expect.any(Number) as unknown as number,
+			mtime: expect.any(Number) as never,
 			size: 2,
 			uid: 'etag-2',
 		},

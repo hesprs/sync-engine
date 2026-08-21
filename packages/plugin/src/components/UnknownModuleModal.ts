@@ -1,7 +1,8 @@
 import { basename } from '@repo/shared/path';
 import { App, Modal, Setting } from 'obsidian';
+import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Fragment, Translate } from '@/modules/I18n';
-import type { AugmentedModuleMeta, MaybePromise } from '@/sdk';
+import type { MaybePromise } from '@/types';
 import formatDateTime from '@/utils/format-date';
 import { formatFileSize } from '@/utils/unit-converter';
 import ModuleEditorModal from './ModuleEditorModal';
