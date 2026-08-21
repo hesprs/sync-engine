@@ -3,7 +3,7 @@ const CHANGELOG_PATH = 'packages/plugin/CHANGELOG.md';
 const OUTPUT_PATH = 'release-notes.md';
 
 function getSemVer(version: string): string {
-	const match = /(?<semver>\d+\.\d+\.\d+)/v.exec(version);
+	const match = /(?<semver>\d+\.\d+\.\d+)/u.exec(version);
 	if (!match)
 		throw new Error(`Invalid version format: ${version}. Expected semver (e.g. 1.0.0).`);
 
