@@ -1,5 +1,6 @@
 import type {
 	Binary,
+	DatabaseSync,
 	FileStat,
 	ListReporter,
 	Request,
@@ -7,6 +8,7 @@ import type {
 	RequestResponse,
 	RootFs,
 	Stat,
+	StoreSync,
 } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/get-status';
@@ -30,10 +32,13 @@ export type GdriveFsOptions = {
 	useTrash: boolean;
 };
 
+export type GdriveDB = DatabaseSync<{ gdriveIds: string }, { gdriveIdsMarker?: string }>;
+
 const READ_CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
 const READ_MAX_CONCURRENT = 8;
 const PAGE_SIZE = 1000;
 const WRITE_FIELDS = 'id,md5Checksum';
+const ROOT_ID = 'root';
 
 function notFoundError(key: string): Error {
 	const error = new Error(`Google Drive: ${key} does not exist.`);
@@ -42,19 +47,28 @@ function notFoundError(key: string): Error {
 }
 
 /**
- * Google Drive stores files by immutable id inside real folders, while the
- * sync engine speaks path keys. This class translates keys to ids on demand
- * and caches the mapping for the lifetime of the instance. Only files created
- * through this module are visible because of the `drive.file` OAuth scope.
+ * Google Drive stores files by immutable id inside real folders, while
+ * Sync Engine speaks path keys. Fs translates keys to ids
+ * and caches the mapping.
+ *
+ * Limitation: cannot download a file with known key but not cached ID, this is
+ * fine in current implementation (impossible to happen).
  */
 export default class GdriveFs implements RootFs {
 	/** Path key (`'/'`, `folder/`, `folder/note.md`) to Drive file id. */
-	private readonly ids = new Map<string, string>();
+	private readonly ids: StoreSync<string>;
 
 	constructor(
 		private readonly request: Request,
 		private readonly options: GdriveFsOptions,
-	) {}
+		memoryDB: GdriveDB,
+	) {
+		this.ids = memoryDB.getStore('gdriveIds');
+		if (memoryDB.getMeta('gdriveIdsMarker') !== this.getUid()) {
+			this.ids.clear();
+			memoryDB.setMeta('gdriveIdsMarker', this.getUid());
+		}
+	}
 
 	getUid(): string {
 		return `gdrive~${this.options.userId}`;
@@ -71,90 +85,9 @@ export default class GdriveFs implements RootFs {
 		throw error;
 	}
 
-	private async lookupChild(
-		parentId: string,
-		name: string,
-		folder: boolean,
-	): Promise<DriveFile | undefined> {
-		const mimeClause = folder
-			? ` and mimeType = '${FOLDER_MIME}'`
-			: ` and mimeType != '${FOLDER_MIME}'`;
-		const url = buildUrl(DRIVE_API, '/files', {
-			fields: `files(${FILE_FIELDS})`,
-			orderBy: 'modifiedTime desc',
-			pageSize: '1',
-			q: `'${escapeQuery(parentId)}' in parents and name = '${escapeQuery(name)}' and trashed = false${mimeClause}`,
-		});
-		const response = await this.requestOrThrow({ method: 'GET', url });
-		return (response.json() as DriveFileList).files?.[0];
-	}
-
-	private async createFolder(parentId: string, name: string): Promise<string> {
-		const response = await this.requestOrThrow({
-			body: textToUint8Array(
-				JSON.stringify({ mimeType: FOLDER_MIME, name, parents: [parentId] }),
-			),
-			headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-			method: 'POST',
-			url: buildUrl(DRIVE_API, '/files', { fields: 'id' }),
-		});
-		const created = response.json() as DriveFile;
-		if (!created.id) throw new Error('Google Drive did not return an id for a created folder!');
-		return created.id;
-	}
-
-	/**
-	 * Resolves the real root id (never the `root` alias) so listing can match
-	 * ids returned in `parents`.
-	 */
-	private async rootId(): Promise<string> {
-		const cached = this.ids.get('/');
-		if (cached !== undefined) return cached;
-		const response = await this.requestOrThrow({
-			method: 'GET',
-			url: buildUrl(DRIVE_API, '/files/root', { fields: 'id' }),
-		});
-		const id = (response.json() as DriveFile).id;
-		if (!id) throw new Error('Google Drive did not return the root folder id!');
-		this.ids.set('/', id);
-		return id;
-	}
-
-	/** Resolves a key to its id, or `undefined` when it does not exist. */
-	private async resolveId(key: string): Promise<string | undefined> {
-		if (key === '/') return this.rootId();
-		const cached = this.ids.get(key);
-		if (cached !== undefined) return cached;
-		const parentId = await this.resolveId(dirname(key));
-		if (parentId === undefined) return undefined;
-		const existing = await this.lookupChild(parentId, basename(key), isFolder(key));
-		if (existing) this.ids.set(key, existing.id);
-		return existing?.id;
-	}
-
-	/** Resolves a folder key to its id, creating the folder chain when missing. */
-	private async ensureFolderId(key: string): Promise<string> {
-		if (key === '/') return this.rootId();
-		const cached = this.ids.get(key);
-		if (cached !== undefined) return cached;
-		const parentId = await this.ensureFolderId(dirname(key));
-		const existing = await this.lookupChild(parentId, basename(key), true);
-		if (existing) {
-			this.ids.set(key, existing.id);
-			return existing.id;
-		}
-		const created = await this.createFolder(parentId, basename(key));
-		this.ids.set(key, created);
-		return created;
-	}
-
-	/** Fresh metadata lookup for a file key (also refreshes the id cache). */
-	private async resolveEntry(key: string): Promise<DriveFile | undefined> {
-		const parentId = await this.resolveId(dirname(key));
-		if (parentId === undefined) return undefined;
-		const entry = await this.lookupChild(parentId, basename(key), false);
-		if (entry) this.ids.set(key, entry.id);
-		return entry;
+	private resolveId(key: string): string | undefined {
+		if (key === '/') return ROOT_ID;
+		return this.ids.get(key);
 	}
 
 	private dropCache(key: string): void {
@@ -164,23 +97,53 @@ export default class GdriveFs implements RootFs {
 			if (cachedKey.startsWith(key)) this.ids.delete(cachedKey);
 	}
 
+	/**
+	 * Walks the path chain of `key` from root with fresh queries, ignoring and
+	 * refreshing the cache along the way.
+	 */
+	private async resolveIdFresh(key: string): Promise<string | undefined> {
+		if (key === '/') return ROOT_ID;
+		const segments = key.split('/').filter((segment) => segment !== '');
+		let parentId = ROOT_ID;
+		let prefix = '';
+		for (const [index, segment] of segments.entries()) {
+			const last = index === segments.length - 1;
+			const childKey = `${prefix}${segment}${last && !isFolder(key) ? '' : '/'}`;
+			const folder = !last || isFolder(key);
+			const response = await this.requestOrThrow({
+				method: 'GET',
+				url: buildUrl(DRIVE_API, '/files', {
+					fields: 'files(id)',
+					pageSize: '1',
+					q: `'${parentId}' in parents and name = '${escapeQuery(segment)}' and mimeType ${folder ? '=' : '!='} '${FOLDER_MIME}' and trashed = false`,
+				}),
+			});
+			const id = (response.json() as DriveFileList).files?.[0]?.id;
+			if (!id) return undefined;
+			this.ids.set(childKey, id);
+			parentId = id;
+			prefix = childKey;
+		}
+		return parentId;
+	}
+
 	/** Session metadata for uploading `key`, updating the existing file when present. */
-	private async sessionFor(
+	private sessionFor(
 		key: string,
 		stat: FileStat,
-	): Promise<{ initiateUrl: string; method: 'PATCH' | 'POST'; metadata: object }> {
+	): { initiateUrl: string; method: 'PATCH' | 'POST'; metadata: object } {
 		const modifiedTime = new Date(stat.mtime).toISOString();
-		const existing = await this.resolveEntry(key);
+		const existing = this.resolveId(key);
 		if (existing)
 			return {
-				initiateUrl: buildUrl(DRIVE_UPLOAD_API, `/files/${existing.id}`, {
+				initiateUrl: buildUrl(DRIVE_UPLOAD_API, `/files/${existing}`, {
 					fields: WRITE_FIELDS,
 					uploadType: 'resumable',
 				}),
 				metadata: { modifiedTime },
 				method: 'PATCH',
 			};
-		const parentId = await this.ensureFolderId(dirname(key));
+		const parentId = this.resolveId(dirname(key));
 		return {
 			initiateUrl: buildUrl(DRIVE_UPLOAD_API, '/files', {
 				fields: WRITE_FIELDS,
@@ -197,7 +160,7 @@ export default class GdriveFs implements RootFs {
 	}
 
 	async read(key: string): Promise<Binary> {
-		const id = await this.resolveId(key);
+		const id = this.resolveId(key);
 		if (id === undefined) throw notFoundError(key);
 		const response = await this.requestOrThrow({
 			method: 'GET',
@@ -206,8 +169,8 @@ export default class GdriveFs implements RootFs {
 		return response.bytes();
 	}
 
-	async readStream(key: string, { size }: FileStat): Promise<ReadableStream<Binary>> {
-		const id = await this.resolveId(key);
+	readStream(key: string, { size }: FileStat): ReadableStream<Binary> {
+		const id = this.resolveId(key);
 		if (id === undefined) throw notFoundError(key);
 		const url = buildUrl(DRIVE_API, `/files/${id}`, { alt: 'media' });
 		return createRangeReadStream({
@@ -228,7 +191,7 @@ export default class GdriveFs implements RootFs {
 	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
 		const file = await singlePutUpload(
 			{
-				...(await this.sessionFor(key, stat)),
+				...this.sessionFor(key, stat),
 				request: this.request,
 				size: value.byteLength,
 			},
@@ -240,7 +203,7 @@ export default class GdriveFs implements RootFs {
 
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
 		const file = await resumableUpload(
-			{ ...(await this.sessionFor(key, stat)), request: this.request, size: stat.size },
+			{ ...this.sessionFor(key, stat), request: this.request, size: stat.size },
 			value,
 		);
 		if (file.id) this.ids.set(key, file.id);
@@ -248,7 +211,7 @@ export default class GdriveFs implements RootFs {
 	}
 
 	async delete(key: string): Promise<void> {
-		const id = await this.resolveId(key);
+		const id = this.resolveId(key);
 		if (id === undefined) return;
 		try {
 			await this.requestOrThrow(
@@ -271,10 +234,11 @@ export default class GdriveFs implements RootFs {
 	}
 
 	async move(oldKey: string, newKey: string): Promise<void> {
-		const id = await this.resolveId(oldKey);
+		const id = this.resolveId(oldKey);
 		if (id === undefined) throw notFoundError(oldKey);
-		const oldParentId = await this.resolveId(dirname(oldKey));
-		const newParentId = await this.ensureFolderId(dirname(newKey));
+		const oldParentId = this.resolveId(dirname(oldKey));
+		const newParentId = this.resolveId(dirname(newKey));
+		if (!newParentId) throw new Error(`Parent not created when moving to "${newKey}"!`);
 		const query: Record<string, string> = { fields: 'id' };
 		if (oldParentId !== newParentId) {
 			query.addParents = newParentId;
@@ -290,31 +254,53 @@ export default class GdriveFs implements RootFs {
 	}
 
 	/** Drive folders always need an existing parent id, so missing parents are created regardless of `recursive`. */
-	async mkdir(key: string): Promise<void> {
-		await this.ensureFolderId(key);
+	async mkdir(key: string, recursive: boolean): Promise<void> {
+		const parent = dirname(key);
+		let parentId = this.resolveId(parent);
+		if (!parent && recursive) {
+			await this.mkdir(parent, true);
+			parentId = this.resolveId(parent);
+		}
+		if (!parentId) throw new Error(`Parent is not created when creating "${key}"!`);
+		const response = await this.requestOrThrow({
+			body: textToUint8Array(
+				JSON.stringify({ mimeType: FOLDER_MIME, name: basename(key), parents: [parentId] }),
+			),
+			headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+			method: 'POST',
+			url: buildUrl(DRIVE_API, '/files', { fields: 'id' }),
+		});
+		const created = response.json() as DriveFile;
+		if (!created.id) throw new Error('Google Drive did not return an id for a created folder!');
+		this.ids.set(key, created.id);
 	}
 
 	async stat(key: string): Promise<Stat> {
-		if (isFolder(key)) {
-			if ((await this.resolveId(key)) === undefined) throw notFoundError(key);
-			return { isDir: true, key };
-		}
-		const entry = await this.resolveEntry(key);
+		const parentId = this.resolveId(dirname(key));
+		if (!parentId) throw notFoundError(key);
+		const url = buildUrl(DRIVE_API, '/files', {
+			fields: `files(${FILE_FIELDS})`,
+			orderBy: 'modifiedTime desc',
+			pageSize: '1',
+			q: `'${parentId}' in parents and name = '${escapeQuery(basename(key))}' and trashed = false`,
+		});
+		const response = await this.requestOrThrow({ method: 'GET', url });
+		const entry = (response.json() as DriveFileList).files?.[0];
 		if (!entry) throw notFoundError(key);
 		return toFileStat(key, entry);
 	}
 
+	// When Sync Engine calls `exists()`, the only possibility is that something is unexpected, don't trust cache here
 	async exists(key: string): Promise<boolean> {
-		return key === '/' || (await this.resolveId(key)) !== undefined;
+		return (await this.resolveIdFresh(key)) !== undefined;
 	}
 
 	/**
-	 * Fetches every visible file in one paginated query (the `drive.file`
-	 * scope limits results to files this module created), then walks the tree
+	 * Fetches every visible file in one paginated query, then walks the tree
 	 * under the requested key so the reporter can steer traversal.
 	 */
 	async list(key: string, reporter: ListReporter): Promise<Array<Stat>> {
-		const startId = await this.resolveId(key);
+		const startId = this.resolveId(key) ?? (await this.resolveIdFresh(key));
 		if (startId === undefined) throw notFoundError(key);
 		const all: Array<DriveFile> = [];
 		let pageToken: string | undefined;
@@ -337,7 +323,7 @@ export default class GdriveFs implements RootFs {
 		const childrenByParent = new Map<string, Array<DriveFile>>();
 		for (const file of all) {
 			const parent = file.parents?.[0];
-			if (!parent || file.name.includes('/')) continue;
+			if (!parent) continue;
 			const siblings = childrenByParent.get(parent);
 			if (siblings) siblings.push(file);
 			else childrenByParent.set(parent, [file]);

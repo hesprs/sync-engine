@@ -65,7 +65,7 @@
 		"react/jsx-props-no-spreading": "off",
 		"import/no-unassigned-import": [
 			"warn",
-			{ "allow": ["**/*.css", "**/*.scss", "**/*.less"] }
+			{ "allow": ["**/*.css", "**/*.scss", "**/*.less", "tsdown/client"] }
 		],
 		"eslint/no-underscore-dangle": [
 			"warn",

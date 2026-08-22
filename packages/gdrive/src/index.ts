@@ -1,3 +1,4 @@
+import 'tsdown/client';
 import type {
 	Context,
 	FsWrapperEntry,
@@ -13,12 +14,14 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
+import type { GdriveDB } from './gdrive/fs';
 import type { GdriveTranslations } from './setting';
 import { TokenManager, bearerMiddleware } from './gdrive/auth';
 import checkConnection from './gdrive/check-connection';
 import GdriveFs from './gdrive/fs';
 import en from './i18n';
 import gdriveSetting from './setting';
+import styles from './styles.css?inline';
 
 export type GdriveSettings = {
 	baseDirectory: string;
@@ -35,10 +38,12 @@ export default class Gdrive {
 			translate: Translate<Translations & GdriveTranslations>;
 			registerRemoteFs: (id: string, entry: RemoteFsEntry) => () => void;
 			app: App;
+			memoryDB: GdriveDB;
 			registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
 			registerSetting: (entry: SettingEntry) => () => void;
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
+			registerCss: (css: string) => () => void;
 		}>,
 	) {
 		if (!this.moduleSettings.baseDirectory)
@@ -59,14 +64,17 @@ export default class Gdrive {
 		const {
 			translate,
 			registerRemoteFs,
+			memoryDB,
 			registerRemoteFsWrapper,
 			registerRemoteRequestMiddleware,
 			registerSetting,
+			registerCss,
 		} = this.ctx;
 		this.cleanup.push(
+			registerCss(styles),
 			registerRemoteFs('gdrive', {
 				checkConnection,
-				instantiate: (request) => new GdriveFs(request, this.moduleSettings),
+				instantiate: (request) => new GdriveFs(request, this.moduleSettings, memoryDB),
 				prettyName: () => translate('gdrive'),
 			}),
 			registerRemoteFsWrapper({

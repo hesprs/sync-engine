@@ -43,14 +43,9 @@ export type GdriveTranslations = {
 };
 
 type DeviceCodeModalOptions = {
-	title: string;
-	instruction: string;
+	translate: Translate<GdriveTranslations>;
 	userCode: string;
 	verificationUrl: string;
-	copyLabel: string;
-	copiedLabel: string;
-	openLabel: string;
-	waitingLabel: string;
 	onClose: () => void;
 };
 
@@ -63,39 +58,36 @@ class DeviceCodeModal extends Modal {
 	}
 
 	override onOpen(): void {
-		const { contentEl, titleEl } = this;
-		titleEl.setText(this.options.title);
-		contentEl.createEl('p', { text: this.options.instruction });
-		const codeEl = contentEl.createEl('div', { text: this.options.userCode });
-		codeEl.setCssStyles({
-			fontSize: '2em',
-			fontWeight: '700',
-			letterSpacing: '0.15em',
-			margin: '0.5em 0',
-			textAlign: 'center',
-			userSelect: 'text',
+		const {
+			contentEl,
+			titleEl,
+			options: { translate, userCode, verificationUrl },
+		} = this;
+		titleEl.setText(translate('deviceCodeTitle'));
+		contentEl.createEl('p', {
+			text: translate('deviceCodeInstruction', { url: verificationUrl }),
 		});
-		const buttonRow = contentEl.createEl('div');
-		buttonRow.setCssStyles({
-			display: 'flex',
-			gap: '0.5em',
-			justifyContent: 'center',
-			marginBottom: '0.75em',
+		contentEl.createEl('code', {
+			cls: 'gdrive-device-code',
+			text: userCode,
 		});
-		const copyButton = buttonRow.createEl('button', { text: this.options.copyLabel });
-		copyButton.addEventListener('click', () => {
+		const buttonRow = contentEl.createEl('div', 'gdrive-device-code-buttons');
+		const copyButton = buttonRow.createEl('button', { text: translate('copyCode') });
+		copyButton.onClickEvent(() => {
 			void navigator.clipboard.writeText(this.options.userCode);
-			copyButton.setText(this.options.copiedLabel);
+			copyButton.setText(translate('codeCopied'));
 		});
 		const openButton = buttonRow.createEl('button', {
 			cls: 'mod-cta',
-			text: this.options.openLabel,
+			text: translate('openVerificationPage'),
 		});
 		openButton.addEventListener('click', () => {
 			window.open(this.options.verificationUrl);
 		});
-		const statusEl = contentEl.createEl('p', { text: this.options.waitingLabel });
-		statusEl.setCssStyles({ opacity: '0.7', textAlign: 'center' });
+		contentEl.createEl('p', {
+			cls: 'gdrive-device-code-status',
+			text: translate('waitingApproval'),
+		});
 	}
 
 	override onClose(): void {
@@ -128,19 +120,12 @@ export default function gdriveSetting(
 			const authorization = await startDeviceAuthorization();
 			let finished = false;
 			const modal = new DeviceCodeModal(app, {
-				copiedLabel: translate('codeCopied'),
-				copyLabel: translate('copyCode'),
-				instruction: translate('deviceCodeInstruction', {
-					url: authorization.verificationUrl,
-				}),
 				onClose: () => {
 					if (!finished) cancelled = true;
 				},
-				openLabel: translate('openVerificationPage'),
-				title: translate('deviceCodeTitle'),
+				translate,
 				userCode: authorization.userCode,
 				verificationUrl: authorization.verificationUrl,
-				waitingLabel: translate('waitingApproval'),
 			});
 			modal.open();
 			try {
