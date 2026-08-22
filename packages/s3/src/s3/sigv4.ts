@@ -142,15 +142,15 @@ export async function signRequest(
 
 	let kSigning: Binary;
 	const marker = `${secretAccessKey}~${dateStamp}~${region}~${service}`;
-	const cache = db.getMeta('signingKey');
-	if (db.getMeta('signingKeyMarker') === marker && cache) kSigning = cache;
+	const cache = db.getMeta('s3Key');
+	if (db.getMeta('s3KeyMarker') === marker && cache) kSigning = cache;
 	else {
 		const kDate = await hmac(encoder.encode(`AWS4${secretAccessKey}`), dateStamp);
 		const kRegion = await hmac(kDate, region);
 		const kService = await hmac(kRegion, service);
 		kSigning = await hmac(kService, 'aws4_request');
-		db.setMeta('signingKeyMarker', marker);
-		db.setMeta('signingKey', kSigning);
+		db.setMeta('s3KeyMarker', marker);
+		db.setMeta('s3Key', kSigning);
 	}
 	const signature = toHex(await hmac(kSigning, stringToSign));
 	const credential = `${accessKeyId}/${credentialScope}`;
