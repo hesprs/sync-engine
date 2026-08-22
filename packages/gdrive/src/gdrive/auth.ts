@@ -1,22 +1,47 @@
 import type { Request, RequestParam } from '@hesprs/sync-engine-sdk';
+import { getStatus } from '@repo/shared/get-status';
+import { requestUrl, SecretStorage } from 'obsidian';
 import { OAUTH_DEVICE_CODE_URL, OAUTH_SCOPE, OAUTH_TOKEN_URL } from './api';
 
-/**
- * Minimal HTTP shape used for OAuth endpoints. Kept independent from the SDK
- * `Request` so authentication can run from settings UI code (via Obsidian
- * `requestUrl`) and from tests without a composed request chain.
- */
-export type AuthHttp = (params: {
-	url: string;
-	method: 'GET' | 'POST';
-	body?: string;
-	contentType?: string;
-}) => Promise<{ status: number; json: () => unknown }>;
+export const CLIENT_ID = process.env.CLIENT_ID ?? '';
+export const CLIENT_SECRET = process.env.CLIENT_SECRET ?? ''; // Not really a secret
+const KEYCHAIN_SECRET_ID = 'sync-engine-gdrive-refresh-token'; // Secret storage id under which the Google refresh token is stored.
 
-export type AuthConfig = {
-	clientId: string;
-	clientSecret: string;
-	refreshToken: string;
+type TokenResponse = {
+	access_token: string;
+	expires_in: number;
+	user_id?: string;
+	refresh_token?: string;
+};
+
+type TokenError = {
+	error:
+		| 'invalid_request'
+		| 'invalid_client'
+		| 'invalid_grant'
+		| 'unauthorized_client'
+		| 'unsupported_grant_type'
+		| 'authorization_pending'
+		| 'slow_down'
+		| 'expired_token'
+		| 'access_denied';
+	error_description?: string;
+	error_uri?: string;
+};
+
+type DeviceCodeResponse = {
+	device_code: string;
+	user_code: string;
+	verification_uri: string;
+	verification_uri_complete?: string;
+	expires_in: number;
+	interval: number;
+};
+
+type DeviceCodeError = {
+	error: 'invalid_request' | 'invalid_client' | 'unsupported_grant_type' | 'unauthorized_client';
+	error_description?: string;
+	error_uri?: string;
 };
 
 export type DeviceAuthorization = {
@@ -31,134 +56,74 @@ export type DeviceTokenResult = {
 	accessToken: string;
 	refreshToken: string;
 	expiresIn: number;
-	email?: string;
+	userId: string;
 };
 
 const FORM_CONTENT_TYPE = 'application/x-www-form-urlencoded';
-
-/** Secret storage id under which the Google refresh token is stored. */
-export const REFRESH_TOKEN_SECRET_ID = 'sync-engine-gdrive-refresh-token';
 
 function formEncode(fields: Record<string, string>): string {
 	return new URLSearchParams(fields).toString();
 }
 
-function describeAuthError(data: Record<string, unknown>, status: number): string {
-	const description =
-		typeof data.error_description === 'string' ? data.error_description : undefined;
-	const code = typeof data.error === 'string' ? data.error : undefined;
-	return description ?? code ?? `HTTP ${status}`;
+function describeAuthError(data: TokenError, status: number): string {
+	return data.error_description ?? data.error ?? `HTTP ${status}`;
 }
 
-function safeAuthJson(response: { json: () => unknown }): Record<string, unknown> {
-	try {
-		const parsed = response.json();
-		return typeof parsed === 'object' && parsed !== undefined && parsed !== null
-			? (parsed as Record<string, unknown>)
-			: {};
-	} catch {
-		return {};
-	}
-}
-
-export function decodeIdTokenEmail(idToken: string): string | undefined {
-	try {
-		const payload = idToken.split('.')[1];
-		if (!payload) return undefined;
-		const normalized = payload.replaceAll('-', '+').replaceAll('_', '/');
-		const padded = normalized + '='.repeat((4 - (normalized.length % 4)) % 4);
-		const parsed = JSON.parse(atob(padded)) as { email?: unknown };
-		return typeof parsed.email === 'string' ? parsed.email : undefined;
-	} catch {
-		return undefined;
-	}
-}
-
-export async function startDeviceAuthorization(
-	http: AuthHttp,
-	clientId: string,
-): Promise<DeviceAuthorization> {
-	const response = await http({
-		body: formEncode({ client_id: clientId, scope: OAUTH_SCOPE }),
+export async function startDeviceAuthorization(): Promise<DeviceAuthorization> {
+	const response = await requestUrl({
+		body: formEncode({ client_id: CLIENT_ID, scope: OAUTH_SCOPE }),
 		contentType: FORM_CONTENT_TYPE,
 		method: 'POST',
+		throw: false,
 		url: OAUTH_DEVICE_CODE_URL,
 	});
-	const data = safeAuthJson(response);
-	if (response.status < 200 || response.status >= 300)
+	const data = response.json as DeviceCodeResponse | DeviceCodeError;
+	if ('error' in data)
 		throw new Error(
 			`Google device authorization failed: ${describeAuthError(data, response.status)}`,
 		);
-	const deviceCode = data.device_code;
-	const userCode = data.user_code;
-	const verificationUrl = data.verification_url ?? data.verification_uri;
-	if (
-		typeof deviceCode !== 'string' ||
-		typeof userCode !== 'string' ||
-		typeof verificationUrl !== 'string'
-	)
-		throw new Error('Google device authorization returned an unexpected response.');
 	return {
-		deviceCode,
-		expiresIn: typeof data.expires_in === 'number' ? data.expires_in : 1800,
-		interval: typeof data.interval === 'number' ? data.interval : 5,
-		userCode,
-		verificationUrl,
+		deviceCode: data.device_code,
+		expiresIn: data.expires_in,
+		interval: data.interval,
+		userCode: data.user_code,
+		verificationUrl: data.verification_uri,
 	};
 }
 
-export async function pollDeviceToken(
-	http: AuthHttp,
-	options: {
-		clientId: string;
-		clientSecret: string;
-		authorization: DeviceAuthorization;
-		isCancelled?: () => boolean;
-		sleep?: (ms: number) => Promise<void>;
-		now?: () => number;
-	},
-): Promise<DeviceTokenResult> {
-	const sleep =
-		options.sleep ??
-		((ms: number) =>
-			new Promise<void>((resolve) => {
-				setTimeout(resolve, ms);
-			}));
-	const now = options.now ?? (() => Date.now());
+export async function pollDeviceToken(options: {
+	authorization: DeviceAuthorization;
+	isCancelled: () => boolean;
+}): Promise<DeviceTokenResult> {
 	let interval = Math.max(options.authorization.interval, 1);
-	const deadline = now() + options.authorization.expiresIn * 1000;
+	const deadline = Date.now() + options.authorization.expiresIn * 1000;
 	while (true) {
 		await sleep(interval * 1000);
 		if (options.isCancelled?.()) throw new Error('Google Drive connection was cancelled.');
-		if (now() > deadline)
+		if (Date.now() > deadline)
 			throw new Error('The device code expired, please try connecting again.');
-		const response = await http({
+		const response = await requestUrl({
 			body: formEncode({
-				client_id: options.clientId,
-				client_secret: options.clientSecret,
+				client_id: CLIENT_ID,
+				client_secret: CLIENT_SECRET,
 				device_code: options.authorization.deviceCode,
 				grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
 			}),
 			contentType: FORM_CONTENT_TYPE,
 			method: 'POST',
+			throw: false,
 			url: OAUTH_TOKEN_URL,
 		});
-		const data = safeAuthJson(response);
-		if (
-			response.status >= 200 &&
-			response.status < 300 &&
-			typeof data.access_token === 'string' &&
-			typeof data.refresh_token === 'string'
-		)
-			return {
-				accessToken: data.access_token,
-				email:
-					typeof data.id_token === 'string'
-						? decodeIdTokenEmail(data.id_token)
-						: undefined,
-				expiresIn: typeof data.expires_in === 'number' ? data.expires_in : 3600,
-				refreshToken: data.refresh_token,
-			};
+		const data = response.json as TokenResponse | TokenError;
+		if ('access_token' in data)
+			if (data.refresh_token && data.user_id)
+				return {
+					accessToken: data.access_token,
+					expiresIn: data.expires_in,
+					refreshToken: data.refresh_token,
+					userId: data.user_id,
+				};
+			else throw new Error('Google authorization payload is malformed!');
 		switch (data.error) {
 			case 'authorization_pending': {
 				continue;
@@ -188,23 +153,29 @@ export async function pollDeviceToken(
  * connection check so a token refresh happens at most once at a time.
  */
 export class TokenManager {
-	private accessToken: string | undefined;
+	private accessToken?: string;
 	private expiresAt = 0;
-	private pending: Promise<string> | undefined;
+	private pending?: Promise<string>;
 
-	constructor(
-		private readonly http: AuthHttp,
-		private readonly resolveAuth: () => AuthConfig,
-		private readonly now: () => number = () => Date.now(),
-	) {}
+	constructor(private readonly secretStorage: SecretStorage) {}
 
 	readonly getToken = (force = false): Promise<string> => {
-		if (!force && this.accessToken !== undefined && this.now() < this.expiresAt - 60_000)
+		if (!force && this.accessToken && Date.now() < this.expiresAt - 60_000)
 			return Promise.resolve(this.accessToken);
-		this.pending ??= this.refresh().finally(() => {
-			this.pending = undefined;
-		});
+		this.pending ??= this.refresh().finally(() => (this.pending = undefined));
 		return this.pending;
+	};
+
+	readonly getRefreshToken = () => this.secretStorage.getSecret(KEYCHAIN_SECRET_ID);
+
+	readonly setRefreshToken = (token: string) =>
+		this.secretStorage.setSecret(KEYCHAIN_SECRET_ID, token);
+
+	readonly deleteRefreshToken = () => this.secretStorage.deleteSecret(KEYCHAIN_SECRET_ID);
+
+	readonly setToken = (token: string, expiresIn: number) => {
+		this.accessToken = token;
+		this.expiresAt = Date.now() + expiresIn * 1000;
 	};
 
 	readonly invalidate = (): void => {
@@ -213,27 +184,24 @@ export class TokenManager {
 	};
 
 	private async refresh(): Promise<string> {
-		const { clientId, clientSecret, refreshToken } = this.resolveAuth();
-		const response = await this.http({
+		const refresh_token = this.getRefreshToken();
+		if (!refresh_token) throw new Error('Please authorize Google Account!');
+		const response = await requestUrl({
 			body: formEncode({
-				client_id: clientId,
-				client_secret: clientSecret,
+				client_id: CLIENT_ID,
+				client_secret: CLIENT_SECRET,
 				grant_type: 'refresh_token',
-				refresh_token: refreshToken,
+				refresh_token,
 			}),
 			contentType: FORM_CONTENT_TYPE,
 			method: 'POST',
+			throw: false,
 			url: OAUTH_TOKEN_URL,
 		});
-		const data = safeAuthJson(response);
-		if (
-			response.status >= 200 &&
-			response.status < 300 &&
-			typeof data.access_token === 'string'
-		) {
+		const data = response.json as TokenResponse | TokenError;
+		if ('access_token' in data) {
 			this.accessToken = data.access_token;
-			this.expiresAt =
-				this.now() + (typeof data.expires_in === 'number' ? data.expires_in : 3600) * 1000;
+			this.expiresAt = Date.now() + data.expires_in * 1000;
 			return data.access_token;
 		}
 		this.invalidate();
@@ -253,11 +221,12 @@ export function bearerMiddleware(request: Request, manager: TokenManager): Reque
 		const base: RequestParam = typeof params === 'string' ? { url: params } : params;
 		const send = (token: string) =>
 			request({ ...base, headers: { ...base.headers, Authorization: `Bearer ${token}` } });
-		let response = await send(await manager.getToken());
-		if (response.status === 401) {
+		try {
+			return await send(await manager.getToken());
+		} catch (error: unknown) {
+			if (getStatus(error) !== 401) throw error;
 			manager.invalidate();
-			response = await send(await manager.getToken(true));
+			return send(await manager.getToken(true));
 		}
-		return response;
 	};
 }

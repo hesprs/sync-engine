@@ -5,7 +5,8 @@ export default async function checkConnection(request: Request): Promise<CheckCo
 	try {
 		const response = await request({
 			method: 'GET',
-			url: buildUrl(DRIVE_API, '/about', { fields: 'user(emailAddress)' }),
+			throw: false,
+			url: buildUrl(DRIVE_API, '/about', { fields: 'storageQuota' }),
 		});
 		if (response.status >= 200 && response.status < 300) return { success: true } as const;
 		return {

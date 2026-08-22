@@ -46,16 +46,8 @@ export function getHeader(
 	return entry?.[1];
 }
 
-export function safeJson(response: RequestResponse): unknown {
-	try {
-		return response.json();
-	} catch {
-		return {};
-	}
-}
-
 export function parseDriveError(response: RequestResponse): string | undefined {
-	const parsed = safeJson(response) as {
+	const parsed = response as {
 		error?: { code?: number; message?: string } | string;
 		error_description?: string;
 	};

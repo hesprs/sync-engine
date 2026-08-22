@@ -122,7 +122,7 @@
 		"unicorn/import-style": "off",
 		"unicorn/no-process-exit": "off",
 		"eslint/one-var": ["warn", "never"],
-		"unicorn/max-nested-calls": ["warn", { "max": 5 }],
+		"unicorn/max-nested-calls": ["warn", { "max": 5 }]
 	},
 	"env": {
 		"builtin": true,
@@ -136,7 +136,8 @@
 		"activeWindow": "readonly",
 		"createFragment": "readonly",
 		"createEl": "readonly",
-		"createDiv": "readonly"
+		"createDiv": "readonly",
+		"sleep": "readonly"
 	},
 	"overrides": [
 		{

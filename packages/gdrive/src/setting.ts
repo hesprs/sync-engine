@@ -8,10 +8,9 @@ import type {
 import type { App, SettingGroupItem } from 'obsidian';
 import { s } from '@hesprs/sync-engine-sdk';
 import { normalizeBaseDir } from '@repo/shared/path';
-import { Modal, Notice, SecretComponent } from 'obsidian';
+import { Modal, Notice } from 'obsidian';
 import type { TokenManager } from './gdrive/auth';
-import { REFRESH_TOKEN_SECRET_ID, pollDeviceToken, startDeviceAuthorization } from './gdrive/auth';
-import requestUrlHttp from './gdrive/auth-http';
+import { pollDeviceToken, startDeviceAuthorization } from './gdrive/auth';
 import handleInput from './handle-input';
 
 export type GdriveTranslations = {
@@ -123,17 +122,10 @@ export default function gdriveSetting(
 	tokenManager: TokenManager,
 ): CallableOrObjectTree {
 	const invalidValue = translate('invalidValue');
-
 	const connectGoogle = async () => {
-		const clientId = settings.clientId.trim();
-		const clientSecret = app.secretStorage.getSecret(settings.clientSecret);
-		if (!clientId || clientSecret === null || clientSecret === '') {
-			new Notice(translate('configureFirst'));
-			return;
-		}
 		let cancelled = false;
 		try {
-			const authorization = await startDeviceAuthorization(requestUrlHttp, clientId);
+			const authorization = await startDeviceAuthorization();
 			let finished = false;
 			const modal = new DeviceCodeModal(app, {
 				copiedLabel: translate('codeCopied'),
@@ -152,20 +144,17 @@ export default function gdriveSetting(
 			});
 			modal.open();
 			try {
-				const token = await pollDeviceToken(requestUrlHttp, {
+				const { refreshToken, userId, accessToken, expiresIn } = await pollDeviceToken({
 					authorization,
-					clientId,
-					clientSecret,
 					isCancelled: () => cancelled,
 				});
 				finished = true;
-				app.secretStorage.setSecret(REFRESH_TOKEN_SECRET_ID, token.refreshToken);
-				settings.refreshToken = REFRESH_TOKEN_SECRET_ID;
-				if (token.email) settings.account = token.email;
-				else if (!settings.account) settings.account = 'Google account';
+				tokenManager.setRefreshToken(refreshToken);
+				settings.userId = userId;
+				tokenManager.setToken(accessToken, expiresIn);
 				await saveSettings();
 				tokenManager.invalidate();
-				new Notice(translate('connectSuccess', { account: settings.account }));
+				new Notice(translate('connectSuccess'));
 			} finally {
 				finished = true;
 				modal.close();
@@ -175,9 +164,10 @@ export default function gdriveSetting(
 			if (!cancelled) new Notice(error instanceof Error ? error.message : String(error));
 		}
 	};
+	const refreshToken = tokenManager.getRefreshToken();
 
 	return {
-		683: s(
+		551: s(
 			(self) => ({
 				heading: translate('gdrive'),
 				items: Object.values(self).map((node) => node(node) as SettingGroupItem),
@@ -185,49 +175,15 @@ export default function gdriveSetting(
 			}),
 			{
 				1000: s(() => ({
-					desc: translate('clientIdDescription'),
-					name: translate('clientId'),
-					render: (setting) => {
-						setting.addText((text) => {
-							text.setPlaceholder(translate('clientIdPlaceholder')).setValue(
-								settings.clientId,
-							);
-							handleInput({
-								invalidValue,
-								key: 'clientId',
-								processValue: (value) => value.trim(),
-								saveSettings,
-								settings,
-								text,
-							});
-						});
-					},
-				})),
-				2000: s(() => ({
-					desc: translate('clientSecretDescription'),
-					name: translate('clientSecret'),
-					render: (setting) => {
-						setting.addComponent((element) =>
-							new SecretComponent(app, element)
-								.setValue(settings.clientSecret)
-								.onChange((value) => {
-									settings.clientSecret = value ?? '';
-									void saveSettings();
-								}),
-						);
-					},
-				})),
-				3000: s(() => ({
-					desc: settings.refreshToken
-						? translate('accountConnected', { account: settings.account })
+					desc: refreshToken
+						? translate('accountConnected')
 						: translate('accountNotConnected'),
 					name: translate('account'),
 					render: (setting) => {
-						if (settings.refreshToken)
+						if (refreshToken)
 							setting.addButton((button) =>
 								button.setButtonText(translate('disconnect')).onClick(() => {
-									settings.refreshToken = '';
-									settings.account = '';
+									tokenManager.deleteRefreshToken();
 									tokenManager.invalidate();
 									void saveSettings();
 									new Notice(translate('disconnected'));
@@ -237,9 +193,7 @@ export default function gdriveSetting(
 						setting.addButton((button) =>
 							button
 								.setButtonText(
-									settings.refreshToken
-										? translate('reconnect')
-										: translate('connect'),
+									refreshToken ? translate('reconnect') : translate('connect'),
 								)
 								.setCta()
 								.onClick(async () => {
@@ -253,7 +207,7 @@ export default function gdriveSetting(
 						);
 					},
 				})),
-				4000: s(() => ({
+				2000: s(() => ({
 					desc: translate('baseDirectoryDescription'),
 					labels: [matchLabel()],
 					name: translate('baseDirectory'),
@@ -273,7 +227,7 @@ export default function gdriveSetting(
 						});
 					},
 				})),
-				5000: s(() => ({
+				3000: s(() => ({
 					desc: translate('useTrashDescription'),
 					name: translate('useTrash'),
 					render: (setting) => {

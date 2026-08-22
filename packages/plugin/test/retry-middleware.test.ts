@@ -1,8 +1,8 @@
 import testKit from '$/test-kit';
+// oxlint-disable-next-line import/no-namespace
+import * as sleepModule from '@repo/shared/sleep';
 import { expect, spyOn, test } from 'bun:test';
 import { retryMiddleware } from '@/fs';
-// oxlint-disable-next-line import/no-namespace
-import * as sleepModule from '@/utils/sleep';
 
 const { bytes, request } = testKit;
 const sleepSpy = spyOn(sleepModule, 'default').mockImplementation(() => Promise.resolve());

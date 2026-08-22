@@ -18,7 +18,7 @@ const en: GdriveTranslations = {
 	codeCopied: 'Copied',
 	configureFirst: 'Enter the OAuth client ID and client secret first.',
 	connect: 'Connect',
-	connectSuccess: 'Connected to Google Drive as {{account}}.',
+	connectSuccess: 'Connected to Google Drive.',
 	copyCode: 'Copy code',
 	deviceCodeInstruction:
 		'On any device, visit {{url}} and enter the code below, then approve access.',

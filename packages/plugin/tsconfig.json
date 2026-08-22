@@ -9,5 +9,12 @@
 			"$/*": ["./test/*"]
 		}
 	},
-	"include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "tsdown.config.ts", "uno.config.ts"]
+	"include": [
+		"src/**/*.ts",
+		"src/**/*.tsx",
+		"test/**/*.ts",
+		"tsdown.config.ts",
+		"uno.config.ts",
+		"../shared/src/sleep.ts"
+	]
 }
