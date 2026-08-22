@@ -43,10 +43,7 @@ export type S3Settings = {
 	};
 };
 
-export type S3DB = DatabaseSync<
-	Record<string, unknown>,
-	{ signingKey: Binary; signingKeyMarker: string }
->;
+export type S3DB = DatabaseSync<Record<string, unknown>, { s3Key?: Binary; s3KeyMarker?: string }>;
 
 export default class S3 {
 	private readonly cleanup: Array<() => void> = [];

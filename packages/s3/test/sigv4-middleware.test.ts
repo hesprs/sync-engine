@@ -1,12 +1,12 @@
 import type { Request, RequestParam } from '@hesprs/sync-engine-sdk';
 import { beforeEach, expect, test } from 'bun:test';
 import { sigv4Middleware } from '@/s3/sigv4';
-import { defaultCredentials, defaultResponse, emptyBinary, memoryDB } from './helpers';
+import { defaultCredentials, defaultResponse, memoryDB } from './helpers';
 
 beforeEach(() => {
 	memoryDB.clearStores();
-	memoryDB.setMeta('signingKey', emptyBinary);
-	memoryDB.setMeta('signingKeyMarker', '');
+	memoryDB.setMeta('s3Key', undefined);
+	memoryDB.setMeta('s3KeyMarker', '');
 });
 
 function createTransport() {
@@ -109,11 +109,11 @@ test('middleware reuses signing key for matching credentials and date', async ()
 	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);
 
 	await request('https://s3.example.com/vault/first.md');
-	const signingKey = memoryDB.getMeta('signingKey');
+	const signingKey = memoryDB.getMeta('s3Key');
 	if (!signingKey) throw new Error('Expected signing key cache entry');
 
 	await request('https://s3.example.com/vault/second.md');
 
-	expect(memoryDB.getMeta('signingKey')).toBe(signingKey);
-	expect(memoryDB.getMeta('signingKeyMarker')).toMatch(/^secret-key~\d{8}~us-east-1~s3$/u);
+	expect(memoryDB.getMeta('s3Key')).toBe(signingKey);
+	expect(memoryDB.getMeta('s3KeyMarker')).toMatch(/^secret-key~\d{8}~us-east-1~s3$/u);
 });

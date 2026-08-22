@@ -33,7 +33,7 @@ export type EncryptionDBSchema = {
 
 export type EncryptionDBMeta = {
 	encryptionKeys?: DerivedKeys;
-	lastEncryptionUid?: string;
+	encryptionMarker?: string;
 };
 
 export type EncryptionDB = DatabaseSync<EncryptionDBSchema, EncryptionDBMeta>;
@@ -57,11 +57,11 @@ class EncryptionFs implements WrappedFs {
 			decryptedToEncrypted: memoryDB.getStore('decryptedToEncrypted'),
 			encryptedToDecrypted: memoryDB.getStore('encryptedToDecrypted'),
 		};
-		if (memoryDB.getMeta('lastEncryptionUid') !== marker) {
+		if (memoryDB.getMeta('encryptionMarker') !== marker) {
 			this.pathStores.decryptedToEncrypted.clear();
 			this.pathStores.encryptedToDecrypted.clear();
 			memoryDB.setMeta('encryptionKeys', undefined);
-			memoryDB.setMeta('lastEncryptionUid', marker);
+			memoryDB.setMeta('encryptionMarker', marker);
 		}
 	}
 

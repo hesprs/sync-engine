@@ -3,7 +3,7 @@ import { openMemoryDB } from 'uni-kv';
 
 export const memoryDB = openMemoryDB<
 	Record<string, unknown>,
-	{ signingKey: Binary; signingKeyMarker: string }
+	{ s3Key?: Binary; s3KeyMarker?: string }
 >('s3-test');
 
 export const emptyBinary: Binary = new Uint8Array(0);

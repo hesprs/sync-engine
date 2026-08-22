@@ -15,7 +15,7 @@ const memoryDB = openMemoryDB<EncryptionDBSchema, EncryptionDBMeta>('encryption-
 beforeEach(() => {
 	memoryDB.clearStores();
 	memoryDB.setMeta('encryptionKeys', undefined);
-	memoryDB.setMeta('lastEncryptionUid', undefined);
+	memoryDB.setMeta('encryptionMarker', undefined);
 });
 
 function must<T>(value: T | undefined, message: string): T {
@@ -309,7 +309,7 @@ test('uid change resets persistent path cache', async () => {
 	const second = createRemote({ uid: 'uid-b' });
 	const secondShim = encryptionWrapper(second.fs, { memoryDB, password: PASSWORD });
 
-	expect(memoryDB.getMeta('lastEncryptionUid')).toBe('uid-b~password');
+	expect(memoryDB.getMeta('encryptionMarker')).toBe('uid-b~password');
 	expect(memoryDB.getMeta('encryptionKeys')).toBeUndefined();
 	expect(memoryDB.getStore('decryptedToEncrypted').keys()).toStrictEqual([]);
 	expect(memoryDB.getStore('encryptedToDecrypted').keys()).toStrictEqual([]);
@@ -326,7 +326,7 @@ test('password change resets persistent path cache', async () => {
 	const second = createRemote({ uid: 'uid-a' });
 	const secondShim = encryptionWrapper(second.fs, { memoryDB, password: WRONG_PASSWORD });
 
-	expect(memoryDB.getMeta('lastEncryptionUid')).toBe('uid-a~wrong-password');
+	expect(memoryDB.getMeta('encryptionMarker')).toBe('uid-a~wrong-password');
 	expect(memoryDB.getMeta('encryptionKeys')).toBeUndefined();
 	expect(memoryDB.getStore('decryptedToEncrypted').keys()).toStrictEqual([]);
 	expect(memoryDB.getStore('encryptedToDecrypted').keys()).toStrictEqual([]);
