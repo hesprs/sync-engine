@@ -1,0 +1,14 @@
+code.gdrive-device-code {
+	display: block;
+	font-size: 2em;
+	font-weight: 700;
+	letter-spacing: 0.15em;
+	margin: 0.5em auto;
+	user-select: text;
+	width: fit-content;
+}
+
+.gdrive-device-code-status {
+	color: var(--text-muted);
+	text-align: center;
+}

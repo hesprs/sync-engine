@@ -1,0 +1,30 @@
+{
+	"name": "gdrive",
+	"version": "0.0.1",
+	"private": true,
+	"license": "MIT",
+	"contributors": [
+		{
+			"name": "Aaron",
+			"github": "Quzzar"
+		},
+		{
+			"name": "Hēsperus",
+			"email": "hesprs@outlook.com",
+			"github": "hesprs"
+		}
+	],
+	"type": "module",
+	"scripts": {
+		"dev": "MODE=dev bun --bun tsdown",
+		"compile": "bun --bun tsdown",
+		"fix": "oxlint --silent --fix && oxfmt",
+		"check": "tsc && oxlint && oxfmt --check",
+		"tests": "bun --preload=./test/mocks test"
+	},
+	"devDependencies": {
+		"@hesprs/sync-engine-sdk": "workspace:*",
+		"@repo/shared": "workspace:*",
+		"hash-wasm": "^4.12.0"
+	}
+}

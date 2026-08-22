@@ -77,10 +77,12 @@ export default class Setting {
 		plugin.addSettingTab(this.settingTab);
 	};
 	private readonly rerenderSettingTab = () => this.settingTab?.update();
+	private readonly refreshSettingTab = () => this.settingTab?.refreshDomState();
 
 	root = {
 		addSettingTab: this.addSettingTab,
 		matchLabel: this.matchLabel,
+		refreshSettingTab: this.refreshSettingTab,
 		registerSetting: setRegister(this.settingRegistry),
 		rerenderSettingTab: this.rerenderSettingTab,
 		speedLabel: this.speedLabel,

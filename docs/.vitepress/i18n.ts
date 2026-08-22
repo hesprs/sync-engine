@@ -23,6 +23,7 @@ const en = {
 	fileSystemWrappers: 'File System Wrappers',
 	fileTree: 'File Tree',
 	folder: '',
+	gdrive: 'Google Drive',
 	home: 'Home',
 	licenseMessage:
 		'All content licensed under the <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> License.',
