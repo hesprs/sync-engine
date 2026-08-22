@@ -319,7 +319,7 @@ export default class GdriveFs implements RootFs {
 			all.push(...(parsed.files ?? []));
 			pageToken = parsed.nextPageToken;
 		} while (pageToken);
-
+		this.ids.clear();
 		const childrenByParent = new Map<string, Array<DriveFile>>();
 		for (const file of all) {
 			const parent = file.parents?.[0];

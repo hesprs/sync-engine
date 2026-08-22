@@ -382,12 +382,14 @@ declare class Setting$1 {
   private readonly speedLabel;
   private readonly addSettingTab;
   private readonly rerenderSettingTab;
+  private readonly refreshSettingTab;
   root: {
     addSettingTab: (plugin: Plugin) => void;
     matchLabel: () => {
       text: string;
       tooltip: string;
     };
+    refreshSettingTab: () => void | undefined;
     registerSetting: (entry: SettingEntry) => () => boolean;
     rerenderSettingTab: () => void | undefined;
     speedLabel: () => {

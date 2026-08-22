@@ -1,6 +1,7 @@
 import type { GdriveSettings } from '@';
 import type {
 	CallableOrObjectTree,
+	Fragment,
 	LabelDefinition,
 	Translate,
 	Translations,
@@ -8,31 +9,23 @@ import type {
 import type { App, SettingGroupItem } from 'obsidian';
 import { s } from '@hesprs/sync-engine-sdk';
 import { normalizeBaseDir } from '@repo/shared/path';
-import { Modal, Notice } from 'obsidian';
+import { Modal, Notice, Setting } from 'obsidian';
 import type { TokenManager } from './gdrive/auth';
-import { pollDeviceToken, startDeviceAuthorization } from './gdrive/auth';
+import { pollDeviceToken, revokeToken, startDeviceAuthorization } from './gdrive/auth';
 import handleInput from './handle-input';
 
 export type GdriveTranslations = {
 	gdrive: string;
-	clientId: string;
-	clientIdDescription: string;
-	clientIdPlaceholder: string;
-	clientSecret: string;
-	clientSecretDescription: string;
-	account: string;
+	connectAccount: string;
 	accountConnected: string;
-	accountNotConnected: string;
+	accountConnectedDescription: string;
+	connectAccountDescription: string;
 	connect: string;
-	reconnect: string;
 	disconnect: string;
-	disconnected: string;
 	configureFirst: string;
 	deviceCodeTitle: string;
-	deviceCodeInstruction: string;
-	copyCode: string;
-	codeCopied: string;
-	openVerificationPage: string;
+	deviceCodeInstruction: Fragment<string>;
+	copyAndOpenGoogle: string;
 	waitingApproval: string;
 	connectSuccess: string;
 	baseDirectory: string;
@@ -40,10 +33,11 @@ export type GdriveTranslations = {
 	baseDirectoryPlaceholder: string;
 	useTrash: string;
 	useTrashDescription: string;
+	authorizationFailed: string;
 };
 
 type DeviceCodeModalOptions = {
-	translate: Translate<GdriveTranslations>;
+	translate: Translate<GdriveTranslations & Translations>;
 	userCode: string;
 	verificationUrl: string;
 	onClose: () => void;
@@ -57,42 +51,43 @@ class DeviceCodeModal extends Modal {
 		super(app);
 	}
 
-	override onOpen(): void {
+	onOpen(): void {
 		const {
 			contentEl,
 			titleEl,
 			options: { translate, userCode, verificationUrl },
 		} = this;
 		titleEl.setText(translate('deviceCodeTitle'));
+		contentEl.addClass('markdown-rendered');
 		contentEl.createEl('p', {
-			text: translate('deviceCodeInstruction', { url: verificationUrl }),
+			text: translate('deviceCodeInstruction', verificationUrl),
 		});
-		contentEl.createEl('code', {
-			cls: 'gdrive-device-code',
-			text: userCode,
-		});
-		const buttonRow = contentEl.createEl('div', 'gdrive-device-code-buttons');
-		const copyButton = buttonRow.createEl('button', { text: translate('copyCode') });
-		copyButton.onClickEvent(() => {
-			void navigator.clipboard.writeText(this.options.userCode);
-			copyButton.setText(translate('codeCopied'));
-		});
-		const openButton = buttonRow.createEl('button', {
-			cls: 'mod-cta',
-			text: translate('openVerificationPage'),
-		});
-		openButton.addEventListener('click', () => {
-			window.open(this.options.verificationUrl);
-		});
+		contentEl.createEl('code', { cls: 'gdrive-device-code', text: userCode });
 		contentEl.createEl('p', {
 			cls: 'gdrive-device-code-status',
 			text: translate('waitingApproval'),
 		});
+		new Setting(contentEl)
+			.addButton((button) =>
+				button
+					.setButtonText(translate('cancel'))
+					.setDestructive()
+					.onClick(() => this.close()),
+			)
+			.addButton((button) =>
+				button
+					.setCta()
+					.setButtonText(translate('copyAndOpenGoogle'))
+					.onClick(() => {
+						void navigator.clipboard.writeText(userCode);
+						window.open(verificationUrl);
+						button.setIcon('check');
+					}),
+			);
 	}
-
-	override onClose(): void {
-		this.options.onClose();
+	onClose(): void {
 		this.contentEl.empty();
+		this.options.onClose();
 	}
 }
 
@@ -102,26 +97,26 @@ export default function gdriveSetting(
 		saveSettings,
 		app,
 		matchLabel,
-		rerenderSettingTab,
+		refreshSettingTab,
 	}: {
 		translate: Translate<GdriveTranslations & Translations>;
 		saveSettings: () => Promise<void>;
 		app: App;
 		matchLabel: () => LabelDefinition;
-		rerenderSettingTab: () => void;
+		refreshSettingTab: () => void;
 	},
 	settings: GdriveSettings,
 	tokenManager: TokenManager,
 ): CallableOrObjectTree {
 	const invalidValue = translate('invalidValue');
-	const connectGoogle = async () => {
+	const connectGoogle = async (resolve: () => void) => {
 		let cancelled = false;
 		try {
 			const authorization = await startDeviceAuthorization();
-			let finished = false;
 			const modal = new DeviceCodeModal(app, {
 				onClose: () => {
-					if (!finished) cancelled = true;
+					cancelled = true;
+					resolve();
 				},
 				translate,
 				userCode: authorization.userCode,
@@ -133,23 +128,26 @@ export default function gdriveSetting(
 					authorization,
 					isCancelled: () => cancelled,
 				});
-				finished = true;
 				tokenManager.setRefreshToken(refreshToken);
 				settings.userId = userId;
 				tokenManager.setToken(accessToken, expiresIn);
-				await saveSettings();
-				tokenManager.invalidate();
+				void saveSettings();
 				new Notice(translate('connectSuccess'));
+				refreshSettingTab();
 			} finally {
-				finished = true;
 				modal.close();
 			}
-			rerenderSettingTab();
 		} catch (error) {
-			if (!cancelled) new Notice(error instanceof Error ? error.message : String(error));
+			if (!cancelled)
+				new Notice(
+					translate('authorizationFailed', {
+						reason: error instanceof Error ? error.message : String(error),
+					}),
+				);
+		} finally {
+			resolve();
 		}
 	};
-	const refreshToken = tokenManager.getRefreshToken();
 
 	return {
 		551: s(
@@ -160,37 +158,44 @@ export default function gdriveSetting(
 			}),
 			{
 				1000: s(() => ({
-					desc: refreshToken
-						? translate('accountConnected')
-						: translate('accountNotConnected'),
-					name: translate('account'),
+					desc: translate('connectAccountDescription'),
+					name: translate('connectAccount'),
 					render: (setting) => {
-						if (refreshToken)
-							setting.addButton((button) =>
-								button.setButtonText(translate('disconnect')).onClick(() => {
+						setting.addButton((button) =>
+							button
+								.setButtonText(translate('connect'))
+								.setCta()
+								.onClick(
+									() =>
+										new Promise<void>((resolve) => {
+											void connectGoogle(resolve);
+										}),
+								),
+						);
+					},
+					visible: () => !tokenManager.getRefreshToken(),
+				})),
+				1100: s(() => ({
+					desc: translate('accountConnectedDescription'),
+					name: translate('accountConnected'),
+					render: (setting) => {
+						setting.addButton((button) =>
+							button
+								.setButtonText(translate('disconnect'))
+								.setDestructive()
+								.onClick(async () => {
+									const token = tokenManager.getRefreshToken();
+									if (!token) return;
+									await revokeToken(token);
+									settings.userId = '';
 									tokenManager.deleteRefreshToken();
 									tokenManager.invalidate();
 									void saveSettings();
-									new Notice(translate('disconnected'));
-									rerenderSettingTab();
-								}),
-							);
-						setting.addButton((button) =>
-							button
-								.setButtonText(
-									refreshToken ? translate('reconnect') : translate('connect'),
-								)
-								.setCta()
-								.onClick(async () => {
-									button.setDisabled(true);
-									try {
-										await connectGoogle();
-									} finally {
-										button.setDisabled(false);
-									}
+									refreshSettingTab();
 								}),
 						);
 					},
+					visible: () => Boolean(tokenManager.getRefreshToken()),
 				})),
 				2000: s(() => ({
 					desc: translate('baseDirectoryDescription'),

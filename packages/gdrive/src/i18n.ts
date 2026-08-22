@@ -1,36 +1,30 @@
 import type { GdriveTranslations } from './setting';
 
 const en: GdriveTranslations = {
-	account: 'Google account',
-	accountConnected: 'Connected as {{account}}.',
-	accountNotConnected:
-		'Not connected. Enter the OAuth client credentials above, then connect your Google account.',
+	accountConnected: 'Account connected',
+	accountConnectedDescription: 'Connected to Google Drive account.',
+	authorizationFailed: 'Authorization failed: {{reason}}',
 	baseDirectory: 'Base directory',
 	baseDirectoryDescription:
-		'Folder in Google Drive that holds this vault. Created automatically on the first sync — do not create it manually in Drive, files added outside this plugin stay invisible to it.',
+		'Set the folder in Google Drive that holds this vault. Created automatically on the first sync and do not create it manually in Drive, files added outside this plugin are invisible to sync.',
 	baseDirectoryPlaceholder: 'my-vault/',
-	clientId: 'OAuth client ID',
-	clientIdDescription:
-		'Client ID of your own Google Cloud OAuth client (application type "TV and Limited Input devices") with the Google Drive API enabled.',
-	clientIdPlaceholder: 'xxxxxxxx.apps.googleusercontent.com',
-	clientSecret: 'OAuth client secret',
-	clientSecretDescription: 'Client secret of the same OAuth client.',
-	codeCopied: 'Copied',
 	configureFirst: 'Enter the OAuth client ID and client secret first.',
 	connect: 'Connect',
+	connectAccount: 'Connect account',
+	connectAccountDescription: 'Click the button to connect to you Google Drive account.',
 	connectSuccess: 'Connected to Google Drive.',
-	copyCode: 'Copy code',
-	deviceCodeInstruction:
-		'On any device, visit {{url}} and enter the code below, then approve access.',
+	copyAndOpenGoogle: 'Copy and open Google',
+	deviceCodeInstruction: (frag, url) => {
+		frag.appendText('Please visit ');
+		frag.createEl('a', { attr: { href: url } }).createEl('code', { text: url });
+		frag.appendText(' and enter the code below, then approve access.');
+	},
 	deviceCodeTitle: 'Connect Google Drive',
 	disconnect: 'Disconnect',
-	disconnected: 'Google Drive disconnected.',
 	gdrive: 'Google Drive',
-	openVerificationPage: 'Open Google',
-	reconnect: 'Reconnect',
 	useTrash: 'Delete to trash',
 	useTrashDescription:
-		'Move remotely deleted files to the Google Drive trash instead of deleting them permanently. Drive clears its trash after 30 days.',
+		'Move deleted files to the Google Drive trash instead of deleting them permanently. Drive clears its trash after 30 days.',
 	waitingApproval: 'Waiting for approval…',
 };
 

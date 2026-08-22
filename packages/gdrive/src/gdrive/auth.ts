@@ -1,7 +1,13 @@
 import type { Request, RequestParam } from '@hesprs/sync-engine-sdk';
 import { getStatus } from '@repo/shared/get-status';
 import { requestUrl, SecretStorage } from 'obsidian';
-import { OAUTH_DEVICE_CODE_URL, OAUTH_SCOPE, OAUTH_TOKEN_URL } from './api';
+import {
+	buildUrl,
+	OAUTH_DEVICE_CODE_URL,
+	OAUTH_SCOPE,
+	OAUTH_TOKEN_URL,
+	TOKEN_REVOKE_URL,
+} from './api';
 
 export const CLIENT_ID = process.env.CLIENT_ID ?? '';
 export const CLIENT_SECRET = process.env.CLIENT_SECRET ?? ''; // Not really a secret
@@ -10,8 +16,8 @@ const KEYCHAIN_SECRET_ID = 'sync-engine-gdrive-refresh-token'; // Secret storage
 type TokenResponse = {
 	access_token: string;
 	expires_in: number;
-	user_id?: string;
 	refresh_token?: string;
+	id_token?: string;
 };
 
 type TokenError = {
@@ -26,14 +32,12 @@ type TokenError = {
 		| 'expired_token'
 		| 'access_denied';
 	error_description?: string;
-	error_uri?: string;
 };
 
 type DeviceCodeResponse = {
 	device_code: string;
 	user_code: string;
-	verification_uri: string;
-	verification_uri_complete?: string;
+	verification_url: string;
 	expires_in: number;
 	interval: number;
 };
@@ -41,7 +45,6 @@ type DeviceCodeResponse = {
 type DeviceCodeError = {
 	error: 'invalid_request' | 'invalid_client' | 'unsupported_grant_type' | 'unauthorized_client';
 	error_description?: string;
-	error_uri?: string;
 };
 
 export type DeviceAuthorization = {
@@ -87,7 +90,7 @@ export async function startDeviceAuthorization(): Promise<DeviceAuthorization> {
 		expiresIn: data.expires_in,
 		interval: data.interval,
 		userCode: data.user_code,
-		verificationUrl: data.verification_uri,
+		verificationUrl: data.verification_url,
 	};
 }
 
@@ -116,12 +119,12 @@ export async function pollDeviceToken(options: {
 		});
 		const data = response.json as TokenResponse | TokenError;
 		if ('access_token' in data)
-			if (data.refresh_token && data.user_id)
+			if (data.refresh_token && data.id_token)
 				return {
 					accessToken: data.access_token,
 					expiresIn: data.expires_in,
 					refreshToken: data.refresh_token,
-					userId: data.user_id,
+					userId: extractSub(data.id_token),
 				};
 			else throw new Error('Google authorization payload is malformed!');
 		switch (data.error) {
@@ -145,6 +148,20 @@ export async function pollDeviceToken(options: {
 			}
 		}
 	}
+}
+function extractSub(idToken: string): string {
+	const payload = JSON.parse(atob(idToken.split('.')[1])) as { sub: string };
+	return payload.sub;
+}
+
+// Fire-and-forget revocation
+export function revokeToken(token: string) {
+	return requestUrl({
+		contentType: FORM_CONTENT_TYPE,
+		method: 'POST',
+		throw: false,
+		url: buildUrl(TOKEN_REVOKE_URL, '', { token }),
+	}).catch(() => {});
 }
 
 /**
