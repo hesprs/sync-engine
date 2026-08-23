@@ -3,7 +3,6 @@ import { expect, spyOn, test } from 'bun:test';
 import { retryMiddleware } from '@/fs';
 
 const { bytes, request } = testKit;
-Object.assign(globalThis, { sleep: () => Promise.resolve() });
 const sleepSpy = spyOn(globalThis, 'sleep').mockImplementation(() => Promise.resolve());
 
 test('retry middleware retries retryable request and waits between attempts', () => {
