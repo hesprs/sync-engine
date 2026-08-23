@@ -46,12 +46,6 @@
     </a>
 </p>
 
-## Migration
-
-If you previously used the plugin **WebDAV Sync** and is confused by the migration to Sync Engine. Sync Engine is the official successor after WebDAV Sync. You can read [this page](https://sync.consensia.cc/usage/migration) for the automatic migration or manual migration.
-
-If not all your devices have WebDAV Sync updated to 2.5.12 or later, you can go to [latest v2 release page](https://github.com/hesprs/sync-engine/releases/tag/2.5.14) and download the `main.js`, `styles.css`, and `manifest.json`, replace corresponding files in `<your vault>/.obsidian/plugins/webdav-sync/`. And then use the updated version to complete the migration.
-
 ## Introduction
 
 Sync Engine is a revolutionary solution for vault syncing. Its not only a syncing plugin, it is a modular platform that everyone can build upon.
@@ -68,6 +62,12 @@ There's already a lot of plugins to sync your notes between devices:
 
 Sync Engine fits the gap: you want to choose your own storage, you want the plugin to stay small because unused features aren't bundled in, and you want a highly optimized syncing that is no slower than a self-hosted server.
 
+## Migration
+
+If you previously used the plugin **WebDAV Sync** and is confused by the migration to Sync Engine. Sync Engine is the official successor after WebDAV Sync. You can read [this page](https://sync.consensia.cc/usage/migration) for the automatic migration or manual migration.
+
+If not all your devices have WebDAV Sync updated to 2.5.12 or later, you can go to [latest v2 release page](https://github.com/hesprs/sync-engine/releases/tag/2.5.14) and download the `main.js`, `styles.css`, and `manifest.json`, replace corresponding files in `<your vault>/.obsidian/plugins/webdav-sync/`. And then use the updated version to complete the migration.
+
 ## Features
 
 ### Core Functions
@@ -81,7 +81,7 @@ Sync Engine fits the gap: you want to choose your own storage, you want the plug
 
 ### Module-Extended ([your can develop your own](#develop-a-module))
 
-- **Backends**: WebDAV, S3
+- **Backends**: WebDAV, S3, Google Drive
 - **Features**: Encryption, Smart Merge Conflict Resolution
 
 ### Extensible Architecture

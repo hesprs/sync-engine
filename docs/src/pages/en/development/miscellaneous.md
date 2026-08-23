@@ -147,6 +147,7 @@ These Context members are not commonly used by modules. Explore source code to o
 | `isIdle`                  | SynthKernel `Ref<boolean>` for sync-idle state.                                                        |
 | `translate`               | Translates a key from merged resources. See [Settings And UI](./settings-and-ui#internationalization). |
 | `rerenderSettingTab()`    | Renders contributed settings again.                                                                    |
+| `refreshSettingTab()`     | Cheap setting page rerender that makes Obsidian reevaluate the visibility of each setting entry.       |
 
 ### Framework Members
 

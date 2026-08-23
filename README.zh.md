@@ -37,12 +37,6 @@
     </a>
 </p>
 
-## 迁移指南
-
-如果您之前使用的是 **WebDAV Sync** 插件，并对迁移到 Sync Engine 感到困惑：Sync Engine 是 WebDAV Sync 的官方继任者。您可以查阅 [此页面](https://sync.consensia.cc/usage/migration) 以了解自动迁移或手动迁移的具体步骤。
-
-如果您并非所有设备上的 WebDAV Sync 都已更新至 2.5.12 或更高版本，可以前往 [最新的 v2 发布页面](https://github.com/hesprs/sync-engine/releases/tag/2.5.14) 下载 `main.js`、`styles.css` 以及 `manifest.json`，并将它们替换至 `<你的笔记库>/.obsidian/plugins/webdav-sync/` 文件夹中的对应文件。之后即可使用更新后的版本完成迁移。
-
 ## 简介
 
 Sync Engine 是一个革命性的 Vault 同步解决方案。它不仅是一个同步插件，更是一个人人都可以为其构建生态的模块化平台。
@@ -59,6 +53,12 @@ Sync Engine 是一个革命性的 Vault 同步解决方案。它不仅是一个�
 
 Sync Engine 恰好填补了这一空白：您可以自由选择存储服务，插件因未打包无用功能而保持轻量，同时还拥有不亚于自建服务器的高度优化同步体验。
 
+## 迁移指南
+
+如果您之前使用的是 **WebDAV Sync** 插件，并对迁移到 Sync Engine 感到困惑：Sync Engine 是 WebDAV Sync 的官方继任者。您可以查阅 [此页面](https://sync.consensia.cc/usage/migration) 以了解自动迁移或手动迁移的具体步骤。
+
+如果您并非所有设备上的 WebDAV Sync 都已更新至 2.5.12 或更高版本，可以前往 [最新的 v2 发布页面](https://github.com/hesprs/sync-engine/releases/tag/2.5.14) 下载 `main.js`、`styles.css` 以及 `manifest.json`，并将它们替换至 `<你的笔记库>/.obsidian/plugins/webdav-sync/` 文件夹中的对应文件。之后即可使用更新后的版本完成迁移。
+
 ## 特性
 
 ### 核心功能
@@ -72,7 +72,7 @@ Sync Engine 恰好填补了这一空白：您可以自由选择存储服务，�
 
 ### 模块扩展功能（[您也可以开发自己的模块](https://www.google.com/search?q=%23%E5%BC%80%E5%8F%91%E6%A8%A1%E5%9D%97)）
 
-- **存储后端**：WebDAV, S3
+- **存储后端**：WebDAV, S3, Google Drive
 - **功能**：加密、智能合并冲突解决
 
 ### 极具扩展性的架构

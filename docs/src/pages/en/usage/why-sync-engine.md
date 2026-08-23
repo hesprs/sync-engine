@@ -54,6 +54,7 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 
 - [WebDAV](../deep-dive/modules/webdav): standard WebDAV protocol implementation with battle-tested compatibility regressions. Supports any backend providing WebDAV API.
 - [S3](../deep-dive/modules/s3): Amazon S3 and S3-compatible object storage with optimized batch deletions.
+- [Google Drive](../deep-dive/modules/gdrive): Google Drive storage with optimized authorization flow.
 
 **Features**:
 
