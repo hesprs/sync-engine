@@ -1,8 +1,8 @@
 import type { Vault, Stat, ListedFiles, App } from 'obsidian';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
-import { isFolder, stripEndSlash } from '@repo/shared/path';
-import { TFile, TFolder } from 'obsidian';
-import type { Binary } from '@/types';
+import { basename, isFolder, stripEndSlash } from '@repo/shared/path';
+import { Platform, TFile, TFolder } from 'obsidian';
+import type { Binary, MaybePromise } from '@/types';
 
 type VaultRequestParam =
 	| { method: 'GET'; key: string }
@@ -73,9 +73,13 @@ export default function createVaultRequest(app: App): VaultRequest {
 			return response.body as never;
 		}
 		if (method === 'PUT')
-			return adapter.writeBinary(path, toArrayBuffer(params.value), params.headers) as never;
+			return withCheckChars(key, () =>
+				adapter.writeBinary(path, toArrayBuffer(params.value), params.headers),
+			) as never;
 		if (method === 'APPEND')
-			return adapter.appendBinary(path, toArrayBuffer(params.value), params.headers) as never;
+			return withCheckChars(key, () =>
+				adapter.appendBinary(path, toArrayBuffer(params.value), params.headers),
+			) as never;
 		if (method === 'DELETE') {
 			const trashOption = getTrashOption(vault);
 			if (trashOption === 'permanent' || params.headers?.permanent)
@@ -86,7 +90,10 @@ export default function createVaultRequest(app: App): VaultRequest {
 		}
 		if (method === 'MOVE')
 			return adapter.rename(path, toVaultPath(params.headers.destination)) as never;
-		if (method === 'MKDIR') return (key === '/' ? undefined : adapter.mkdir(path)) as never;
+		if (method === 'MKDIR')
+			return (
+				key === '/' ? undefined : withCheckChars(key, () => adapter.mkdir(path))
+			) as never;
 		if (method === 'EXISTS') {
 			if (vault.getAbstractFileByPath(path)) return true as never;
 			return adapter.exists(path, true) as never;
@@ -123,4 +130,19 @@ export default function createVaultRequest(app: App): VaultRequest {
 		}
 		return undefined as never;
 	};
+}
+
+async function withCheckChars<T>(key: string, action: () => MaybePromise<T>): Promise<T> {
+	try {
+		return await action();
+	} catch (error: unknown) {
+		if (Platform.isWin) {
+			const match = /[<>:"/\\|?*]/u.exec(basename(key));
+			if (match)
+				throw new Error(`Windows forbids character "${match[0]}" in file names!`, {
+					cause: error,
+				});
+		}
+		throw error;
+	}
 }
