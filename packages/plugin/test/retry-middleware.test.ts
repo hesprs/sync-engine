@@ -1,11 +1,9 @@
 import testKit from '$/test-kit';
 import { expect, spyOn, test } from 'bun:test';
 import { retryMiddleware } from '@/fs';
-// oxlint-disable-next-line import/no-namespace
-import * as sleepModule from '@/utils/sleep';
 
 const { bytes, request } = testKit;
-const sleepSpy = spyOn(sleepModule, 'default').mockImplementation(() => Promise.resolve());
+const sleepSpy = spyOn(globalThis, 'sleep').mockImplementation(() => Promise.resolve());
 
 test('retry middleware retries retryable request and waits between attempts', () => {
 	sleepSpy.mockClear();

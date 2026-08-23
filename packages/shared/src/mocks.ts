@@ -48,3 +48,10 @@ export function requireApiVersion() {
 }
 
 export const apiVersion = '1.12.7';
+
+Object.assign(globalThis, {
+	sleep: (milliseconds: number) =>
+		new Promise<void>((resolve) => {
+			setTimeout(resolve, milliseconds);
+		}),
+});

@@ -36,6 +36,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - Plugin & module SDK: `packages/plugin/`, package name `@hesprs/sync-engine-sdk`, `dev` builds SDK.
 - WebDAV module: `packages/webdav/`, package name `webdav`.
 - S3 module: `packages/s3/`, package name `s3`.
+- Google Drive module: `packages/gdrive/`, package name `gdrive`.
 - Encryption module: `packages/encryption/`, package name `encryption`.
 - Shared utils: `packages/shared/`, package name `@repo/shared`.
 - Documentation site: `docs/`, package name `docs`.

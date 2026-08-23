@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.1.1 - 2026-08-23
+
+### Core
+
+- Fixed sync failure caused by deleting a parent folder whose children are moved to other folders.
+- Added clearer failure message for file names containing Windows forbidden characters.
+
+### S3 Module
+
+- Supported optional `session_token` in S3 authorization.
+- Optimized sync speed by caching SigV4 signing key.
+
+### Google Drive Module
+
+- Experimental Google Drive backend. Internal testing while waiting Google App review.
+
+### WebDAV Module
+
+- Eliminated minor discrepancy on Etag handling between `PUT` and `PROPFIND` responses.
+
+### Contributors
+
+@Quzzar, @xx025, @hesprs
+
 ## Sync Engine v3.1.0 - 2026-08-21
 
 ### UI Modernization

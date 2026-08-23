@@ -79,26 +79,33 @@ export default function hierarchicalOptimizer({ atoms, executeAtom }: OptimizerI
 			const { write } = pathsOf(atom);
 			if (write && (`${deletion.key}/` === write || `${write}/` === deletion.key))
 				dependencies.get(atom)?.add(deletion);
+			if (atom.type === 'move' && isSub(deletion.key, atom.oldKey))
+				dependencies.get(deletion)?.add(atom);
 		}
 	}
 
 	for (const atom of atoms) {
 		const originalExecute = atom.execute;
 		atom.execute = (async () => {
-			if (isSubsumable(atom)) {
-				const umbrella = umbrellas.get(atom);
-				if (umbrella) {
-					await executeAtom(umbrella);
-					atom.resolve();
-					return;
+			try {
+				if (isSubsumable(atom)) {
+					const umbrella = umbrellas.get(atom);
+					if (umbrella) {
+						await executeAtom(umbrella);
+						atom.resolve();
+						return;
+					}
 				}
+				await Promise.all(
+					[...(dependencies.get(atom) as Set<InputAtom>)].map((dependency) =>
+						executeAtom(dependency),
+					),
+				);
+				return await originalExecute();
+			} catch (error) {
+				atom.reject(error instanceof Error ? error : new Error(String(error)));
+				throw error;
 			}
-			await Promise.all(
-				[...(dependencies.get(atom) as Set<InputAtom>)].map((dependency) =>
-					executeAtom(dependency),
-				),
-			);
-			return originalExecute();
 		}) as never;
 	}
 

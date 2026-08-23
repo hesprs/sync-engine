@@ -11,9 +11,7 @@ const en: Translations = {
 	asymmetricStorageDescription: (frag) => {
 		frag.appendText('Use ');
 		frag.createEl('a', {
-			attr: {
-				href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage',
-			},
+			attr: { href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage' },
 			text: 'asymmetric storage',
 		});
 		frag.appendText(' to substantially accelerate syncing.');

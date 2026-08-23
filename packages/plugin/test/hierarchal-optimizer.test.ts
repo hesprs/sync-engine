@@ -78,6 +78,34 @@ test('mkdir chain waits for ancestor mkdir', async () => {
 	await pending;
 });
 
+test('dependent atom receives ancestor failure', async () => {
+	const parentError = new Error('parent mkdir failed');
+	let childRejection: unknown;
+	const atoms: Array<InputAtom> = [
+		{
+			execute: () => Promise.reject(parentError),
+			key: 'folder/',
+			reject: () => {},
+			resolve: () => {},
+			type: 'mkdir',
+		},
+		{
+			execute: () => 'write-uid',
+			key: 'folder/note.md',
+			reject: (error) => (childRejection = error),
+			resolve: () => {},
+			type: 'write',
+		},
+	];
+	const { executeAtom, optimized } = runOptimizer(atoms);
+	const results = await Promise.all(
+		optimized.map((atom) => executeAtom(atom).catch((error: unknown) => error)),
+	);
+
+	expect(results[1]).toBe(parentError);
+	expect(childRejection).toBe(parentError);
+});
+
 test('move gates operations under destination', async () => {
 	const logs: Array<string> = [];
 	const move = deferred<void>();
@@ -114,6 +142,89 @@ test('move gates operations under destination', async () => {
 	await flush();
 	expect(logs).toStrictEqual(['move:folder/src/->folder/dst/', 'write:folder/dst/note.md']);
 
+	await pending;
+});
+
+test('Parent deletion waits for descendant moves', async () => {
+	const logs: Array<string> = [];
+	const move = deferred<void>();
+	const atoms: Array<InputAtom> = [
+		{
+			execute: async () => {
+				logs.push('move:folder/src/->folder/dst/');
+				await move.promise;
+			},
+			newKey: 'folder/dst/',
+			oldKey: 'folder/src/',
+			reject: () => {},
+			resolve: () => {},
+			type: 'move',
+		},
+		{
+			execute: () => {
+				logs.push('move:folder/src/a.md->folder/dst/a.md');
+			},
+			newKey: 'folder/dst/a.md',
+			oldKey: 'folder/src/a.md',
+			reject: () => {},
+			resolve: () => {},
+			type: 'move',
+		},
+		{
+			execute: () => {
+				logs.push('delete:folder/');
+			},
+			key: 'folder/',
+			reject: () => {},
+			resolve: () => {},
+			type: 'delete',
+		},
+	];
+	const { executeAtom, optimized } = runOptimizer(atoms);
+	const pending = Promise.all(optimized.map(executeAtom));
+
+	await flush();
+	expect(logs).toStrictEqual(['move:folder/src/->folder/dst/']);
+	move.resolve();
+	await flush();
+	expect(logs).toStrictEqual(['move:folder/src/->folder/dst/', 'delete:folder/']);
+
+	await pending;
+});
+
+test('Moves waits for destination creation', async () => {
+	const logs: Array<string> = [];
+	const mkdir = deferred<void>();
+	const atoms: Array<InputAtom> = [
+		{
+			execute: () => {
+				logs.push('move:src/a.md->dst/a.md');
+			},
+			newKey: 'dst/a.md',
+			oldKey: 'src/a.md',
+			reject: () => {},
+			resolve: () => {},
+			type: 'move',
+		},
+		{
+			execute: async () => {
+				logs.push('mkdir:dst/');
+				await mkdir.promise;
+			},
+			key: 'dst/',
+			reject: () => {},
+			resolve: () => {},
+			type: 'mkdir',
+		},
+	];
+	const { executeAtom, optimized } = runOptimizer(atoms);
+	const pending = Promise.all(optimized.map(executeAtom));
+
+	await flush();
+	expect(logs).toStrictEqual(['mkdir:dst/']);
+	mkdir.resolve();
+	await flush();
+	expect(logs).toStrictEqual(['mkdir:dst/', 'move:src/a.md->dst/a.md']);
 	await pending;
 });
 

@@ -11,5 +11,6 @@ Sync Engine Logs
 **/.turbo
 **/node_modules
 **/cache
+**/.env
 !packages/plugin/dist
 packages/plugin/dist/**/*.js
