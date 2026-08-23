@@ -19,7 +19,7 @@ import type { GdriveTranslations } from './setting';
 import { TokenManager, bearerMiddleware } from './gdrive/auth';
 import checkConnection from './gdrive/check-connection';
 import GdriveFs from './gdrive/fs';
-import en from './i18n';
+import { ru, en, zh, zhTW } from './i18n';
 import gdriveSetting from './setting';
 import styles from './styles.css?inline';
 
@@ -49,6 +49,9 @@ export default class Gdrive {
 		if (!this.moduleSettings.baseDirectory)
 			this.moduleSettings.baseDirectory = `${ctx.app.vault.getName()}/`;
 		ctx.registerI18n('en', en);
+		ctx.registerI18n('zh', zh);
+		ctx.registerI18n('zh-TW', zhTW);
+		ctx.registerI18n('ru', ru);
 		this.tokenManager = new TokenManager(ctx.app.secretStorage);
 	}
 

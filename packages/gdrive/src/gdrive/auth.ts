@@ -9,8 +9,8 @@ import {
 	TOKEN_REVOKE_URL,
 } from './api';
 
-export const CLIENT_ID = process.env.CLIENT_ID ?? '';
-export const CLIENT_SECRET = process.env.CLIENT_SECRET ?? ''; // Not really a secret
+export const CLIENT_ID = atob(process.env.CLIENT_ID ?? '');
+export const CLIENT_SECRET = atob(process.env.CLIENT_SECRET ?? ''); // Not really a secret
 const KEYCHAIN_SECRET_ID = 'sync-engine-gdrive-refresh-token'; // Secret storage id under which the Google refresh token is stored.
 
 type TokenResponse = {

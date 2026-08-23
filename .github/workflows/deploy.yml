@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: "pages"
+  group: 'pages'
   cancel-in-progress: true
 
 jobs:
@@ -36,6 +36,9 @@ jobs:
 
       - name: Build modules
         run: bun compile
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
 
       - name: Sync modules
         run: bun scripts/deploy-modules.ts

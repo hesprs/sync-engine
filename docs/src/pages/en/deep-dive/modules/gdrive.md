@@ -1,83 +1,184 @@
 # Google Drive Module
 
-The Google Drive module connects Sync Engine to Google Drive. It registers the `gdrive` remote file system, authenticates with OAuth through Google's device flow, and stores the vault as regular files and folders that stay readable in the Drive web and mobile apps.
+The Google Drive module registers the `gdrive` remote file system. It stores the vault in a Google Drive folder and performs file operations through the Google Drive public API. The module uses Google OAuth for authentication and does not use a third-party server or proxy.
 
-## Requirements
+## Settings
 
-The module uses a Google Cloud OAuth client that you create in your own Google account, so no third-party server ever handles your tokens:
+The module adds a **Google Drive** settings group. Configure these settings
+before selecting Google Drive as the remote file system:
 
-1. In [Google Cloud Console](https://console.cloud.google.com/), create a project (or reuse one) and enable the **Google Drive API**.
-2. Configure the OAuth consent screen. Add yourself as a test user, or publish the app to production — a consent screen left in testing mode expires refresh tokens after seven days, forcing weekly reconnects.
-3. Create an OAuth client of type **TV and Limited Input devices** and note the client ID and client secret.
+### Connect account / Account connected
 
-The same client ID and secret are entered on every device that syncs; each device completes its own device-flow approval.
+This setting initiates the Google authorization process. Once authorized, the module stores the refresh token securely in Obsidian's secret storage and uses it to obtain short-lived access tokens as needed. The **Disconnect** option revokes the token with Google, removes it from secret storage, clears any cached access tokens, and deletes the stored account identifier.
 
-## Settings and Configuration
+### Base directory
 
-Install and enable the Google Drive module, then select **Google Drive** as the storage backend. Configure these module settings:
+This defines the folder in Google Drive that serves as the root directory for this vault. The value is normalized as a directory path. If left empty when the module starts, it defaults to `<vault name>/`. The specified folder is created automatically during the first synchronization.
 
-| Setting                 | Description                                                                   |
-| ----------------------- | ----------------------------------------------------------------------------- |
-| **OAuth client ID**     | Client ID of your Google Cloud OAuth client.                                  |
-| **OAuth client secret** | Client secret of the same OAuth client. Stored in Obsidian's keychain.        |
-| **Google account**      | Connect, reconnect, or disconnect the Google account through the device flow. |
-| **Base directory**      | Drive folder that holds the vault. Defaults to the vault name.                |
-| **Delete to trash**     | Move remote deletions to the Drive trash instead of deleting permanently.     |
+::: warning
 
-Connecting opens a dialog with a short code: visit the shown Google URL on any device, enter the code, and approve access. The dialog polls until Google confirms, then the module stores the refresh token and shows the connected account.
+The base directory is an application-managed namespace. The module can see and operate only on files that it created through its Google Drive integration. Files or folders created manually in Drive, or created by another application, are not visible to this module even when they are inside the configured base directory. They will not be imported, synchronized, or listed.
 
-## Credentials and Keychain
+Do not manually create, rename, move, or maintain vault files in this Drive folder. Set the base directory in the module settings, then let the first sync create it and let Sync Engine manage its contents. Manual Drive operations can leave files outside the module's visible set or cause conflicting changes.
 
-The client secret and the refresh token are stored through Obsidian's secret storage, not as ordinary module settings. Access tokens are short-lived, kept only in memory, and refreshed automatically. Disconnecting clears the stored refresh token; access can also be revoked at [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+This is a consequence of Google's `drive.file` scope, not a filtering option that can be disabled in Sync Engine. The module is intentionally not granted full Drive access.
 
-## Scope and Visibility
+:::
 
-The module requests only the `drive.file` scope, plus `email` to display the connected account. `drive.file` grants access exclusively to files this module created — it cannot read the rest of the Drive. The practical consequences:
+### Delete to trash
 
-- Do not create the base directory manually in Drive; the module creates it on the first sync. A manually created folder is invisible to the module and leads to a duplicate.
-- Files added to the vault folder through the Drive web or mobile apps are invisible to the module and never sync. Edit through Obsidian only; treat the Drive copy as read-only.
-- Google shows an "unverified app" style consent step for personal OAuth clients. That is expected — the client is your own.
+When enabled, files deleted remotely are moved to the Google Drive trash instead of being permanently removed. When disabled, deleted files are permanently erased immediately. Note that Google Drive typically clears items from the trash after 30 days.
 
-## Base Directory
+## Permissions And Scopes
 
-The base directory is resolved to a Drive folder ID and used as the file-system root, so the folder path never appears in keys. It must be identical on every device syncing the same vault. Renaming or moving the vault folder in the Drive web interface changes nothing for sync (IDs stay stable) as long as the configured path still resolves; keep the setting and the actual folder in agreement.
+The module requests exactly these OAuth scopes:
 
-## Practical Behavior
+### `drive.file`
 
-- Folders are real Drive folders and moves use Drive's native rename and re-parenting — no copy-and-delete.
-- Deleting a missing file is treated as success. With **Delete to trash** enabled, deletions land in the Drive trash, which Google empties after 30 days.
-- File UIDs use the Drive `md5Checksum`. The local modification time is written to Drive's `modifiedTime` on upload, so timestamps survive round trips between devices.
-- Duplicate names in one folder (possible in Drive, not in a vault) resolve to the most recently modified file.
-- [Asymmetric storage](../asymmetric-storage) can flatten and anchor remote keys. Use it only when remote files do not need to remain readable in their normal folder structure, and keep the setting consistent across devices.
+This scope permits the module to create and manage files that it creates in Google Drive. Sync requires this access to:
 
-## Implementation
+- Create the base directory and vault files
+- List the module's files so it can discover remote changes
+- Read file contents and metadata
+- Upload new contents and update existing files
+- Move or rename files
+- Delete files, either permanently or by moving them to trash
 
-### Unified File-System Mapping
+The scope does **not** grant general access to the user's Drive. In particular, the module cannot discover or synchronize files created outside the plugin. Granting `drive.file` is a deliberate least-privilege choice: the module can manage its own sync data without receiving permission to read unrelated Drive files.
 
-`GdriveFs` implements the SDK `RootFs` contract with unified keys. Drive is ID-based, so the module resolves path keys to file IDs segment by segment and caches the mapping for the lifetime of the instance. The basic operations map to Drive API v3 requests as follows:
+### `openid`
 
-| File-system operation | Drive operation                                  |
-| --------------------- | ------------------------------------------------ |
-| `read()`              | `files.get` with `alt=media`                     |
-| `write()`             | Multipart upload (create or update)              |
-| `stat()`              | `files.list` lookup by parent and name           |
-| `delete()`            | `files.update` with `trashed`, or `files.delete` |
-| `move()`              | `files.update` with `addParents`/`removeParents` |
-| `mkdir()`             | `files.create` with the folder MIME type         |
-| `list()`              | Paginated `files.list`, assembled into a tree    |
+The `openid` scope makes Google return an OpenID Connect ID token during device authorization. The module reads the token's stable `sub` subject identifier and stores it as the connected account identifier. This lets Sync Engine identify which Google account is connected and distinguish multiple account connections, so that the sync record for different Google accounts don't interfere; it does not read the user's profile or request broad identity permissions.
 
-### Bearer Middleware
+## Authentication Flow
 
-When Google Drive is the selected backend, registered request middleware attaches a `Bearer` access token to every remote request. A shared token manager caches the access token, refreshes it through the stored refresh token shortly before expiry, deduplicates concurrent refreshes, and retries a request once after an authentication failure. A revoked refresh token surfaces as a clear reconnect prompt.
+The module uses [**Google OAuth 2.0 for TV and Limited-Input Device Applications**](https://developers.google.com/identity/protocols/oauth2/limited-input-device):
 
-### Flat Listing
+1. When you click **Connect**, the module requests a device code from Google's device authorization endpoint with the two scopes above.
+2. Obsidian displays Google's verification URL and a one-time user code. The module can copy the code and open the URL in a browser.
+3. You sign in to Google in that browser and approve the requested access.
+4. While the dialog remains open, Obsidian polls Google's token endpoint. It waits when authorization is pending and backs off when Google requests a slower polling interval.
+5. After approval, Google returns a short-lived access token, a refresh token, and an OpenID ID token. The module extracts the account subject from the ID token, stores the refresh token in Obsidian's secret storage, and caches the access token in memory.
+6. Later Drive requests use the cached access token. When it is close to expiry, the module exchanges the refresh token for a new access token. A failed request with HTTP 401 causes one forced refresh and retry.
 
-Because `drive.file` limits visibility to module-created files, `list()` fetches every visible file in one paginated query (1000 files per page) instead of one request per folder, then assembles the tree client-side from parent references. The walk honors the unified reporter verdicts, skipping excluded subtrees without visiting them.
+Device authorization is used because Obsidian mobile cannot reliably provide the local browser redirect, localhost listener, or desktop-style custom URL callback required by common interactive OAuth flows. Device authorization keeps the OAuth interaction in a normal browser while the Obsidian app polls Google's endpoint, so the same connection flow works on desktop and mobile.
 
-### Range Reads
+## Privacy Policy
 
-`readStream()` downloads media with ranged `GET` requests: 2 MiB chunks, at most eight in flight, emitted in file order. Empty files return an already-closed stream.
+Last updated on **August 23, 2026**.
 
-### Resumable Uploads
+### Introduction
 
-`writeStream()` buffers small files and sends them as one multipart upload. Files of 8 MiB or more use a Drive resumable upload session: metadata initiates the session, sequential `PUT` requests send 8 MiB chunks (Drive requires multiples of 256 KiB), and the final chunk closes the session. On failure the module attempts to cancel the session.
+This Privacy Policy describes how the Sync Engine plugin for Obsidian with Google Drive module (“the Plugin”) handles your data when you connect a Google Drive account. The Plugin is open-source software licensed under the MIT License.
+
+### Data We Collect
+
+**We collect no data.** The Plugin has no telemetry, no analytics, no remote logging service, and no backend server. No information about you, your files, or your usage ever leaves your local device.
+
+### How Your Data Is Handled
+
+**Google Account Connection**:
+
+When you click “Connect,” the Plugin initiates a Google Device Authorization flow directly between your device and Google’s servers. The Plugin requests only these scopes:
+
+- `drive.file`: Access to files created by the Plugin. Files created outside the Plugin are not visible to it, even inside the configured base directory.
+- `openid`: Supplies a stable Google account subject identifier so the Plugin can identify and deduplicate connections
+
+**Token Storage**:
+
+OAuth refresh tokens are stored exclusively in Electron’s encrypted secret storage on your local device. Tokens are never transmitted to any third party, never logged, and never included in crash reports or diagnostics.
+
+**File Operations**:
+
+All sync operations are triggered or scheduled manually by you. File reads and writes occur directly between your local Obsidian vault and Google Drive via Google’s API. No intermediary servers are involved.
+
+**Data Retention**:
+
+Your data exists only on your local device and in your own Google Drive account. When you click “Disconnect,” the Plugin:
+
+1.  Revokes the OAuth token with Google
+2.  Deletes all stored tokens from Electron secret storage
+
+After disconnection, no trace of your Google Account connection remains on your device.
+
+### Third Parties
+
+The only third-party service involved is Google’s OAuth and Drive API, which you authorize directly. We have no relationship with Google beyond using their public APIs. We do not share, sell, or transfer any data to any entity.
+
+### Your Rights
+
+You have complete control:
+
+- All data is on your local device; inspect it anytime
+- Click “Disconnect” to erase all local credentials instantly
+- Revoke access anytime at `https://myaccount.google.com/permissions`
+- Your files remain in your Google Drive regardless of Plugin status
+
+### Changes
+
+Updates to this policy will be published in the Plugin’s GitHub repository and `https://sync.consensia.cc`. Continued use after changes constitutes acceptance.
+
+### Contact
+
+Open an issue on our GitHub repository for privacy-related questions.
+
+## Terms of Service
+
+Last updated on **August 23, 2026**.
+
+### Acceptance
+
+By installing or using the Sync Engine plugin for Obsidian with Google Drive module (“the Plugin”), you agree to these Terms. If you disagree, uninstall the Plugin immediately.
+
+### License
+
+The Plugin is provided under the MIT License. You may use, modify, and distribute it freely per that license’s terms.
+
+### No Warranty
+
+THE PLUGIN IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. THE AUTHORS AND COPYRIGHT HOLDERS SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM USE OF THE PLUGIN, INCLUDING DATA LOSS, SYNC FAILURES, OR GOOGLE DRIVE API CHANGES.
+
+### User Responsibilities
+
+You are solely responsible for:
+
+- Maintaining the security of your Google Account credentials
+- Understanding what data you choose to sync
+- Backing up important files independently of the Plugin
+- Complying with Google’s Terms of Service when connecting your Drive account
+- Ensuring your local device’s Electron secret storage remains secure
+
+### Acceptable Use
+
+Do not use the Plugin to:
+
+- Violate Google’s API Terms of Service
+- Access accounts you do not own or lack authorization for
+- Circumvent Google Drive storage or rate limits
+- Distribute malware or illegal content via synced files
+
+### Third-Party Services
+
+The Plugin interacts with Google’s OAuth and Drive APIs. These services are governed by Google’s own Terms of Service and Privacy Policy. We have no control over Google’s services and accept no liability for their availability, changes, or termination.
+
+### Disconnection & Termination
+
+You may terminate your use at any time by clicking “Disconnect” in the Plugin settings or uninstalling the Plugin. We reserve the right to discontinue development or distribution of the Plugin at any time without notice.
+
+### Limitation of Liability
+
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOST PROFITS, DATA LOSS, OR BUSINESS INTERRUPTION, REGARDLESS OF THEORY OF LIABILITY.
+
+### Governing Law
+
+This Plugin is developed and maintained on a voluntary, non-commercial basis by contributors located in multiple jurisdictions worldwide. No single governing law applies.
+
+These Terms shall be interpreted in accordance with general principles of international law and the MIT License under which the Plugin is distributed.
+
+### Changes
+
+We may update these Terms at any time. Changes take effect upon publication in the GitHub repository. Continued use constitutes acceptance.
+
+### Contact
+
+Open an issue on our GitHub repository for questions regarding these Terms.

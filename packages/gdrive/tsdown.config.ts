@@ -5,9 +5,10 @@ const dev = process.env.MODE === 'dev';
 
 export default defineConfig({
 	clean: !dev,
+	css: { minify: true },
 	define: {
-		'process.env.CLIENT_ID': JSON.stringify(process.env.CLIENT_ID ?? ''),
-		'process.env.CLIENT_SECRET': JSON.stringify(process.env.CLIENT_SECRET ?? ''),
+		'process.env.CLIENT_ID': JSON.stringify(btoa(process.env.GDRIVE_CLIENT_ID ?? '')),
+		'process.env.CLIENT_SECRET': JSON.stringify(btoa(process.env.GDRIVE_CLIENT_SECRET ?? '')),
 	},
 	dts: false,
 	entry: { gdrive: 'src/index.ts' },
