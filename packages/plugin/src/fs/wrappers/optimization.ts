@@ -215,8 +215,8 @@ class OptimizationCompanionFs implements WrappedFs {
 	delete(key: string) {
 		return this.original.delete(key);
 	}
-	mkdir(key: string) {
-		return this.original.mkdir(key);
+	mkdir(key: string, recursive?: boolean) {
+		return this.original.mkdir(key, recursive);
 	}
 	stat(key: string) {
 		return this.original.stat(key);
