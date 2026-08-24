@@ -13,6 +13,6 @@
 	"scripts": {
 		"fix": "oxlint --silent --fix && oxfmt",
 		"check": "tsc && oxlint && oxfmt --check",
-		"tests": "bun test"
+		"tests": "bun test ./test"
 	}
 }

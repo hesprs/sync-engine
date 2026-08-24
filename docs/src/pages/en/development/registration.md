@@ -126,9 +126,9 @@ type ConflictResolverEntry = { prettyName: () => string; resolver: ConflictResol
 ctx.registerConflictResolver(id: string, entry: ConflictResolverEntry): () => boolean;
 ```
 
-## Settings And UI
+## Settings and UI
 
-Register nested setting definitions, translations, and migration-aware controls as described in [Settings And UI](./settings-and-ui).
+Register nested setting definitions, translations, and migration-aware controls as described in [Settings and UI](./settings-and-ui).
 
 ## CSS
 

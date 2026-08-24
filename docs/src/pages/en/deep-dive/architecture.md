@@ -89,7 +89,7 @@ Registration entries are consumed according to their role:
 - **Factories and ID maps:** the selected remote backend, decider, and conflict resolver are looked up by the ID in settings. Missing IDs fail with an explicit error.
 - **Wrappers:** request and file-system wrappers are grouped by numeric priority and applied in ascending priority order. Within one priority, the first wrapper that returns a replacement wins; returning `undefined` declines the current value.
 - **First-match pipelines:** listers and optimizers are also priority ordered. The first entry that returns a result supplies the implementation for that operation.
-- **Settings:** setting-definition trees are ordered by priority and merged into the native plugin settings tab. See [Settings And UI](../development/settings-and-ui).
+- **Settings:** setting-definition trees are ordered by priority and merged into the native plugin settings tab. See [Settings and UI](../development/settings-and-ui).
 
 Bootstrap uses these same APIs to build the production pipeline. For example, cancellation, rate limiting, retry, custom headers, memory control, optimization, context caching, and asymmetric storage are independent registrations layered around the base request and file-system implementations. Their behavior is specified in [Request Middleware](./request-middleware) and [File System Wrappers](./file-system-wrappers).
 

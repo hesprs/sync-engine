@@ -1,7 +1,7 @@
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
-type Binary = Uint8Array<ArrayBuffer>;
+export type Binary = Uint8Array<ArrayBuffer>;
 
 export function toUint8Array(buffer: ArrayBuffer) {
 	return new Uint8Array(buffer);

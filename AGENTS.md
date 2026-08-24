@@ -48,7 +48,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - For mobile compatibility, Node.js API prohibited.
 - Sentence case for UI text.
 - Module-specific behavior should not pollute plugin core.
-- All Obsidian API mocks go `packages/shared/src/obsidian-mock.ts`.
+- All Obsidian API mocks go `packages/shared/test/obsidian-mock.ts`.
 - Use inline Tailwind CSS for common styling, only use semantic CSS for animations and complex compositions. (Documentation website doesn't use TailwindCSS, you need to edit `docs/.vitepress/theme/styles.css`)
 - When any function or class needs to use `Context` as argument, prefer structural typing instead of direct `Context`.
 - Excluding main plugin, shared utils and documentation site, all packages are Sync Engine modules, they use the SDK and follow unified module structure.

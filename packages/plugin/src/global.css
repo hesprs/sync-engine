@@ -91,11 +91,8 @@ input[type='text'].sync-engine-invalid-input {
 	.setting-item-info {
 		display: none;
 	}
-	.setting-item-control {
-		width: 100% !important;
-		input[type='text'] {
-			flex: 1;
-		}
+	.setting-item-control input[type='text'] {
+		flex: 1;
 	}
 }
 

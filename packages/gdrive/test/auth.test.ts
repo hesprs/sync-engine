@@ -1,6 +1,6 @@
 import type { Request, RequestParam, RequestResponse } from '@hesprs/sync-engine-sdk';
 import type { SecretStorage } from 'obsidian';
-import * as ObsidianMock from '@repo/shared/mocks';
+import ObsidianMock from '@repo/shared/obsidian-mock';
 import { expect, mock, test } from 'bun:test';
 
 type HttpResponse = { json: unknown; status?: number };

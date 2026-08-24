@@ -1,5 +1,4 @@
-// oxlint-disable-next-line import/no-namespace
-import * as ObsidianMock from '@repo/shared/mocks';
+import ObsidianMock from '@repo/shared/obsidian-mock';
 import { mock } from 'bun:test';
 
 process.env.CLIENT_ID = btoa(process.env.GDRIVE_CLIENT_ID ?? '');

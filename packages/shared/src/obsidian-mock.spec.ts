@@ -1,9 +1,4 @@
-// oxlint-disable no-useless-constructor
-// oxlint-disable typescript/no-extraneous-class
-// oxlint-disable eslint/no-empty-function
-// oxlint-disable eslint/require-await
-// oxlint-disable typescript/require-await
-
+// oxlint-disable typescript/require-await typescript/no-extraneous-class no-useless-constructor no-empty-function
 export async function requestUrl() {
 	return {
 		headers: {},

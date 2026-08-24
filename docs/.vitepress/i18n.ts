@@ -39,7 +39,7 @@ const en = {
 	s3: 'S3',
 	security: 'Security',
 	settings: 'Settings',
-	settingsAndUI: 'Settings And UI',
+	settingsAndUI: 'Settings and UI',
 	sideDescription: 'Next-generation syncing plugin for Obsidian.',
 	smartMerge: 'Smart Merge',
 	storage: 'Storage',

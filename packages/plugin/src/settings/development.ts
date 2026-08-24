@@ -5,7 +5,7 @@ import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
 import { Notice } from 'obsidian';
 import type { Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Setting';
-import type { MaybePromise } from '@/types';
+import type { General, MaybePromise } from '@/types';
 import { generateEditableList, reactivelyValidate, s } from './utils';
 
 export type DevelopmentSettingTranslations = {
@@ -41,7 +41,7 @@ export default function developmentSettings({
 	exportLogs: () => Promise<void>;
 	settings: Settings;
 	saveSettings: () => Promise<void>;
-	memoryDB: DatabaseSync;
+	memoryDB: DatabaseSync<General>;
 	rerenderSettingTab: () => void;
 }): CallableOrObjectTree {
 	return {

@@ -4,6 +4,7 @@ import type { DatabaseSync } from 'uni-kv';
 import { SecretComponent } from 'obsidian';
 import type { Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Setting';
+import type { General } from '@/types';
 import { generateEditableList, reactivelyValidate, s } from './utils';
 
 export type MiscellaneousSettingTranslations = {
@@ -40,7 +41,7 @@ export default function miscellaneousSettings({
 	translate: Translate<MiscellaneousSettingTranslations>;
 	saveSettings: () => Promise<void>;
 	settings: Settings;
-	memoryDB: DatabaseSync;
+	memoryDB: DatabaseSync<General>;
 	rerenderSettingTab: () => void;
 	app: App;
 }): CallableOrObjectTree {
