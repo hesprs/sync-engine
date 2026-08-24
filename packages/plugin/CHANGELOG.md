@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.1.2 - 2026-08-24
+
+### Core
+
+- Fixed first sync failure caused by nested base directory.
+
+### Google Drive Module
+
+- Fixed recursive folder creation fail to apply.
+
 ## Sync Engine v3.1.1 - 2026-08-23
 
 ### Core

@@ -257,7 +257,7 @@ export default class GdriveFs implements RootFs {
 	async mkdir(key: string, recursive: boolean): Promise<void> {
 		const parent = dirname(key);
 		let parentId = this.resolveId(parent);
-		if (!parent && recursive) {
+		if (!parentId && recursive) {
 			await this.mkdir(parent, true);
 			parentId = this.resolveId(parent);
 		}
