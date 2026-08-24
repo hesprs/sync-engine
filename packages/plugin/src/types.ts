@@ -1,4 +1,5 @@
-export type { General } from '$/e2e-utils';
+export type { General } from '@repo/shared/e2e-utils.spec';
+export type { Binary } from '@repo/shared/binary';
 
 export type MaybePromise<T> = Promise<T> | T;
 export type TogglableValue<T = number> = { enabled: boolean; value: T };
@@ -30,5 +31,3 @@ export type Progress<T = string> = {
 	completed: number;
 	current?: T;
 };
-
-export type Binary = Uint8Array<ArrayBuffer>;

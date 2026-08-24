@@ -1,13 +1,14 @@
 import type { Context, Events, Translations } from '@';
-import type { App } from 'obsidian';
+import type { App, DataAdapter } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
-import loadModule from '$/e2e-utils';
 import hash from '@repo/shared/crypto';
+import { importCode } from '@repo/shared/e2e-utils.spec';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
 import type { General } from '@/types';
 import UnknownModuleModal from '@/components/UnknownModuleModal';
+import sha256 from '@/utils/sha-256';
 import toErrorMessage from '@/utils/to-error-message';
 import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
@@ -22,6 +23,7 @@ export type ModuleInstance = {
 	start?: () => void;
 };
 export type ModuleCtor = new (ctx: object) => ModuleInstance;
+type GeneralCtor = new (...args: ReadonlyArray<General>) => General;
 
 export type ModuleMeta = {
 	id: string;
@@ -381,4 +383,19 @@ function isValidMeta(meta: unknown): meta is ModuleMeta {
 		meta.integrity.length === 64 &&
 		/^[0-9a-f]*$/u.test(meta.integrity)
 	);
+}
+
+export async function loadModule(
+	options:
+		| { path: string; integrity: string; adapter: DataAdapter }
+		| { module: string; integrity: string; adapter: DataAdapter },
+) {
+	const { adapter, integrity } = options;
+	const file = 'module' in options ? options.module : await adapter.read(options.path);
+	if (integrity && (await sha256(file)) !== integrity)
+		throw new Error('Module has been maliciously modified!');
+	const module = await importCode<{ default?: GeneralCtor }>(file);
+	const ctor = module.default;
+	if (typeof ctor !== 'function') throw new Error(`Invalid module!`);
+	return ctor;
 }

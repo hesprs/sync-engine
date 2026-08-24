@@ -1,5 +1,6 @@
 import type { Vault, Stat, ListedFiles, App } from 'obsidian';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
+import { requestNative } from '@repo/shared/e2e-utils.spec';
 import { basename, isFolder, stripEndSlash } from '@repo/shared/path';
 import { Platform, TFile, TFolder } from 'obsidian';
 import type { Binary, MaybePromise } from '@/types';
@@ -68,7 +69,7 @@ export default function createVaultRequest(app: App): VaultRequest {
 		if (method === 'GET')
 			return adapter.readBinary(path).then((buffer) => toUint8Array(buffer)) as never;
 		if (method === 'GET_STREAM') {
-			const response = await fetch(adapter.getResourcePath(path));
+			const response = await requestNative(adapter.getResourcePath(path));
 			if (!response.body) throw new Error('Streaming vault file is not supported!');
 			return response.body as never;
 		}

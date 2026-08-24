@@ -1,4 +1,4 @@
-# Settings And UI
+# Settings and UI
 
 Sync Engine settings use Obsidian's setting definitions. Modules can contribute nested groups, pages, lists, controls, and custom rendered settings without owning the plugin settings tab. This page also covers the translation and migration helpers used by module UI.
 

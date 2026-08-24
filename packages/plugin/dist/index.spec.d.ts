@@ -1,4 +1,4 @@
-import { $ as RootFs, A as AddRecord, B as StoreOperations, C as RemoveRemote, D as MoveLocal, E as MoveRemote, F as RecordStore, G as Fs, H as BatchOptimizer, I as Storage, J as MkdirAtom, K as InputAtom, L as DatabaseAsync, M as ConflictResolver, N as ConflictResolverPayload, O as Download, P as TaskNames, Q as OutputAtom, R as DatabaseSync, S as ResolveConflict, T as RemoveLocal, U as CustomAtom, V as StoreSync, W as DeleteAtom, X as OptimizerInput, Y as MoveAtom, Z as OptimizerOutput, _ as CreateLocalDir, a as FsWrapperEntry, at as GlobMatchRule, b as TaskFactory, c as OptimizerEntry, ct as RecordStat, d as RemoteLister, dt as StatsMap, et as WrappedFs, f as RemoteListerEntry, ft as TogglableValue, g as RequestResponse, h as RequestParam, i as DeciderEntry, it as FolderStat, j as BaseTask, k as CreateRemoteDir, l as Registrar, lt as RecordStatsMap, m as Request, n as CheckConnectionResult, nt as Binary, o as Infras, ot as MaybePromise, p as RemoteRequestMiddlewareEntry, pt as General$1, q as ListReporter, r as ConflictResolverEntry, rt as FileStat, s as LocalRequestMiddlewareEntry, st as Progress, t as VaultRequest, tt as WriteAtom, u as RemoteFsEntry, ut as Stat, v as Decider, w as RemoveRecord, x as Upload, y as DeciderInput, z as StoreAsync } from "./index-LOl_cerr.spec.js";
+import { $ as RootFs, A as AddRecord, B as StoreOperations, C as RemoveRemote, D as MoveLocal, E as MoveRemote, F as RecordStore, G as Fs, H as BatchOptimizer, I as Storage, J as MkdirAtom, K as InputAtom, L as DatabaseAsync, M as ConflictResolver, N as ConflictResolverPayload, O as Download, P as TaskNames, Q as OutputAtom, R as DatabaseSync, S as ResolveConflict, T as RemoveLocal, U as CustomAtom, V as StoreSync, W as DeleteAtom, X as OptimizerInput, Y as MoveAtom, Z as OptimizerOutput, _ as CreateLocalDir, a as FsWrapperEntry, at as MaybePromise, b as TaskFactory, c as OptimizerEntry, ct as RecordStatsMap, d as RemoteLister, dt as TogglableValue, et as WrappedFs, f as RemoteListerEntry, ft as Binary, g as RequestResponse, h as RequestParam, i as DeciderEntry, it as GlobMatchRule, j as BaseTask, k as CreateRemoteDir, l as Registrar, lt as Stat, m as Request, n as CheckConnectionResult, nt as FileStat, o as Infras, ot as Progress, p as RemoteRequestMiddlewareEntry, pt as General$1, q as ListReporter, r as ConflictResolverEntry, rt as FolderStat, s as LocalRequestMiddlewareEntry, st as RecordStat, t as VaultRequest, tt as WriteAtom, u as RemoteFsEntry, ut as StatsMap, v as Decider, w as RemoveRecord, x as Upload, y as DeciderInput, z as StoreAsync } from "./index-g3mTMY1u.spec.js";
 import { App, Command, EventRef, IconName, Modal, Plugin, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, ToggleComponent } from "obsidian";
 //#region ../../node_modules/.bun/synthkernel@.+synthkernel.tgz/node_modules/synthkernel/dist/context.d.ts
 //#region src/context.d.ts
@@ -152,14 +152,14 @@ declare class Sync {
   private readonly convertDeleteToUpload;
   root: {
     executeSync: (trigger: string) => Promise<{
-      result: 'cancelled';
+      result: "cancelled";
     } | {
-      result: 'completed';
+      result: "completed";
     } | {
-      result: 'failed';
+      result: "failed";
       error: string;
     } | {
-      result: 'noop';
+      result: "noop";
     }>;
   };
 }

@@ -8,11 +8,11 @@
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | `digOriginal`      | Unwraps nested wrappers to root filesystem. See [file system](./file-system#digoriginal).                                                   |
 | `prefixWrapper`    | Exposes a prefixed directory as an `Fs` root. See [file system](./file-system#prefixwrapper).                                               |
-| `setNeedMigration` | Adds migration confirmation behavior to a setting toggle; see [Settings And UI](./settings-and-ui#migration-aware-toggles).                 |
+| `setNeedMigration` | Adds migration confirmation behavior to a setting toggle; see [Settings and UI](./settings-and-ui#migration-aware-toggles).                 |
 | `pipe`             | Transfer a file between two filesystems with auto-streaming. See [file system](./file-system#pipe).                                         |
 | `readWithSize`     | Read a file with auto-streaming by size threshold. See [file system](./file-system#readwithsize).                                           |
 | `writeWithValue`   | Write a value with auto-streaming by input type. See [file system](./file-system#writewithvalue).                                           |
-| `s`                | Combines a parent setting definition with nested setting definitions. See [Settings And UI](./settings-and-ui#nested-setting-registration). |
+| `s`                | Combines a parent setting definition with nested setting definitions. See [Settings and UI](./settings-and-ui#nested-setting-registration). |
 
 ### `/dev` runtime exports
 
@@ -145,7 +145,7 @@ These Context members are not commonly used by modules. Explore source code to o
 | `on(key, cb)`             | Subscribes to typed SDK event. See [events](./events).                                                 |
 | `dispatch(key, payload?)` | Dispatches typed SDK event. See [events](./events).                                                    |
 | `isIdle`                  | SynthKernel `Ref<boolean>` for sync-idle state.                                                        |
-| `translate`               | Translates a key from merged resources. See [Settings And UI](./settings-and-ui#internationalization). |
+| `translate`               | Translates a key from merged resources. See [Settings and UI](./settings-and-ui#internationalization). |
 | `rerenderSettingTab()`    | Renders contributed settings again.                                                                    |
 | `refreshSettingTab()`     | Cheap setting page rerender that makes Obsidian reevaluate the visibility of each setting entry.       |
 

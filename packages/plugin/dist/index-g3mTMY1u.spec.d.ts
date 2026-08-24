@@ -1,6 +1,9 @@
 import { App, ListedFiles, RequestUrlParam, Stat } from "obsidian";
-//#region test/e2e-utils.d.ts
+//#region ../shared/src/e2e-utils.spec.d.ts
 type General = any;
+//#endregion
+//#region ../shared/src/binary.d.ts
+type Binary = Uint8Array<ArrayBuffer>;
 //#endregion
 //#region src/types.d.ts
 type MaybePromise<T> = Promise<T> | T;
@@ -38,7 +41,6 @@ type Progress<T = string> = {
   completed: number;
   current?: T;
 };
-type Binary = Uint8Array<ArrayBuffer>;
 //#endregion
 //#region src/fs/interface.d.ts
 /**
@@ -459,7 +461,7 @@ declare class Registrar {
   root: {
     conflictResolverRegistry: Map<string, ConflictResolverEntry>;
     createLocalFs: () => Fs;
-    createRemoteFs: (remoteFs?: string) => RootFs;
+    createRemoteFs: (remoteFs?: string) => Fs;
     deciderRegistry: Map<string, DeciderEntry>;
     getCheckConnection: (remoteFs?: string) => () => MaybePromise<CheckConnectionResult>;
     getConflictResolver: () => ConflictResolver;
@@ -555,4 +557,4 @@ type VaultRequestResponseMap = {
 };
 type VaultRequest = <T extends VaultRequestParam>(params: T) => Promise<VaultRequestResponseMap[T['method']]>;
 //#endregion
-export { RootFs as $, AddRecord as A, StoreOperations as B, RemoveRemote as C, MoveLocal as D, MoveRemote as E, RecordStore as F, Fs as G, BatchOptimizer as H, Storage as I, MkdirAtom as J, InputAtom as K, DatabaseAsync as L, ConflictResolver as M, ConflictResolverPayload as N, Download as O, TaskNames as P, OutputAtom as Q, DatabaseSync as R, ResolveConflict as S, RemoveLocal as T, CustomAtom as U, StoreSync as V, DeleteAtom as W, OptimizerInput as X, MoveAtom as Y, OptimizerOutput as Z, CreateLocalDir as _, FsWrapperEntry as a, GlobMatchRule as at, TaskFactory as b, OptimizerEntry as c, RecordStat as ct, RemoteLister as d, StatsMap as dt, WrappedFs as et, RemoteListerEntry as f, TogglableValue as ft, RequestResponse as g, RequestParam as h, DeciderEntry as i, FolderStat as it, BaseTask as j, CreateRemoteDir as k, Registrar as l, RecordStatsMap as lt, Request as m, CheckConnectionResult as n, Binary as nt, Infras as o, MaybePromise as ot, RemoteRequestMiddlewareEntry as p, General as pt, ListReporter as q, ConflictResolverEntry as r, FileStat as rt, LocalRequestMiddlewareEntry as s, Progress as st, VaultRequest as t, WriteAtom as tt, RemoteFsEntry as u, Stat$1 as ut, Decider as v, RemoveRecord as w, Upload as x, DeciderInput as y, StoreAsync as z };
+export { RootFs as $, AddRecord as A, StoreOperations as B, RemoveRemote as C, MoveLocal as D, MoveRemote as E, RecordStore as F, Fs as G, BatchOptimizer as H, Storage as I, MkdirAtom as J, InputAtom as K, DatabaseAsync as L, ConflictResolver as M, ConflictResolverPayload as N, Download as O, TaskNames as P, OutputAtom as Q, DatabaseSync as R, ResolveConflict as S, RemoveLocal as T, CustomAtom as U, StoreSync as V, DeleteAtom as W, OptimizerInput as X, MoveAtom as Y, OptimizerOutput as Z, CreateLocalDir as _, FsWrapperEntry as a, MaybePromise as at, TaskFactory as b, OptimizerEntry as c, RecordStatsMap as ct, RemoteLister as d, TogglableValue as dt, WrappedFs as et, RemoteListerEntry as f, Binary as ft, RequestResponse as g, RequestParam as h, DeciderEntry as i, GlobMatchRule as it, BaseTask as j, CreateRemoteDir as k, Registrar as l, Stat$1 as lt, Request as m, CheckConnectionResult as n, FileStat as nt, Infras as o, Progress as ot, RemoteRequestMiddlewareEntry as p, General as pt, ListReporter as q, ConflictResolverEntry as r, FolderStat as rt, LocalRequestMiddlewareEntry as s, RecordStat as st, VaultRequest as t, WriteAtom as tt, RemoteFsEntry as u, StatsMap as ut, Decider as v, RemoveRecord as w, Upload as x, DeciderInput as y, StoreAsync as z };

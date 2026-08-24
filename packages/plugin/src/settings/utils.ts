@@ -205,6 +205,7 @@ export function generateEditableList<T>({
 			name: '',
 			render: (setting) => {
 				setting.settingEl.addClass('sync-engine-editable-list');
+				setting.settingEl.querySelector('.setting-item-control')?.addClass('w-100%!');
 				return render(setting, item, saveEdit);
 			},
 			searchable: false,
