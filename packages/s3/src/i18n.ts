@@ -41,7 +41,7 @@ export const zh: S3Translations = {
 	accessKeyId: 'Access Key ID',
 	accessKeyIdDescription: '请输入您的 S3 Access Key ID。',
 	accessKeyIdPlaceholder: '例如：AKIAI...',
-	bucket: '存储桶名称（Bucket）',
+	bucket: '存储桶',
 	bucketDescription: '请输入您的 S3 存储桶名称。',
 	bucketPlaceholder: 'my-bucket',
 	endpoint: '端点 URL',
@@ -64,9 +64,9 @@ export const zh: S3Translations = {
 	sessionTokenDescription: '配置可选的 AWS 临时会话令牌，存储在 Obsidian 密钥环中。',
 	urlStyle: 'URL 样式',
 	urlStyleDescription: (frag) => {
-		frag.appendText('选择适用于您的 S3 服务的 URL 样式。虚拟主机样式（Virtual-hosted）：');
+		frag.appendText('选择适用于您的 S3 服务的 URL 样式。虚拟主机样式：');
 		frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
-		frag.appendText('。路径样式（Path）：');
+		frag.appendText('。路径样式：');
 		frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
 		frag.appendText('。某些 S3 兼容的服务要求使用路径样式。');
 	},
@@ -117,7 +117,7 @@ export const zhTW: S3Translations = {
 	accessKeyId: '存取金鑰 ID',
 	accessKeyIdDescription: '輸入您的 S3 存取金鑰 ID。',
 	accessKeyIdPlaceholder: '例如 AKIAI...',
-	bucket: '儲存桶名稱',
+	bucket: '儲存桶',
 	bucketDescription: '輸入您的 S3 儲存桶名稱。',
 	bucketPlaceholder: 'my-bucket',
 	endpoint: '端點 URL',
@@ -139,9 +139,9 @@ export const zhTW: S3Translations = {
 	sessionTokenDescription: '設定可選的 AWS 臨時工作階段權杖，儲存於 Obsidian 金鑰圈。',
 	urlStyle: 'URL 樣式',
 	urlStyleDescription: (frag) => {
-		frag.appendText('選擇您 S3 服務的 URL 樣式。虛擬主機樣式（Virtual-hosted style）：');
+		frag.appendText('選擇您 S3 服務的 URL 樣式。虛擬主機樣式：');
 		frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
-		frag.appendText('。路徑樣式（Path style）：');
+		frag.appendText('。路徑樣式：');
 		frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
 		frag.appendText('。某些相容 S3 的服務需要使用路徑樣式。');
 	},

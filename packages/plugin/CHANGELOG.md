@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 
 ### Google Drive Module
 
-- Fixed recursive folder creation fail to apply.
+- Fixed recursive folder creation fails to apply.
 
 ## Sync Engine v3.1.1 - 2026-08-23
 

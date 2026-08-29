@@ -3,7 +3,7 @@ import canvas from './encryption.canvas';
 import Canvas from '@/components/Canvas.vue';
 </script>
 
-# Client-side Encryption v2
+# Client-Side Encryption v2
 
 The plugin uploads encrypted files to remote, download and decrypt back to local. This document specifies the encryption algorithm implementation in the `Encryption` module.
 

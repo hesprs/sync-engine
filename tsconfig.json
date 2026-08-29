@@ -16,5 +16,5 @@
 		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"types": ["bun", "@obsidian-typings/obsidian-public-latest"]
 	},
-	"include": ["scripts/**/*.ts"]
+	"include": ["scripts/**/*.ts", "./harness.config.ts"]
 }
