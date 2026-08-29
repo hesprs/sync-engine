@@ -5,14 +5,17 @@
     <br />
 </h1>
 
-<h4 align="center">The next-generation syncing plugin: Fast · Free · Extend with Modules</h4>
+<h4 align="center">The extensible vault synchronization engine: Fast · Free · Reliable</h4>
 
 <p align="center">
     <a href="https://github.com/hesprs/sync-engine/releases/latest">
-        <img src="https://img.shields.io/github/downloads/hesprs/sync-engine/manifest.json.svg?style=flat&label=%E2%AC%87%20Downloads&labelColor=008811&color=333333&displayAssetName=false" alt="accumulated downloads">
+        <img src="https://img.shields.io/github/downloads/hesprs/sync-engine/manifest.json.svg?label=%E2%AC%87%20Downloads&labelColor=008811&color=333333&displayAssetName=false" alt="accumulated downloads">
+    </a>
+    <a href="https://community.obsidian.md/plugins/sync-engine">
+        <img src="https://img.shields.io/badge/Plugin-Scanned-333333?logo=obsidian&logoColor=white&labelColor=a079ff" alt="plugin scan">
     </a>
     <a href="https://github.com/hesprs/sync-engine/actions">
-        <img src="https://img.shields.io/github/actions/workflow/status/hesprs/sync-engine/ci.yml?style=flat&logo=github&logoColor=white&label=CI&labelColor=d4ab00&color=333333" alt="ci">
+        <img src="https://img.shields.io/github/actions/workflow/status/hesprs/sync-engine/ci.yml?logo=github&logoColor=white&label=CI&labelColor=d4ab00&color=333333" alt="ci">
     </a>
     <a href="https://sync.consensia.cc">
         <img src="https://img.shields.io/badge/Documentation-Ready-333333?labelColor=5C73E7&logo=vitepress&logoColor=white" alt="Documentation" />
@@ -40,17 +43,24 @@
     </a> • 
     <a href="https://community.obsidian.md/plugins/sync-engine">
         <strong>Plugin Store</strong>
-    </a> • 
-    <a href="#license-copyright-and-originality">
-        <strong>License</strong>
     </a>
 </p>
 
 ## Introduction
 
-Sync Engine is a revolutionary solution for vault syncing. Its not only a syncing plugin, it is a modular platform that everyone can build upon.
+Sync Engine is a vault syncing plugin to **synchronize vault files in multiple devices**, it supports:
 
-The core ships the infrastructure, and all backends (WebDAV, S3, GDrive) and features (i18n, optimization, sync strategy) come from composable modules. You can build your own modules via convenient SDK, extend the plugin, contribute to community, all without modifying the source code.
+**Backends**: [S3](https://sync.consensia.cc/deep-dive/modules/s3), [WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav), [Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive)<br>
+**Features**:
+
+- [Client-side encryption](https://sync.consensia.cc/deep-dive/modules/encryption)
+- Bidirectional / mirror remote / mirror local syncing.
+- Startup / periodic / save-on-change syncing.
+- Conflict resolution strategies ([smart merge](https://sync.consensia.cc/deep-dive/modules/smart-merge) / keep both / latest survive / keep remote / keep local / skip).
+- Rate / memory control options.
+- Custom headers.
+
+Sync Engine is also **a modular platform** that everyone can build upon. You can achieve customized experience by [building your own modules via the convenient SDK](https://sync.consensia.cc/development/develop-a-module), extending the plugin, [contributing to the community](ttps://sync.consensia.cc/usage/contributing), all without modifying the source code.
 
 Access Sync Engine documentation at [`sync.consensia.cc`](https://sync.consensia.cc), which contains usage guides, existing modules, permission claims, benchmarking, and documentation on how to build a module.
 
@@ -62,44 +72,32 @@ There's already a lot of plugins to sync your notes between devices:
 
 Sync Engine fits the gap: you want to choose your own storage, you want the plugin to stay small because unused features aren't bundled in, and you want a highly optimized syncing that is no slower than a self-hosted server.
 
-## Migration
+## Our Claims
 
-If you previously used the plugin **WebDAV Sync** and is confused by the migration to Sync Engine. Sync Engine is the official successor after WebDAV Sync. You can read [this page](https://sync.consensia.cc/usage/migration) for the automatic migration or manual migration.
-
-If not all your devices have WebDAV Sync updated to 2.5.12 or later, you can go to [latest v2 release page](https://github.com/hesprs/sync-engine/releases/tag/2.5.14) and download the `main.js`, `styles.css`, and `manifest.json`, replace corresponding files in `<your vault>/.obsidian/plugins/webdav-sync/`. And then use the updated version to complete the migration.
-
-## Features
-
-### Core Functions
-
-- Bidirectional / mirror remote / mirror local syncing.
-- Startup / periodic / save-on-change syncing.
-- Conflict resolution strategies (keep both / latest survive / keep remote / keep local / skip).
-- Rate / memory control options.
-- Custom headers.
-- You can extend most above features by writing modules.
-
-### Module-Extended ([your can develop your own](#develop-a-module))
-
-- **Backends**: WebDAV, S3, Google Drive
-- **Features**: Encryption, Smart Merge Conflict Resolution
-
-### Extensible Architecture
-
-- You can add backends, optimizers, sync triggers, i18n resources, decision strategies, conflict strategies, setting entries, custom file processing, and invoke all possible operations in custom modules.
-- Documentation, AI agent skills, and SDK with debug and testing kit are provided.
-- Plugin provides dedicated module discovery and management UI.
-- Repo accepts any module contribution as long as it respects [contribution guide](./CONTRIBUTING.md).
-
-### Radical Optimization
+### Fast
 
 - Incremental syncing never uploads the full vault each time.
-- [Anchored Asymmetric Storage](https://sync.consensia.cc/deep-dive/asymmetric-storage) technology substantially accelerates syncing.
+- [Anchored Asymmetric Storage](https://sync.consensia.cc/deep-dive/asymmetric-storage) substantially accelerates syncing.
 - Real-time sync uses cached remote states, allowing it to complete within milliseconds.
-- [Benchmarking shows around **100x** faster than Remotely Save in daily syncing](https://sync.consensia.cc/usage/benchmark).
+- [Benchmarking shows around **100x** faster than Remotely Save in some metrics](https://sync.consensia.cc/usage/benchmark).
 - Handles vaults with thousands of files smoothly.
 - No slower than a self-hosted server
 - Detailed performance comparison can be found in [performance benchmark](https://sync.consensia.cc/usage/benchmark).
+
+### Free and Reliable
+
+- The plugin is completely open-source, free to use and distribute ([MIT License](https://mit-license.org/))
+- All source code, including plugin core, all modules, and the documentation website are publicly accessible in this repo; and thus they are all scanned by Obsidian's automated scan. There's no hidden telemetry or third-party server.
+- The [documentation](https://sync.consensia.cc) documents everything in detail, including [permission](https://sync.consensia.cc/usage/permissions) and [security](https://sync.consensia.cc/usage/security) claims.
+- The plugin protects you from attacks: [encryption](https://sync.consensia.cc/deep-dive/modules/encryption), [module verification](https://sync.consensia.cc/deep-dive/extensibility).
+- The [sync algorithm](https://sync.consensia.cc/deep-dive/sync) is battle-tested and has evolved over thousands of usage.
+
+### Extensible
+
+- You can add backends, optimizers, sync triggers, i18n resources, decision strategies, conflict strategies, setting entries, custom file processing, and invoke all possible operations in custom modules.
+- Documentation and SDK with debug and testing toolkit are provided.
+- Plugin provides dedicated module discovery and management UI.
+- Repo accepts any module contribution as long as it respects [contribution guide](./CONTRIBUTING.md).
 
 ## Usage
 
@@ -109,10 +107,17 @@ If not all your devices have WebDAV Sync updated to 2.5.12 or later, you can go 
 4. Start your first sync from command palette or ribbon button.
 5. Review the sync tasks that will be performed.
 6. Click "Confirm", and your files will arrive the configured backend at the speed of light.
+7. Access [documentation](https://sync.consensia.cc) for advanced usages.
 
-## Develop a Module
+## Roadmap
 
-Sync Engine welcomes everyone that would like to develop and contribute a module. The detailed module development documentation can be found in [Sync Engine website](https://sync.consensia.cc/development/develop-a-module). Module contribution standard see [CONTRIBUTING](https://sync.consensia.cc/usage/contributing).
+Below is a list of planned features and improvements, the faster this plugin is adopted and the **star** ⭐ grows, the faster the development will be. Also, we welcome contributors that would like to help us with the development of either modules or core.
+
+- [x] v3.0: Rewrite entirely, dynamic module loading, module store, asymmetric storage, and rebrand
+- [x] v3.1: Migrate settings to Obsidian v1.13 API
+- [ ] v3.2: Granular sync strategy selection / exclusion inclusion rule refactor based on ordered glob match rules.
+
+Sync Engine has a [wishlist of features](https://github.com/hesprs/sync-engine/issues/214), you can react with **thumbs up** 👍 on feature comments you would like to have. And the features with more votes will have higher priority.
 
 ## Common Questions
 
@@ -130,19 +135,9 @@ According to this plugin's [file handling strategy](https://hesprs.github.io/pro
 
 </details>
 
-## Roadmap
-
-Below is a list of planned features and improvements, the faster this plugin is adopted and the **star** ⭐ grows, the faster the development will be. Also, we welcome contributors that would like to help us with the development of either modules or core.
-
-Sync Engine also has a [wishlist of features](https://github.com/hesprs/sync-engine/issues/214), you can react with **thumbs up** 👍 on feature comments you would like to have. And the features with more votes will have higher priority.
-
-- [x] v3.0: Rewrite entirely, dynamic module loading, module store, asymmetric storage, and rebrand
-- [ ] v3.1: Migrate settings to Obsidian v1.13 API
-- [ ] v3.2: Granular sync strategy selection / exclusion inclusion rule refactor based on ordered glob match rules.
-
 ## License
 
 The source code of Sync Engine and modules in this repository are licensed under the [MIT License](https://mit-license.org/).<br>
-Documents in the documentation website are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
+Pages in the documentation website are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
 
 Copyright ©️ 2026 Hēsperus and All Contributors

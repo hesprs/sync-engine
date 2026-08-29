@@ -66,7 +66,7 @@
 		"id": "gdrive",
 		"name": "Google Drive",
 		"version": "0.0.2",
-		"description": "[Alpha] Google Drive backend support.",
+		"description": "Google Drive backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/gdrive.js",
 		"minPluginVersion": "3.1.1"

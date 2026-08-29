@@ -1,4 +1,4 @@
-## Smart Merge Module
+# Smart Merge Module
 
 Smart Merge is an optional text conflict resolver for Markdown files. It keeps a base snapshot for each mergeable file, then uses that snapshot to distinguish independent edits from conflicting edits. The module registers a remote file system wrapper, the `smartMerge` conflict resolver, and settings.
 
