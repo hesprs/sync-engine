@@ -9,17 +9,17 @@
 	],
 	"type": "module",
 	"scripts": {
-		"postinstall": "cd packages/plugin && bun compile",
+		"postinstall": "turbo run compile -F @hesprs/sync-engine-sdk",
 		"dev:plugin": "cd packages/plugin && bun dev:plugin",
 		"build:plugin": "cd packages/plugin && bun build:plugin",
 		"dev:docs": "cd docs && bun dev:docs",
 		"build:docs": "cd docs && bun build:docs",
-		"dev": "bun turbo run dev",
-		"compile": "bun turbo run compile",
+		"dev": "turbo run dev",
+		"compile": "turbo run compile",
 		"ver": "bun scripts/version-bump.ts",
-		"fix": "bun turbo run fix",
-		"check": "bun turbo run check",
-		"tests": "bun turbo run tests"
+		"fix": "turbo run fix",
+		"check": "turbo run check",
+		"tests": "turbo run tests"
 	},
 	"devDependencies": {
 		"@obsidian-typings/obsidian-public-latest": "^6.34.0",
