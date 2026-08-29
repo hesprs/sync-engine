@@ -35,8 +35,8 @@
 </p>
 
 <p align="center">
-    <a href="./README.zh.md">
-        <strong>简体中文</strong>
+    <a href="./README.md">
+        <strong>English</strong>
     </a> • 
     <a href="https://sync.consensia.cc">
         <strong>文档指南</strong>
