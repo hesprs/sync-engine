@@ -40,7 +40,7 @@ test('list should infer folder anchors from remoteStatContext and return hierarc
 			],
 		},
 	});
-	const wrapper = asymmetricStorageWrapper(remote.fs, store);
+	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});
 
 	expect(await wrapper.list('/', () => 'include')).toStrictEqual([
 		file('root.md', { size: 1, uid: 'root-file' }),
@@ -65,7 +65,7 @@ test('list should throw when encountering too many malformed or orphan flattened
 			],
 		},
 	});
-	const wrapper = asymmetricStorageWrapper(remote.fs, store);
+	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});
 
 	expect(() => wrapper.list('/', () => 'include')).toThrow(
 		"There are too many files at remote that don't adopt asymmetric storage, maybe you want to turn it off in settings.",
@@ -74,7 +74,7 @@ test('list should throw when encountering too many malformed or orphan flattened
 
 test('mkdir should write empty folder marker file and reuse same generated anchor later', async () => {
 	const remote = fs();
-	const wrapper = asymmetricStorageWrapper(remote.fs, store);
+	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});
 	const noteStat = file('folder/note.md', { uid: 'note-uid' });
 
 	await wrapper.mkdir('folder/');
@@ -92,7 +92,7 @@ test('mkdir should write empty folder marker file and reuse same generated ancho
 test('mkdir should reuse bootstrapped anchor instead of generating a colliding one', async () => {
 	seedRemoteContext(file('00000abcde~folder'));
 	const remote = fs();
-	const wrapper = asymmetricStorageWrapper(remote.fs, store);
+	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});
 	const noteStat = file('folder/note.md', { uid: 'note-uid' });
 
 	await wrapper.mkdir('folder/');
@@ -118,7 +118,7 @@ test('mkdir should reuse bootstrapped anchor instead of generating a colliding o
 test('folder move should preserve anchor and short-circuit identical flattened move', async () => {
 	seedRemoteContext(file('00000abcde~folder'));
 	const remote = fs();
-	const wrapper = asymmetricStorageWrapper(remote.fs, store);
+	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});
 	const childStat = file('renamed/child.md', { uid: 'child-uid' });
 
 	await wrapper.move('folder/', 'renamed/');

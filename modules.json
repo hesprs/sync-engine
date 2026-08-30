@@ -2,7 +2,7 @@
 	{
 		"id": "webdav",
 		"name": "WebDAV",
-		"version": "0.1.11",
+		"version": "0.1.12",
 		"description": "WebDAV backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/webdav.js",
@@ -11,7 +11,7 @@
 	{
 		"id": "s3",
 		"name": "S3",
-		"version": "0.1.0",
+		"version": "0.1.1",
 		"description": "S3 and S3-compatible backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/s3.js",

@@ -282,7 +282,11 @@ export default class Bootstrap {
 		registerRemoteFsWrapper({
 			apply: (fs) => {
 				if (this.settings.asymmetricStorage)
-					return asymmetricStorageWrapper(fs, memoryDB.getStore('remoteContext10000'));
+					return asymmetricStorageWrapper(
+						fs,
+						memoryDB.getStore('remoteContext10000'),
+						(str) => dispatch('logSync', str),
+					);
 			},
 			priority: 11_000,
 		});

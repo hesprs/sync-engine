@@ -52,6 +52,7 @@ class AsymmetricStorageFs implements WrappedFs {
 	constructor(
 		readonly original: Fs,
 		private readonly statStore: StoreSync<Stat>,
+		private readonly logger: (str: string) => void,
 	) {}
 
 	getUid() {
@@ -162,6 +163,7 @@ class AsymmetricStorageFs implements WrappedFs {
 			stats.map(async (stat, index) => {
 				const inflated = this.inflateStat(stat);
 				if (!inflated) {
+					this.logger(`Asymmetric storage ignored orphaned \`${stat.key}\`.`);
 					ignoredCount++;
 					return;
 				}
@@ -275,9 +277,10 @@ class AsymmetricStorageFs implements WrappedFs {
 
 export default function asymmetricStorageWrapper(
 	original: Fs,
-	options: StoreSync<Stat>,
+	store: StoreSync<Stat>,
+	logger: (str: string) => void,
 ): WrappedFs {
-	return new AsymmetricStorageFs(original, options);
+	return new AsymmetricStorageFs(original, store, logger);
 }
 
 const SAFE_81 = " !$'(),-.0123456789;=@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{}";
@@ -294,7 +297,6 @@ function generateId(str: string): string {
 	h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3_266_489_909);
 	h2 = Math.imul(h2 ^ (h2 >>> 16), 2_246_822_507);
 	h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3_266_489_909);
-	// oxlint-disable-next-line unicorn/prefer-math-trunc https://github.com/oxc-project/oxc/issues/25239
 	let hash = 4_294_967_296 * (2_097_151 & h2) + (h1 >>> 0);
 	const c4 = hash % 81;
 	hash = Math.trunc(hash / 81);
