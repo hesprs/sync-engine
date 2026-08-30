@@ -149,7 +149,7 @@ export default class S3Fs implements RootFs {
 	}
 
 	private async requestOrThrow(params: RequestParam): Promise<RequestResponse> {
-		const response = await this.request(params);
+		const response = await this.request(Object.assign(params, { throw: false }));
 		if (response.status >= 200 && response.status < 300) return response;
 
 		const body = response.text();

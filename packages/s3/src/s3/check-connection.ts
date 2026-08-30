@@ -20,7 +20,7 @@ export async function checkConnection(
 			key: '/',
 			urlStyle: options.urlStyle,
 		});
-		const response = await request({ method: 'HEAD', url });
+		const response = await request({ method: 'HEAD', throw: false, url });
 		if (response.status >= 200 && response.status < 300) return { success: true } as const;
 		return {
 			reason: `HTTP ${response.status}`,

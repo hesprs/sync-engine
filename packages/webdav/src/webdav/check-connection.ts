@@ -24,6 +24,7 @@ export async function checkConnection(
 			contentType: 'application/xml',
 			headers: { Authorization, Depth: '0' },
 			method: 'PROPFIND',
+			throw: false,
 			url: buildUrl(normalizeUrl(options.endpoint), '/'),
 		});
 		if (response.status === 200 || response.status === 207) return { success: true } as const;
