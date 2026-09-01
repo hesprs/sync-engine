@@ -30,6 +30,7 @@ type ModuleMeta = {
   main: string; // Absolute URL to the built .js file to download from
   icon?: string; // Optional. Defaults to 'puzzle'
   minPluginVersion?: string; // Optional. Module skipped if plugin version is lower
+  readme?: string; // Optional. Link to the module's README page, shown in Module Management UI
   integrity: string; // Required. 64-character hex SHA-256 hash of the module file
 };
 ```
@@ -41,6 +42,15 @@ The plugin validates all six required fields (`name`, `version`, `description`, 
 :::
 
 The `id` field cannot contain `< > : " / \ | ? *`. There is no character restriction on `name`.
+
+## Magic Bytes
+
+Module metadata can reach users through two channels:
+
+- **Source metadata**: when a module is downloaded from a source, the entry from the source JSON is authoritative. Magic bytes in the downloaded file are ignored.
+- **Magic bytes**: when a user installs a module from a local file through **Install module from file**, there is no source JSON. Sync Engine parses the `/*! ... */` comment at the top of the file and prefills the module editor with it. The user reviews and confirms the metadata before it is stored.
+
+Build-time embedding of magic bytes with the [Tsdown plugin](./develop-a-module#magic-bytes) is therefore mainly useful for modules distributed as standalone files. If your module is distributed through a source, keep metadata in the source JSON and you can omit magic bytes entirely.
 
 ## Module Sources
 

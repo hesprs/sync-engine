@@ -23,8 +23,6 @@ export default function parseXML<T extends object>(xml: string): T {
 				textContent += child.nodeValue || '';
 			else if (child.nodeType === Node.ELEMENT_NODE) elementChildren.push(child as Element);
 
-		textContent = textContent.trim();
-
 		// Group children by tag name
 		const grouped: Record<string, Array<unknown>> = {};
 		for (const child of elementChildren) {

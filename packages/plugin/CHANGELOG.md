@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.1.3 - 2026-09-01
+
+### Core
+
+- Supported loading custom modules from files in the module management page.
+- Supported displaying modules' README pages in the module management page when present.
+
+### S3 Module
+
+- Fixed asymmetric storage occasionally drops uploaded directories undiscoverable.
+- Refreshed input validation of the settings UI.
+
+## Google Drive Module
+
+- Refreshed input validation of the settings UI.
+
+## WebDAV Module
+
+- Refreshed input validation of the settings UI.
+
 ## Sync Engine v3.1.2 - 2026-08-24
 
 ### Core

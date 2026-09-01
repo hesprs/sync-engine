@@ -43,11 +43,12 @@ type ModuleMeta = {
 	main: string; // Download link
 	icon?: string;
 	minPluginVersion?: string;
+	readme?: string;
 	integrity: string;
 };
 ```
 
-Optional `icon` and `minPluginVersion` values are also supported. Entries requiring a newer plugin version remain identifiable in the catalog and mark the plugin as outdated; update the plugin before installing those modules. IDs containing common filename separators or metacharacters are skipped, and the integrity string must contain 64 hexadecimal characters.
+Optional `icon`, `minPluginVersion`, and `readme` values are also supported. Entries requiring a newer plugin version remain identifiable in the catalog and mark the plugin as outdated; update the plugin before installing those modules. IDs containing common filename separators or metacharacters are skipped, and the integrity string must contain 64 hexadecimal characters.
 
 Source contents are cached for automatic update checks during the current plugin lifetime. Duplicate IDs are filtered within each source.
 
@@ -108,6 +109,10 @@ The Module Management UI exposes a download action for a module that is not inst
 5. loads the module immediately when it was already running or is marked enabled.
 
 New modules are disabled by default. The downloaded text is integrity-checked before import when immediate loading occurs. A newly downloaded disabled module is written and stored without being imported; integrity is checked when the module is later enabled.
+
+### Install From File
+
+The module management menu also offers **Install module from file**. The user picks a `.js` file (other extensions are rejected with a notice), and the module editor opens with metadata prefilled from the file's magic bytes, a leading `/*! ... */` comment of `key: value` lines embedded at build time. On save, `installModule()` writes the file to the module directory, stores the confirmed metadata, and loads the module when it is enabled. No source is involved in this path.
 
 ### Automatic Update
 

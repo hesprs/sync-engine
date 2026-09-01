@@ -22,6 +22,7 @@
 		"tests": "turbo run tests"
 	},
 	"devDependencies": {
+		"@hesprs/harness": "./hesprs-harness.tgz",
 		"@obsidian-typings/obsidian-public-latest": "^6.34.0",
 		"@tsdown/css": "^0.22.14",
 		"@types/bun": "^1.4.0",

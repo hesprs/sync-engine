@@ -33,6 +33,7 @@ export type ModuleMeta = {
 	main: string; // Download link
 	icon?: string;
 	minPluginVersion?: string;
+	readme?: string;
 	integrity: string;
 };
 export type AugmentedModuleMeta = ModuleMeta & {
@@ -41,8 +42,8 @@ export type AugmentedModuleMeta = ModuleMeta & {
 	icon: string;
 };
 
-const MODULE_EXTENSION = '.js';
 const AUTO_UPDATE_DELAY = 200;
+export const MODULE_EXTENSION = '.js';
 export const OFFICIAL_SOURCE = 'https://sync.consensia.cc/modules.json';
 
 export default class Extensibility {
@@ -205,29 +206,33 @@ export default class Extensibility {
 		dispatch('moduleUnloaded', id);
 	};
 
+	private readonly installModule = async (meta: AugmentedModuleMeta, module: string) => {
+		const { id, enabled } = meta;
+		const { adapter } = this.ctx.app.vault;
+		await Promise.all([
+			adapter.write(this.getModulePath(id), module),
+			enabled ? this.loadModule(meta, true, module) : Promise.resolve(),
+			this.moduleStore.set(id, meta),
+		]);
+		this.discoveredModules.set(id, meta);
+	};
+
 	private readonly downloadModule = async (meta: AugmentedModuleMeta, waitIdle = true) => {
-		const { id, version, main, enabled, name } = meta;
-		const { dispatch, translate, app, isIdle } = this.ctx;
+		const { id, version, main, name } = meta;
+		const { dispatch, translate, isIdle } = this.ctx;
 		let setBusy = false;
 		try {
 			const legacy = this.discoveredModules.get(id);
 			if (legacy?.version === version) return;
 			dispatch('logGeneral', `Downloading module \`${id}\` of version \`${version}\`.`);
-			const { adapter } = app.vault;
 			const module = await requestUrl(main).text;
-			const isRunning = this.loadedModules.has(id);
 			if (waitIdle) {
 				await untilTrue(isIdle, 'stop');
 				setBusy = true;
 				isIdle(false);
 			}
-			if (isRunning) this.unloadModule(id);
-			await Promise.all([
-				adapter.write(this.getModulePath(id), module),
-				isRunning || enabled ? this.loadModule(meta, true, module) : Promise.resolve(),
-				this.moduleStore.set(id, meta),
-			]);
-			this.discoveredModules.set(id, meta);
+			if (this.loadedModules.has(id)) this.unloadModule(id);
+			await this.installModule(meta, module);
 		} catch (error) {
 			const message = toErrorMessage(error);
 			dispatch('errorGeneral', `Failed to download module \`${id}\`: ${message}`);
@@ -354,6 +359,7 @@ export default class Extensibility {
 		downloadModule: this.downloadModule,
 		enableModule: this.enableModule,
 		fetchSources: this.fetchSources,
+		installModule: this.installModule,
 		loadAllModules: this.loadAllModules,
 		loadModule: this.loadModule,
 		loadedModules: this.loadedModules,

@@ -97,10 +97,12 @@ export default function App(props: {
 	const unsubscribeShowInstalledOnly = props.hooks.onShowInstalledOnlyChange.subscribe(
 		(enabled) => setShowInstalledOnlySignal(enabled),
 	);
+	const unsubscribeInstallFromFile = props.hooks.onInstallModuleFromFile.subscribe(syncSnapshots);
 
 	onCleanup(() => {
 		unsubscribeQuery();
 		unsubscribeShowInstalledOnly();
+		unsubscribeInstallFromFile();
 	});
 
 	onMount(() => {

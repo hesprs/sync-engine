@@ -102,6 +102,7 @@ const ru: Translations = {
 	delete: 'Удалить',
 	deleteModule: 'Удалить модуль',
 	description: 'Описание',
+	descriptionDescription: 'Укажите текст описания, отображаемый в карточке модуля.',
 	descriptionPlaceholder: 'Этот модуль...',
 	development: 'Разработка',
 	diffMatchPatch: 'Объединить',
@@ -112,6 +113,7 @@ const ru: Translations = {
 	edit: 'Редактировать',
 	editModuleInformation: 'Редактировать информацию о модуле',
 	enable: 'Включить',
+	enableDescription: 'Определяет, следует ли загружать этот модуль.',
 	enableModule: 'Включить модуль',
 	exclusionRules: 'Правила исключения',
 	exclusionRulesDescription: (frag) => {
@@ -149,7 +151,7 @@ const ru: Translations = {
 	icon: 'Иконка',
 	iconDescription: (frag) => {
 		frag.appendText(
-			'Задайте иконку для этого модуля, которая будет отображаться в панели управления модулями. Полный список иконок доступен в ',
+			'Задайте иконку, отображаемую в карточке модуля. Полный список иконок доступен в ',
 		);
 		frag.createEl('a', {
 			attr: { href: 'https://lucide.dev/icons/' },
@@ -157,7 +159,7 @@ const ru: Translations = {
 		});
 		frag.appendText('.');
 	},
-	iconPlaceholder: 'Введите код Lucide Icons (например, puzzle)',
+	iconPlaceholder: 'Введите код иконки (например, puzzle)',
 	idle: 'В ожидании',
 	inclusionRules: 'Правила включения',
 	inclusionRulesDescription: (frag) => {
@@ -172,17 +174,16 @@ const ru: Translations = {
 		});
 		frag.appendText(' для руководства по настройке.');
 	},
+	installModuleFromFile: 'Установить модуль из файла',
 	installed: 'Установлено',
 	integrityVerification: 'Проверка целостности',
 	integrityVerificationDescription: (frag) => {
-		frag.appendText(
-			'Определяет, нужно ли привязывать бинарный файл модуля к определённому хэшу и проверять его при каждой загрузке. ',
-		);
+		frag.appendText('Проверять хэш при каждой загрузке модуля, ');
 		frag.createEl('strong', {
-			text: 'Настоятельно не рекомендуется отключать проверку целостности, так как это сильно снижает безопасность.',
+			text: 'защищая вас от атак с подменой модулей',
 		});
+		frag.appendText('.');
 	},
-	invalidValue: 'Некорректное значение, возвращено исходное.',
 	keepLocal: 'Оставить локальную версию',
 	keepRemote: 'Оставить удалённую версию',
 	latestSurvive: 'Оставлять последнюю версию',
@@ -217,6 +218,11 @@ const ru: Translations = {
 	miscellaneous: 'Разное',
 	moduleAutoUpdate: 'Автообновление модулей',
 	moduleAutoUpdateDescription: 'Автоматически обновлять установленные модули из их источников.',
+	moduleExtensionWarning: (frag) => {
+		frag.appendText('Неверный файл: модули должны иметь расширение ');
+		frag.createEl('code', { text: '.js' });
+		frag.appendText('.');
+	},
 	moduleManagement: 'Управление модулями',
 	moduleManagementDescription:
 		'Управление модулями в специальной панели. Вы можете устанавливать, удалять, обновлять, включать, отключать и редактировать модули, а также их источники.',
@@ -227,6 +233,7 @@ const ru: Translations = {
 	moveLocal: 'Переместить локальный файл',
 	moveRemote: 'Переместить удалённый файл',
 	name: 'Название',
+	nameDescription: 'Укажите название, отображаемое в карточке модуля.',
 	namePlaceholder: 'Введите отображаемое имя модуля',
 	noHeaderConfigured: 'Заголовок не настроен.',
 	noInstalledModulesFound: 'Установленные модули не найдены.',
@@ -239,6 +246,11 @@ const ru: Translations = {
 	noticeStatusOnMobileDescription:
 		'Отображать всплывающее уведомление на мобильных устройствах во время синхронизации. Заменяет строку состояния, используемую на ПК.',
 	official: 'Официальный',
+	openReadme: 'Открыть страницу README модуля.',
+	readmePage: 'Страница README',
+	readmePageDescription:
+		'Укажите необязательную страницу README модуля; пустое поле означает отсутствие README.',
+	readmePagePlaceholder: 'https://example.com/my-module',
 	realtimeSync: 'Синхронизация в реальном времени',
 	realtimeSyncDescription:
 		'Запускать синхронизацию автоматически сразу после изменения файлов. Измените задержку между изменением файла и запуском синхронизации в поле ниже.',
@@ -335,12 +347,12 @@ const ru: Translations = {
 			' Если вы не знаете, откуда появился этот модуль, лучше всего сразу удалить его. Если вы сами создали этот модуль и это сделано намеренно, вы можете выбрать «Настроить» и включить его.',
 		);
 	},
+	update: 'Обновить',
 	updateAvailable: 'Доступно обновление',
+	updateDescription:
+		'Определяет, может ли модуль получать обновления. Укажите источник обновлений в поле; пустой источник означает отсутствие обновлений.',
 	updateModule: 'Обновить модуль',
-	updateSource: 'Источник обновлений',
-	updateSourceDescription:
-		'Укажите источник, из которого этот модуль будет получать обновления. Оставьте поле пустым, чтобы отключить обновления.',
-	updateSourcePlaceholder: 'https://example.com/modules.json',
+	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Загрузить',
 	walkingRemote: 'Сканирование удалённых файлов',
 	xConfigured: 'Настроено: {{x}}',

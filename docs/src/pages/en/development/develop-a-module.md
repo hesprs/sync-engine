@@ -45,7 +45,7 @@ your-module
 Create `tsdown.config.ts` and write following content:
 
 ```TypeScript
-import { syncEngineTransform } from '@hesprs/sync-engine-sdk/dev';
+import { syncEngineModule } from '@hesprs/sync-engine-sdk/dev';
 import { defineConfig } from 'tsdown';
 
 const dev = process.env.MODE === 'dev';
@@ -57,11 +57,11 @@ export default defineConfig({
 	minify: true,
 	outExtensions: () => ({ js: '.js' }),
 	outputOptions: { codeSplitting: false },
-	plugins: [syncEngineTransform()],
+	plugins: [syncEngineModule()],
 });
 ```
 
-This config makes Tsdown output a single minified JavaScript file, which can be directly loaded by Sync Engine core. The `syncEngineTransform` plugin makes you able to use Obsidian API directly in your module.
+This config makes Tsdown output a single minified JavaScript file, which can be directly loaded by Sync Engine core. The `syncEngineModule` plugin bridges Obsidian API imports and can embed module metadata as magic bytes, see [Tsdown Plugin](#tsdown-plugin).
 
 Finally add following commands to your `package.json`:
 
@@ -73,6 +73,55 @@ Finally add following commands to your `package.json`:
   }
 }
 ```
+
+## Tsdown Plugin
+
+The `syncEngineModule` plugin shipped in `@hesprs/sync-engine-sdk/dev` handles two concerns when building your module.
+
+### Obsidian API Bridging
+
+It rewrites every form of `obsidian` import in the output to the runtime API bridge, so module code can import Obsidian API directly and still load as a plain ESM file:
+
+```TypeScript
+import { Notice, Setting } from 'obsidian';
+
+// Compiled to:
+const { Notice, Setting } = window.syncEngineApiBridge;
+```
+
+### Magic Bytes
+
+Passing module metadata to the plugin prepends a magic bytes comment to each compiled entry file:
+
+```TypeScript
+plugins: [
+	syncEngineModule({
+		name: 'My Module',
+		icon: 'puzzle',
+		description: 'An example module.',
+		source: 'https://example.com/modules.json',
+		version: '1.0.0',
+		readme: 'https://example.com/my-module',
+	}),
+],
+```
+
+The output file then starts with:
+
+```js
+/*!
+name: My Module
+icon: puzzle
+description: An example module.
+source: https://example.com/modules.json
+version: 1.0.0
+readme: https://example.com/my-module
+*/
+```
+
+The metadata can also be an array of `{ id, ...meta }` or a record keyed by entry name, which assigns different metadata to each entry in multi-entry builds. All fields are optional, omitted fields produce no line, and entries without a match get no comment.
+
+When a user installs a module from a local file, Sync Engine parses this comment to prefill module metadata in the editor, see [distribution](./distribution#magic-bytes) for when magic bytes or source metadata is used.
 
 ## Module Contract
 
@@ -111,7 +160,7 @@ Every module:
 
 - You can use Node.js and Browser APIs in your module, but if you need mobile compatibility, please avoid using Node.js API.
 - Use **Sentence case** for all UI text, this is an Obsidian standard.
-- Access **Obsidian API** directly via `obsidian` import (this is bridged gracefully via `syncEngineTransform`).
+- Access **Obsidian API** directly via `obsidian` import (this is bridged gracefully via `syncEngineModule`).
 - Register i18n resources first so that later registration can use them.
 - Unregister all registered capabilities during disposal.
 

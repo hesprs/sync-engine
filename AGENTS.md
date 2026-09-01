@@ -1,13 +1,15 @@
+### Sync Engine
+
 This is the monorepo for an extensible Obsidian syncing plugin to sync vault files between Obsidian and various backends. The plugin itself and modules are in `packages/`.
 
-## Context
+#### Context
 
 - When exploring the repo, you must read related pages in `docs/src/pages/en/`, especially inside the `deep-dive/` folder: this is the fastest way to understand the engineering sophistication.
 - This repo is also an Obsidian vault used for testing. The config folder is at `.obsidian`, and plugin dist folder is symlinked to `.obsidian/plugins/sync-engine`. The folder also contains plugin settings `data.json` and module binaries.
 
-## Techstack
+#### Techstack
 
-- **TypeScript 7** as programming language
+- **TypeScript 6** as programming language
 - **Bun** as its package manager and task runner
 - **Turbo** for monorepo orchestration
 - **Tsdown** for building
@@ -17,7 +19,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - custom package **SynthKernel** for dependency injection
 - custom package **Uni-KV** for IndexedDB and in-memory database.
 
-## Commands
+#### Commands
 
 - `bun dev:plugin`: build plugin without cleaning dist
 - `bun dev:docs`: start docs dev server
@@ -31,7 +33,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - `cd packages/plugin && bun synthkernel <file-name> <type-alias>`: inspect the final flattened content of a type alias in a file, use to inspect merged types, do not explore the entire codebase.
 - `bun -e '<code>'` run TS code directly, can import from codebase, use double quotes inside code.
 
-## Packages
+#### Packages
 
 - Plugin & module SDK: `packages/plugin/`, package name `@hesprs/sync-engine-sdk`, `dev` builds SDK.
 - WebDAV module: `packages/webdav/`, package name `webdav`.
@@ -43,7 +45,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - I18n modules: `packages/i18n/`, package name `i18n`.
 - Smart merge module: `packages/smart-merge/`, package name `smart-merge`.
 
-## Conventions
+#### Conventions
 
 - For mobile compatibility, Node.js API prohibited.
 - Sentence case for UI text.
@@ -56,7 +58,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - Lint warnings must be cleared, except time-bounded ones (TODO with date, deprecated API for compat)
 - SDK types (`**/*.d.ts` in `packages/plugin/dist/`) are committed to satisfy Obsidian automated linting. Never edit, delete, restore, clean, or otherwise alter these files, even when builds or checks create uncommitted changes. Leave their existing worktree state unchanged.
 
-## Documentation
+#### Documentation
 
 - The primary documentation locates in `docs/src/pages/en/` has three sections in three folders: `usage/`, `development/`, and `deep-dive/`:
   - `usage/`: designed for non-technical users, avoid dev jargons

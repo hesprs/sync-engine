@@ -167,7 +167,7 @@
 			}
 		}
 	],
-	"ignorePatterns": ["**/node_modules/**", "**/dist/**"],
+	"ignorePatterns": ["**/node_modules/**", "**/dist/**", "*.js"],
 	"options": {
 		"typeAware": true
 	}

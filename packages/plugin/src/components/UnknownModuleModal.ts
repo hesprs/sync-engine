@@ -58,20 +58,10 @@ export default class UnknownModuleModal extends Modal {
 
 		new Setting(this.contentEl)
 			.addButton((button) =>
-				button.setButtonText(translate('configure')).onClick(() => {
+				button.setButtonText(translate('configure')).onClick(async () => {
 					new ModuleEditorModal(this.ctx, {
-						getFile: () => app.vault.adapter.read(path),
-						initial: {
-							description: '',
-							enabled: false,
-							icon: 'puzzle',
-							id,
-							integrity: '<placeholder>',
-							main: '',
-							name: 'Unknown Module',
-							source: '',
-							version: '0.0.1',
-						},
+						file: await app.vault.adapter.read(path),
+						initial: { id },
 						onCancel: () => this.open(),
 						onSave,
 					}).open();

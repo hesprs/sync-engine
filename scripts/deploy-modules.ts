@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import modules from '../modules.json' with { type: 'json' };
 import sha256 from '../packages/plugin/src/utils/sha-256';
 
-export type ModuleMeta = {
+type ModuleMeta = {
 	id: string;
 	name: string;
 	version: string;
@@ -12,6 +12,7 @@ export type ModuleMeta = {
 	icon?: string;
 	minPluginVersion?: string;
 	integrity: string;
+	readme?: string;
 };
 
 const ROOT = `${import.meta.dir}/..`;

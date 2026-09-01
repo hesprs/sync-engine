@@ -100,6 +100,7 @@ const zhTW: Translations = {
 	delete: '刪除',
 	deleteModule: '刪除模組',
 	description: '說明',
+	descriptionDescription: '設定顯示於模組卡片中的說明文字。',
 	descriptionPlaceholder: '此模組是用於...',
 	development: '開發者選項',
 	diffMatchPatch: '文字合併',
@@ -110,6 +111,7 @@ const zhTW: Translations = {
 	edit: '編輯',
 	editModuleInformation: '編輯模組資訊',
 	enable: '啟用',
+	enableDescription: '設定是否載入此模組。',
 	enableModule: '啟用模組',
 	exclusionRules: '排除規則',
 	exclusionRulesDescription: (frag) => {
@@ -145,14 +147,14 @@ const zhTW: Translations = {
 	hide: '隱藏',
 	icon: '圖示',
 	iconDescription: (frag) => {
-		frag.appendText('設定此模組顯示於模組管理面板中的圖示，完整圖示清單可參考 ');
+		frag.appendText('設定顯示於模組卡片中的圖示，完整圖示清單可參考 ');
 		frag.createEl('a', {
 			attr: { href: 'https://lucide.dev/icons/' },
 			text: 'Lucide Icons 目錄',
 		});
 		frag.appendText('。');
 	},
-	iconPlaceholder: '輸入 Lucide Icons 代碼（例如 puzzle）',
+	iconPlaceholder: '輸入圖示代碼（例如 puzzle）',
 	idle: '待命',
 	inclusionRules: '包含規則',
 	inclusionRulesDescription: (frag) => {
@@ -167,15 +169,16 @@ const zhTW: Translations = {
 		});
 		frag.appendText('以瞭解設定指南。');
 	},
+	installModuleFromFile: '從檔案安裝模組',
 	installed: '已安裝',
 	integrityVerification: '完整性驗證',
 	integrityVerificationDescription: (frag) => {
-		frag.appendText('設定是否將模組的二進位檔案鎖定至特定雜湊值，並在每次載入時驗證該雜湊值。');
+		frag.appendText('每次載入模組時驗證其雜湊值，');
 		frag.createEl('strong', {
-			text: '強烈不建議關閉完整性驗證，否則將使系統暴露於極大的安全風險中。',
+			text: '保護您免受惡意模組替換攻擊',
 		});
+		frag.appendText('。');
 	},
-	invalidValue: '數值無效，已還原為原設定。',
 	keepLocal: '保留本地',
 	keepRemote: '保留遠端',
 	latestSurvive: '以最新修改為主',
@@ -210,6 +213,11 @@ const zhTW: Translations = {
 	miscellaneous: '雜項設定',
 	moduleAutoUpdate: '自動更新模組',
 	moduleAutoUpdateDescription: '自動從模組來源更新已安裝的模組。',
+	moduleExtensionWarning: (frag) => {
+		frag.appendText('無效的檔案：模組副檔名必須為 ');
+		frag.createEl('code', { text: '.js' });
+		frag.appendText('。');
+	},
 	moduleManagement: '模組管理',
 	moduleManagementDescription:
 		'在專屬面板中管理模組。您可以進行安裝、卸載、更新、啟用、停用、編輯模組或編輯模組來源。',
@@ -219,6 +227,7 @@ const zhTW: Translations = {
 	moveLocal: '移動本地',
 	moveRemote: '移動遠端',
 	name: '名稱',
+	nameDescription: '設定顯示於模組卡片中的名稱。',
 	namePlaceholder: '輸入模組顯示名稱',
 	noHeaderConfigured: '尚未設定標頭。',
 	noInstalledModulesFound: '未找到已安裝的模組。',
@@ -230,6 +239,10 @@ const zhTW: Translations = {
 	noticeStatusOnMobile: '行動裝置同步狀態通知',
 	noticeStatusOnMobileDescription: '同步進行時於行動裝置上顯示通知訊息（取代桌面版的狀態列）。',
 	official: '官方',
+	openReadme: '開啟模組的 README 頁面。',
+	readmePage: 'README 頁面',
+	readmePageDescription: '設定模組的選用 README 頁面，留空表示無 README。',
+	readmePagePlaceholder: 'https://example.com/my-module',
 	realtimeSync: '即時同步',
 	realtimeSyncDescription:
 		'當檔案經修改後立即自動觸發同步。請在欄位中修改檔案變更到觸發同步之間的延遲時間。',
@@ -321,11 +334,11 @@ const zhTW: Translations = {
 			' 若您不清楚其來源，直接刪除是最好的做法。若此模組是由您掌控且為預期行為，您可以選擇「設定」並將其啟用。',
 		);
 	},
+	update: '更新',
 	updateAvailable: '有可用更新',
+	updateDescription: '設定模組是否可接收更新。請於欄位中修改取得更新的來源；來源留空表示不更新。',
 	updateModule: '更新模組',
-	updateSource: '更新來源',
-	updateSourceDescription: '設定此模組接收更新的模組來源。留空則停用更新。',
-	updateSourcePlaceholder: 'https://example.com/modules.json',
+	updatePlaceholder: 'https://example.com/modules.json',
 	upload: '上傳',
 	walkingRemote: '正在掃描遠端檔案',
 	xConfigured: '已設定 {{x}} 項',

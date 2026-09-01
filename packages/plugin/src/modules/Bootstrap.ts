@@ -3,7 +3,6 @@ import type { App, SecretStorage } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { DatabaseSync } from 'uni-kv';
 import type { FileTreeTranslations } from '@/components/file-tree';
-import type { ModuleEditorTranslations } from '@/components/ModuleEditorModal';
 import type { UnknownModuleTranslations } from '@/components/UnknownModuleModal';
 import type { BatchOptimizer, Fs, MemoryControlSharedState } from '@/fs';
 import type { ControlsSettingTranslations } from '@/settings/controls';
@@ -94,7 +93,6 @@ export default class Bootstrap {
 		HeadSettingTranslations &
 		MiscellaneousSettingTranslations &
 		UnknownModuleTranslations &
-		ModuleEditorTranslations &
 		FileTreeTranslations &
 		ModulesTranslations;
 	declare readonly settings: {

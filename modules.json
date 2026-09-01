@@ -2,20 +2,32 @@
 	{
 		"id": "webdav",
 		"name": "WebDAV",
-		"version": "0.1.12",
+		"version": "0.1.13",
 		"description": "WebDAV backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/webdav.js",
-		"minPluginVersion": "3.1.0"
+		"minPluginVersion": "3.1.3",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/webdav"
 	},
 	{
 		"id": "s3",
 		"name": "S3",
-		"version": "0.1.1",
+		"version": "0.1.2",
 		"description": "S3 and S3-compatible backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/s3.js",
-		"minPluginVersion": "3.1.0"
+		"minPluginVersion": "3.1.3",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/s3"
+	},
+	{
+		"id": "gdrive",
+		"name": "Google Drive",
+		"version": "0.0.3",
+		"description": "Google Drive backend support.",
+		"icon": "server",
+		"main": "https://sync.consensia.cc/modules/gdrive.js",
+		"minPluginVersion": "3.1.3",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/gdrive"
 	},
 	{
 		"id": "encryption",
@@ -24,7 +36,8 @@
 		"description": "Client-side encrypt vault files before uploading to backend.",
 		"icon": "key-round",
 		"main": "https://sync.consensia.cc/modules/encryption.js",
-		"minPluginVersion": "3.1.0"
+		"minPluginVersion": "3.1.0",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/encryption"
 	},
 	{
 		"id": "i18n-zh",
@@ -60,15 +73,7 @@
 		"description": "Smart merge conflict resolution strategy that applies recursive three-way merge.",
 		"icon": "combine",
 		"main": "https://sync.consensia.cc/modules/smart-merge.js",
-		"minPluginVersion": "3.1.0"
-	},
-	{
-		"id": "gdrive",
-		"name": "Google Drive",
-		"version": "0.0.2",
-		"description": "Google Drive backend support.",
-		"icon": "server",
-		"main": "https://sync.consensia.cc/modules/gdrive.js",
-		"minPluginVersion": "3.1.1"
+		"minPluginVersion": "3.1.0",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/smart-merge"
 	}
 ]

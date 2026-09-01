@@ -1,5 +1,6 @@
-import { syncEngineTransform } from '@hesprs/sync-engine-sdk/dev';
+import { syncEngineModule } from '@hesprs/sync-engine-sdk/dev';
 import { defineConfig } from 'tsdown';
+import modules from '../../modules.json';
 
 const dev = process.env.MODE === 'dev';
 
@@ -13,5 +14,5 @@ export default defineConfig({
 	},
 	minify: true,
 	outExtensions: () => ({ js: '.js' }),
-	plugins: [syncEngineTransform()],
+	plugins: [syncEngineModule(modules)],
 });

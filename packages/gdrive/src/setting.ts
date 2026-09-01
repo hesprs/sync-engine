@@ -12,7 +12,6 @@ import { normalizeBaseDir } from '@repo/shared/path';
 import { Modal, Notice, Setting } from 'obsidian';
 import type { TokenManager } from './gdrive/auth';
 import { pollDeviceToken, revokeToken, startDeviceAuthorization } from './gdrive/auth';
-import handleInput from './handle-input';
 
 export type GdriveTranslations = {
 	gdrive: string;
@@ -99,7 +98,7 @@ export default function gdriveSetting(
 		matchLabel,
 		refreshSettingTab,
 	}: {
-		translate: Translate<GdriveTranslations & Translations>;
+		translate: Translate<GdriveTranslations>;
 		saveSettings: () => Promise<void>;
 		app: App;
 		matchLabel: () => LabelDefinition;
@@ -108,7 +107,6 @@ export default function gdriveSetting(
 	settings: GdriveSettings,
 	tokenManager: TokenManager,
 ): CallableOrObjectTree {
-	const invalidValue = translate('invalidValue');
 	const connectGoogle = async (resolve: () => void) => {
 		let cancelled = false;
 		try {
@@ -203,17 +201,14 @@ export default function gdriveSetting(
 					name: translate('baseDirectory'),
 					render: (setting) => {
 						setting.addText((text) => {
-							text.setPlaceholder(translate('baseDirectoryPlaceholder')).setValue(
-								settings.baseDirectory,
-							);
-							handleInput({
-								invalidValue,
-								key: 'baseDirectory',
-								processValue: (original) => normalizeBaseDir(original.trim()),
-								saveSettings,
-								settings,
-								text,
-							});
+							text.setPlaceholder(translate('baseDirectoryPlaceholder'))
+								.setValue(settings.baseDirectory)
+								.inputEl.addEventListener('blur', () => {
+									const normalized = normalizeBaseDir(text.getValue().trim());
+									text.setValue(normalized);
+									settings.baseDirectory = normalized;
+									void saveSettings();
+								});
 						});
 					},
 				})),
