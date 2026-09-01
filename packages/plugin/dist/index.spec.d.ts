@@ -1,5 +1,5 @@
 import { $ as RootFs, A as AddRecord, B as StoreOperations, C as RemoveRemote, D as MoveLocal, E as MoveRemote, F as RecordStore, G as Fs, H as BatchOptimizer, I as Storage, J as MkdirAtom, K as InputAtom, L as DatabaseAsync, M as ConflictResolver, N as ConflictResolverPayload, O as Download, P as TaskNames, Q as OutputAtom, R as DatabaseSync, S as ResolveConflict, T as RemoveLocal, U as CustomAtom, V as StoreSync, W as DeleteAtom, X as OptimizerInput, Y as MoveAtom, Z as OptimizerOutput, _ as CreateLocalDir, a as FsWrapperEntry, at as MaybePromise, b as TaskFactory, c as OptimizerEntry, ct as RecordStatsMap, d as RemoteLister, dt as TogglableValue, et as WrappedFs, f as RemoteListerEntry, ft as Binary, g as RequestResponse, h as RequestParam, i as DeciderEntry, it as GlobMatchRule, j as BaseTask, k as CreateRemoteDir, l as Registrar, lt as Stat, m as Request, n as CheckConnectionResult, nt as FileStat, o as Infras, ot as Progress, p as RemoteRequestMiddlewareEntry, pt as General$1, q as ListReporter, r as ConflictResolverEntry, rt as FolderStat, s as LocalRequestMiddlewareEntry, st as RecordStat, t as VaultRequest, tt as WriteAtom, u as RemoteFsEntry, ut as StatsMap, v as Decider, w as RemoveRecord, x as Upload, y as DeciderInput, z as StoreAsync } from "./index-g3mTMY1u.spec.js";
-import { App, Command, EventRef, IconName, Modal, Plugin, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, ToggleComponent } from "obsidian";
+import { App, Command, EventRef, ExtraButtonComponent, IconName, Modal, Plugin, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, TextComponent, ToggleComponent } from "obsidian";
 //#region ../../node_modules/.bun/synthkernel@.+synthkernel.tgz/node_modules/synthkernel/dist/context.d.ts
 //#region src/context.d.ts
 type General = any;
@@ -237,6 +237,7 @@ type ModuleMeta = {
   main: string;
   icon?: string;
   minPluginVersion?: string;
+  readme?: string;
   integrity: string;
 };
 type AugmentedModuleMeta = ModuleMeta & {
@@ -282,6 +283,7 @@ declare class Extensibility {
   private readonly loadAllModules;
   private readonly loadModule;
   private readonly unloadModule;
+  private readonly installModule;
   private readonly downloadModule;
   private readonly deleteModule;
   private readonly fetchSources;
@@ -299,6 +301,7 @@ declare class Extensibility {
     downloadModule: (meta: AugmentedModuleMeta, waitIdle?: boolean) => Promise<void>;
     enableModule: (id: string) => Promise<void>;
     fetchSources: (manual?: boolean) => Promise<AugmentedModuleMeta[]>;
+    installModule: (meta: AugmentedModuleMeta, module: string) => Promise<void>;
     loadAllModules: () => Promise<void>;
     loadModule: (meta: AugmentedModuleMeta, start?: boolean, module?: string) => Promise<void>;
     loadedModules: Map<string, ModuleCtor>;
@@ -308,27 +311,6 @@ declare class Extensibility {
     updateModules: () => Promise<void>;
   };
 }
-//#endregion
-//#region src/components/ModuleEditorModal.d.ts
-type ModuleEditorTranslations = {
-  editModuleInformation: string;
-  enable: string;
-  name: string;
-  namePlaceholder: string;
-  description: string;
-  descriptionPlaceholder: string;
-  icon: string;
-  iconDescription: Fragment;
-  iconPlaceholder: string;
-  updateSource: string;
-  updateSourceDescription: string;
-  updateSourcePlaceholder: string;
-  invalidValue: string;
-  integrityVerification: string;
-  integrityVerificationDescription: Fragment;
-  save: string;
-  cancel: string;
-};
 //#endregion
 //#region src/components/UnknownModuleModal.d.ts
 type FileInfo = {
@@ -403,6 +385,14 @@ declare class Setting$1 {
 }
 //#endregion
 //#region src/settings/utils.d.ts
+type EphemeralEditableItem<T> = {
+  valid: boolean;
+  new: boolean;
+  value: T;
+};
+type EphemeralEditableListSchema = {
+  ephemeralEditableLists: Array<EphemeralEditableItem<General$1>>;
+};
 type AugmentedSettingDefinitionItem<K extends string = string> = SettingDefinitionGroup<K> | SettingDefinitionList<K> | (SettingDefinitionPage<K> & {
   labels?: Array<LabelDefinition>;
 }) | (SettingDefinition<K> & {
@@ -415,6 +405,28 @@ type LabelDefinition = {
   textColor?: string;
 };
 declare function s(parent: (self: SettingTree) => AugmentedSettingDefinitionItem, children?: CallableOrObjectTree): CallableOrObjectTree;
+declare function reactivelyValidate<T>({ text, parse, onSave, format, immediate }: {
+  text: TextComponent;
+  parse: (value: string) => T | undefined;
+  format?: (value: T) => string;
+  onSave: (value: T) => void;
+  immediate?: boolean;
+}): void;
+declare function generateEditableList<T>({ memoryDB, items, identifier, saveSettings, rerenderSettingTab, defaultValue, render, translations: { add, empty, heading }, extraButtons }: {
+  memoryDB: DatabaseSync<EphemeralEditableListSchema>;
+  items: Array<T>;
+  identifier: string;
+  saveSettings: () => Promise<void>;
+  rerenderSettingTab: () => void;
+  defaultValue: T;
+  render: (setting: Setting, item: EphemeralEditableItem<T>, save: () => void) => void | (() => void);
+  translations: {
+    add: string;
+    empty: string;
+    heading?: string;
+  };
+  extraButtons?: Array<(button: ExtraButtonComponent, list: Array<EphemeralEditableItem<T>>, save: () => void) => void>;
+}): SettingDefinitionList;
 //#endregion
 //#region src/settings/controls.d.ts
 type ControlsSettingTranslations = {
@@ -586,13 +598,42 @@ type ModuleManagementTranslations = {
   editModuleInformation: string;
   official: string;
   someModulesHidden: string;
+  openReadme: string;
+};
+//#endregion
+//#region src/components/ModuleEditorModal.d.ts
+type ModuleEditorTranslations = {
+  editModuleInformation: string;
+  enable: string;
+  enableDescription: string;
+  name: string;
+  namePlaceholder: string;
+  nameDescription: string;
+  description: string;
+  descriptionDescription: string;
+  descriptionPlaceholder: string;
+  icon: string;
+  iconDescription: Fragment;
+  iconPlaceholder: string;
+  update: string;
+  updateDescription: string;
+  updatePlaceholder: string;
+  integrityVerification: string;
+  integrityVerificationDescription: Fragment;
+  save: string;
+  cancel: string;
+  readmePage: string;
+  readmePageDescription: string;
+  readmePagePlaceholder: string;
 };
 //#endregion
 //#region src/settings/module-management.d.ts
-type ModulesTranslations = ModuleManagementTranslations & {
+type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & {
   searchModules: string;
   moduleManagement: string;
   showInstalledOnly: string;
+  installModuleFromFile: string;
+  moduleExtensionWarning: Fragment;
 };
 //#endregion
 //#region src/modules/Bootstrap.d.ts
@@ -628,7 +669,7 @@ declare class Bootstrap {
     keepRemote: string;
     renameAndKeepBoth: string;
     skip: string;
-  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UnknownModuleTranslations & ModuleEditorTranslations & FileTreeTranslations & ModulesTranslations;
+  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UnknownModuleTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
     maxMemoryConsumption: TogglableValue;
     maxRequestConcurrency: TogglableValue;
@@ -794,4 +835,4 @@ declare function writeWithValue(fs: Fs, key: string, value: Binary | ReadableStr
 declare function digOriginal(wrapped: Fs): RootFs;
 type SelectFromContext<O extends object> = Context extends O ? O : never;
 //#endregion
-export { type AddRecord, type AugmentedModuleMeta, type BaseTask, type BatchOptimizer, type Binary, type CallableOrObjectTree, type CheckConnectionResult, type ConflictResolver, type ConflictResolverEntry, type ConflictResolverPayload, type Context, type CreateLocalDir, type CreateRemoteDir, type CustomAtom, type DatabaseAsync, type DatabaseSync, type Decider, type DeciderEntry, type DeciderInput, type DeleteAtom, type Dispatch, type Download, type Events, type ExistingMemoryDB, type FileStat, type FolderStat, type Fragment, type Fs, type FsWrapperEntry, type InputAtom, type LabelDefinition, type ListReporter, type LocalRequestMiddlewareEntry, type MaybePromise, type MkdirAtom, type ModuleMeta, type MoveAtom, type MoveLocal, type MoveRemote, type ObsidianLanguageCode, type On, type OptimizerEntry, type OptimizerInput, type OptimizerOutput, type OutputAtom, type Progress, type RecordStat, type RecordStatsMap, type RecordStore, type RemoteFsEntry, type RemoteLister, type RemoteListerEntry, type RemoteRequestMiddlewareEntry, type RemoveLocal, type RemoveRecord, type RemoveRemote, type Request, type RequestParam, type RequestResponse, type ResolveConflict, type RootFs, SelectFromContext, type SettingEntry, type Settings, type Stat, type StatsMap, type StoreAsync, type StoreOperations, type StoreSync, type SyncTerminateReason, type TaskFactory, type TaskNames, type Translate, type TranslationResource, type Translations, type Upload, type VaultRequest, type WrappedFs, type WriteAtom, digOriginal, pipe, prefixWrapper, readWithSize, s, setNeedMigration, writeWithValue };
+export { type AddRecord, type AugmentedModuleMeta, type BaseTask, type BatchOptimizer, type Binary, type CallableOrObjectTree, type CheckConnectionResult, type ConflictResolver, type ConflictResolverEntry, type ConflictResolverPayload, type Context, type CreateLocalDir, type CreateRemoteDir, type CustomAtom, type DatabaseAsync, type DatabaseSync, type Decider, type DeciderEntry, type DeciderInput, type DeleteAtom, type Dispatch, type Download, type Events, type ExistingMemoryDB, type FileStat, type FolderStat, type Fragment, type Fs, type FsWrapperEntry, type InputAtom, type LabelDefinition, type ListReporter, type LocalRequestMiddlewareEntry, type MaybePromise, type MkdirAtom, type ModuleMeta, type MoveAtom, type MoveLocal, type MoveRemote, type ObsidianLanguageCode, type On, type OptimizerEntry, type OptimizerInput, type OptimizerOutput, type OutputAtom, type Progress, type RecordStat, type RecordStatsMap, type RecordStore, type RemoteFsEntry, type RemoteLister, type RemoteListerEntry, type RemoteRequestMiddlewareEntry, type RemoveLocal, type RemoveRecord, type RemoveRemote, type Request, type RequestParam, type RequestResponse, type ResolveConflict, type RootFs, SelectFromContext, type SettingEntry, type Settings, type Stat, type StatsMap, type StoreAsync, type StoreOperations, type StoreSync, type SyncTerminateReason, type TaskFactory, type TaskNames, type Translate, type TranslationResource, type Translations, type Upload, type VaultRequest, type WrappedFs, type WriteAtom, digOriginal, generateEditableList, pipe, prefixWrapper, reactivelyValidate, readWithSize, s, setNeedMigration, writeWithValue };

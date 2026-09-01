@@ -86,12 +86,19 @@ type SyncEngineConfig = {
     neverBundle?: true | string | RegExp | Array<string | RegExp> | ((id: string, parentId: string | undefined, isResolved: boolean) => boolean | null | undefined);
   };
 };
-declare function syncEngineTransform(): {
+type ModuleMeta = Partial<Record<'name' | 'icon' | 'description' | 'source' | 'version' | 'readme', string>>;
+type ModuleMetaWithId = ModuleMeta & {
+  id: string;
+};
+declare function syncEngineModule(meta?: ModuleMeta | Array<ModuleMetaWithId> | Record<string, ModuleMeta>): {
   name: string;
-  renderChunk(code: string): {
+  renderChunk(code: string, chunk: {
+    name: string;
+    isEntry: boolean;
+  }): {
     code: string;
   } | undefined;
   tsdownConfig(config: SyncEngineConfig): void;
 };
 //#endregion
-export { debugWrapper, sha256, syncEngineTransform, testKit };
+export { debugWrapper, sha256, syncEngineModule, testKit };

@@ -196,6 +196,70 @@ Sync Engine currently provides these labels:
 
 Use a custom `LabelDefinition` when a setting needs a module-specific explanation. Labels describe a setting; they do not change its value, validation, or synchronization behavior.
 
+## Reactive Input Validation
+
+`reactivelyValidate()` attaches live validation to a setting text input. It parses the value on every change, flags invalid input with a warning style, and saves only the parsed value when the input loses focus:
+
+```ts
+import { reactivelyValidate } from '@hesprs/sync-engine-sdk';
+
+setting.addText((text) => {
+  text.setValue(settings.name);
+  reactivelyValidate<string>({
+    onSave: (value) => {
+      settings.name = value;
+      void saveSettings();
+    },
+    parse: (value) => value.trim(),
+    text,
+  });
+});
+```
+
+`parse` can return any type. Return `undefined` to mark the input as invalid, for example `parse: (value) => Number.parseFloat(value) || undefined` rejects non-numeric input. `format` (default `String`) re-displays the parsed value on save, and `immediate: true` validates the initial value once on setup.
+
+## Editable Lists
+
+`generateEditableList()` produces an Obsidian `list` setting definition for repeated editable entries, such as module sources or custom headers. Draft edits live in an ephemeral store so they survive setting tab rerenders, and only valid items are written back to settings on save:
+
+```ts
+import { generateEditableList } from '@hesprs/sync-engine-sdk';
+
+{
+  1000: () =>
+    generateEditableList({
+      defaultValue: '',
+      identifier: 'tags',
+      items: settings.tags,
+      memoryDB: ctx.memoryDB,
+      render: (setting, item, save) => {
+        setting.addText((text) => {
+          text.setValue(item.value);
+          text.inputEl.addEventListener('blur', () => {
+            item.value = text.getValue().trim();
+            item.valid = item.value !== '';
+            save();
+          });
+        });
+      },
+      rerenderSettingTab: ctx.rerenderSettingTab,
+      saveSettings,
+      translations: {
+        add: translate('addTag'),
+        empty: translate('noTagConfigured'),
+      },
+    }),
+}
+```
+
+How it works:
+
+- `items` is the live array stored in settings. `identifier` keys the draft list inside the ephemeral store of `memoryDB`, pass `ctx.memoryDB`. Drafts survive setting tab rerenders but are not persisted until saved.
+- `render` draws one draft item `{ value, valid, new }`, mutate `value` and `valid` and call the provided `save` callback. The `new` flag can be used to focus freshly added items, and `reactivelyValidate()` (above) fits naturally here.
+- `save` writes all valid items back into `items` and calls `saveSettings()`, but only when the resulting list actually changed.
+- The add button appends a clone of `defaultValue` and rerenders through `rerenderSettingTab`. Deleting an item removes it from the draft list, saves, and rerenders.
+- `translations` supplies the add-button text and the empty-state text, `heading` optionally names the list, and `extraButtons` adds custom buttons that receive the draft list and the `save` callback.
+
 ## Internationalization
 
 Sync Engine merges translation resources from all loaded modules. Register resources with `registerI18n()` and use the typed `translate()` function from the context.

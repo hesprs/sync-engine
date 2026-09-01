@@ -6,12 +6,11 @@ import type {
 	Translate,
 	Translations,
 } from '@hesprs/sync-engine-sdk';
-import type { App, SettingGroupItem } from 'obsidian';
-import { s } from '@hesprs/sync-engine-sdk';
+import type { App, SettingGroupItem, TextComponent } from 'obsidian';
+import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
-import { Notice, SecretComponent } from 'obsidian';
+import { SecretComponent } from 'obsidian';
 import type { UrlStyle } from './s3/sigv4';
-import handleInput from './handle-input';
 
 export type S3Translations = {
 	s3: string;
@@ -57,7 +56,18 @@ export default function s3Setting(
 	},
 	settings: S3Settings,
 ): CallableOrObjectTree {
-	const invalidValue = translate('invalidValue');
+	const handleInput = <K extends keyof S3Settings>(
+		text: TextComponent,
+		field: K,
+		parse: (str: string) => S3Settings[K],
+		format: (value: S3Settings[K]) => string = String,
+	) =>
+		text.inputEl.addEventListener('blur', () => {
+			const parsed = parse(text.getValue());
+			text.setValue(format(parsed));
+			settings[field] = parsed;
+			void saveSettings();
+		});
 	return {
 		604: s(
 			(self) => ({
@@ -74,18 +84,18 @@ export default function s3Setting(
 							text.setPlaceholder(translate('endpointPlaceholder')).setValue(
 								settings.endpoint,
 							);
-							handleInput({
-								invalidValue,
-								key: 'endpoint',
-								processValue: (value) => {
+							reactivelyValidate<string>({
+								onSave: (value) => {
+									settings.endpoint = value;
+									void saveSettings();
+								},
+								parse: (value) => {
 									try {
-										return normalizeUrl(value);
+										normalizeUrl(value);
 									} catch {
-										return false;
+										// Return undefined
 									}
 								},
-								saveSettings,
-								settings,
 								text,
 							});
 						});
@@ -95,38 +105,30 @@ export default function s3Setting(
 					desc: translate('regionDescription'),
 					name: translate('region'),
 					render: (setting) => {
-						setting.addText((text) => {
-							text.setPlaceholder(translate('regionPlaceholder')).setValue(
-								settings.region,
-							);
-							handleInput({
-								invalidValue,
-								key: 'region',
-								processValue: (value) => value.trim(),
-								saveSettings,
-								settings,
-								text,
-							});
-						});
+						setting.addText((text) =>
+							handleInput(
+								text
+									.setPlaceholder(translate('regionPlaceholder'))
+									.setValue(settings.region),
+								'region',
+								(str) => str.trim(),
+							),
+						);
 					},
 				})),
 				3000: s(() => ({
 					desc: translate('accessKeyIdDescription'),
 					name: translate('accessKeyId'),
 					render: (setting) => {
-						setting.addText((text) => {
-							text.setPlaceholder(translate('accessKeyIdPlaceholder')).setValue(
-								settings.accessKeyId,
-							);
-							handleInput({
-								invalidValue,
-								key: 'accessKeyId',
-								processValue: (value) => value.trim(),
-								saveSettings,
-								settings,
-								text,
-							});
-						});
+						setting.addText((text) =>
+							handleInput(
+								text
+									.setPlaceholder(translate('accessKeyIdPlaceholder'))
+									.setValue(settings.accessKeyId),
+								'accessKeyId',
+								(str) => str.trim(),
+							),
+						);
 					},
 				})),
 				4000: s(() => ({
@@ -169,19 +171,15 @@ export default function s3Setting(
 					labels: [matchLabel()],
 					name: translate('bucket'),
 					render: (setting) => {
-						setting.addText((text) => {
-							text.setPlaceholder(translate('bucketPlaceholder')).setValue(
-								settings.bucket,
-							);
-							handleInput({
-								invalidValue,
-								key: 'bucket',
-								processValue: (value) => value.trim(),
-								saveSettings,
-								settings,
-								text,
-							});
-						});
+						setting.addText((text) =>
+							handleInput(
+								text
+									.setPlaceholder(translate('bucketPlaceholder'))
+									.setValue(settings.bucket),
+								'bucket',
+								(str) => str.trim(),
+							),
+						);
 					},
 				})),
 				7000: s(() => ({
@@ -205,19 +203,15 @@ export default function s3Setting(
 					labels: [matchLabel()],
 					name: translate('prefix'),
 					render: (setting) => {
-						setting.addText((text) => {
-							text.setPlaceholder(translate('prefixPlaceholder')).setValue(
-								settings.prefix,
-							);
-							handleInput({
-								invalidValue,
-								key: 'prefix',
-								processValue: (original) => normalizeBaseDir(original.trim()),
-								saveSettings,
-								settings,
-								text,
-							});
-						});
+						setting.addText((text) =>
+							handleInput(
+								text
+									.setPlaceholder(translate('prefixPlaceholder'))
+									.setValue(settings.prefix),
+								'prefix',
+								(str) => normalizeBaseDir(str.trim()),
+							),
+						);
 					},
 				})),
 				9000: s(() => ({
@@ -226,18 +220,24 @@ export default function s3Setting(
 					render: (setting) => {
 						setting
 							.addText((text) => {
-								text.setPlaceholder(translate('proxyUrlPlaceholder'))
-									.setValue(settings.proxyUrl.value)
-									.inputEl.addEventListener('blur', () => {
-										const original = settings.proxyUrl.value;
+								text.setPlaceholder(translate('proxyUrlPlaceholder')).setValue(
+									settings.proxyUrl.value,
+								);
+								reactivelyValidate<string>({
+									onSave: (value) => {
+										settings.proxyUrl.value = value;
+										void saveSettings();
+									},
+									parse: (value) => {
+										if (!value.trim()) return '';
 										try {
-											settings.proxyUrl.value = normalizeUrl(text.getValue());
+											normalizeUrl(value);
 										} catch {
-											new Notice(translate('invalidValue'));
-											settings.proxyUrl.value = original;
+											// Return undefined
 										}
-										text.setValue(settings.proxyUrl.value);
-									});
+									},
+									text,
+								});
 							})
 							.addToggle((toggle) =>
 								toggle.setValue(settings.proxyUrl.enabled).onChange((value) => {

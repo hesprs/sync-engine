@@ -13,10 +13,34 @@ type SyncEngineConfig = {
 	};
 };
 
-export default function syncEngineTransform() {
+type ModuleMeta = Partial<
+	Record<'name' | 'icon' | 'description' | 'source' | 'version' | 'readme', string>
+>;
+type ModuleMetaWithId = ModuleMeta & { id: string };
+
+const MAGIC_KEYS = ['name', 'icon', 'description', 'source', 'version', 'readme'] as const;
+
+function magicBytes(meta: ModuleMeta): string {
+	const lines = MAGIC_KEYS.filter((key) => meta[key]).map((key) => `${key}: ${meta[key]}`);
+	return `/*!\n${lines.join('\n')}\n*/\n`;
+}
+
+function resolveMeta(
+	meta: ModuleMeta | Array<ModuleMetaWithId> | Record<string, ModuleMeta>,
+	entryName: string,
+): ModuleMeta | undefined {
+	if (Array.isArray(meta)) return meta.find(({ id }) => id === entryName);
+	if (typeof Object.values(meta)[0] === 'object')
+		return (meta as Record<string, ModuleMeta>)[entryName];
+	return meta;
+}
+
+export default function syncEngineModule(
+	meta?: ModuleMeta | Array<ModuleMetaWithId> | Record<string, ModuleMeta>,
+) {
 	return {
-		name: 'sync-engine-transform',
-		renderChunk(code: string) {
+		name: 'sync-engine-module',
+		renderChunk(code: string, chunk: { name: string; isEntry: boolean }) {
 			const transformed = code
 				.replaceAll(/^[ \t]*import\s+['"]obsidian['"]\s*;?[ \t]*$/gmu, '')
 				.replaceAll(
@@ -31,7 +55,12 @@ export default function syncEngineTransform() {
 					/^\s*import\s+(?!(?:type\b|\*\s+as\s+))(?<name>.+?)\s+from\s+(?<quote>['"])obsidian\k<quote>\s*;?\s*$/gmu,
 					(_, name: string) => `const ${name} = window.syncEngineApiBridge;`,
 				);
-			return transformed === code ? undefined : { code: transformed };
+			const resolved = chunk.isEntry && meta ? resolveMeta(meta, chunk.name) : undefined;
+			const result =
+				resolved && Object.keys(resolved).length > 0
+					? magicBytes(resolved) + transformed
+					: transformed;
+			return result === code ? undefined : { code: result };
 		},
 		tsdownConfig(config: SyncEngineConfig) {
 			config.deps ??= {};

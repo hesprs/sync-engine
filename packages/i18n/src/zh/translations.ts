@@ -88,6 +88,7 @@ const zh: Translations = {
 	delete: '删除',
 	deleteModule: '删除模块',
 	description: '描述',
+	descriptionDescription: '设置在模块卡片中显示的描述文本。',
 	descriptionPlaceholder: '此模块是…',
 	development: '开发',
 	diffMatchPatch: '合并',
@@ -98,6 +99,7 @@ const zh: Translations = {
 	edit: '编辑',
 	editModuleInformation: '编辑模块信息',
 	enable: '启用',
+	enableDescription: '设置是否加载此模块。',
 	enableModule: '启用模块',
 	exclusionRules: '排除规则',
 	exclusionRulesDescription: (frag) => {
@@ -133,14 +135,14 @@ const zh: Translations = {
 	hide: '隐藏',
 	icon: '图标',
 	iconDescription: (frag) => {
-		frag.appendText('设置此模块在模块管理面板中显示的图标，完整图标可在 ');
+		frag.appendText('设置在模块卡片中显示的图标，完整图标列表可在 ');
 		frag.createEl('a', {
 			attr: { href: 'https://lucide.dev/icons/' },
 			text: 'Lucide 图标目录',
 		});
 		frag.appendText(' 中找到。');
 	},
-	iconPlaceholder: '输入 Lucide 图标代码（例如 puzzle）',
+	iconPlaceholder: '输入图标代码（例如 puzzle）',
 	idle: '空闲',
 	inclusionRules: '包含规则',
 	inclusionRulesDescription: (frag) => {
@@ -153,15 +155,16 @@ const zh: Translations = {
 		});
 		frag.appendText('了解配置指南。');
 	},
+	installModuleFromFile: '从文件安装模块',
 	installed: '已安装',
 	integrityVerification: '完整性验证',
 	integrityVerificationDescription: (frag) => {
-		frag.appendText('设置是否将模块的二进制文件固定到特定哈希值，并在每次加载时验证该哈希值。');
+		frag.appendText('每次加载模块时验证其哈希值，');
 		frag.createEl('strong', {
-			text: '强烈不建议关闭完整性验证，因为这会使您暴露于巨大的攻击面。',
+			text: '保护您免受恶意模块替换攻击',
 		});
+		frag.appendText('。');
 	},
-	invalidValue: '无效值，已恢复为原始值。',
 	keepLocal: '保留本地',
 	keepRemote: '保留远程',
 	latestSurvive: '保留最新修改',
@@ -196,6 +199,11 @@ const zh: Translations = {
 	miscellaneous: '杂项',
 	moduleAutoUpdate: '自动更新模块',
 	moduleAutoUpdateDescription: '从模块源自动更新已安装的模块。',
+	moduleExtensionWarning: (frag) => {
+		frag.appendText('无效的文件：模块文件的扩展名必须为 ');
+		frag.createEl('code', { text: '.js' });
+		frag.appendText('。');
+	},
 	moduleManagement: '模块管理',
 	moduleManagementDescription:
 		'在专用面板中管理模块。您可以安装、卸载、更新、启用、禁用、编辑模块，或编辑模块源。',
@@ -205,6 +213,7 @@ const zh: Translations = {
 	moveLocal: '移动本地',
 	moveRemote: '移动远程',
 	name: '名称',
+	nameDescription: '设置在模块卡片中显示的名称。',
 	namePlaceholder: '输入模块显示名称',
 	noHeaderConfigured: '未配置请求头。',
 	noInstalledModulesFound: '未找到已安装的模块。',
@@ -217,6 +226,10 @@ const zh: Translations = {
 	noticeStatusOnMobileDescription:
 		'同步进行时在移动设备上显示通知提示。在桌面端则会替换状态栏显示。',
 	official: '官方',
+	openReadme: '打开模块的 README 页面。',
+	readmePage: 'README 页面',
+	readmePageDescription: '设置模块的可选 README 页面，留空表示无 README。',
+	readmePagePlaceholder: 'https://example.com/my-module',
 	realtimeSync: '实时同步',
 	realtimeSyncDescription:
 		'文件一旦修改即刻自动触发同步。在输入框中修改文件修改到触发同步之间的延迟时间。',
@@ -307,11 +320,12 @@ const zh: Translations = {
 			'如果您不知道它来自何处，直接删除是最佳选择。如果您了解该模块且此操作符合预期，您可以选择"配置"并启用它。',
 		);
 	},
+	update: '更新',
 	updateAvailable: '有可用更新',
+	updateDescription:
+		'设置模块是否可以接收更新。在输入框中修改获取更新的来源；来源为空表示不更新。',
 	updateModule: '更新模块',
-	updateSource: '更新源',
-	updateSourceDescription: '设置此模块接收更新的模块源。留空以禁用更新。',
-	updateSourcePlaceholder: 'https://example.com/modules.json',
+	updatePlaceholder: 'https://example.com/modules.json',
 	upload: '上传',
 	walkingRemote: '正在探测远程文件',
 	xConfigured: '已配置 {{x}} 项',

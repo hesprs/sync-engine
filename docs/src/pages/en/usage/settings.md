@@ -12,9 +12,9 @@ Choose the installed module that connects Sync Engine to your storage service. T
 
 ### Module Management
 
-Open the module management page. From there, you can install, update, enable, disable, remove, or edit modules. Modules provide storage backends and extra sync strategies. Review [Security](./security) before installing modules from sources you do not control.
+Open the module management page. From there, you can install modules from sources or local files, and update, enable, disable, remove, or edit modules. Modules provide storage backends and extra sync strategies. Review [Security](./security) before installing modules from sources you do not control.
 
-The [module management page](../deep-dive/module-management-page) contains a search bar, an installed-only filter, and module cards. Module source URLs are edited in the **Module sources** page under Development.
+The [module management page](../deep-dive/module-management-page) contains a search bar, an installed-only filter, an install-from-file entry, and module cards. Module source URLs are edited in the **Module sources** page under Development.
 
 ### Auto-Update Modules
 

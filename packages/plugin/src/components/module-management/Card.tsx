@@ -86,7 +86,26 @@ export default function Card(props: {
 						}
 					/>
 				</Show>
+				<Show when={props.module.readme}>
+					<a
+						class="clickable-icon rounded-md p-1"
+						href={props.module.readme}
+						ref={(ref) => {
+							setIcon(ref, 'book-open-text');
+							setTooltip(ref, props.ctx.translate('openReadme'));
+						}}
+					/>
+				</Show>
 				<Show when={isInstalled()}>
+					<ActionButton
+						disabled={busy()}
+						icon="trash-2"
+						pending={props.pendingAction === 'delete'}
+						tooltip={props.ctx.translate('deleteModule')}
+						onClick={() =>
+							props.runAction('delete', () => props.ctx.deleteModule(props.module.id))
+						}
+					/>
 					<ActionButton
 						disabled={busy()}
 						icon="pencil"
@@ -100,15 +119,6 @@ export default function Card(props: {
 										props.ctx.updateModuleMeta(newMeta),
 									),
 							}).open()
-						}
-					/>
-					<ActionButton
-						disabled={busy()}
-						icon="trash-2"
-						pending={props.pendingAction === 'delete'}
-						tooltip={props.ctx.translate('deleteModule')}
-						onClick={() =>
-							props.runAction('delete', () => props.ctx.deleteModule(props.module.id))
 						}
 					/>
 					<EnableToggle

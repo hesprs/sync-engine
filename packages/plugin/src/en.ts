@@ -100,6 +100,7 @@ const en: Translations = {
 	delete: 'Delete',
 	deleteModule: 'Delete module',
 	description: 'Description',
+	descriptionDescription: 'Set the description text to be displayed in the module card.',
 	descriptionPlaceholder: 'This module is ...',
 	development: 'Development',
 	diffMatchPatch: 'Merge',
@@ -110,6 +111,7 @@ const en: Translations = {
 	edit: 'Edit',
 	editModuleInformation: 'Edit module information',
 	enable: 'Enable',
+	enableDescription: 'Set whether to load this module.',
 	enableModule: 'Enable module',
 	exclusionRules: 'Exclusion rules',
 	exclusionRulesDescription: (frag) => {
@@ -147,7 +149,7 @@ const en: Translations = {
 	icon: 'Icon',
 	iconDescription: (frag) => {
 		frag.appendText(
-			'Set the icon for this module to be displayed in the module management page, full icons can be found in ',
+			'Set the icon to be displayed in the module card, a full list of icons can be found in ',
 		);
 		frag.createEl('a', {
 			attr: { href: 'https://lucide.dev/icons/' },
@@ -155,7 +157,7 @@ const en: Translations = {
 		});
 		frag.appendText('.');
 	},
-	iconPlaceholder: 'Enter Lucide Icons code (e.g. puzzle)',
+	iconPlaceholder: 'Enter icon code (e.g. puzzle)',
 	idle: 'Idle',
 	inclusionRules: 'Inclusion rules',
 	inclusionRulesDescription: (frag) => {
@@ -170,17 +172,16 @@ const en: Translations = {
 		});
 		frag.appendText(' for configuration guide.');
 	},
+	installModuleFromFile: 'Install module from file',
 	installed: 'Installed',
 	integrityVerification: 'Integrity verification',
 	integrityVerificationDescription: (frag) => {
-		frag.appendText(
-			"Set whether to pin the module's binary file to a specific hash, and verify the hash each time it is loaded. ",
-		);
+		frag.appendText('Verify the hash each time the module is loaded, ');
 		frag.createEl('strong', {
-			text: 'It is strongly discouraged to turn off integrity verification, since it will expose you to a large attack surface.',
+			text: 'protecting you from malicious module replacement attacks',
 		});
+		frag.appendText('.');
 	},
-	invalidValue: 'Invalid value, reverted to original.',
 	keepLocal: 'Keep local',
 	keepRemote: 'Keep remote',
 	latestSurvive: 'Latest survives',
@@ -215,6 +216,11 @@ const en: Translations = {
 	miscellaneous: 'Miscellaneous',
 	moduleAutoUpdate: 'Auto-update modules',
 	moduleAutoUpdateDescription: 'Automatically update installed modules from module sources.',
+	moduleExtensionWarning: (frag) => {
+		frag.appendText('Invalid file: modules need to have ');
+		frag.createEl('code', { text: '.js' });
+		frag.appendText(' extension.');
+	},
 	moduleManagement: 'Module management',
 	moduleManagementDescription:
 		'Manage modules in a dedicated page. You can install, uninstall, update, enable, disable, and edit modules.',
@@ -225,6 +231,7 @@ const en: Translations = {
 	moveLocal: 'Move local',
 	moveRemote: 'Move remote',
 	name: 'Name',
+	nameDescription: 'Set the name to be displayed in the module card.',
 	namePlaceholder: 'Enter module display name',
 	noHeaderConfigured: 'No header configured.',
 	noInstalledModulesFound: 'No installed modules found.',
@@ -237,6 +244,11 @@ const en: Translations = {
 	noticeStatusOnMobileDescription:
 		'Display a notice on mobile devices when synchronization is in progress. Replaces the status bar on desktop.',
 	official: 'Official',
+	openReadme: "Open the module's README page.",
+	readmePage: 'README page',
+	readmePageDescription:
+		'Set the optional README page of the module, leaving empty means no README.',
+	readmePagePlaceholder: 'https://example.com/my-module',
 	realtimeSync: 'Realtime sync',
 	realtimeSyncDescription:
 		'Trigger syncs automatically as soon as files are modified. Alter the delay between a file being modified and the sync being triggered in the field.',
@@ -330,12 +342,12 @@ const en: Translations = {
 			' If you do not know where does it come from, directly deleting it is the best option. If you control the module and it is intentional, you can choose "Configure" and enable it.',
 		);
 	},
+	update: 'Update',
 	updateAvailable: 'Update available',
+	updateDescription:
+		'Set whether the module can receive updates. Alter the source to fetch updates from in the field; empty source means no updates.',
 	updateModule: 'Update module',
-	updateSource: 'Update source',
-	updateSourceDescription:
-		'Set the module source from which this module receives updates. Leave empty to disable update.',
-	updateSourcePlaceholder: 'https://example.com/modules.json',
+	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Upload',
 	walkingRemote: 'Discovering remote files',
 	xConfigured: '{{x}} configured',

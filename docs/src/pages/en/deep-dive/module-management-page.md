@@ -7,18 +7,21 @@ Sync Engine uses a native Obsidian settings page to manage executable modules fr
 `ModuleManagement` extends Obsidian's `SettingPage`. Its page contains:
 
 - a full-width search field;
-- an icon button that toggles **Show installed only**;
+- an icon button that opens a menu with the **Show installed only** toggle and **Install module from file**;
 - a Solid.js module-card list.
 
 Module source URLs are edited separately on **Settings > Sync Engine > Development > Module sources**. Returning to Module management creates a new source snapshot and refreshes the catalog.
 
 The search field uses Obsidian's `SearchComponent`. An empty query sorts modules alphabetically. A non-empty query uses `prepareFuzzySearch()` against module names and descriptions, then sorts by match score and name.
 
+**Install module from file** opens a file picker that only accepts `.js` files; other extensions are rejected with a notice. The chosen file opens the module editor with metadata prefilled from the file's magic bytes, see [extensibility: install from file](./extensibility#install-from-file).
+
 ## Module Cards
 
 Each card displays the module icon, name, version, source status, description, and available actions:
 
 - **Download** installs a module that is not installed or has a newer advertised version.
+- **README** opens the module's README page when its metadata provides one.
 - **Edit** opens the module metadata and integrity settings.
 - **Delete** removes the installed module and its stored metadata.
 - **Enable** stores `enabled: true` and loads the module.

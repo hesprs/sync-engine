@@ -1,6 +1,6 @@
 {
 	"name": "@hesprs/sync-engine-sdk",
-	"version": "3.1.2",
+	"version": "3.1.3",
 	"description": "Official SDK for developing modules targeting Sync Engine, the extensible Obsidian syncing plugin.",
 	"keywords": [
 		"obsidian-plugin",

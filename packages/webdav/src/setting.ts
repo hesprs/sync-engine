@@ -1,15 +1,9 @@
 import type { WebdavSettings } from '@';
-import type {
-	CallableOrObjectTree,
-	LabelDefinition,
-	Translate,
-	Translations,
-} from '@hesprs/sync-engine-sdk';
-import type { App, SettingGroupItem } from 'obsidian';
-import { s } from '@hesprs/sync-engine-sdk';
+import type { CallableOrObjectTree, LabelDefinition, Translate } from '@hesprs/sync-engine-sdk';
+import type { App, SettingGroupItem, TextComponent } from 'obsidian';
+import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
 import { SecretComponent } from 'obsidian';
-import handleInput from './handle-input';
 
 export type WebdavTranslations = {
 	webdav: string;
@@ -38,7 +32,7 @@ export default function webdavSetting(
 		matchLabel,
 		speedLabel,
 	}: {
-		translate: Translate<WebdavTranslations & Translations>;
+		translate: Translate<WebdavTranslations>;
 		saveSettings: () => Promise<void>;
 		app: App;
 		matchLabel: () => LabelDefinition;
@@ -46,7 +40,18 @@ export default function webdavSetting(
 	},
 	settings: WebdavSettings,
 ): CallableOrObjectTree {
-	const invalidValue = translate('invalidValue');
+	const handleInput = <K extends keyof WebdavSettings>(
+		text: TextComponent,
+		field: K,
+		parse: (str: string) => WebdavSettings[K],
+		format: (value: WebdavSettings[K]) => string = String,
+	) =>
+		text.inputEl.addEventListener('blur', () => {
+			const parsed = parse(text.getValue());
+			text.setValue(format(parsed));
+			settings[field] = parsed;
+			void saveSettings();
+		});
 	return {
 		749: s(
 			(self) => ({
@@ -63,18 +68,18 @@ export default function webdavSetting(
 							text.setPlaceholder(translate('endpointPlaceholder')).setValue(
 								settings.endpoint,
 							);
-							handleInput({
-								invalidValue,
-								key: 'endpoint',
-								processValue: (value) => {
+							reactivelyValidate<string>({
+								onSave: (value) => {
+									settings.endpoint = value;
+									void saveSettings();
+								},
+								parse: (value) => {
 									try {
-										return normalizeUrl(value);
+										normalizeUrl(value);
 									} catch {
-										return false;
+										// Return undefined
 									}
 								},
-								saveSettings,
-								settings,
 								text,
 							});
 						});
@@ -84,19 +89,15 @@ export default function webdavSetting(
 					desc: translate('usernameDescription'),
 					name: translate('username'),
 					render: (setting) => {
-						setting.addText((text) => {
-							text.setPlaceholder(translate('usernamePlaceholder')).setValue(
-								settings.username,
-							);
-							handleInput({
-								invalidValue,
-								key: 'username',
-								processValue: (value) => value.trim(),
-								saveSettings,
-								settings,
-								text,
-							});
-						});
+						setting.addText((text) =>
+							handleInput(
+								text
+									.setPlaceholder(translate('usernamePlaceholder'))
+									.setValue(settings.username),
+								'username',
+								(str) => str.trim(),
+							),
+						);
 					},
 				})),
 				3000: s(() => ({
@@ -118,19 +119,15 @@ export default function webdavSetting(
 					labels: [matchLabel()],
 					name: translate('baseDirectory'),
 					render: (setting) => {
-						setting.addText((text) => {
-							text.setPlaceholder(translate('baseDirectoryPlaceholder')).setValue(
-								settings.baseDirectory,
-							);
-							handleInput({
-								invalidValue,
-								key: 'baseDirectory',
-								processValue: (original) => normalizeBaseDir(original.trim()),
-								saveSettings,
-								settings,
-								text,
-							});
-						});
+						setting.addText((text) =>
+							handleInput(
+								text
+									.setPlaceholder(translate('baseDirectoryPlaceholder'))
+									.setValue(settings.baseDirectory),
+								'baseDirectory',
+								(str) => normalizeBaseDir(str.trim()),
+							),
+						);
 					},
 				})),
 				5000: s(() => ({

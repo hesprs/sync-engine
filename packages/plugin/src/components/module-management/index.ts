@@ -22,11 +22,13 @@ export type ModuleManagementTranslations = {
 	editModuleInformation: string;
 	official: string;
 	someModulesHidden: string;
+	openReadme: string;
 };
 
 export type ModuleManagementHooks = {
 	onQuery: Hook<[string]>;
 	onShowInstalledOnlyChange: Hook<[boolean]>;
+	onInstallModuleFromFile: Hook;
 };
 
 export type ModuleManagementContext = {

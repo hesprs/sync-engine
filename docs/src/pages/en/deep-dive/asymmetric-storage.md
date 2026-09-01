@@ -1,6 +1,6 @@
 # Asymmetric Storage
 
-Asymmetric storage means that the file structure at remote differs from real hierarchies at local. For example, the remote structure is flat, while the local files are nested inside folders
+Asymmetric storage means that the file structure at remote differs from real hierarchies at local. For example, the remote structure is flat, while the local files are nested inside folders.
 
 ## Disadvantages in Traditional Methods
 
