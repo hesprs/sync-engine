@@ -1,3 +1,10 @@
+/*!
+name: Encryption
+icon: key-round
+description: Client-side encrypt vault files before uploading to backend.
+version: 0.1.2
+readme: https://sync.consensia.cc/deep-dive/modules/encryption
+*/
 const{Modal:e,Notice:t,ProgressBarComponent:n,SecretComponent:r,Setting:i}=window.syncEngineApiBridge,a=new TextEncoder,o=new TextDecoder;function s(e){return new Uint8Array(e)}function c(e){return a.encode(e)}function l(e){return o.decode(e)}function u(...e){let t=e.reduce((e,t)=>e+t.byteLength,0),n=new Uint8Array(t),r=0;for(let t of e){let e=t instanceof ArrayBuffer?new Uint8Array(t):new Uint8Array(t.buffer,t.byteOffset,t.byteLength);n.set(e,r),r+=t.byteLength}return n}
 /*!
 * hash-wasm (https://www.npmjs.com/package/hash-wasm)
