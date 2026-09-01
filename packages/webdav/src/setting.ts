@@ -24,14 +24,6 @@ export type WebdavTranslations = {
 	chunkedUploadDescription: string;
 };
 
-export function parseEndpoint(value: string): string | undefined {
-	try {
-		return normalizeUrl(value);
-	} catch {
-		return undefined;
-	}
-}
-
 export default function webdavSetting(
 	{
 		translate,
@@ -81,7 +73,13 @@ export default function webdavSetting(
 									settings.endpoint = value;
 									void saveSettings();
 								},
-								parse: parseEndpoint,
+								parse: () => {
+									try {
+											return normalizeUrl(value);
+									} catch {
+											// Return undefined
+									}
+								},
 								text,
 							});
 						});
