@@ -6,7 +6,7 @@
 		"description": "WebDAV backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/webdav.js",
-		"minPluginVersion": "3.1.3",
+		"minPluginVersion": "3.1.0",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/webdav"
 	},
 	{
@@ -16,7 +16,7 @@
 		"description": "S3 and S3-compatible backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/s3.js",
-		"minPluginVersion": "3.1.3",
+		"minPluginVersion": "3.1.0",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/s3"
 	},
 	{
@@ -26,7 +26,7 @@
 		"description": "Google Drive backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/gdrive.js",
-		"minPluginVersion": "3.1.3",
+		"minPluginVersion": "3.1.0",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/gdrive"
 	},
 	{
@@ -46,7 +46,7 @@
 		"description": "Simplified Chinese UI language pack. / 简体中文介面语言包。",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-zh.js",
-		"minPluginVersion": "3.1.0"
+		"minPluginVersion": "3.1.3"
 	},
 	{
 		"id": "i18n-zh-TW",
@@ -55,7 +55,7 @@
 		"description": "Traditional Chinese UI language pack. / 繁體中文介面語言包。",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-zh-TW.js",
-		"minPluginVersion": "3.1.0"
+		"minPluginVersion": "3.1.3"
 	},
 	{
 		"id": "i18n-ru",
@@ -64,7 +64,7 @@
 		"description": "Russian UI language pack. / Пакет русского интерфейса.",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-ru.js",
-		"minPluginVersion": "3.1.0"
+		"minPluginVersion": "3.1.3"
 	},
 	{
 		"id": "smart-merge",
