@@ -14,11 +14,11 @@ All notable changes to this project will be documented in this file.
 - Fixed asymmetric storage occasionally drops uploaded directories undiscoverable.
 - Refreshed input validation of the settings UI.
 
-## Google Drive Module
+### Google Drive Module
 
 - Refreshed input validation of the settings UI.
 
-## WebDAV Module
+### WebDAV Module
 
 - Refreshed input validation of the settings UI.
 

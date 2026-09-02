@@ -69,6 +69,16 @@ export default function Card(props: {
 			</div>
 
 			<div class="flex items-center justify-end gap-2">
+				<Show when={props.module.readme}>
+					<a
+						class="clickable-icon rounded-md p-1"
+						href={props.module.readme}
+						ref={(ref) => {
+							setIcon(ref, 'book-open-text');
+							setTooltip(ref, props.ctx.translate('openReadme'));
+						}}
+					/>
+				</Show>
 				<Show when={props.module.main && (!isInstalled() || hasUpdate())}>
 					<ActionButton
 						disabled={busy()}
@@ -84,16 +94,6 @@ export default function Card(props: {
 								props.ctx.downloadModule(props.module),
 							)
 						}
-					/>
-				</Show>
-				<Show when={props.module.readme}>
-					<a
-						class="clickable-icon rounded-md p-1"
-						href={props.module.readme}
-						ref={(ref) => {
-							setIcon(ref, 'book-open-text');
-							setTooltip(ref, props.ctx.translate('openReadme'));
-						}}
 					/>
 				</Show>
 				<Show when={isInstalled()}>
