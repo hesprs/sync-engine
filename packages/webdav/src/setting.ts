@@ -73,7 +73,7 @@ export default function webdavSetting(
 									settings.endpoint = value;
 									void saveSettings();
 								},
-								parse: () => {
+								parse: (value) => {
 									try {
 											return normalizeUrl(value);
 									} catch {
