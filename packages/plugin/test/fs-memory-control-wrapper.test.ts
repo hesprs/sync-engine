@@ -58,13 +58,13 @@ test('memory wrapper resumes queued reads after write completes', async () => {
 
 	expect(remote.calls.read).toStrictEqual([
 		['held.md', heldStat],
-		['first.md', firstStat],
 		['second.md', secondStat],
+		['first.md', firstStat],
 	]);
 	await Promise.all([firstQueuedRead, secondQueuedRead]);
 });
 
-test('memory wrapper reserves fixed 16 MiB for readStream', async () => {
+test('memory wrapper caps stream reservation at 16 MiB', async () => {
 	const state = createSharedState(SIXTEEN_MIB + 1);
 	const remote = fs();
 	const wrapper = memoryControlWrapper(remote.fs, state);
@@ -215,7 +215,7 @@ test('memory wrapper writeStream cancel releases consumed budget', async () => {
 	expect(state.memoryConsumption).toBe(0);
 });
 
-test('memory wrapper keeps hanging pool sorted and resumes maximum possible reads', async () => {
+test('memory wrapper resumes largest fitting reads first and backfills smaller ones', async () => {
 	const state = createSharedState(10);
 	const remote = fs();
 	const wrapper = memoryControlWrapper(remote.fs, state);
@@ -228,18 +228,56 @@ test('memory wrapper keeps hanging pool sorted and resumes maximum possible read
 
 	await wrapper.read('held.md', heldStat);
 	void wrapper.read('seven.md', sevenStat);
-	const oneRead = wrapper.read('one.md', oneStat);
-	void wrapper.read('four.md', fourStat);
-	const threeRead = wrapper.read('three.md', threeStat);
+	void wrapper.read('one.md', oneStat);
+	const fourRead = wrapper.read('four.md', fourStat);
+	void wrapper.read('three.md', threeStat);
 
 	await wrapper.write('release.md', bytes('1234'), file('release.md', { size: 4 }));
 	await flush();
 
 	expect(remote.calls.read).toStrictEqual([
 		['held.md', heldStat],
-		['one.md', oneStat],
-		['three.md', threeStat],
+		['four.md', fourStat],
 	]);
-	expect(state.hangingOperations.map(({ size }) => size)).toStrictEqual([4, 7]);
-	await Promise.all([oneRead, threeRead]);
+	expect(state.hangingOperations.map(({ size }) => size)).toStrictEqual([7, 3, 1]);
+	await fourRead;
+});
+
+test('memory wrapper orders hanging operations by transfer size, not reservation', async () => {
+	const state = createSharedState(SIXTEEN_MIB);
+	const remote = fs();
+	const wrapper = memoryControlWrapper(remote.fs, state);
+
+	const heldStat = file('held.bin', { size: SIXTEEN_MIB });
+	const largerStat = file('larger.bin', { size: SIXTEEN_MIB * 10 });
+	const smallerStat = file('smaller.bin', { size: SIXTEEN_MIB * 5 });
+
+	await wrapper.readStream('held.bin', heldStat);
+	const smallerRead = wrapper.readStream('smaller.bin', smallerStat);
+	const largerRead = wrapper.readStream('larger.bin', largerStat);
+	expect(remote.calls.readStream).toStrictEqual([['held.bin', heldStat]]);
+
+	await wrapper.writeStream(
+		'release.bin',
+		stream(['data']),
+		file('release.bin', { size: SIXTEEN_MIB }),
+	);
+	await flush();
+	expect(remote.calls.readStream).toStrictEqual([
+		['held.bin', heldStat],
+		['larger.bin', largerStat],
+	]);
+
+	await wrapper.writeStream(
+		'release2.bin',
+		stream(['data']),
+		file('release2.bin', { size: SIXTEEN_MIB }),
+	);
+	await flush();
+	expect(remote.calls.readStream).toStrictEqual([
+		['held.bin', heldStat],
+		['larger.bin', largerStat],
+		['smaller.bin', smallerStat],
+	]);
+	await Promise.all([largerRead, smallerRead]);
 });

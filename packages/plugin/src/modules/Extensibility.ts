@@ -209,6 +209,7 @@ export default class Extensibility {
 	private readonly installModule = async (meta: AugmentedModuleMeta, module: string) => {
 		const { id, enabled } = meta;
 		const { adapter } = this.ctx.app.vault;
+		if (this.loadedModules.has(id)) this.unloadModule(id);
 		await Promise.all([
 			adapter.write(this.getModulePath(id), module),
 			enabled ? this.loadModule(meta, true, module) : Promise.resolve(),
@@ -231,7 +232,6 @@ export default class Extensibility {
 				setBusy = true;
 				isIdle(false);
 			}
-			if (this.loadedModules.has(id)) this.unloadModule(id);
 			await this.installModule(meta, module);
 		} catch (error) {
 			const message = toErrorMessage(error);

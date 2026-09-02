@@ -18,12 +18,14 @@ There are two kinds of wrappers:
 
 Applied on both local and remote. The wrapper receives a shared `MemoryControlSharedState` containing `memoryConsumption`, `hangingOperations`, and `maxMemory`.
 
-`hangingOperations` pool should always be sorted in ascending order according to the file size of each operation.
+`hangingOperations` pool is kept sorted in descending order by transfer size (`stat.size`), so longer transfers resume before shorter ones. This front-loads large files across the whole sync instead of deferring them into an underutilized tail.
 
 Only intercept `read`, `readStream`, `write`, `writeStream` calls:
 
-1. When `read()` and `readStream()` arrive, reserve `stat.size` or a fixed 16 MiB respectively. If memory is unavailable, put the operation into the sorted pool and delay it. On failure, release the reservation and resume queued operations. When consumption is zero, one operation may exceed `maxMemory`.
-2. `write()` and `writeStream()` do not reserve memory. When either finishes or fails, release `stat.size` or a fixed 16 MiB respectively, then resume queued reads when memory allows.
+1. When `read()` and `readStream()` arrive, reserve `min(stat.size, 16 MiB)`. If memory is unavailable, put the operation into the sorted pool and delay it. On failure, release the reservation and resume queued operations. When consumption is zero, one operation may exceed `maxMemory`.
+2. `write()` and `writeStream()` do not reserve memory. When either finishes or fails, release `min(stat.size, 16 MiB)`, then resume queued reads when memory allows.
+
+When resuming, the wrapper scans the whole pool and admits every operation that fits, skipping larger ones that do not. This backfilling keeps leftover budget packed with smaller transfers instead of stalling behind a single oversized operation.
 
 ## Optimization Wrapper
 

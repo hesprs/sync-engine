@@ -1,8 +1,11 @@
-import type { Binary, FileStat } from '@/types';
+import type { Binary, FileStat, MaybePromise } from '@/types';
 import type { Fs, ListReporter, WrappedFs } from '../interface';
 
 type HangingOperation = {
+	/** Memory reservation, capped at `STREAM_RESERVATION_SIZE`. */
 	size: number;
+	/** Transfer size, larger operations resume first. */
+	priority: number;
 	resume: () => void;
 };
 
@@ -22,22 +25,31 @@ function canReserve(state: MemoryControlSharedState, size: number) {
 function insertHangingOperation(state: MemoryControlSharedState, operation: HangingOperation) {
 	const { hangingOperations } = state;
 	let index = 0;
-	while (index < hangingOperations.length && hangingOperations[index].size <= operation.size)
+	while (
+		index < hangingOperations.length &&
+		hangingOperations[index].priority >= operation.priority
+	)
 		index += 1;
 	hangingOperations.splice(index, 0, operation);
 }
 
 function resumeHangingOperations(state: MemoryControlSharedState) {
-	while (state.hangingOperations.length > 0) {
-		const operation = state.hangingOperations[0];
-		if (!canReserve(state, operation.size)) return;
-		state.hangingOperations.shift();
+	const { hangingOperations } = state;
+	// Largest transfers first, but keep backfilling smaller ones into leftover budget instead of stopping at the first operation that does not fit.
+	for (let index = 0; index < hangingOperations.length;) {
+		const operation = hangingOperations[index];
+		if (!canReserve(state, operation.size)) {
+			index += 1;
+			continue;
+		}
+		hangingOperations.splice(index, 1);
 		state.memoryConsumption += operation.size;
 		operation.resume();
 	}
 }
 
-function reserveMemory(state: MemoryControlSharedState, size: number) {
+function reserveMemory(state: MemoryControlSharedState, stat: FileStat) {
+	const size = Math.min(stat.size, STREAM_RESERVATION_SIZE);
 	if (canReserve(state, size)) {
 		state.memoryConsumption += size;
 		return Promise.resolve();
@@ -45,13 +57,15 @@ function reserveMemory(state: MemoryControlSharedState, size: number) {
 
 	return new Promise<void>((resolve) => {
 		insertHangingOperation(state, {
+			priority: stat.size,
 			resume: () => resolve(),
 			size,
 		});
 	});
 }
 
-function releaseMemory(state: MemoryControlSharedState, size: number) {
+function releaseMemory(state: MemoryControlSharedState, stat: FileStat) {
+	const size = Math.min(stat.size, STREAM_RESERVATION_SIZE);
 	state.memoryConsumption = Math.max(0, state.memoryConsumption - size);
 	resumeHangingOperations(state);
 }
@@ -62,21 +76,21 @@ class MemoryControlRemoteFs implements WrappedFs {
 		private readonly state: MemoryControlSharedState,
 	) {}
 
-	private async readThroughMemory(key: string, stat: FileStat) {
-		await reserveMemory(this.state, stat.size);
+	private async readThroughMemory<T>(read: () => MaybePromise<T>, stat: FileStat) {
+		await reserveMemory(this.state, stat);
 		try {
-			return await this.original.read(key, stat);
+			return await read();
 		} catch (error) {
-			releaseMemory(this.state, stat.size);
+			releaseMemory(this.state, stat);
 			throw error;
 		}
 	}
 
-	private async writeThroughMemory(key: string, value: Binary, stat: FileStat) {
+	private async writeThroughMemory<T>(write: () => MaybePromise<T>, stat: FileStat) {
 		try {
-			return await this.original.write(key, value, stat);
+			return await write();
 		} finally {
-			releaseMemory(this.state, stat.size);
+			releaseMemory(this.state, stat);
 		}
 	}
 
@@ -85,29 +99,19 @@ class MemoryControlRemoteFs implements WrappedFs {
 	}
 
 	read(key: string, stat: FileStat) {
-		return this.readThroughMemory(key, stat);
+		return this.readThroughMemory(() => this.original.read(key, stat), stat);
 	}
 
-	async readStream(key: string, stat: FileStat) {
-		await reserveMemory(this.state, STREAM_RESERVATION_SIZE);
-		try {
-			return await this.original.readStream(key, stat);
-		} catch (error) {
-			releaseMemory(this.state, STREAM_RESERVATION_SIZE);
-			throw error;
-		}
+	readStream(key: string, stat: FileStat) {
+		return this.readThroughMemory(() => this.original.readStream(key, stat), stat);
 	}
 
 	write(key: string, value: Binary, stat: FileStat) {
-		return this.writeThroughMemory(key, value, stat);
+		return this.writeThroughMemory(() => this.original.write(key, value, stat), stat);
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
-		try {
-			return await this.original.writeStream(key, value, stat);
-		} finally {
-			releaseMemory(this.state, STREAM_RESERVATION_SIZE);
-		}
+	writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+		return this.writeThroughMemory(() => this.original.writeStream(key, value, stat), stat);
 	}
 
 	delete(key: string) {
