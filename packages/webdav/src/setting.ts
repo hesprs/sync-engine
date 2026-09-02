@@ -75,7 +75,7 @@ export default function webdavSetting(
 								},
 								parse: (value) => {
 									try {
-										normalizeUrl(value);
+										return normalizeUrl(value);
 									} catch {
 										// Return undefined
 									}

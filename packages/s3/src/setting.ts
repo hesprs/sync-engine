@@ -231,7 +231,7 @@ export default function s3Setting(
 									parse: (value) => {
 										if (!value.trim()) return '';
 										try {
-											normalizeUrl(value);
+											return normalizeUrl(value);
 										} catch {
 											// Return undefined
 										}
