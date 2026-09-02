@@ -10,7 +10,7 @@ When writing a debug module, you need to produce a plain, self-contained JS ESM 
 - Register a request middleware to log raw request raw request and response.
 - Register a filesystem wrapper to trace the files.
 - Subscribe to Sync Engine events and (execute code to) gather information when event fires.
-- Wrap and reassign a property in `Context` to intercept calls.
+- Wrap (reassign) a property in `Context` to intercept calls.
 
 You must:
 
@@ -18,5 +18,6 @@ You must:
 - When logging, dispatch Sync Engine events `logGeneral` or `logSync` directly, do not create a separate logging and export logs path.
 - Simplify the module to bare minimum, don't gather information that has no value, focus on the most valuable and distinguishing info, don't do over-abstraction. The module is throwaway.
 - Only perform syntax checking, no need linting or formatting.
+- Include proper magic bytes at the top of the file (see docs -> development -> develop-a-module -> #magic-bytes).
 
 After writing the module, you need to give clear instruction on what to perform after loading the module.
