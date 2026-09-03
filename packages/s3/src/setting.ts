@@ -91,7 +91,7 @@ export default function s3Setting(
 								},
 								parse: (value) => {
 									try {
-										normalizeUrl(value);
+										return normalizeUrl(value);
 									} catch {
 										// Return undefined
 									}
