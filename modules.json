@@ -22,7 +22,7 @@
 	{
 		"id": "gdrive",
 		"name": "Google Drive",
-		"version": "0.0.3",
+		"version": "0.0.4",
 		"description": "Google Drive backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/gdrive.js",

@@ -10,6 +10,8 @@ import { mountModuleManagementList } from '@/components/module-management';
 import ModuleEditorModal from '@/components/ModuleEditorModal';
 import { MODULE_EXTENSION } from '@/modules/Extensibility';
 
+const ALTERNATIVE_MODULE_EXTENSION = '.mjs';
+
 export type ModulesTranslations = ModuleEditorTranslations &
 	ModuleManagementTranslations & {
 		searchModules: string;
@@ -84,7 +86,11 @@ export default class ModuleManagement extends SettingPage {
 				pickFile(
 					item.setIcon('package').setTitle(t('installModuleFromFile')),
 					async (fileObj) => {
-						if (!fileObj.name.endsWith(MODULE_EXTENSION)) {
+						let extension: string;
+						if (fileObj.name.endsWith(MODULE_EXTENSION)) extension = MODULE_EXTENSION;
+						else if (fileObj.name.endsWith(ALTERNATIVE_MODULE_EXTENSION))
+							extension = ALTERNATIVE_MODULE_EXTENSION;
+						else {
 							new Notice(t('moduleExtensionWarning'));
 							return;
 						}
@@ -92,9 +98,7 @@ export default class ModuleManagement extends SettingPage {
 						new ModuleEditorModal(ctx, {
 							file,
 							initial: {
-								id: fileObj.name
-									.slice(0, -MODULE_EXTENSION.length)
-									.normalize('NFC'),
+								id: fileObj.name.slice(0, -extension.length).normalize('NFC'),
 							},
 							onSave: async (meta) => {
 								await installModule(meta, file);
@@ -129,7 +133,7 @@ export default class ModuleManagement extends SettingPage {
 function pickFile(item: MenuItem, handler: (file: File) => MaybePromise<void>) {
 	item.dom.addClass('relative');
 	const input = item.dom.createEl('input', {
-		attr: { accept: '.js' },
+		attr: { accept: '.js,.mjs' },
 		cls: 'absolute top-0 bottom-0 left-0 right-0 opacity-0',
 		type: 'file',
 	});

@@ -217,8 +217,10 @@ const en: Translations = {
 	moduleAutoUpdate: 'Auto-update modules',
 	moduleAutoUpdateDescription: 'Automatically update installed modules from module sources.',
 	moduleExtensionWarning: (frag) => {
-		frag.appendText('Invalid file: modules need to have ');
+		frag.appendText('Invalid module: the file needs to have ');
 		frag.createEl('code', { text: '.js' });
+		frag.appendText(' or ');
+		frag.createEl('code', { text: '.mjs' });
 		frag.appendText(' extension.');
 	},
 	moduleManagement: 'Module management',

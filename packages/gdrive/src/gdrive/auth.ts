@@ -1,6 +1,6 @@
 import type { Request, RequestParam } from '@hesprs/sync-engine-sdk';
 import { getStatus } from '@repo/shared/get-status';
-import { requestUrl, SecretStorage } from 'obsidian';
+import { Platform, requestUrl, SecretStorage } from 'obsidian';
 import {
 	buildUrl,
 	OAUTH_DEVICE_CODE_URL,
@@ -105,18 +105,27 @@ export async function pollDeviceToken(options: {
 		if (options.isCancelled?.()) throw new Error('Google Drive connection was cancelled.');
 		if (Date.now() > deadline)
 			throw new Error('The device code expired, please try connecting again.');
-		const response = await requestUrl({
-			body: formEncode({
-				client_id: CLIENT_ID,
-				client_secret: CLIENT_SECRET,
-				device_code: options.authorization.deviceCode,
-				grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
-			}),
-			contentType: FORM_CONTENT_TYPE,
-			method: 'POST',
-			throw: false,
-			url: OAUTH_TOKEN_URL,
-		});
+		let response: Awaited<ReturnType<typeof requestUrl>>;
+		try {
+			response = await requestUrl({
+				body: formEncode({
+					client_id: CLIENT_ID,
+					client_secret: CLIENT_SECRET,
+					device_code: options.authorization.deviceCode,
+					grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+				}),
+				contentType: FORM_CONTENT_TYPE,
+				method: 'POST',
+				throw: false,
+				url: OAUTH_TOKEN_URL,
+			});
+		} catch (error) {
+			// Android suspends network access while the app is in background with UnknownHostException error:
+			// https://github.com/hesprs/sync-engine/issues/258
+			// https://medium.com/@mmarashan/the-unnoticed-limitation-of-android-15-53bf9ac8ae76
+			if (Platform.isAndroidApp && String(error).includes('UnknownHostException')) continue;
+			throw error;
+		}
 		const data = response.json as TokenResponse | TokenError;
 		if ('access_token' in data)
 			if (data.refresh_token && data.id_token)

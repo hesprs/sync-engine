@@ -174,9 +174,7 @@ const zhTW: Translations = {
 	integrityVerification: '完整性驗證',
 	integrityVerificationDescription: (frag) => {
 		frag.appendText('每次載入模組時驗證其雜湊值，');
-		frag.createEl('strong', {
-			text: '保護您免受惡意模組替換攻擊',
-		});
+		frag.createEl('strong', { text: '保護您免受惡意模組替換攻擊' });
 		frag.appendText('。');
 	},
 	keepLocal: '保留本地',
@@ -214,8 +212,10 @@ const zhTW: Translations = {
 	moduleAutoUpdate: '自動更新模組',
 	moduleAutoUpdateDescription: '自動從模組來源更新已安裝的模組。',
 	moduleExtensionWarning: (frag) => {
-		frag.appendText('無效的檔案：模組副檔名必須為 ');
+		frag.appendText('無效的模組：檔案副檔名必須為 ');
 		frag.createEl('code', { text: '.js' });
+		frag.appendText(' 或 ');
+		frag.createEl('code', { text: '.mjs' });
 		frag.appendText('。');
 	},
 	moduleManagement: '模組管理',
