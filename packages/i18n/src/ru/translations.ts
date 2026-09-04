@@ -219,8 +219,10 @@ const ru: Translations = {
 	moduleAutoUpdate: 'Автообновление модулей',
 	moduleAutoUpdateDescription: 'Автоматически обновлять установленные модули из их источников.',
 	moduleExtensionWarning: (frag) => {
-		frag.appendText('Неверный файл: модули должны иметь расширение ');
+		frag.appendText('Неверный модуль: файл должен иметь расширение ');
 		frag.createEl('code', { text: '.js' });
+		frag.appendText(' или ');
+		frag.createEl('code', { text: '.mjs' });
 		frag.appendText('.');
 	},
 	moduleManagement: 'Управление модулями',

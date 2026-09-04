@@ -1,4 +1,4 @@
-import type { Context, Settings } from '@';
+import type { Context, Events, Settings } from '@';
 import type { DatabaseSync } from 'uni-kv';
 import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
 import type { ModuleCtor } from '@/modules/Extensibility';
@@ -10,6 +10,7 @@ import type {
 	RemoteFsEntry,
 } from '@/modules/Registrar';
 import type { CallableOrObjectTree } from '@/modules/Setting';
+import type { Dispatch } from '@/sdk';
 import type { General, MaybePromise } from '@/types';
 import toErrorMessage from '@/utils/to-error-message';
 import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
@@ -51,6 +52,7 @@ export default function headSettings(
 		loadedModules: Map<string, ModuleCtor>;
 		matchLabel: () => LabelDefinition;
 		speedLabel: () => LabelDefinition;
+		dispatch: Dispatch<Events>;
 	},
 	getSettingTab: () => PluginSettingTab | undefined,
 ): CallableOrObjectTree {
@@ -66,6 +68,7 @@ export default function headSettings(
 		conflictResolverRegistry,
 		matchLabel,
 		speedLabel,
+		dispatch,
 	} = ctx;
 	return {
 		10: s(() => ({
@@ -106,6 +109,7 @@ export default function headSettings(
 								.setTooltip(translate('checkConnection'))
 								.onClick(() => void checks.check(true)),
 							getCheckConnection,
+							log: (str: string) => dispatch('errorGeneral', str),
 							memoryDB,
 							settings,
 							translate,
@@ -170,12 +174,14 @@ function setupCheckConnection({
 	settings,
 	translate,
 	button,
+	log,
 }: {
 	memoryDB: CheckConnectionDB;
 	getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
 	settings: Settings;
 	translate: Translate<HeadSettingTranslations>;
 	button: ExtraButtonComponent;
+	log: (str: string) => void;
 }) {
 	let timeout: number | undefined;
 	const possibleClasses = [
@@ -227,13 +233,15 @@ function setupCheckConnection({
 				if (force) new Notice(translate('checkConnectionSuccess'));
 			} else {
 				setError();
+				log(`Check connection to \`${settings.remoteFs}\` failed: \`${result.reason}\`.`);
 				if (force) new Notice(`${translate('checkConnectionFailed')}: ${result.reason}`);
 				else scheduleCheckConnection();
 			}
 		} catch (error) {
 			setError();
-			if (force)
-				new Notice(`${translate('checkConnectionFailed')}: ${toErrorMessage(error)}`);
+			const message = toErrorMessage(error);
+			log(`Check connection to \`${settings.remoteFs}\` failed: \`${message}\`.`);
+			if (force) new Notice(`${translate('checkConnectionFailed')}: ${message}`);
 			else scheduleCheckConnection();
 		}
 	};

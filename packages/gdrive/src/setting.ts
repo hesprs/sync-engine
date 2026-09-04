@@ -1,10 +1,12 @@
 import type { GdriveSettings } from '@';
 import type {
 	CallableOrObjectTree,
+	Dispatch,
 	Fragment,
 	LabelDefinition,
 	Translate,
 	Translations,
+	Events,
 } from '@hesprs/sync-engine-sdk';
 import type { App, SettingGroupItem } from 'obsidian';
 import { s } from '@hesprs/sync-engine-sdk';
@@ -97,12 +99,14 @@ export default function gdriveSetting(
 		app,
 		matchLabel,
 		refreshSettingTab,
+		dispatch,
 	}: {
 		translate: Translate<GdriveTranslations>;
 		saveSettings: () => Promise<void>;
 		app: App;
 		matchLabel: () => LabelDefinition;
 		refreshSettingTab: () => void;
+		dispatch: Dispatch<Events>;
 	},
 	settings: GdriveSettings,
 	tokenManager: TokenManager,
@@ -136,12 +140,10 @@ export default function gdriveSetting(
 				modal.close();
 			}
 		} catch (error) {
-			if (!cancelled)
-				new Notice(
-					translate('authorizationFailed', {
-						reason: error instanceof Error ? error.message : String(error),
-					}),
-				);
+			if (cancelled) return;
+			const reason = error instanceof Error ? error.message : String(error);
+			new Notice(translate('authorizationFailed', { reason }), 5);
+			dispatch('errorGeneral', `Google Drive auth failed: \`${reason}\`.`);
 		} finally {
 			resolve();
 		}

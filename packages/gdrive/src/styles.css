@@ -3,7 +3,7 @@ code.gdrive-device-code {
 	font-size: 2em;
 	font-weight: 700;
 	letter-spacing: 0.15em;
-	margin: 0.5em auto;
+	margin: 0.5em auto 0.2em;
 	user-select: text;
 	width: fit-content;
 }

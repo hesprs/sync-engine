@@ -8,6 +8,7 @@ export async function requestUrl() {
 }
 
 export const Platform = {
+	isAndroidApp: false,
 	isDesktop: true,
 	isMobile: false,
 };

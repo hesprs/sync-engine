@@ -104,16 +104,16 @@ export default class ModuleEditorModal extends Modal {
 		new Setting(this.contentEl)
 			.setName(translate('description'))
 			.setDesc(translate('descriptionDescription'))
-			.addTextArea((text) =>
-				text
-					.setValue(updated.description)
+			.addTextArea((text) => {
+				text.setValue(updated.description)
 					.setPlaceholder(translate('descriptionPlaceholder'))
 					.inputEl.addEventListener('blur', () => {
 						const trimmed = text.getValue().trim();
 						text.setValue(trimmed);
 						updated.description = trimmed;
-					}),
-			);
+					});
+				text.inputEl.addClass('min-w-100%');
+			});
 
 		new Setting(this.contentEl)
 			.setName(translate('icon'))

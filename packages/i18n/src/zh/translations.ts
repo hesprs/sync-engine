@@ -200,8 +200,10 @@ const zh: Translations = {
 	moduleAutoUpdate: '自动更新模块',
 	moduleAutoUpdateDescription: '从模块源自动更新已安装的模块。',
 	moduleExtensionWarning: (frag) => {
-		frag.appendText('无效的文件：模块文件的扩展名必须为 ');
+		frag.appendText('无效的模块：文件扩展名必须为 ');
 		frag.createEl('code', { text: '.js' });
+		frag.appendText(' 或 ');
+		frag.createEl('code', { text: '.mjs' });
 		frag.appendText('。');
 	},
 	moduleManagement: '模块管理',

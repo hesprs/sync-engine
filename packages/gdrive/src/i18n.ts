@@ -17,7 +17,9 @@ export const en: GdriveTranslations = {
 	deviceCodeInstruction: (frag, url) => {
 		frag.appendText('Please visit ');
 		frag.createEl('a', { attr: { href: url } }).createEl('code', { text: url });
-		frag.appendText(' and enter the code below, then approve access.');
+		frag.appendText(
+			' and enter the code below, then approve access. Switch back to Obsidian when you see "Continue on your device".',
+		);
 	},
 	deviceCodeTitle: 'Connect Google Drive',
 	disconnect: 'Disconnect',
@@ -45,7 +47,9 @@ export const ru: GdriveTranslations = {
 	deviceCodeInstruction: (frag, url) => {
 		frag.appendText('Пожалуйста, перейдите по ссылке ');
 		frag.createEl('a', { attr: { href: url } }).createEl('code', { text: url });
-		frag.appendText(' и введите код ниже, после чего подтвердите доступ.');
+		frag.appendText(
+			' и введите код ниже, после чего подтвердите доступ. Переключитесь обратно в Obsidian, когда увидите «Продолжить на вашем устройстве».',
+		);
 	},
 	deviceCodeTitle: 'Подключение Google Drive',
 	disconnect: 'Отключить',
@@ -73,7 +77,9 @@ export const zhTW: GdriveTranslations = {
 	deviceCodeInstruction: (frag, url) => {
 		frag.appendText('請前往 ');
 		frag.createEl('a', { attr: { href: url } }).createEl('code', { text: url });
-		frag.appendText(' 並輸入下方驗證碼，隨後核准存取權限。');
+		frag.appendText(
+			' 並輸入下方驗證碼，隨後核准存取權限。當您看到「在您的裝置上繼續」時，請切換回 Obsidian。',
+		);
 	},
 	deviceCodeTitle: '連結 Google Drive',
 	disconnect: '中斷連線',
@@ -101,7 +107,9 @@ export const zh: GdriveTranslations = {
 	deviceCodeInstruction: (frag, url) => {
 		frag.appendText('请访问 ');
 		frag.createEl('a', { attr: { href: url } }).createEl('code', { text: url });
-		frag.appendText(' 并输入下方验证码，然后批准访问权限。');
+		frag.appendText(
+			' 并输入下方验证码，然后批准访问权限。看到“在您的设备上继续”时，请切换回 Obsidian。',
+		);
 	},
 	deviceCodeTitle: '连接 Google Drive',
 	disconnect: '断开连接',
