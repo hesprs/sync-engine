@@ -113,8 +113,6 @@ type FailedTaskInfo = TaskInfo & {
 };
 declare class Sync {
   private readonly ctx;
-  dispatch: Dispatch<Events>;
-  on: On<Events>;
   constructor(ctx: {
     dispatch: Dispatch<Events>;
     initializeSync: () => Infras;
@@ -151,16 +149,7 @@ declare class Sync {
   private readonly executeSync;
   private readonly convertDeleteToUpload;
   root: {
-    executeSync: (trigger: string) => Promise<{
-      result: "cancelled";
-    } | {
-      result: "completed";
-    } | {
-      result: "failed";
-      error: string;
-    } | {
-      result: "noop";
-    }>;
+    executeSync: (trigger: string) => Promise<SyncTerminateReason>;
   };
 }
 //#endregion
@@ -170,6 +159,7 @@ type AddRibbonIcon = (icon: IconName, title: string, callback: (evt: MouseEvent)
 declare class Observability {
   private readonly ctx;
   private lastSyncTime;
+  private lastFailure?;
   private readonly sinceLastSyncText;
   private readonly syncStage;
   private readonly walkProgress;
@@ -580,6 +570,8 @@ type MiscellaneousSettingTranslations = {
   headerKeyPlaceholder: string;
   headerValuePlaceholder: string;
   addSecretHeader: string;
+  avoidAutoSyncWhenOffline: string;
+  avoidAutoSyncWhenOfflineDescription: string;
 };
 //#endregion
 //#region src/components/module-management/index.d.ts
@@ -779,6 +771,7 @@ declare class Scheduler {
     registerEvent: (ref: EventRef) => void;
     app: App;
     isIdle: Ref<boolean>;
+    dispatch: Dispatch<Events>;
   });
   settings: {
     startupSync: TogglableValue;
@@ -786,6 +779,7 @@ declare class Scheduler {
     realtimeSync: TogglableValue;
     exclusionRules: Array<GlobMatchRule>;
     inclusionRules: Array<GlobMatchRule>;
+    avoidAutoSyncWhenOffline: boolean;
   };
   private readonly requestSync;
   start: () => void;

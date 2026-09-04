@@ -1,8 +1,10 @@
+import type { Events } from '@';
 import type { App, EventRef, TAbstractFile } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { GlobMatchRule, TogglableValue } from '@/types';
 import { prepareGlobMatch } from '@/utils/glob-match';
 import untilTrue from '@/utils/until-true';
+import type { Dispatch } from './EventBus';
 import type { SyncStage } from './Observability';
 import type { SyncTerminateReason } from './Sync';
 
@@ -25,6 +27,7 @@ export default class Scheduler {
 			registerEvent: (ref: EventRef) => void;
 			app: App;
 			isIdle: Ref<boolean>;
+			dispatch: Dispatch<Events>;
 		},
 	) {}
 
@@ -34,13 +37,27 @@ export default class Scheduler {
 		realtimeSync: TogglableValue;
 		exclusionRules: Array<GlobMatchRule>;
 		inclusionRules: Array<GlobMatchRule>;
+		avoidAutoSyncWhenOffline: boolean;
 	};
 
-	private readonly requestSync = (trigger: string): Promise<SyncTerminateReason> =>
-		new Promise((resolve) => {
+	private readonly requestSync = (trigger: string): Promise<SyncTerminateReason> => {
+		if (
+			!navigator.onLine &&
+			this.settings.avoidAutoSyncWhenOffline &&
+			trigger !== 'manual' &&
+			trigger !== 'nonInteractiveManual'
+		) {
+			this.ctx.dispatch(
+				'logGeneral',
+				`Skipped offline auto sync with trigger \`${trigger}\`.`,
+			);
+			return Promise.resolve({ error: 'Device is offline.', result: 'failed' });
+		}
+		return new Promise((resolve) => {
 			this.pendingRequests.push({ resolve, trigger });
 			void this.scheduleFlush();
 		});
+	};
 
 	start = () => {
 		const { workspace, vault } = this.ctx.app;

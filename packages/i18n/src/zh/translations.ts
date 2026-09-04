@@ -40,6 +40,8 @@ const zh: Translations = {
 			});
 		}
 	},
+	avoidAutoSyncWhenOffline: '离线时避免自动同步',
+	avoidAutoSyncWhenOfflineDescription: '当无网络连接时，静默跳过非手动触发的同步任务。',
 	awaitingConfirmation: '等待确认',
 	backend: '存储后端',
 	backendDescription: '选择要使用的云服务。后端由模块提供。',

@@ -50,6 +50,9 @@ const en: Translations = {
 			});
 		}
 	},
+	avoidAutoSyncWhenOffline: 'Avoid auto sync when offline',
+	avoidAutoSyncWhenOfflineDescription:
+		"Silently skip non-manual sync runs when there's no internet connection.",
 	awaitingConfirmation: 'Awaiting confirmation',
 	backend: 'Storage backend',
 	backendDescription: 'Select the cloud service to use. Backends are provided by modules.',
