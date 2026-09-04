@@ -31,6 +31,7 @@ export type AddRibbonIcon = (
 
 export default class Observability {
 	private lastSyncTime = 0;
+	private lastFailure?: string;
 	private readonly sinceLastSyncText = ref('');
 	private readonly syncStage = ref<SyncStage>('none');
 	private readonly walkProgress = ref<Progress>({ completed: 0, total: 1 });
@@ -52,7 +53,7 @@ export default class Observability {
 				return `${this.t('completed')}${this.sinceLastSyncText()}`;
 			else if (stage === 'completedNoop')
 				return `${this.t('completedNoop')}${this.sinceLastSyncText()}`;
-			else if (stage === 'failed') return this.t('failed');
+			else if (stage === 'failed') return `${this.t('failed')}: ${this.lastFailure}`;
 			return '';
 		},
 		{
@@ -147,14 +148,10 @@ export default class Observability {
 			on('syncTerminated', (reason) => {
 				const { result } = reason;
 				if (mobileSyncNotice)
-					if (result === 'failed') {
-						mobileSyncNotice.hide();
+					noticeTimeout = window.setTimeout(() => {
+						mobileSyncNotice?.hide();
 						mobileSyncNotice = undefined;
-					} else
-						noticeTimeout = window.setTimeout(() => {
-							mobileSyncNotice?.hide();
-							mobileSyncNotice = undefined;
-						}, MOBILE_SYNC_NOTICE_HIDE_DELAY);
+					}, MOBILE_SYNC_NOTICE_HIDE_DELAY);
 				this.lastSyncTime = Date.now();
 				const setUpdateInterval = () =>
 					(updateInterval = window.setInterval(() => {
@@ -170,8 +167,8 @@ export default class Observability {
 					syncStage('completedNoop');
 					setUpdateInterval();
 				} else if (result === 'failed') {
+					this.lastFailure = reason.error;
 					syncStage('failed');
-					new Notice(`${t('failed')}: ${reason.error}`);
 				}
 				walkProgress({ completed: 0, total: 1 });
 				executionProgress({ completed: 0, total: 0 });
@@ -212,7 +209,7 @@ export default class Observability {
 		const { isIdle, addStatusBarItem } = ctx;
 		const statusEl = addStatusBarItem();
 		setIcon(statusEl, 'refresh-cw');
-		const status = statusEl.createSpan({ cls: 'ml-1', text: t('idle') });
+		const status = statusEl.createSpan({ cls: 'ml-1 max-w-250px truncate', text: t('idle') });
 		this.cleanupCallbacks.push(
 			isIdle.subscribe(
 				(idle) => {

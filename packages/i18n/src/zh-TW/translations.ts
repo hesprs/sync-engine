@@ -52,6 +52,8 @@ const zhTW: Translations = {
 			});
 		}
 	},
+	avoidAutoSyncWhenOffline: '離線時避免自動同步',
+	avoidAutoSyncWhenOfflineDescription: '當沒有網路連線時，靜默跳過非手動觸發的同步作業。',
 	awaitingConfirmation: '等待確認',
 	backend: '儲存後端',
 	backendDescription: '選擇要使用的雲端服務。後端支援由模組提供。',

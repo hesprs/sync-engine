@@ -52,6 +52,9 @@ const ru: Translations = {
 			});
 		}
 	},
+	avoidAutoSyncWhenOffline: 'Избегать автосинхронизации оффлайн',
+	avoidAutoSyncWhenOfflineDescription:
+		'Тихо пропускать автоматические запуски синхронизации при отсутствии подключения к интернету.',
 	awaitingConfirmation: 'Ожидание подтверждения',
 	backend: 'Бэкенд хранилища',
 	backendDescription: 'Выберите облачный сервис. Бэкенды предоставляются модулями.',

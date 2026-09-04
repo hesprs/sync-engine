@@ -47,29 +47,30 @@ Internal supporting types can appear in exported signatures but are not standalo
 
 `Settings` is a merged object at `ctx.settings`. For descriptions of each setting, see [usage: settings](../usage/settings).
 
-| Key                       | Type                                                                   |
-| ------------------------- | ---------------------------------------------------------------------- |
-| `moduleSources`           | `Array<string>` of registry URLs                                       |
-| `modules`                 | `Record<string, object>` of per-module settings                        |
-| `moduleAutoUpdate`        | `boolean`                                                              |
-| `remoteFs`                | `string` selected backend ID                                           |
-| `decider`                 | `string` selected decider ID                                           |
-| `conflictResolver`        | `string` selected conflict-resolver ID                                 |
-| `maxFileSize`             | `TogglableValue` max file size in bytes                                |
-| `confirmTasksInSync`      | `boolean`                                                              |
-| `confirmDeleteInAutoSync` | `boolean`                                                              |
-| `noticeStatusOnMobile`    | `boolean`                                                              |
-| `startupSync`             | `TogglableValue` delay in milliseconds                                 |
-| `scheduledSync`           | `TogglableValue` interval in milliseconds                              |
-| `realtimeSync`            | `TogglableValue` debounce delay in milliseconds                        |
-| `inclusionRules`          | `Array<GlobMatchRule>`                                                 |
-| `exclusionRules`          | `Array<GlobMatchRule>`                                                 |
-| `maxMemoryConsumption`    | `TogglableValue` in bytes                                              |
-| `maxRequestConcurrency`   | `TogglableValue`                                                       |
-| `minRequestInterval`      | `TogglableValue` in milliseconds                                       |
-| `realtimeSyncFastMode`    | `boolean`                                                              |
-| `asymmetricStorage`       | `boolean`                                                              |
-| `customHeaders`           | `Array<{ type: 'plaintext' \| 'secret'; value: string; key: string }>` |
+| Key                        | Type                                                                   |
+| -------------------------- | ---------------------------------------------------------------------- |
+| `moduleSources`            | `Array<string>` of registry URLs                                       |
+| `modules`                  | `Record<string, object>` of per-module settings                        |
+| `moduleAutoUpdate`         | `boolean`                                                              |
+| `remoteFs`                 | `string` selected backend ID                                           |
+| `decider`                  | `string` selected decider ID                                           |
+| `conflictResolver`         | `string` selected conflict-resolver ID                                 |
+| `maxFileSize`              | `TogglableValue` max file size in bytes                                |
+| `confirmTasksInSync`       | `boolean`                                                              |
+| `confirmDeleteInAutoSync`  | `boolean`                                                              |
+| `noticeStatusOnMobile`     | `boolean`                                                              |
+| `avoidAutoSyncWhenOffline` | `boolean`                                                              |
+| `startupSync`              | `TogglableValue` delay in milliseconds                                 |
+| `scheduledSync`            | `TogglableValue` interval in milliseconds                              |
+| `realtimeSync`             | `TogglableValue` debounce delay in milliseconds                        |
+| `inclusionRules`           | `Array<GlobMatchRule>`                                                 |
+| `exclusionRules`           | `Array<GlobMatchRule>`                                                 |
+| `maxMemoryConsumption`     | `TogglableValue` in bytes                                              |
+| `maxRequestConcurrency`    | `TogglableValue`                                                       |
+| `minRequestInterval`       | `TogglableValue` in milliseconds                                       |
+| `realtimeSyncFastMode`     | `boolean`                                                              |
+| `asymmetricStorage`        | `boolean`                                                              |
+| `customHeaders`            | `Array<{ type: 'plaintext' \| 'secret'; value: string; key: string }>` |
 
 `TogglableValue` has shape `{ enabled: boolean; value: number }`.
 

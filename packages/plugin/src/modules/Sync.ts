@@ -40,9 +40,6 @@ export type TaskInfo = { name: TaskNames; key: string; prettyName: string; isDir
 export type FailedTaskInfo = TaskInfo & { error: string };
 
 export default class Sync {
-	dispatch: Dispatch<Events>;
-	on: On<Events>;
-
 	constructor(
 		private readonly ctx: {
 			dispatch: Dispatch<Events>;
@@ -53,10 +50,7 @@ export default class Sync {
 			listRemote: RemoteLister;
 			getConflictResolver: () => ConflictResolver;
 		},
-	) {
-		this.dispatch = ctx.dispatch;
-		this.on = ctx.on;
-	}
+	) {}
 
 	declare readonly events: {
 		syncStarted: { isCancelled: Ref<boolean>; trigger: string };
@@ -96,11 +90,12 @@ export default class Sync {
 
 	private readonly confirmTasks = (tasks: Array<BaseTask>) =>
 		new Promise<Array<BaseTask>>((resolve, reject) => {
-			const unsub1 = this.on('tasksConfirmed', (result) => {
+			const { on, dispatch } = this.ctx;
+			const unsub1 = on('tasksConfirmed', (result) => {
 				cleanup();
 				resolve(result);
 			});
-			const unsub2 = this.on('syncCanceled', () => {
+			const unsub2 = on('syncCanceled', () => {
 				cleanup();
 				reject(syncCancelledError);
 			});
@@ -108,16 +103,17 @@ export default class Sync {
 				unsub1();
 				unsub2();
 			}
-			this.dispatch('requestConfirmTasks', tasks);
+			dispatch('requestConfirmTasks', tasks);
 		});
 
 	private readonly confirmDeletion = (tasks: Array<RemoveLocal>) =>
 		new Promise<DeleteConfirmReturn>((resolve, reject) => {
-			const unsub1 = this.on('deleteConfirmed', (result) => {
+			const { on, dispatch } = this.ctx;
+			const unsub1 = on('deleteConfirmed', (result) => {
 				cleanup();
 				resolve(result);
 			});
-			const unsub2 = this.on('syncCanceled', () => {
+			const unsub2 = on('syncCanceled', () => {
 				cleanup();
 				reject(syncCancelledError);
 			});
@@ -125,34 +121,45 @@ export default class Sync {
 				unsub1();
 				unsub2();
 			}
-			this.dispatch('requestConfirmDelete', tasks);
+			dispatch('requestConfirmDelete', tasks);
 		});
 
-	private readonly executeSync = async (trigger: string) => {
+	private readonly executeSync = async (trigger: string): Promise<SyncTerminateReason> => {
+		const { settings, ctx, postProcess, confirmDeletion, confirmTasks, convertDeleteToUpload } =
+			this;
+		const {
+			on,
+			dispatch,
+			initializeSync,
+			listRemote,
+			getConflictResolver,
+			translate,
+			getDecider,
+		} = ctx;
+		const { inclusionRules, exclusionRules, confirmDeleteInAutoSync, confirmTasksInSync } =
+			settings;
 		const isCancelled = ref(false);
 		let failedCount = 0;
 		let tasks: Array<BaseTask>;
 		let terminateReason!: SyncTerminateReason;
-		const cleanup = this.on('syncCanceled', () => isCancelled(true));
+		const cleanup = on('syncCanceled', () => isCancelled(true));
 		try {
-			this.dispatch('syncStarted', { isCancelled, trigger });
+			dispatch('syncStarted', { isCancelled, trigger });
+			if (isCancelled()) throw syncCancelledError;
 
-			const infras = this.ctx.initializeSync();
+			const infras = initializeSync();
 			const { record, localFs } = infras;
 
-			const match = prepareGlobMatch(
-				this.settings.inclusionRules,
-				this.settings.exclusionRules,
-			);
+			const match = prepareGlobMatch(inclusionRules, exclusionRules);
 			const { reporter: localReporter, pruner: localPruner } = prepareReporter(match);
 			const { reporter: remoteReporter, pruner: remotePruner } = prepareReporter(match);
 
 			const [localList, remoteList] = await Promise.all([
 				localFs.list('/', localReporter),
-				this.ctx.listRemote({
+				listRemote({
 					...infras,
 					reporter: (prog) => {
-						this.dispatch('remoteWalkProgress', prog);
+						dispatch('remoteWalkProgress', prog);
 						return remoteReporter(prog);
 					},
 					trigger,
@@ -160,9 +167,9 @@ export default class Sync {
 			]);
 			if (isCancelled()) throw syncCancelledError;
 			const records = new Map(await record.entries());
-			const localStats = this.postProcess(localList, localPruner);
-			const remoteStats = this.postProcess(remoteList, remotePruner);
-			this.dispatch(
+			const localStats = postProcess(localList, localPruner);
+			const remoteStats = postProcess(remoteList, remotePruner);
+			dispatch(
 				'logSync',
 				`Local ${localStats.size} item(s), remote ${remoteStats.size} item(s), record ${records.size} item(s).`,
 			);
@@ -170,12 +177,12 @@ export default class Sync {
 			if (isCancelled()) throw syncCancelledError;
 			const taskFactory = createTaskFactory({
 				baseOptions: infras,
-				resolver: this.ctx.getConflictResolver(),
-				translate: this.ctx.translate,
+				resolver: getConflictResolver(),
+				translate,
 			});
-			tasks = this.ctx.getDecider()({
+			tasks = getDecider()({
 				localStats,
-				logger: (log: string) => this.dispatch('logSync', log),
+				logger: (log: string) => dispatch('logSync', log),
 				records,
 				remoteStats,
 				taskFactory,
@@ -186,26 +193,19 @@ export default class Sync {
 			}
 
 			const initialTasks = tasks.length;
-			tasks = detectMoves(tasks, this.ctx.translate, records);
+			tasks = detectMoves(tasks, translate, records);
 			const convertedTasks = initialTasks - tasks.length;
 			if (convertedTasks)
-				this.dispatch(
-					'logSync',
-					`Discovered and converted ${convertedTasks} move task(s).`,
-				);
+				dispatch('logSync', `Discovered and converted ${convertedTasks} move task(s).`);
 
-			this.dispatch('logSync', `Planning finished with ${tasks.length} task(s).`);
+			dispatch('logSync', `Planning finished with ${tasks.length} task(s).`);
 
 			const [nonDisplayableTasks, displayableTasks] = partition(
 				tasks,
 				(task) => task instanceof AddRecord || task instanceof RemoveRecord,
 			);
-			if (
-				trigger === 'manual' &&
-				this.settings.confirmTasksInSync &&
-				displayableTasks.length !== 0
-			) {
-				const confirmResult = await this.confirmTasks(displayableTasks);
+			if (trigger === 'manual' && confirmTasksInSync && displayableTasks.length !== 0) {
+				const confirmResult = await confirmTasks(displayableTasks);
 				tasks = [...nonDisplayableTasks, ...confirmResult];
 			}
 
@@ -215,13 +215,13 @@ export default class Sync {
 			);
 			if (
 				(trigger === 'realtime' || trigger === 'startup' || trigger === 'scheduled') &&
-				this.settings.confirmDeleteInAutoSync &&
+				confirmDeleteInAutoSync &&
 				removeLocalTasks.length !== 0
 			) {
-				const { delete: deleted, reupload } = await this.confirmDeletion(removeLocalTasks);
+				const { delete: deleted, reupload } = await confirmDeletion(removeLocalTasks);
 				tasks = [
 					...deleted,
-					...(await this.convertDeleteToUpload(reupload, localFs)),
+					...(await convertDeleteToUpload(reupload, localFs)),
 					...otherTasks,
 				];
 			}
@@ -229,16 +229,16 @@ export default class Sync {
 			sortTasks(tasks);
 
 			if (isCancelled()) throw syncCancelledError;
-			this.dispatch('executionStarted', tasks);
+			dispatch('executionStarted', tasks);
 			await Promise.all(
 				tasks.map(async (task) => {
 					try {
 						await task.exec();
-						this.dispatch('taskCompleted', toTaskInfo(task));
+						dispatch('taskCompleted', toTaskInfo(task));
 					} catch (error) {
 						if (isCancelled()) return;
 						failedCount++;
-						this.dispatch('taskFailed', {
+						dispatch('taskFailed', {
 							...toTaskInfo(task),
 							error: toErrorMessage(error),
 						});
@@ -260,7 +260,7 @@ export default class Sync {
 				: ({ error: toErrorMessage(error), result: 'failed' } as const);
 		} finally {
 			cleanup();
-			this.dispatch('syncTerminated', terminateReason);
+			dispatch('syncTerminated', terminateReason);
 		}
 		return terminateReason;
 	};
@@ -272,7 +272,7 @@ export default class Sync {
 				const options = task.options;
 				const local = await localFs.stat(options.key);
 				if (!local) {
-					this.dispatch(
+					this.ctx.dispatch(
 						'logSync',
 						`Local file \`${options.key}\` not found during reupload.`,
 					);

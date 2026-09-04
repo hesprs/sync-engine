@@ -28,6 +28,8 @@ export type MiscellaneousSettingTranslations = {
 	headerKeyPlaceholder: string;
 	headerValuePlaceholder: string;
 	addSecretHeader: string;
+	avoidAutoSyncWhenOffline: string;
+	avoidAutoSyncWhenOfflineDescription: string;
 };
 
 export default function miscellaneousSettings({
@@ -150,11 +152,16 @@ export default function miscellaneousSettings({
 					name: translate('noticeStatusOnMobile'),
 				})),
 				3000: s(() => ({
+					control: { key: 'avoidAutoSyncWhenOffline', type: 'toggle' },
+					desc: translate('avoidAutoSyncWhenOfflineDescription'),
+					name: translate('avoidAutoSyncWhenOffline'),
+				})),
+				4000: s(() => ({
 					control: { key: 'confirmTasksInSync', type: 'toggle' },
 					desc: translate('confirmTasksInSyncDescription'),
 					name: translate('confirmTasksInSync'),
 				})),
-				4000: s(() => ({
+				5000: s(() => ({
 					control: { key: 'confirmDeleteInAutoSync', type: 'toggle' },
 					desc: translate('confirmDeleteInAutoSyncDescription'),
 					name: translate('confirmDeleteInAutoSync'),

@@ -187,6 +187,12 @@ Show a notice on mobile while a sync is running. On desktop, the status bar show
 
 Enabled by default.
 
+### Avoid Auto Sync When Offline
+
+Silently skip all non-manual sync runs when your device is not connected to any wired or wireless network.
+
+Enabled by default.
+
 ### Confirm Operations in Manual Sync
 
 Show planned file operations before a manually started sync runs. You can review and confirm them. This does not affect automatic syncs.

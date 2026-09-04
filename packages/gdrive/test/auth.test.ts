@@ -26,8 +26,8 @@ function reset(...next: Array<HttpResponse>) {
 	responses = [...next];
 }
 
-async function expectPollFailure(error: Error, expected: string) {
-	reset({ throw: error });
+async function expectPollFailure(err: Error, expected: string) {
+	reset({ throw: err });
 	let caught: unknown;
 	try {
 		await pollDeviceToken({
