@@ -10,6 +10,7 @@ import type {
 	Stat,
 	StoreSync,
 } from '@hesprs/sync-engine-sdk';
+import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/get-status';
 import { basename, dirname, isFolder } from '@repo/shared/path';
@@ -34,8 +35,6 @@ export type GdriveFsOptions = {
 
 export type GdriveDB = DatabaseSync<{ gdriveIds: string }, { gdriveIdsMarker?: string }>;
 
-const READ_CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
-const READ_MAX_CONCURRENT = 8;
 const PAGE_SIZE = 1000;
 const WRITE_FIELDS = 'id,md5Checksum';
 const ROOT_ID = 'root';
@@ -174,8 +173,8 @@ export default class GdriveFs implements RootFs {
 		if (id === undefined) throw notFoundError(key);
 		const url = buildUrl(DRIVE_API, `/files/${id}`, { alt: 'media' });
 		return createRangeReadStream({
-			chunkSize: READ_CHUNK_SIZE,
-			maxConcurrent: READ_MAX_CONCURRENT,
+			chunkSize,
+			concurrency,
 			requestRange: async (start, endInclusive) => {
 				const response = await this.requestOrThrow({
 					headers: { Range: `bytes=${start}-${endInclusive}` },

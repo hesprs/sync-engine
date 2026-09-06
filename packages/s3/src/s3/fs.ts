@@ -8,6 +8,7 @@ import type {
 	RootFs,
 	Stat,
 } from '@hesprs/sync-engine-sdk';
+import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/get-status';
 import parseXML from '@repo/shared/parse-xml';
@@ -28,9 +29,6 @@ export type S3FsOptions = {
 };
 
 export const BATCH_DELETE_MAX_KEYS = 1000;
-
-const READ_CHUNK_SIZE = 2 * 1024 * 1024; // 2 MiB
-const READ_MAX_CONCURRENT = 8;
 
 type S3ErrorResponse = {
 	Error?: {
@@ -173,8 +171,8 @@ export default class S3Fs implements RootFs {
 		const url = this.buildUrl(key);
 		return Promise.resolve(
 			createS3ReadStream({
-				chunkSize: READ_CHUNK_SIZE,
-				maxConcurrent: READ_MAX_CONCURRENT,
+				chunkSize,
+				concurrency,
 				requestRange: async (start, endInclusive) => {
 					const response = await this.requestOrThrow({
 						headers: { Range: `bytes=${start}-${endInclusive}` },

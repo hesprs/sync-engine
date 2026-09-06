@@ -15,7 +15,7 @@ export type MemoryControlSharedState = {
 	maxMemory: number;
 };
 
-const STREAM_RESERVATION_SIZE = 16 * 1024 * 1024;
+export const STREAM_RESERVATION_SIZE = 16 * 1024 * 1024;
 
 function canReserve(state: MemoryControlSharedState, size: number) {
 	const { memoryConsumption, maxMemory } = state;

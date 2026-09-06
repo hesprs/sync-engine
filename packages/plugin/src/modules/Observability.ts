@@ -134,6 +134,7 @@ export default class Observability {
 			on('executionStarted', (tasks) => {
 				totalSyncTasks = tasks.length;
 				completedTasks = 0;
+				executionProgress({ completed: 0, total: totalSyncTasks });
 				syncStage('executing');
 			}),
 			on('remoteWalkProgress', (progress) => walkProgress(progress)),

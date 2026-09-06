@@ -3,18 +3,18 @@ import type { Binary } from '@hesprs/sync-engine-sdk';
 export type CreateS3ReadStreamOptions = {
 	size: number;
 	chunkSize: number;
-	maxConcurrent: number;
+	concurrency: number;
 	requestRange: (start: number, endInclusive: number) => Promise<Binary>;
 };
 
 export default function createS3ReadStream({
 	size,
 	chunkSize,
-	maxConcurrent,
+	concurrency,
 	requestRange,
 }: CreateS3ReadStreamOptions): ReadableStream<Binary> {
 	const totalChunks = size === 0 ? 0 : Math.ceil(size / chunkSize);
-	const maxBufferedBytes = chunkSize * maxConcurrent;
+	const maxBufferedBytes = chunkSize * concurrency;
 	if (totalChunks === 0)
 		return new ReadableStream<Binary>({
 			start(controller) {
@@ -56,7 +56,7 @@ export default function createS3ReadStream({
 		controllerRef !== undefined &&
 		!closed &&
 		consumerReady &&
-		inFlight < maxConcurrent &&
+		inFlight < concurrency &&
 		nextChunkIndex < totalChunks &&
 		pendingBytes < maxBufferedBytes;
 

@@ -18,6 +18,7 @@
 		"check": "tsc && oxlint && oxfmt --check"
 	},
 	"devDependencies": {
-		"@hesprs/sync-engine-sdk": "workspace:*"
+		"@hesprs/sync-engine-sdk": "workspace:*",
+		"@repo/shared": "workspace:*"
 	}
 }
