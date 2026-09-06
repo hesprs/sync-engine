@@ -2,6 +2,7 @@
 name: Encryption
 icon: key-round
 description: Client-side encrypt vault files before uploading to backend.
+source: https://sync.consensia.cc/modules.json
 version: 0.1.2
 readme: https://sync.consensia.cc/deep-dive/modules/encryption
 */
