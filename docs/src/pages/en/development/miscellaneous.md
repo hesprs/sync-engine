@@ -18,12 +18,17 @@
 
 ### `/dev` runtime exports
 
+| Export         | Description                                                                               |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| `debugWrapper` | FS wrapper that logs calls. See [debug and testing](./debug-and-testing#debugwrapper).    |
+| `testKit`      | Test harness utilities. See [debug and testing](./debug-and-testing#testkit).             |
+| `sha256`       | SHA-256 hash utility. See [distribution](./distribution#computing-integrity-with-sha256). |
+
+### `/tsdown-plugin` exports
+
 | Export             | Description                                                                                                                                       |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `debugWrapper`     | FS wrapper that logs calls. See [debug and testing](./debug-and-testing#debugwrapper).                                                            |
-| `testKit`          | Test harness utilities. See [debug and testing](./debug-and-testing#testkit).                                                                     |
 | `syncEngineModule` | Tsdown plugin bridging `obsidian` imports and embedding module metadata as magic bytes. See [writing a module](./develop-a-module#tsdown-plugin). |
-| `sha256`           | SHA-256 hash utility. See [distribution](./distribution#computing-integrity-with-sha256).                                                         |
 
 ### Root type exports
 

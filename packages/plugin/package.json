@@ -35,6 +35,10 @@
 		"./dev": {
 			"types": "./dist/dev.spec.d.ts",
 			"default": "./dist/dev.js"
+		},
+		"./tsdown-plugin": {
+			"types": "./dist/tsdown-plugin.spec.d.ts",
+			"default": "./dist/tsdown-plugin.js"
 		}
 	},
 	"publishConfig": {

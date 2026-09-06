@@ -47,7 +47,11 @@ const sdkConfig = defineConfig({
 	...sharedConfig,
 	clean: dtsPass,
 	dts: dtsPass ? { eager: true } : false,
-	entry: { dev: 'src/sdk/dev.ts', index: 'src/sdk/index.ts' },
+	entry: {
+		dev: 'src/sdk/dev.ts',
+		index: 'src/sdk/index.ts',
+		'tsdown-plugin': 'src/sdk/tsdown-plugin.ts',
+	},
 	unbundle: !dtsPass,
 });
 

@@ -1,4 +1,5 @@
 import type { Binary, Progress, Request, RootFs } from '@hesprs/sync-engine-sdk';
+import { chunkSize } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, mock, test } from 'bun:test';
 import type { WebdavFsOptions } from '@/webdav/fs';
@@ -590,7 +591,7 @@ test('readStream reorders out-of-order ranged responses', async () => {
 
 	const stream = createWebDAVReadStream({
 		chunkSize: 2,
-		maxConcurrent: 3,
+		concurrency: 3,
 		requestRange: (start, end) => {
 			requestRanges.push({ end, start });
 			const pending = deferred<Binary>();
@@ -615,13 +616,14 @@ test('readStream reorders out-of-order ranged responses', async () => {
 	expect(toBytes(await collected)).toStrictEqual([1, 1, 2, 2, 3, 3]);
 });
 
-test('readStream uses 2 MiB ranges from stat size', async () => {
+test('readStream requests SDK chunk size ranges from stat size', async () => {
+	const size = 5 * 1024 * 1024 + 1;
 	setXmlResponse([
 		{
 			href: 'https://dav.example.com/dav/Notes/file.bin',
 			propstat: {
 				prop: {
-					getcontentlength: String(5 * 1024 * 1024 + 1),
+					getcontentlength: String(size),
 					getlastmodified: 'Mon, 01 Jan 2024 00:00:00 GMT',
 					resourcetype: {},
 				},
@@ -642,18 +644,16 @@ test('readStream uses 2 MiB ranges from stat size', async () => {
 		return wait.promise;
 	});
 
+	const expectedRanges = Array.from({ length: Math.ceil(size / chunkSize) }, (_, index) => {
+		const start = index * chunkSize;
+		return `bytes=${start}-${Math.min(start + chunkSize - 1, size - 1)}`;
+	});
+
 	const collected = collectStream(
-		await webdav.fs.readStream(
-			'Notes/file.bin',
-			file('Notes/file.bin', { size: 5 * 1024 * 1024 + 1 }),
-		),
+		await webdav.fs.readStream('Notes/file.bin', file('Notes/file.bin', { size })),
 	);
 	await flush();
-	expect(ranges).toStrictEqual([
-		'bytes=0-2097151',
-		'bytes=2097152-4194303',
-		'bytes=4194304-5242880',
-	]);
+	expect(ranges).toStrictEqual(expectedRanges);
 
 	const makeResponse = (byte: number): RequestResponse => ({
 		bytes: () => new Uint8Array([byte]),
@@ -663,17 +663,14 @@ test('readStream uses 2 MiB ranges from stat size', async () => {
 		text: () => '',
 	});
 
-	pending.get('bytes=4194304-5242880')?.resolve(makeResponse(3));
-	pending.get('bytes=2097152-4194303')?.resolve(makeResponse(2));
-	pending.get('bytes=0-2097151')?.resolve(makeResponse(1));
+	for (let index = expectedRanges.length - 1; index >= 0; index--)
+		pending.get(expectedRanges[index])?.resolve(makeResponse(index + 1));
 
 	await flush();
-	expect(ranges).toStrictEqual([
-		'bytes=0-2097151',
-		'bytes=2097152-4194303',
-		'bytes=4194304-5242880',
-	]);
-	expect(await collected).toStrictEqual(new Uint8Array([1, 2, 3]));
+	expect(ranges).toStrictEqual(expectedRanges);
+	expect(await collected).toStrictEqual(
+		new Uint8Array(expectedRanges.map((_, index) => index + 1)),
+	);
 });
 
 test('readStream waits for consumer demand before scheduling', async () => {

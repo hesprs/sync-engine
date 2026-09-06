@@ -80,7 +80,7 @@ test('resolver should stream remote fallback for large newer remote files', asyn
 	const local = fs();
 	const remote = fs({ control: { readStream: () => stream(['remote wins']) } });
 	const resolver = smartMergeResolver(mergeOptions, db, () => 'namespace');
-	const remoteStat = file('large.md', { mtime: 10, size: 2 ** 22, uid: 'remote-current' });
+	const remoteStat = file('large.md', { mtime: 10, size: 6 * 1024 ** 2, uid: 'remote-current' });
 
 	await resolver({
 		key: 'large.md',

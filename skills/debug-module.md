@@ -7,16 +7,17 @@ Sync Engine serves for various services, many bugs need deeper investigation tha
 
 When writing a debug module, you need to produce a plain, self-contained JS ESM file at repo root, containing a simple Sync Engine module. Read repo docs on how to develop a module before writing. Useful patterns:
 
-- Register a request middleware to log raw request raw request and response.
+- Register a request middleware to log raw requests and responses.
 - Register a filesystem wrapper to trace the files.
 - Subscribe to Sync Engine events and (execute code to) gather information when event fires.
 - Wrap (reassign) a property in `Context` to intercept calls.
+- Use Obsidian runtime exports from `window.syncEngineApiBridge`.
 
 You must:
 
 - Obfuscate any privacy-sensitive info logged in your module, including hashing filenames and contents instead of logging raw content, and strip off auth header and URL in logged requests. File mtime, size, and UID are safe to disclose without obfuscation.
 - When logging, dispatch Sync Engine events `logGeneral` or `logSync` directly, do not create a separate logging and export logs path.
-- Simplify the module to bare minimum, don't gather information that has no value, focus on the most valuable and distinguishing info, don't do over-abstraction. The module is throwaway.
+- Simplify the module to bare minimum, don't gather information that has no value, focus on the most valuable and distinguishing info. Don't make the user perform too many steps. Don't do over-abstraction - the module is throwaway.
 - Only perform syntax checking, no need linting or formatting.
 - Include proper magic bytes at the top of the file (see docs -> development -> develop-a-module -> #magic-bytes).
 

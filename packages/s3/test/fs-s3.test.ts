@@ -6,6 +6,7 @@ import type {
 	RequestParam,
 	RequestResponse,
 } from '@hesprs/sync-engine-sdk';
+import { chunkSize } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, mock, test } from 'bun:test';
 import type { S3FsOptions } from '@/s3/fs';
@@ -146,8 +147,12 @@ test('write sends binary PUT and uses ETag or HEAD metadata fallback', async () 
 	);
 });
 
-test('readStream requests 2 MiB ranges and emits responses in file order', async () => {
-	const mib = 1024 * 1024;
+test('readStream requests SDK chunk size ranges and emits responses in file order', async () => {
+	const size = 5 * 1024 * 1024 + 1;
+	const expectedRanges = Array.from({ length: Math.ceil(size / chunkSize) }, (_, index) => {
+		const start = index * chunkSize;
+		return `bytes=${start}-${Math.min(start + chunkSize - 1, size - 1)}`;
+	});
 	const pending = new Map<string, ReturnType<typeof deferred<RequestResponse>>>();
 	const scheduled = deferred<void>();
 	const s3 = createS3Fs();
@@ -156,25 +161,22 @@ test('readStream requests 2 MiB ranges and emits responses in file order', async
 		if (!range) throw new Error('Expected range');
 		const wait = deferred<RequestResponse>();
 		pending.set(range, wait);
-		if (pending.size === 3) scheduled.resolve();
+		if (pending.size === expectedRanges.length) scheduled.resolve();
 		return wait.promise;
 	});
-	const stream = await s3.fs.readStream(
-		'Notes/file.bin',
-		file('Notes/file.bin', { size: 5 * mib + 1 }),
-	);
+	const stream = await s3.fs.readStream('Notes/file.bin', file('Notes/file.bin', { size }));
 	const collected = collectStream(stream);
 	await scheduled.promise;
 	expect(new Set(s3.calls.map((call) => call.headers?.Range))).toStrictEqual(
-		new Set(['bytes=0-2097151', 'bytes=2097152-4194303', 'bytes=4194304-5242880']),
+		new Set(expectedRanges),
 	);
-	for (const [range, value] of [
-		['bytes=4194304-5242880', 3],
-		['bytes=2097152-4194303', 2],
-		['bytes=0-2097151', 1],
-	] as const)
-		pending.get(range)?.resolve(response({ body: new Uint8Array([value]), status: 206 }));
-	expect(await collected).toStrictEqual(new Uint8Array([1, 2, 3]));
+	for (let index = expectedRanges.length - 1; index >= 0; index--)
+		pending
+			.get(expectedRanges[index])
+			?.resolve(response({ body: new Uint8Array([index + 1]), status: 206 }));
+	expect(await collected).toStrictEqual(
+		new Uint8Array(expectedRanges.map((_, index) => index + 1)),
+	);
 });
 
 test('readStream handles empty files and ranged request errors', async () => {

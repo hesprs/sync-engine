@@ -7,6 +7,7 @@ import type {
 	RootFs,
 	Stat,
 } from '@hesprs/sync-engine-sdk';
+import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/get-status';
 import parseXML from '@repo/shared/parse-xml';
@@ -67,8 +68,6 @@ const PROPFIND_BODY = `<?xml version="1.0" encoding="utf-8"?>
     <getetag/>
   </prop>
 </propfind>`;
-const READ_CHUNK_SIZE = 2 * 1024 * 1024;
-const READ_MAX_CONCURRENT = 8;
 
 function getDavText(value: WebDAVPropValue) {
 	if (typeof value === 'string') return value;
@@ -230,8 +229,8 @@ export default class WebdavFs implements RootFs {
 
 	readStream(key: string, { size }: FileStat) {
 		return createWebDAVReadStream({
-			chunkSize: READ_CHUNK_SIZE,
-			maxConcurrent: READ_MAX_CONCURRENT,
+			chunkSize,
+			concurrency,
 			requestRange: async (start, endInclusive) => {
 				const response = await this.request({
 					headers: {

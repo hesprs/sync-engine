@@ -45,7 +45,7 @@ your-module
 Create `tsdown.config.ts` and write following content:
 
 ```TypeScript
-import { syncEngineModule } from '@hesprs/sync-engine-sdk/dev';
+import syncEngineModule from '@hesprs/sync-engine-sdk/tsdown-plugin';
 import { defineConfig } from 'tsdown';
 
 const dev = process.env.MODE === 'dev';
@@ -76,7 +76,7 @@ Finally add following commands to your `package.json`:
 
 ## Tsdown Plugin
 
-The `syncEngineModule` plugin shipped in `@hesprs/sync-engine-sdk/dev` handles two concerns when building your module.
+The `syncEngineModule` plugin shipped in `@hesprs/sync-engine-sdk/tsdown-plugin` handles two concerns when building your module.
 
 ### Obsidian API Bridging
 

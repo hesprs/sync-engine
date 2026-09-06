@@ -16,7 +16,7 @@
 		"compile": "bun --bun tsdown",
 		"fix": "oxlint --silent --fix && oxfmt",
 		"check": "tsc && oxlint && oxfmt --check",
-		"tests": "bun test"
+		"tests": "bun --preload=./test/mocks test"
 	},
 	"devDependencies": {
 		"@hesprs/sync-engine-sdk": "workspace:*",

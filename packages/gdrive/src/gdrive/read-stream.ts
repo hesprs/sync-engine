@@ -3,7 +3,7 @@ import type { Binary } from '@hesprs/sync-engine-sdk';
 export type CreateRangeReadStreamOptions = {
 	size: number;
 	chunkSize: number;
-	maxConcurrent: number;
+	concurrency: number;
 	requestRange: (start: number, endInclusive: number) => Promise<Binary>;
 };
 
@@ -11,11 +11,11 @@ export type CreateRangeReadStreamOptions = {
 export default function createRangeReadStream({
 	size,
 	chunkSize,
-	maxConcurrent,
+	concurrency,
 	requestRange,
 }: CreateRangeReadStreamOptions): ReadableStream<Binary> {
 	const totalChunks = size === 0 ? 0 : Math.ceil(size / chunkSize);
-	const maxBufferedBytes = chunkSize * maxConcurrent;
+	const maxBufferedBytes = chunkSize * concurrency;
 	if (totalChunks === 0)
 		return new ReadableStream<Binary>({
 			start(controller) {
@@ -57,7 +57,7 @@ export default function createRangeReadStream({
 		controllerRef !== undefined &&
 		!closed &&
 		consumerReady &&
-		inFlight < maxConcurrent &&
+		inFlight < concurrency &&
 		nextChunkIndex < totalChunks &&
 		pendingBytes < maxBufferedBytes;
 
