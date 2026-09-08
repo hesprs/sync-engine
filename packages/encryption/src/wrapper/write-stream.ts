@@ -1,8 +1,9 @@
 import type { Binary } from '@hesprs/sync-engine-sdk';
 import { concatBinary } from '@repo/shared/binary';
-import { DECRYPTION_ERROR_MESSAGE, encryptContentChunk } from './content';
+import { encryptContentChunk } from './content';
 import {
 	CONTENT_CHUNK_SIZE,
+	DECRYPTION_ERROR_MESSAGE,
 	FILE_SALT_LENGTH,
 	deriveFileKey,
 	getEncryptedFileSize,

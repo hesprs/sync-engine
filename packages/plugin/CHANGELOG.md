@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.1.4 - 2026-09-08
+
+### Core
+
+- Fixed the memory lead caused by loading a module from file via the UI that doesn't unload the existing module.
+- Optimized memory control algorithm for more accurate memory reservation and larger throughput.
+- Added an option to avoid syncing when the device is offline.
+- Optimized download chunking to decide appropriate sizes according to device hardware.
+
+### Google Drive Module
+
+- Fixed Android cannot connect to Google due to background process restriction.
+
 ## Sync Engine v3.1.3 - 2026-09-01
 
 ### Core

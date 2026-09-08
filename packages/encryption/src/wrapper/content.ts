@@ -3,6 +3,7 @@ import { concatBinary, textToUint8Array, toUint8Array } from '@repo/shared/binar
 import { argon2id } from 'hash-wasm';
 import {
 	CONTENT_CHUNK_SIZE,
+	DECRYPTION_ERROR_MESSAGE,
 	FILE_SALT_LENGTH,
 	MASTER_KEY_LENGTH,
 	MASTER_SALT_LENGTH,
@@ -18,8 +19,6 @@ import {
 
 const ROOT_FILE_KEY_INFO = 'root-file-key-v1';
 const NAME_KEY_INFO = 'name-key-v1';
-
-export const DECRYPTION_ERROR_MESSAGE = 'data corrupted or wrong password';
 
 export async function deriveMasterSalt(remoteUid: string): Promise<Binary> {
 	const digest = await sha256Digest(textToUint8Array(remoteUid));

@@ -3,7 +3,8 @@ import { concatBinary, textToUint8Array, toUint8Array } from '@repo/shared/binar
 
 const EMPTY_SALT: Binary = new Uint8Array(0);
 
-const DECRYPTION_ERROR_MESSAGE = 'data corrupted or wrong password';
+export const DECRYPTION_ERROR_MESSAGE =
+	'Decryption error: incorrect encryption password or the data is corrupted';
 export const MASTER_KEY_LENGTH = 32;
 export const MASTER_SALT_LENGTH = 16;
 export const FILE_SALT_LENGTH = 16;
