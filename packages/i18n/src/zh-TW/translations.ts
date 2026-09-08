@@ -20,33 +20,21 @@ const zhTW: Translations = {
 	},
 	asymmetricStorageMigration: (frag, flag) => {
 		if (flag === 'enable') {
-			frag.createEl('p', {
-				text: '⚠️ 在啟用非對稱儲存前，請務必留意以下幾點：',
-			});
+			frag.createEl('p', { text: '⚠️ 在啟用非對稱儲存前，請務必留意以下幾點：' });
 			const ol = frag.createEl('ol');
 			ol.createEl('li', {
 				text: '遠端儲存將不再保留本地的層級結構。所有檔案都會直接上傳至根目錄，並附上隨機字串標記。',
 			});
-			ol.createEl('li', {
-				text: '若您需要讓遠端檔案保持可讀的目錄結構，請勿啟用此功能。',
-			});
-			ol.createEl('li', {
-				text: '啟用後，請確保所有裝置皆已開啟非對稱儲存。',
-			});
+			ol.createEl('li', { text: '若您需要讓遠端檔案保持可讀的目錄結構，請勿啟用此功能。' });
+			ol.createEl('li', { text: '啟用後，請確保所有裝置皆已開啟非對稱儲存。' });
 			ol.createEl('li', {
 				text: '若此儲存庫先前未啟用非對稱儲存即進行過上傳，則必須執行遷移。',
 			});
 		} else {
-			frag.createEl('p', {
-				text: '⚠️ 在停用非對稱儲存前，請務必留意以下幾點：',
-			});
+			frag.createEl('p', { text: '⚠️ 在停用非對稱儲存前，請務必留意以下幾點：' });
 			const ol = frag.createEl('ol');
-			ol.createEl('li', {
-				text: '後續的所有上傳將會還原為本地的層級結構。',
-			});
-			ol.createEl('li', {
-				text: '請確保所有裝置皆已停用非對稱儲存。',
-			});
+			ol.createEl('li', { text: '後續的所有上傳將會還原為本地的層級結構。' });
+			ol.createEl('li', { text: '請確保所有裝置皆已停用非對稱儲存。' });
 			ol.createEl('li', {
 				text: '若此儲存庫先前是在啟用非對稱儲存的狀態下上傳，則必須執行遷移。',
 			});
@@ -79,11 +67,11 @@ const zhTW: Translations = {
 	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
 		const deleteOr = deleteLocal + deleteRemote !== 0;
 		frag.appendText(`同步總共將執行 ${total} 個操作`);
-		if (conflict + deleteLocal + deleteRemote !== 0) frag.appendText('，包含');
+		if (deleteOr || conflict !== 0) frag.appendText('，包含');
 		if (deleteOr) frag.appendText('刪除');
-		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 個本地檔案`);
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 個本地項目`);
 		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' 以及');
-		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 個遠端檔案`);
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 個遠端項目`);
 		if (deleteOr && conflict !== 0) frag.appendText('，並');
 		if (conflict !== 0) frag.appendText(`解決 ${conflict} 個衝突`);
 		frag.appendText('：');
