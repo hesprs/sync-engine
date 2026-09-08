@@ -4,11 +4,11 @@ import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { EncryptionDBMeta, EncryptionDBSchema } from '@/wrapper';
 import encryptionWrapper from '@/wrapper';
+import { DECRYPTION_ERROR_MESSAGE } from '@/wrapper/shared';
 
 const { bytes, file, fs: testFs, stream } = testKit;
 const PASSWORD = 'password';
 const WRONG_PASSWORD = 'wrong-password';
-const DECRYPTION_ERROR_MESSAGE = 'data corrupted or wrong password';
 
 const memoryDB = openMemoryDB<EncryptionDBSchema, EncryptionDBMeta>('encryption-wrapper-test');
 

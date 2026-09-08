@@ -126,7 +126,7 @@ Then come to the traversal and syncing logic:
 - Calculate _file key_ using `HKDF-SHA-256` of _root file key_ (salt: _file key salt_, info: `file-key-v1`).
 - Continue to splice into 131,088B pieces (exception for the last chunk), for each piece:
   - count _chunk index_ as _chunk nonce_
-  - decrypt the chunk with _chunk nonce_ + _file key_ with `AES-GCM-256`, throw `data corrupted or wrong password` and skip the file if auth tag mismatch
+  - decrypt the chunk with _chunk nonce_ + _file key_ with `AES-GCM-256`, throw `Decryption error: incorrect encryption password or the data is corrupted` and skip the file if auth tag mismatch
 - Concatenate decrypted content
 
 ## Streamed Decryption
