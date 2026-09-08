@@ -1,7 +1,7 @@
 // Copyright (c) 2006, 2008 Tony Garnock-Jones <tonyg@lshift.net>
 // Copyright (c) 2006, 2008 LShift Ltd. <query@lshift.net>
 // Copyright (c) 2016, 2022 Axosoft, LLC (www.gitkraken.com)
-// Copyright (c) 2026, Hēsperus (hesprs@outlook.com)
+// Copyright (c) 2026, Hēsperus
 //
 // Permission is hereby granted, free of charge, to any person
 // Obtaining a copy of this software and associated documentation files
