@@ -85,7 +85,7 @@ export default class Gdrive {
 					if (digOriginal(fs) instanceof GdriveFs)
 						return prefixWrapper(fs, this.moduleSettings.baseDirectory);
 				},
-				priority: 8308,
+				priority: 5998,
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {

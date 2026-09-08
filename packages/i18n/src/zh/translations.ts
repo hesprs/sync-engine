@@ -66,14 +66,14 @@ const zh: Translations = {
 		'在自动触发的同步过程中，显示将被删除的本地文件的确认提示。您可以选择删除或重新上传它们。',
 	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
 		const deleteOr = deleteLocal + deleteRemote !== 0;
-		frag.appendText(`同步总共将执行 ${total} 项操作`);
-		if (conflict + deleteLocal + deleteRemote !== 0) frag.appendText('，其中包括');
-		if (deleteOr) frag.appendText('删除');
-		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 个本地文件`);
-		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText('以及');
-		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 个远程文件`);
+		frag.appendText(`同步将总共执行 ${total} 个操作`);
+		if (deleteOr || conflict !== 0) frag.appendText('。其中包含');
+		if (deleteOr) frag.appendText(' 删除');
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 个本地项目`);
+		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' 以及');
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 个远程项目`);
 		if (deleteOr && conflict !== 0) frag.appendText('，并');
-		if (conflict !== 0) frag.appendText(`解决 ${conflict} 个冲突`);
+		if (conflict !== 0) frag.appendText(` 解决 ${conflict} 个冲突`);
 		frag.appendText('：');
 	},
 	confirmTasksInSync: '手动同步时确认操作',

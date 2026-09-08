@@ -81,9 +81,9 @@ const en: Translations = {
 		frag.appendText(`Sync will execute ${total} operation(s) in total`);
 		if (deleteOr || conflict !== 0) frag.appendText('. Including');
 		if (deleteOr) frag.appendText(' deleting');
-		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} local file(s)`);
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} local item(s)`);
 		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' plus');
-		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} remote file(s)`);
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} remote item(s)`);
 		if (deleteOr && conflict !== 0) frag.appendText(', and');
 		if (conflict !== 0) frag.appendText(` resolving ${conflict} conflict(s)`);
 		frag.appendText(':');

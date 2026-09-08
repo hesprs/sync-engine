@@ -81,11 +81,11 @@ const ru: Translations = {
 	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
 		const deleteOr = deleteLocal + deleteRemote !== 0;
 		frag.appendText(`Всего при синхронизации будет выполнено операций: ${total}`);
-		if (conflict + deleteLocal + deleteRemote !== 0) frag.appendText('. В том числе');
+		if (deleteOr || conflict !== 0) frag.appendText('. В том числе');
 		if (deleteOr) frag.appendText(' удаление');
-		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} локальных файл(а/ов)`);
+		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} локальных элемент(а/ов)`);
 		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' и');
-		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} удалённых файл(а/ов)`);
+		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} удалённых элемент(а/ов)`);
 		if (deleteOr && conflict !== 0) frag.appendText(', а также');
 		if (conflict !== 0) frag.appendText(` разрешение конфликтов: ${conflict}`);
 		frag.appendText(':');

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2013 Tatsuhiko Kubo <cubicdaiya@gmail.com>
  * Copyright (c) 2016, 2022 Axosoft, LLC (www.gitkraken.com)
- * Copyright (c) 2026, Hēsperus (hesprs@outlook.com)
+ * Copyright (c) 2026, Hēsperus
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal

@@ -11,6 +11,12 @@ before selecting Google Drive as the remote file system:
 
 This setting initiates the Google authorization process. Once authorized, the module stores the refresh token securely in Obsidian's secret storage and uses it to obtain short-lived access tokens as needed. The **Disconnect** option revokes the token with Google, removes it from secret storage, clears any cached access tokens, and deletes the stored account identifier.
 
+::: warning
+
+Connecting to a Google Drive account creates a **new secret in Obsidian keychain** named `sync-engine-gdrive-refresh-token`. This secret is managed exclusively by Sync Engine used as the refresh token to trade Google Drive access tokens. Please do not use this secret for other purposes.
+
+:::
+
 ### Base directory
 
 This defines the folder in Google Drive that serves as the root directory for this vault. The value is normalized as a directory path. If left empty when the module starts, it defaults to `<vault name>/`. The specified folder is created automatically during the first synchronization.

@@ -394,15 +394,15 @@ type LabelDefinition = {
   color?: string;
   textColor?: string;
 };
-declare function s(parent: (self: SettingTree) => AugmentedSettingDefinitionItem, children?: CallableOrObjectTree): CallableOrObjectTree;
-declare function reactivelyValidate<T>({ text, parse, onSave, format, immediate }: {
+export declare function s(parent: (self: SettingTree) => AugmentedSettingDefinitionItem, children?: CallableOrObjectTree): CallableOrObjectTree;
+export declare function reactivelyValidate<T>({ text, parse, onSave, format, immediate }: {
   text: TextComponent;
   parse: (value: string) => T | undefined;
   format?: (value: T) => string;
   onSave: (value: T) => void;
   immediate?: boolean;
 }): void;
-declare function generateEditableList<T>({ memoryDB, items, identifier, saveSettings, rerenderSettingTab, defaultValue, render, translations: { add, empty, heading }, extraButtons }: {
+export declare function generateEditableList<T>({ memoryDB, items, identifier, saveSettings, rerenderSettingTab, defaultValue, render, translations: { add, empty, heading }, extraButtons }: {
   memoryDB: DatabaseSync<EphemeralEditableListSchema>;
   items: Array<T>;
   identifier: string;
@@ -817,17 +817,17 @@ declare function prefixWrapper(original: Fs, prefix: string): WrappedFs;
 //#endregion
 //#region src/utils/pipe.d.ts
 declare const chunkSize: number, concurrency: number;
-declare function pipe({ from, to, stat, key }: {
+export declare function pipe({ from, to, stat, key }: {
   from: Fs;
   to: Fs;
   key: string;
   stat: FileStat;
 }): Promise<string | undefined>;
-declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promise<Binary | ReadableStream<Binary> | undefined>;
-declare function writeWithValue(fs: Fs, key: string, value: Binary | ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
+export declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promise<Binary | ReadableStream<Binary> | undefined>;
+export declare function writeWithValue(fs: Fs, key: string, value: Binary | ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
 //#endregion
 //#region src/sdk/index.d.ts
-declare function digOriginal(wrapped: Fs): RootFs;
-type SelectFromContext<O extends object> = Context extends O ? O : never;
+export declare function digOriginal(wrapped: Fs): RootFs;
+export type SelectFromContext<O extends object> = Context extends O ? O : never;
 //#endregion
-export { type AddRecord, type AugmentedModuleMeta, type BaseTask, type BatchOptimizer, type Binary, type CallableOrObjectTree, type CheckConnectionResult, type ConflictResolver, type ConflictResolverEntry, type ConflictResolverPayload, type Context, type CreateLocalDir, type CreateRemoteDir, type CustomAtom, type DatabaseAsync, type DatabaseSync, type Decider, type DeciderEntry, type DeciderInput, type DeleteAtom, type Dispatch, type Download, type Events, type ExistingMemoryDB, type FileStat, type FolderStat, type Fragment, type Fs, type FsWrapperEntry, type InputAtom, type LabelDefinition, type ListReporter, type LocalRequestMiddlewareEntry, type MaybePromise, type MkdirAtom, type ModuleMeta, type MoveAtom, type MoveLocal, type MoveRemote, type ObsidianLanguageCode, type On, type OptimizerEntry, type OptimizerInput, type OptimizerOutput, type OutputAtom, type Progress, type RecordStat, type RecordStatsMap, type RecordStore, type RemoteFsEntry, type RemoteLister, type RemoteListerEntry, type RemoteRequestMiddlewareEntry, type RemoveLocal, type RemoveRecord, type RemoveRemote, type Request, type RequestParam, type RequestResponse, type ResolveConflict, type RootFs, SelectFromContext, type SettingEntry, type Settings, type Stat, type StatsMap, type StoreAsync, type StoreOperations, type StoreSync, type SyncTerminateReason, type TaskFactory, type TaskNames, type Translate, type TranslationResource, type Translations, type Upload, type VaultRequest, type WrappedFs, type WriteAtom, chunkSize, concurrency, digOriginal, generateEditableList, pipe, prefixWrapper, reactivelyValidate, readWithSize, s, setNeedMigration, writeWithValue };
+export { type AddRecord, type AugmentedModuleMeta, type BaseTask, type BatchOptimizer, type Binary, type CallableOrObjectTree, type CheckConnectionResult, type ConflictResolver, type ConflictResolverEntry, type ConflictResolverPayload, type Context, type CreateLocalDir, type CreateRemoteDir, type CustomAtom, type DatabaseAsync, type DatabaseSync, type Decider, type DeciderEntry, type DeciderInput, type DeleteAtom, type Dispatch, type Download, type Events, type ExistingMemoryDB, type FileStat, type FolderStat, type Fragment, type Fs, type FsWrapperEntry, type InputAtom, type LabelDefinition, type ListReporter, type LocalRequestMiddlewareEntry, type MaybePromise, type MkdirAtom, type ModuleMeta, type MoveAtom, type MoveLocal, type MoveRemote, type ObsidianLanguageCode, type On, type OptimizerEntry, type OptimizerInput, type OptimizerOutput, type OutputAtom, type Progress, type RecordStat, type RecordStatsMap, type RecordStore, type RemoteFsEntry, type RemoteLister, type RemoteListerEntry, type RemoteRequestMiddlewareEntry, type RemoveLocal, type RemoveRecord, type RemoveRemote, type Request, type RequestParam, type RequestResponse, type ResolveConflict, type RootFs, type SettingEntry, type Settings, type Stat, type StatsMap, type StoreAsync, type StoreOperations, type StoreSync, type SyncTerminateReason, type TaskFactory, type TaskNames, type Translate, type TranslationResource, type Translations, type Upload, type VaultRequest, type WrappedFs, type WriteAtom, chunkSize, concurrency, prefixWrapper, setNeedMigration };
