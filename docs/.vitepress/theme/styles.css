@@ -14,10 +14,6 @@ html.dark {
 	--vp-c-brand-soft: #a661ff20 !important;
 }
 
-.vp-doc hr {
-	background-color: var(--vp-c-divider) !important;
-}
-
 .canvas-viewer {
 	width: 100%;
 	aspect-ratio: 16 / 9;

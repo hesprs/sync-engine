@@ -8,7 +8,7 @@ type ModuleMeta = Partial<Record<'name' | 'icon' | 'description' | 'source' | 'v
 type ModuleMetaWithId = ModuleMeta & {
   id: string;
 };
-declare function syncEngineModule(meta?: ModuleMeta | Array<ModuleMetaWithId> | Record<string, ModuleMeta>): {
+export default function syncEngineModule(meta?: ModuleMeta | Array<ModuleMetaWithId> | Record<string, ModuleMeta>): {
   name: string;
   renderChunk(code: string, chunk: {
     name: string;
@@ -19,4 +19,3 @@ declare function syncEngineModule(meta?: ModuleMeta | Array<ModuleMetaWithId> | 
   tsdownConfig(config: SyncEngineConfig): void;
 };
 //#endregion
-export { syncEngineModule as default };
