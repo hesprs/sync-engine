@@ -2,7 +2,7 @@ import type { Context, Events, Settings } from '@';
 import type { DatabaseSync } from 'uni-kv';
 import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
 import type { ModuleCtor } from '@/modules/Extensibility';
-import type { Fragment, Translate } from '@/modules/I18n';
+import type { Fragment, Snippet, Translate } from '@/modules/I18n';
 import type {
 	CheckConnectionResult,
 	ConflictResolverEntry,
@@ -33,7 +33,7 @@ export type HeadSettingTranslations = {
 	checkConnection: string;
 	conflictResolveStrategy: string;
 	conflictResolveStrategyDescription: string;
-	xEnabled: string;
+	xEnabled: Snippet<number>;
 	settingTips: Fragment<{ labels: Array<LabelDefinition>; addLabel: typeof addLabel }>;
 };
 
@@ -130,7 +130,7 @@ export default function headSettings(
 		})),
 		30: s(() => ({
 			desc: translate('moduleManagementDescription'),
-			displayValue: translate('xEnabled', { x: loadedModules.size }),
+			displayValue: translate('xEnabled', loadedModules.size),
 			name: translate('moduleManagement'),
 			page: () => new ModuleManagement(ctx as Context),
 			type: 'page',

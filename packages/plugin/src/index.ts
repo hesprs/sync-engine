@@ -16,7 +16,7 @@ import Scheduler from '@/modules/Scheduler';
 import Setting from '@/modules/Setting';
 import Storage from '@/modules/Storage';
 import Sync from '@/modules/Sync';
-import { normalizeGlob } from './utils/glob-match';
+import { normalizeGlob } from '@/utils/glob-match';
 
 const internalModules = [
 	EventBus,

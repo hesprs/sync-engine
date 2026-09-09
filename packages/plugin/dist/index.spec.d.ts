@@ -74,12 +74,13 @@ declare class EventBus {
 //#endregion
 //#region src/modules/I18n.d.ts
 type ObsidianLanguageCode = 'en' | 'af' | 'am' | 'ar' | 'az' | 'be' | 'bg' | 'bn' | 'ca' | 'cs' | 'da' | 'de' | 'dv' | 'el' | 'en-GB' | 'eo' | 'es' | 'eu' | 'fa' | 'fi' | 'fr' | 'ga' | 'gl' | 'he' | 'hi' | 'hr' | 'hu' | 'id' | 'it' | 'ja' | 'ka' | 'kh' | 'kn' | 'ko' | 'ky' | 'la' | 'lt' | 'lv' | 'ml' | 'ms' | 'nan-TW' | 'ne' | 'nl' | 'nn' | 'no' | 'oc' | 'or' | 'pl' | 'pt' | 'pt-BR' | 'ro' | 'ru' | 'sa' | 'si' | 'sk' | 'sl' | 'sq' | 'sr' | 'sv' | 'sw' | 'ta' | 'te' | 'th' | 'tl' | 'tr' | 'tt' | 'uk' | 'ur' | 'uz' | 'vi' | 'zh' | 'zh-TW';
-type Primitive = string | number | boolean | null | undefined;
-type Fragment<A = undefined> = (frag: DocumentFragment, args: A) => void;
-type TranslationResource = Record<string, string | Fragment<General$1>>;
-type InterpolationValues = Record<string, Primitive>;
-type TranslateParams<R extends Fragment<General$1> | string> = R extends Fragment<infer A> ? ([undefined] extends [A] ? [] : [A]) : [] | [InterpolationValues];
-type Translate<O extends TranslationResource> = <K extends keyof O>(key: K, ...args: TranslateParams<O[K]>) => O[K] extends string ? string : DocumentFragment;
+type Factory<A = undefined> = (args: A) => DocumentFragment | string;
+type Fragment<A = undefined> = (args: A) => DocumentFragment;
+type Snippet<A = undefined> = (args: A) => string;
+type TranslationTypes = string | Factory<General$1>;
+type TranslationResource = Record<string, TranslationTypes>;
+type TranslateParams<R extends TranslationTypes> = R extends Factory<infer A> ? ([A] extends [undefined] ? [] : [A]) : [];
+type Translate<O extends TranslationResource> = <K extends keyof O>(key: K, ...arg: TranslateParams<O[K]>) => O[K] extends string | Snippet<General$1> ? string : DocumentFragment;
 declare class I18n {
   private readonly targetLangs;
   readonly i18n: {};
@@ -87,7 +88,7 @@ declare class I18n {
   private readonly translate;
   root: {
     registerI18n: (code: ObsidianLanguageCode, resource: TranslationResource) => void;
-    translate: Translate<General$1>;
+    translate: Translate<TranslationResource>;
   };
 }
 //#endregion
@@ -209,7 +210,7 @@ declare class Observability {
 //#region src/components/file-tree/index.d.ts
 type FileTreeTranslations = {
   selectAll: string;
-  xSelected: string;
+  xSelected: Snippet<number>;
 };
 //#endregion
 //#region src/modules/Extensibility.d.ts
@@ -249,9 +250,9 @@ declare class Extensibility {
     modules: Record<string, object>;
   };
   readonly i18n: {
-    failedToLoadModule: string;
-    failedToDownloadModule: string;
-    failedToFetchSource: string;
+    failedToLoadModule: Snippet<string>;
+    failedToDownloadModule: Snippet<string>;
+    failedToFetchSource: Snippet<string>;
   };
   readonly events: {
     moduleLoaded: string;
@@ -449,7 +450,7 @@ type DevelopmentSettingTranslations = {
   moduleSources: string;
   moduleSourcesDescription: string;
   edit: string;
-  xConfigured: string;
+  xConfigured: Snippet<number>;
   addSource: string;
   noSourceConfigured: string;
   moduleSourcePlaceholder: string;
@@ -507,7 +508,7 @@ type FeaturesSettingTranslations = {
   scheduledSyncPlaceholder: string;
   asymmetricStorage: string;
   asymmetricStorageDescription: Fragment;
-  asymmetricStorageMigration: Fragment<'enable' | 'disable'>;
+  asymmetricStorageMigration: Fragment<boolean>;
 } & MigrationModalTranslations;
 //#endregion
 //#region src/settings/filter.d.ts
@@ -517,7 +518,7 @@ type FilterSettingTranslations = {
   inclusionRulesDescription: Fragment;
   exclusionRules: string;
   exclusionRulesDescription: Fragment;
-  xConfigured: string;
+  xConfigured: Snippet<number>;
   addInclusionRule: string;
   addExclusionRule: string;
   noRuleConfigured: string;
@@ -540,7 +541,7 @@ type HeadSettingTranslations = {
   checkConnection: string;
   conflictResolveStrategy: string;
   conflictResolveStrategyDescription: string;
-  xEnabled: string;
+  xEnabled: Snippet<number>;
   settingTips: Fragment<{
     labels: Array<LabelDefinition>;
     addLabel: typeof addLabel;
@@ -564,7 +565,7 @@ type MiscellaneousSettingTranslations = {
   customHeaders: string;
   customHeadersDescription: string;
   edit: string;
-  xConfigured: string;
+  xConfigured: Snippet<number>;
   addHeader: string;
   noHeaderConfigured: string;
   headerKeyPlaceholder: string;
@@ -731,9 +732,9 @@ declare class ProgressModal extends Modal {
   readonly i18n: {
     syncProgress: string;
     completed: string;
-    failedTasksDescription: string;
-    confirmDeleteDescription: string;
-    confirmTasksDescription: Fragment<TaskCounts>;
+    failedTasksDescription: Snippet<number>;
+    confirmDeleteDescription: Snippet<number>;
+    confirmTasksDescription: Snippet<TaskCounts>;
     hide: string;
     confirm: string;
     cancel: string;
@@ -830,4 +831,4 @@ export declare function writeWithValue(fs: Fs, key: string, value: Binary | Read
 export declare function digOriginal(wrapped: Fs): RootFs;
 export type SelectFromContext<O extends object> = Context extends O ? O : never;
 //#endregion
-export { type AddRecord, type AugmentedModuleMeta, type BaseTask, type BatchOptimizer, type Binary, type CallableOrObjectTree, type CheckConnectionResult, type ConflictResolver, type ConflictResolverEntry, type ConflictResolverPayload, type Context, type CreateLocalDir, type CreateRemoteDir, type CustomAtom, type DatabaseAsync, type DatabaseSync, type Decider, type DeciderEntry, type DeciderInput, type DeleteAtom, type Dispatch, type Download, type Events, type ExistingMemoryDB, type FileStat, type FolderStat, type Fragment, type Fs, type FsWrapperEntry, type InputAtom, type LabelDefinition, type ListReporter, type LocalRequestMiddlewareEntry, type MaybePromise, type MkdirAtom, type ModuleMeta, type MoveAtom, type MoveLocal, type MoveRemote, type ObsidianLanguageCode, type On, type OptimizerEntry, type OptimizerInput, type OptimizerOutput, type OutputAtom, type Progress, type RecordStat, type RecordStatsMap, type RecordStore, type RemoteFsEntry, type RemoteLister, type RemoteListerEntry, type RemoteRequestMiddlewareEntry, type RemoveLocal, type RemoveRecord, type RemoveRemote, type Request, type RequestParam, type RequestResponse, type ResolveConflict, type RootFs, type SettingEntry, type Settings, type Stat, type StatsMap, type StoreAsync, type StoreOperations, type StoreSync, type SyncTerminateReason, type TaskFactory, type TaskNames, type Translate, type TranslationResource, type Translations, type Upload, type VaultRequest, type WrappedFs, type WriteAtom, chunkSize, concurrency, prefixWrapper, setNeedMigration };
+export { type AddRecord, type AugmentedModuleMeta, type BaseTask, type BatchOptimizer, type Binary, type CallableOrObjectTree, type CheckConnectionResult, type ConflictResolver, type ConflictResolverEntry, type ConflictResolverPayload, type Context, type CreateLocalDir, type CreateRemoteDir, type CustomAtom, type DatabaseAsync, type DatabaseSync, type Decider, type DeciderEntry, type DeciderInput, type DeleteAtom, type Dispatch, type Download, type Events, type ExistingMemoryDB, type FileStat, type FolderStat, type Fragment, type Fs, type FsWrapperEntry, type InputAtom, type LabelDefinition, type ListReporter, type LocalRequestMiddlewareEntry, type MaybePromise, type MkdirAtom, type ModuleMeta, type MoveAtom, type MoveLocal, type MoveRemote, type ObsidianLanguageCode, type On, type OptimizerEntry, type OptimizerInput, type OptimizerOutput, type OutputAtom, type Progress, type RecordStat, type RecordStatsMap, type RecordStore, type RemoteFsEntry, type RemoteLister, type RemoteListerEntry, type RemoteRequestMiddlewareEntry, type RemoveLocal, type RemoveRecord, type RemoveRemote, type Request, type RequestParam, type RequestResponse, type ResolveConflict, type RootFs, type SettingEntry, type Settings, type Snippet, type Stat, type StatsMap, type StoreAsync, type StoreOperations, type StoreSync, type SyncTerminateReason, type TaskFactory, type TaskNames, type Translate, type TranslationResource, type Translations, type Upload, type VaultRequest, type WrappedFs, type WriteAtom, chunkSize, concurrency, prefixWrapper, setNeedMigration };

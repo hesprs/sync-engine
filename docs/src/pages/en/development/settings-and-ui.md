@@ -268,26 +268,27 @@ Sync Engine merges translation resources from all loaded modules. Register resou
 import type { ObsidianLanguageCode, Translate, TranslationResource } from '@hesprs/sync-engine-sdk';
 
 const messages = {
-  connected: 'Connected to {{backend}}.',
-  files: (frag: DocumentFragment, { succeeded, failed }: { succeeded: number; failed: number }) => {
-    frag.createEl('p', { text: 'Files synchronized:' });
-    const list = frag.createEl('ul');
-    list.createEl('li', { text: `${succeeded} succeeded` });
-    if (failed) list.createEl('li', { text: `${failed} failed` });
-  },
+  connected: (backend: string) => `Connected to ${backend}.`,
+  files: ({ failed, succeeded }: { failed: number; succeeded: number }) =>
+    createFragment((frag) => {
+      frag.createEl('p', { text: 'Files synchronized:' });
+      const list = frag.createEl('ul');
+      list.createEl('li', { text: `${succeeded} succeeded` });
+      if (failed) list.createEl('li', { text: `${failed} failed` });
+    }),
 } satisfies TranslationResource;
 
 const language: ObsidianLanguageCode = 'en';
 ctx.registerI18n(language, messages);
 
 const translate: Translate<typeof messages> = ctx.translate;
-const label = translate('connected', { backend: 'WebDAV' });
+const label = translate('connected', 'WebDAV');
 const summary = translate('files', { succeeded: 3, failed: 0 });
 ```
 
-String resources return strings and support `{{name}}` interpolation. Fragment resources receive a `DocumentFragment` and typed arguments, then return a `DocumentFragment` from `translate()`. Use Obsidian DOM helpers such as `createEl()`, `createSpan()`, `createDiv()`, and `appendText()` when building fragments.
+Plain strings are returned as is. Values are supplied by snippet resources: functions that receive typed arguments and return the final string. For rich content, fragment resources are functions that receive typed arguments and return a `DocumentFragment`. Build fragments with `createFragment()` (an Obsidian global) and DOM helpers such as `createEl()`, `createDiv()`, and `appendText()`. Use `Intl.PluralRules` inside snippets and fragments when a language needs plural forms.
 
-`ObsidianLanguageCode`, `Fragment`, `TranslationResource`, and `Translate` are SDK exports. The full core English resource map is available in [Sync Engine core English translations](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/en.ts).
+`ObsidianLanguageCode`, `Fragment`, `Snippet`, `TranslationResource`, and `Translate` are SDK exports. The full core English resource map is available in [Sync Engine core English translations](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/en.ts).
 
 Register translations before settings or other UI that uses them. `registerI18n()` returns `void`, so it must not be added to a cleanup callback array.
 

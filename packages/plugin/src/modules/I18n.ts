@@ -1,4 +1,3 @@
-import type { Translations } from '@';
 import { getLanguage } from 'obsidian';
 import type { General } from '@/types';
 
@@ -78,17 +77,20 @@ export type ObsidianLanguageCode =
 	| 'zh-TW';
 
 const DEFAULT_LANGUAGE: ObsidianLanguageCode = 'en';
-type Primitive = string | number | boolean | null | undefined;
-export type Fragment<A = undefined> = (frag: DocumentFragment, args: A) => void;
-export type TranslationResource = Record<string, string | Fragment<General>>;
-export type InterpolationValues = Record<string, Primitive>;
 
-type TranslateParams<R extends Fragment<General> | string> =
-	R extends Fragment<infer A> ? ([undefined] extends [A] ? [] : [A]) : [] | [InterpolationValues];
+type Factory<A = undefined> = (args: A) => DocumentFragment | string;
+export type Fragment<A = undefined> = (args: A) => DocumentFragment;
+export type Snippet<A = undefined> = (args: A) => string;
+
+type TranslationTypes = string | Factory<General>;
+export type TranslationResource = Record<string, TranslationTypes>;
+
+type TranslateParams<R extends TranslationTypes> =
+	R extends Factory<infer A> ? ([A] extends [undefined] ? [] : [A]) : [];
 export type Translate<O extends TranslationResource> = <K extends keyof O>(
 	key: K,
-	...args: TranslateParams<O[K]>
-) => O[K] extends string ? string : DocumentFragment;
+	...arg: TranslateParams<O[K]>
+) => O[K] extends string | Snippet<General> ? string : DocumentFragment;
 
 export default class I18n {
 	private readonly targetLangs = new Set<ObsidianLanguageCode>([
@@ -100,31 +102,18 @@ export default class I18n {
 	private readonly registerI18n = (code: ObsidianLanguageCode, resource: TranslationResource) => {
 		if (code === DEFAULT_LANGUAGE && !this.targetLangs.has(DEFAULT_LANGUAGE))
 			for (const [key, value] of Object.entries(resource))
-				(this.i18n as Record<string, string | Fragment>)[key] ??= value;
+				(this.i18n as TranslationResource)[key] ??= value;
 		else if (this.targetLangs.has(code)) Object.assign(this.i18n, resource);
 	};
 
-	private readonly translate = ((key, params) => {
-		const i18n = this.i18n as Translations;
-		const value = i18n[key];
-		if (typeof value === 'string') {
-			if (params) return interpolate(value, params as InterpolationValues);
-			return value;
-		}
-		if (typeof value === 'function')
-			return createFragment((frag) => value(frag, params as never));
-	}) as Translate<Translations>;
+	private readonly translate = ((key: string, arg: unknown) => {
+		const value = (this.i18n as TranslationResource)[key];
+		if (typeof value === 'string') return value;
+		if (typeof value === 'function') return value(arg);
+	}) as Translate<TranslationResource>;
 
 	root = {
 		registerI18n: this.registerI18n,
-		translate: this.translate as Translate<General>,
+		translate: this.translate,
 	};
-}
-
-function interpolate(template: string, params?: InterpolationValues): string {
-	if (params === undefined) return template;
-	return template.replaceAll(/\{\{\s*(?<key>[^{}\s]+)\s*\}\}/gu, (match, key: string) => {
-		const value = params[key];
-		return value === undefined ? match : String(value);
-	});
 }

@@ -32,6 +32,22 @@ test('compacts structural single-child folder chains into visible labels', () =>
 	});
 });
 
+test('depths nested files by visible tree levels, not path segments', () => {
+	const data = createFileTreeData([
+		makeTask({
+			key: 'test-files/Archive/2025/Work/Nested',
+			name: 'removeRemote',
+			remoteIsDir: true,
+		}),
+		makeTask({ key: 'test-files/Archive/2025/Work/Nested/a.md', name: 'upload' }),
+	]);
+
+	const nested = data.nodes['test-files/Archive/2025/Work/Nested'];
+	const file = data.nodes['test-files/Archive/2025/Work/Nested/a.md'];
+	expect(nested.depth).toBe(0);
+	expect(file.depth).toBe(1);
+});
+
 test('orders siblings with folders first then alphabetically', () => {
 	const data = createFileTreeData([
 		makeTask({ key: 'notes.md', name: 'upload' }),

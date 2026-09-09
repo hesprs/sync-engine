@@ -3,7 +3,7 @@ import type { SettingGroupItem } from 'obsidian';
 import type { DatabaseSync } from 'uni-kv';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
 import { Notice } from 'obsidian';
-import type { Translate } from '@/modules/I18n';
+import type { Snippet, Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { General, MaybePromise } from '@/types';
 import { generateEditableList, reactivelyValidate, s } from './utils';
@@ -21,7 +21,7 @@ export type DevelopmentSettingTranslations = {
 	moduleSources: string;
 	moduleSourcesDescription: string;
 	edit: string;
-	xConfigured: string;
+	xConfigured: Snippet<number>;
 	addSource: string;
 	noSourceConfigured: string;
 	moduleSourcePlaceholder: string;
@@ -93,8 +93,7 @@ export default function developmentSettings({
 				3000: s(
 					(self) => ({
 						desc: translate('moduleSourcesDescription'),
-						displayValue: () =>
-							translate('xConfigured', { x: settings.moduleSources.length }),
+						displayValue: () => translate('xConfigured', settings.moduleSources.length),
 						items: Object.values(self).map((node) => node(node)),
 						name: translate('moduleSources'),
 						type: 'page',

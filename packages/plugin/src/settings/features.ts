@@ -23,7 +23,7 @@ export type FeaturesSettingTranslations = {
 	scheduledSyncPlaceholder: string;
 	asymmetricStorage: string;
 	asymmetricStorageDescription: Fragment;
-	asymmetricStorageMigration: Fragment<'enable' | 'disable'>;
+	asymmetricStorageMigration: Fragment<boolean>;
 } & MigrationModalTranslations;
 
 export default function featuresSettings(ctx: {
@@ -113,11 +113,7 @@ export default function featuresSettings(ctx: {
 									settings.asymmetricStorage = value;
 									void saveSettings();
 								},
-								content: (value) =>
-									translate(
-										'asymmetricStorageMigration',
-										value ? 'enable' : 'disable',
-									),
+								content: (value) => translate('asymmetricStorageMigration', value),
 								needMigration: () => recordStoreExists(),
 								toggle: toggle.setValue(settings.asymmetricStorage),
 							}),

@@ -12,7 +12,7 @@ import sha256 from '@/utils/sha-256';
 import toErrorMessage from '@/utils/to-error-message';
 import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
-import type { Translate } from './I18n';
+import type { Snippet, Translate } from './I18n';
 import { VERSION } from './EventBus';
 
 type WindowAugmentation = { syncEngineApiBridge?: typeof obsidian };
@@ -60,9 +60,9 @@ export default class Extensibility {
 		modules: Record<string, object>;
 	};
 	declare readonly i18n: {
-		failedToLoadModule: string;
-		failedToDownloadModule: string;
-		failedToFetchSource: string;
+		failedToLoadModule: Snippet<string>;
+		failedToDownloadModule: Snippet<string>;
+		failedToFetchSource: Snippet<string>;
 	};
 	declare readonly events: {
 		moduleLoaded: string;
@@ -191,7 +191,7 @@ export default class Extensibility {
 			}
 			const message = toErrorMessage(error);
 			dispatch('errorGeneral', `Module \`${id}\` failed to load: ${message}`);
-			new Notice(`${translate('failedToLoadModule', { name })}: ${message}`);
+			new Notice(`${translate('failedToLoadModule', name)}: ${message}`);
 		}
 	};
 
@@ -236,7 +236,7 @@ export default class Extensibility {
 		} catch (error) {
 			const message = toErrorMessage(error);
 			dispatch('errorGeneral', `Failed to download module \`${id}\`: ${message}`);
-			new Notice(`${translate('failedToDownloadModule', { name })}: ${message}`);
+			new Notice(`${translate('failedToDownloadModule', name)}: ${message}`);
 		}
 		if (setBusy) isIdle(true);
 	};
@@ -264,7 +264,7 @@ export default class Extensibility {
 			} catch (error) {
 				const message = toErrorMessage(error);
 				dispatch('errorGeneral', `Failed to fetch source from \`${url}\`: ${message}`);
-				if (manual) new Notice(`${translate('failedToFetchSource', { url })}: ${message}`);
+				if (manual) new Notice(`${translate('failedToFetchSource', url)}: ${message}`);
 				return [];
 			}
 		};

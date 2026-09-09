@@ -22,7 +22,7 @@ export default function renderFailedTasks(
 	failedTasks: Array<FailedTaskInfo>,
 ): void {
 	detailContainer.empty();
-	const tasksContainer = detailContainer.createDiv('w-100% flex flex-col gap-3 p-1.5');
+	const tasksContainer = detailContainer.createDiv('w-100% flex flex-col gap-3');
 	detailContainer.removeClass('hidden');
 	failedTasks.forEach((task) => renderFailedTaskRow(tasksContainer, task));
 }

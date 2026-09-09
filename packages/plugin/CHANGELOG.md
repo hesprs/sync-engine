@@ -2,11 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.1.5 - 2026-09-09
+
+### Core
+
+- Fixed syncing nested files + folders failing intermittently due to race condition in optimization wrapper that makes optimization fail to apply on `write()` calls.
+- Refurbished i18n translation resource implementation and made translations pluralization-aware.
+- Improved file tree display on small screen devices and fixed over-padding of nested nodes whose parent paths are collapsed.
+
+### Google Drive Module
+
+- Fixed interoperability bug with encryption module that causes the base directory name also get encrypted.
+
 ## Sync Engine v3.1.4 - 2026-09-08
 
 ### Core
 
-- Fixed the memory lead caused by loading a module from file via the UI that doesn't unload the existing module.
+- Fixed the memory leak caused by loading a module from file via the UI that doesn't unload the existing module.
 - Optimized memory control algorithm for more accurate memory reservation and larger throughput.
 - Added an option to avoid syncing when the device is offline.
 - Optimized download chunking to decide appropriate sizes according to device hardware.

@@ -4,6 +4,7 @@ import type {
 	Dispatch,
 	Fragment,
 	LabelDefinition,
+	Snippet,
 	Translate,
 	Translations,
 	Events,
@@ -34,7 +35,7 @@ export type GdriveTranslations = {
 	baseDirectoryPlaceholder: string;
 	useTrash: string;
 	useTrashDescription: string;
-	authorizationFailed: string;
+	authorizationFailed: Snippet<string>;
 };
 
 type DeviceCodeModalOptions = {
@@ -142,7 +143,7 @@ export default function gdriveSetting(
 		} catch (error) {
 			if (cancelled) return;
 			const reason = error instanceof Error ? error.message : String(error);
-			new Notice(translate('authorizationFailed', { reason }), 5);
+			new Notice(translate('authorizationFailed', reason), 5);
 			dispatch('errorGeneral', `Google Drive auth failed: \`${reason}\`.`);
 		} finally {
 			resolve();

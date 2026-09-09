@@ -8,38 +8,42 @@ const zhTW: Translations = {
 	addSecretHeader: '新增加密標頭',
 	addSource: '新增來源',
 	asymmetricStorage: '非對稱儲存',
-	asymmetricStorageDescription: (frag) => {
-		frag.appendText('使用');
-		frag.createEl('a', {
-			attr: {
-				href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage',
-			},
-			text: '非對稱儲存',
-		});
-		frag.appendText('來大幅提升同步速度。');
-	},
-	asymmetricStorageMigration: (frag, flag) => {
-		if (flag === 'enable') {
-			frag.createEl('p', { text: '⚠️ 在啟用非對稱儲存前，請務必留意以下幾點：' });
-			const ol = frag.createEl('ol');
-			ol.createEl('li', {
-				text: '遠端儲存將不再保留本地的層級結構。所有檔案都會直接上傳至根目錄，並附上隨機字串標記。',
+	asymmetricStorageDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('使用');
+			frag.createEl('a', {
+				attr: {
+					href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage',
+				},
+				text: '非對稱儲存',
 			});
-			ol.createEl('li', { text: '若您需要讓遠端檔案保持可讀的目錄結構，請勿啟用此功能。' });
-			ol.createEl('li', { text: '啟用後，請確保所有裝置皆已開啟非對稱儲存。' });
-			ol.createEl('li', {
-				text: '若此儲存庫先前未啟用非對稱儲存即進行過上傳，則必須執行遷移。',
-			});
-		} else {
-			frag.createEl('p', { text: '⚠️ 在停用非對稱儲存前，請務必留意以下幾點：' });
-			const ol = frag.createEl('ol');
-			ol.createEl('li', { text: '後續的所有上傳將會還原為本地的層級結構。' });
-			ol.createEl('li', { text: '請確保所有裝置皆已停用非對稱儲存。' });
-			ol.createEl('li', {
-				text: '若此儲存庫先前是在啟用非對稱儲存的狀態下上傳，則必須執行遷移。',
-			});
-		}
-	},
+			frag.appendText('來大幅提升同步速度。');
+		}),
+	asymmetricStorageMigration: (flag) =>
+		createFragment((frag) => {
+			if (flag) {
+				frag.createEl('p', { text: '在啟用非對稱儲存前，請務必留意以下幾點：' });
+				const ol = frag.createEl('ol');
+				ol.createEl('li', {
+					text: '遠端儲存將不再保留本地的層級結構。所有檔案都會直接上傳至根目錄，並附上隨機字串標記。',
+				});
+				ol.createEl('li', {
+					text: '若您需要讓遠端檔案保持可讀的目錄結構，請勿啟用此功能。',
+				});
+				ol.createEl('li', { text: '啟用後，請確保所有裝置皆已開啟非對稱儲存。' });
+				ol.createEl('li', {
+					text: '若此儲存庫先前未啟用非對稱儲存即進行過上傳，則必須執行遷移。',
+				});
+			} else {
+				frag.createEl('p', { text: '在停用非對稱儲存前，請務必留意以下幾點：' });
+				const ol = frag.createEl('ol');
+				ol.createEl('li', { text: '後續的所有上傳將會還原為本地的層級結構。' });
+				ol.createEl('li', { text: '請確保所有裝置皆已停用非對稱儲存。' });
+				ol.createEl('li', {
+					text: '若此儲存庫先前是在啟用非對稱儲存的狀態下上傳，則必須執行遷移。',
+				});
+			}
+		}),
 	avoidAutoSyncWhenOffline: '離線時避免自動同步',
 	avoidAutoSyncWhenOfflineDescription: '當沒有網路連線時，靜默跳過非手動觸發的同步作業。',
 	awaitingConfirmation: '等待確認',
@@ -60,21 +64,23 @@ const zhTW: Translations = {
 	completedNoop: '已是最新狀態',
 	configure: '設定',
 	confirm: '確認',
-	confirmDeleteDescription: '請確認將被刪除的 {{x}} 個本地檔案，未勾選的檔案將會重新上傳。',
+	confirmDeleteDescription: (count) =>
+		`請確認將被刪除的 ${count} 個本地檔案，未勾選的檔案將會重新上傳。`,
 	confirmDeleteInAutoSync: '自動同步時確認刪除',
 	confirmDeleteInAutoSyncDescription:
 		'在自動同步過程中刪除本地檔案前顯示確認視窗。您可以選擇刪除或重新上傳。',
-	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+	confirmTasksDescription: ({ total, conflict, deleteLocal, deleteRemote }) => {
 		const deleteOr = deleteLocal + deleteRemote !== 0;
-		frag.appendText(`同步總共將執行 ${total} 個操作`);
-		if (deleteOr || conflict !== 0) frag.appendText('，包含');
-		if (deleteOr) frag.appendText('刪除');
-		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 個本地項目`);
-		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' 以及');
-		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 個遠端項目`);
-		if (deleteOr && conflict !== 0) frag.appendText('，並');
-		if (conflict !== 0) frag.appendText(`解決 ${conflict} 個衝突`);
-		frag.appendText('：');
+		let result = `同步總共將執行 ${total} 個操作`;
+		if (deleteOr || conflict !== 0) result += '，包含';
+		if (deleteOr) result += '刪除';
+		if (deleteLocal !== 0) result += ` ${deleteLocal} 個本地項目`;
+		if (deleteLocal !== 0 && deleteRemote !== 0) result += ' 以及';
+		if (deleteRemote !== 0) result += ` ${deleteRemote} 個遠端項目`;
+		if (deleteOr && conflict !== 0) result += '，並';
+		if (conflict !== 0) result += `解決 ${conflict} 個衝突`;
+		result += '：';
+		return result;
 	},
 	confirmTasksInSync: '手動同步時確認操作',
 	confirmTasksInSyncDescription: '顯示待處理的操作，並在您確認後執行（不影響自動同步）。',
@@ -104,20 +110,21 @@ const zhTW: Translations = {
 	enableDescription: '設定是否載入此模組。',
 	enableModule: '啟用模組',
 	exclusionRules: '排除規則',
-	exclusionRulesDescription: (frag) => {
-		frag.appendText(
-			'符合這些 Glob 萬用字元模式的檔案或資料夾將不會進行同步。若要排除特定檔案，請記得加上副檔名（例如 ',
-		);
-		frag.createEl('code', { text: '.md' });
-		frag.appendText('）。請參閱 ');
-		frag.createEl('a', {
-			attr: {
-				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-			},
-			text: '設定文件',
-		});
-		frag.appendText('以瞭解設定指南。');
-	},
+	exclusionRulesDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'符合這些 Glob 萬用字元模式的檔案或資料夾將不會進行同步。若要排除特定檔案，請記得加上副檔名（例如 ',
+			);
+			frag.createEl('code', { text: '.md' });
+			frag.appendText('）。請參閱 ');
+			frag.createEl('a', {
+				attr: {
+					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+				},
+				text: '設定文件',
+			});
+			frag.appendText('以瞭解設定指南。');
+		}),
 	executing: '執行中',
 	export: '匯出',
 	exportLogsDescription: '將外掛程式紀錄匯出至儲存庫中的檔案。請在欄位中設定紀錄匯出目錄。',
@@ -125,10 +132,10 @@ const zhTW: Translations = {
 	exportLogsFailed: '匯出紀錄失敗',
 	exportLogsToFile: '匯出紀錄至檔案',
 	failed: '失敗',
-	failedTasksDescription: '同步過程中有 {{x}} 個任務失敗：',
-	failedToDownloadModule: '下載模組 "{{name}}" 失敗',
-	failedToFetchSource: '無法從 "{{url}}" 取得來源',
-	failedToLoadModule: '載入模組 "{{name}}" 失敗',
+	failedTasksDescription: (count) => `同步過程中有 ${count} 個操作失敗：`,
+	failedToDownloadModule: (name) => `下載模組 "${name}" 失敗`,
+	failedToFetchSource: (url) => `無法從 "${url}" 取得來源`,
+	failedToLoadModule: (name) => `載入模組 "${name}" 失敗`,
 	features: '功能特徵',
 	filterPlaceholder: '例如 temp.md, .trash/**/*',
 	filterRules: '過濾規則',
@@ -136,37 +143,40 @@ const zhTW: Translations = {
 	headerValuePlaceholder: '標頭數值',
 	hide: '隱藏',
 	icon: '圖示',
-	iconDescription: (frag) => {
-		frag.appendText('設定顯示於模組卡片中的圖示，完整圖示清單可參考 ');
-		frag.createEl('a', {
-			attr: { href: 'https://lucide.dev/icons/' },
-			text: 'Lucide Icons 目錄',
-		});
-		frag.appendText('。');
-	},
+	iconDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('設定顯示於模組卡片中的圖示，完整圖示清單可參考 ');
+			frag.createEl('a', {
+				attr: { href: 'https://lucide.dev/icons/' },
+				text: 'Lucide Icons 目錄',
+			});
+			frag.appendText('。');
+		}),
 	iconPlaceholder: '輸入圖示代碼（例如 puzzle）',
 	idle: '待命',
 	inclusionRules: '包含規則',
-	inclusionRulesDescription: (frag) => {
-		frag.appendText(
-			'即使符合排除規則，只要符合這些 Glob 萬用字元模式的檔案或資料夾仍會進行同步。請參閱 ',
-		);
-		frag.createEl('a', {
-			attr: {
-				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-			},
-			text: '設定文件',
-		});
-		frag.appendText('以瞭解設定指南。');
-	},
+	inclusionRulesDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'即使符合排除規則，只要符合這些 Glob 萬用字元模式的檔案或資料夾仍會進行同步。請參閱 ',
+			);
+			frag.createEl('a', {
+				attr: {
+					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+				},
+				text: '設定文件',
+			});
+			frag.appendText('以瞭解設定指南。');
+		}),
 	installModuleFromFile: '從檔案安裝模組',
 	installed: '已安裝',
 	integrityVerification: '完整性驗證',
-	integrityVerificationDescription: (frag) => {
-		frag.appendText('每次載入模組時驗證其雜湊值，');
-		frag.createEl('strong', { text: '保護您免受惡意模組替換攻擊' });
-		frag.appendText('。');
-	},
+	integrityVerificationDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('每次載入模組時驗證其雜湊值，');
+			frag.createEl('strong', { text: '保護您免受惡意模組替換攻擊' });
+			frag.appendText('。');
+		}),
 	keepLocal: '保留本地',
 	keepRemote: '保留遠端',
 	latestSurvive: '以最新修改為主',
@@ -201,13 +211,14 @@ const zhTW: Translations = {
 	miscellaneous: '雜項設定',
 	moduleAutoUpdate: '自動更新模組',
 	moduleAutoUpdateDescription: '自動從模組來源更新已安裝的模組。',
-	moduleExtensionWarning: (frag) => {
-		frag.appendText('無效的模組：檔案副檔名必須為 ');
-		frag.createEl('code', { text: '.js' });
-		frag.appendText(' 或 ');
-		frag.createEl('code', { text: '.mjs' });
-		frag.appendText('。');
-	},
+	moduleExtensionWarning: () =>
+		createFragment((frag) => {
+			frag.appendText('無效的模組：檔案副檔名必須為 ');
+			frag.createEl('code', { text: '.js' });
+			frag.appendText(' 或 ');
+			frag.createEl('code', { text: '.mjs' });
+			frag.appendText('。');
+		}),
 	moduleManagement: '模組管理',
 	moduleManagementDescription:
 		'在專屬面板中管理模組。您可以進行安裝、卸載、更新、啟用、停用、編輯模組或編輯模組來源。',
@@ -253,21 +264,22 @@ const zhTW: Translations = {
 	scheduledSyncPlaceholder: '輸入間隔時間（例如 10min, 0.5h）',
 	searchModules: '搜尋模組',
 	selectAll: '全選',
-	settingTips: (frag, { labels, addLabel }) => {
-		const p = frag.createEl('p', { text: '感謝您選擇 Sync Engine！請參閱 ' });
-		p.createEl('a', {
-			attr: { href: 'https://sync.consensia.cc/usage/settings' },
-			text: '文件',
-		});
-		p.appendText('以瞭解各項設定的詳細說明。設定標籤：');
-		const ul = frag.createEl('ul', 'list-none ps-0!');
-		for (const label of labels) {
-			const li = ul.createEl('li');
-			const flair = addLabel(li, label);
-			flair.addClass('m-0');
-			li.appendText(` ${flair.ariaLabel}`);
-		}
-	},
+	settingTips: ({ labels, addLabel }) =>
+		createFragment((frag) => {
+			const p = frag.createEl('p', { text: '感謝您選擇 Sync Engine！請參閱 ' });
+			p.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/settings' },
+				text: '文件',
+			});
+			p.appendText('以瞭解各項設定的詳細說明。設定標籤：');
+			const ul = frag.createEl('ul', 'list-none ps-0!');
+			for (const label of labels) {
+				const li = ul.createEl('li');
+				const flair = addLabel(li, label);
+				flair.addClass('m-0');
+				li.appendText(` ${flair.ariaLabel}`);
+			}
+		}),
 	showInstalledOnly: '僅顯示已安裝',
 	showProgress: '顯示進度',
 	skip: '跳過',
@@ -288,42 +300,43 @@ const zhTW: Translations = {
 	syncStrategyDescription: '選擇用來處理檔案變更的同步策略。更多策略可透過模組提供。',
 	toggleWithoutMigration: '直接切換（不執行遷移）',
 	unknownModule: '未知模組',
-	unknownModuleDescription: (frag, { fileName, size, path, mtime, ctime }) => {
-		const p1 = frag.createEl('p');
-		p1.appendText('Sync Engine 在模組目錄中偵測到名為 ');
-		p1.createEl('code', { text: fileName });
-		p1.appendText(
-			' 的已安裝模組。此模組既未在 Sync Engine 模組面板中安裝，也未在任何地方註冊以豁免來源驗證。',
-		);
-		p1.createEl('strong', { text: '在繼續操作前，請仔細核對以下資訊：' });
-		const ul = frag
-			.createDiv(
-				'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
-			)
-			.createEl('ul');
-		const li1 = ul.createEl('li');
-		li1.appendText('檔案名稱：');
-		li1.createEl('code', { text: fileName });
-		const li2 = ul.createEl('li');
-		li2.appendText('檔案路徑：');
-		li2.createEl('code', { text: path });
-		const li3 = ul.createEl('li');
-		li3.appendText('檔案大小：');
-		li3.createEl('code', { text: size });
-		const li4 = ul.createEl('li');
-		li4.appendText('建立時間：');
-		li4.createEl('code', { text: ctime });
-		const li5 = ul.createEl('li');
-		li5.appendText('修改時間：');
-		li5.createEl('code', { text: mtime });
-		const p2 = frag.createEl('p');
-		p2.createEl('strong', {
-			text: '請避免載入來源不明的模組，這可能是惡意攻擊。',
-		});
-		p2.appendText(
-			' 若您不清楚其來源，直接刪除是最好的做法。若此模組是由您掌控且為預期行為，您可以選擇「設定」並將其啟用。',
-		);
-	},
+	unknownModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p');
+			p1.appendText('Sync Engine 在模組目錄中偵測到名為 ');
+			p1.createEl('code', { text: fileName });
+			p1.appendText(
+				' 的已安裝模組。此模組既未在 Sync Engine 模組面板中安裝，也未在任何地方註冊以豁免來源驗證。',
+			);
+			p1.createEl('strong', { text: '在繼續操作前，請仔細核對以下資訊：' });
+			const ul = frag
+				.createDiv(
+					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
+				)
+				.createEl('ul');
+			const li1 = ul.createEl('li');
+			li1.appendText('檔案名稱：');
+			li1.createEl('code', { text: fileName });
+			const li2 = ul.createEl('li');
+			li2.appendText('檔案路徑：');
+			li2.createEl('code', { text: path });
+			const li3 = ul.createEl('li');
+			li3.appendText('檔案大小：');
+			li3.createEl('code', { text: size });
+			const li4 = ul.createEl('li');
+			li4.appendText('建立時間：');
+			li4.createEl('code', { text: ctime });
+			const li5 = ul.createEl('li');
+			li5.appendText('修改時間：');
+			li5.createEl('code', { text: mtime });
+			const p2 = frag.createEl('p');
+			p2.createEl('strong', {
+				text: '請避免載入來源不明的模組，這可能是惡意攻擊。',
+			});
+			p2.appendText(
+				' 若您不清楚其來源，直接刪除是最好的做法。若此模組是由您掌控且為預期行為，您可以選擇「設定」並將其啟用。',
+			);
+		}),
 	update: '更新',
 	updateAvailable: '有可用更新',
 	updateDescription: '設定模組是否可接收更新。請於欄位中修改取得更新的來源；來源留空表示不更新。',
@@ -331,9 +344,9 @@ const zhTW: Translations = {
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: '上傳',
 	walkingRemote: '正在掃描遠端檔案',
-	xConfigured: '已設定 {{x}} 項',
-	xEnabled: '已啟用 {{x}} 個模組',
-	xSelected: '（已選擇 {{x}} 項）',
+	xConfigured: (count) => `已設定 ${count} 項`,
+	xEnabled: (count) => `已啟用 ${count} 個模組`,
+	xSelected: (count) => `（已選擇 ${count} 項）`,
 };
 
 export default zhTW;
