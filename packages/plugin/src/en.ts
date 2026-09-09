@@ -1,5 +1,12 @@
 import type { Translations } from '@';
 
+const p = (count: number, singular: string, plural: string) => (count === 1 ? singular : plural);
+const pc = (count: number, singular: string, plural: string) =>
+	`${count} ${p(count, singular, plural)}`;
+
+const pItem = (count: number) => p(count, 'item', 'items');
+const pcOperations = (count: number) => pc(count, 'operation', 'operations');
+
 const en: Translations = {
 	addExclusionRule: 'Add exclusion rule',
 	addHeader: 'Add header',
@@ -8,48 +15,50 @@ const en: Translations = {
 	addSecretHeader: 'Add secret header',
 	addSource: 'Add source',
 	asymmetricStorage: 'Asymmetric storage',
-	asymmetricStorageDescription: (frag) => {
-		frag.appendText('Use ');
-		frag.createEl('a', {
-			attr: { href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage' },
-			text: 'asymmetric storage',
-		});
-		frag.appendText(' to substantially accelerate syncing.');
-	},
-	asymmetricStorageMigration: (frag, flag) => {
-		if (flag === 'enable') {
-			frag.createEl('p', {
-				text: '⚠️ You should be cautious about following points before enabling asymmetric storage:',
+	asymmetricStorageDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('Use ');
+			frag.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage' },
+				text: 'asymmetric storage',
 			});
-			const ol = frag.createEl('ol');
-			ol.createEl('li', {
-				text: 'Remote storage will no longer mirror local hierarchical structure. All files will be uploaded flatly to the base directory with random string anchors appended.',
-			});
-			ol.createEl('li', {
-				text: "If you need the remote to remain readable by humans, please don't enable this feature.",
-			});
-			ol.createEl('li', {
-				text: 'After enabling, please ensure all devices have asymmetric storage enabled.',
-			});
-			ol.createEl('li', {
-				text: 'Migration is necessary if this vault was previously uploaded without asymmetric storage.',
-			});
-		} else {
-			frag.createEl('p', {
-				text: '⚠️ You should be cautious about following points before disabling asymmetric storage:',
-			});
-			const ol = frag.createEl('ol');
-			ol.createEl('li', {
-				text: 'All subsequent uploads will mirror local hierarchical structure.',
-			});
-			ol.createEl('li', {
-				text: 'Please ensure all devices have asymmetric storage disabled.',
-			});
-			ol.createEl('li', {
-				text: 'Migration is necessary if this vault was previously uploaded with asymmetric storage enabled.',
-			});
-		}
-	},
+			frag.appendText(' to substantially accelerate syncing.');
+		}),
+	asymmetricStorageMigration: (enable) =>
+		createFragment((frag) => {
+			if (enable) {
+				frag.createEl('p', {
+					text: 'You should be cautious about following points before enabling asymmetric storage:',
+				});
+				const ol = frag.createEl('ol');
+				ol.createEl('li', {
+					text: 'Remote storage will no longer mirror local hierarchical structure. All files will be uploaded flatly to the base directory with random string anchors appended.',
+				});
+				ol.createEl('li', {
+					text: "If you need the remote to remain readable by humans, please don't enable this feature.",
+				});
+				ol.createEl('li', {
+					text: 'After enabling, please ensure all devices have asymmetric storage enabled.',
+				});
+				ol.createEl('li', {
+					text: 'Migration is necessary if this vault was previously uploaded without asymmetric storage.',
+				});
+			} else {
+				frag.createEl('p', {
+					text: 'You should be cautious about following points before disabling asymmetric storage:',
+				});
+				const ol = frag.createEl('ol');
+				ol.createEl('li', {
+					text: 'All subsequent uploads will mirror local hierarchical structure.',
+				});
+				ol.createEl('li', {
+					text: 'Please ensure all devices have asymmetric storage disabled.',
+				});
+				ol.createEl('li', {
+					text: 'Migration is necessary if this vault was previously uploaded with asymmetric storage enabled.',
+				});
+			}
+		}),
 	avoidAutoSyncWhenOffline: 'Avoid auto sync when offline',
 	avoidAutoSyncWhenOfflineDescription:
 		"Silently skip non-manual sync runs when there's no internet connection.",
@@ -71,22 +80,23 @@ const en: Translations = {
 	completedNoop: 'Already synced',
 	configure: 'Configure',
 	confirm: 'Confirm',
-	confirmDeleteDescription:
-		'Please confirm the {{x}} local files that will be deleted, unselected files will be re-uploaded.',
+	confirmDeleteDescription: (count) =>
+		`Please confirm the ${count} local ${pItem(count)} that will be deleted; unselected items will be re-uploaded.`,
 	confirmDeleteInAutoSync: 'Confirm deletions during auto-sync',
 	confirmDeleteInAutoSyncDescription:
 		'Show a confirmation of local files that will be deleted during auto-triggered syncs. You can choose to delete or re-upload them.',
-	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+	confirmTasksDescription: ({ total, conflict, deleteLocal, deleteRemote }) => {
 		const deleteOr = deleteLocal + deleteRemote !== 0;
-		frag.appendText(`Sync will execute ${total} operation(s) in total`);
-		if (deleteOr || conflict !== 0) frag.appendText('. Including');
-		if (deleteOr) frag.appendText(' deleting');
-		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} local item(s)`);
-		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' plus');
-		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} remote item(s)`);
-		if (deleteOr && conflict !== 0) frag.appendText(', and');
-		if (conflict !== 0) frag.appendText(` resolving ${conflict} conflict(s)`);
-		frag.appendText(':');
+		let result = `Sync will execute ${pcOperations(total)} in total`;
+		if (deleteOr || conflict !== 0) result += '. Including';
+		if (deleteOr) result += ' deleting';
+		if (deleteLocal !== 0) result += ` ${deleteLocal} local ${pItem(deleteLocal)}`;
+		if (deleteLocal !== 0 && deleteRemote !== 0) result += ' plus';
+		if (deleteRemote !== 0) result += ` ${deleteRemote} remote ${pItem(deleteRemote)}`;
+		if (deleteOr && conflict !== 0) result += ', and';
+		if (conflict !== 0) result += ` resolving ${pc(conflict, 'conflict', 'conflicts')}`;
+		result += ':';
+		return result;
 	},
 	confirmTasksInSync: 'Confirm operations in manual sync',
 	confirmTasksInSyncDescription:
@@ -117,20 +127,21 @@ const en: Translations = {
 	enableDescription: 'Set whether to load this module.',
 	enableModule: 'Enable module',
 	exclusionRules: 'Exclusion rules',
-	exclusionRulesDescription: (frag) => {
-		frag.appendText(
-			'Files / folders matching these Glob patterns will not be synced. Please remember to add file extensions (E.g. ',
-		);
-		frag.createEl('code', { text: '.md' });
-		frag.appendText(') if you want to exclude files. Refer to ');
-		frag.createEl('a', {
-			attr: {
-				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-			},
-			text: 'settings documentation',
-		});
-		frag.appendText(' for configuration guide.');
-	},
+	exclusionRulesDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'Files / folders matching these Glob patterns will not be synced. Please remember to add file extensions (E.g. ',
+			);
+			frag.createEl('code', { text: '.md' });
+			frag.appendText(') if you want to exclude files. Refer to ');
+			frag.createEl('a', {
+				attr: {
+					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+				},
+				text: 'settings documentation',
+			});
+			frag.appendText(' for configuration guide.');
+		}),
 	executing: 'Executing',
 	export: 'Export',
 	exportLogsDescription:
@@ -139,10 +150,10 @@ const en: Translations = {
 	exportLogsFailed: 'Failed to export logs',
 	exportLogsToFile: 'Export logs to file',
 	failed: 'Failed',
-	failedTasksDescription: '{{x}} task(s) failed during sync:',
-	failedToDownloadModule: 'Failed to download module "{{name}}"',
-	failedToFetchSource: 'Failed to fetch source from "{{url}}"',
-	failedToLoadModule: 'Failed to load module "{{name}}"',
+	failedTasksDescription: (count) => `${pcOperations(count)} failed during sync:`,
+	failedToDownloadModule: (name) => `Failed to download module "${name}"`,
+	failedToFetchSource: (url) => `Failed to fetch source from "${url}"`,
+	failedToLoadModule: (name) => `Failed to load module "${name}"`,
 	features: 'Features',
 	filterPlaceholder: 'E.g. temp.md, .trash/**/*',
 	filterRules: 'Filter rules',
@@ -150,41 +161,44 @@ const en: Translations = {
 	headerValuePlaceholder: 'Header value',
 	hide: 'Hide',
 	icon: 'Icon',
-	iconDescription: (frag) => {
-		frag.appendText(
-			'Set the icon to be displayed in the module card, a full list of icons can be found in ',
-		);
-		frag.createEl('a', {
-			attr: { href: 'https://lucide.dev/icons/' },
-			text: 'Lucide Icons catalog',
-		});
-		frag.appendText('.');
-	},
+	iconDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'Set the icon to be displayed in the module card, a full list of icons can be found in ',
+			);
+			frag.createEl('a', {
+				attr: { href: 'https://lucide.dev/icons/' },
+				text: 'Lucide Icons catalog',
+			});
+			frag.appendText('.');
+		}),
 	iconPlaceholder: 'Enter icon code (e.g. puzzle)',
 	idle: 'Idle',
 	inclusionRules: 'Inclusion rules',
-	inclusionRulesDescription: (frag) => {
-		frag.appendText(
-			'Files / folders matching exclusion rules but also matching these glob patterns will still be synced. Refer to ',
-		);
-		frag.createEl('a', {
-			attr: {
-				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-			},
-			text: 'settings documentation',
-		});
-		frag.appendText(' for configuration guide.');
-	},
+	inclusionRulesDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'Files / folders matching exclusion rules but also matching these glob patterns will still be synced. Refer to ',
+			);
+			frag.createEl('a', {
+				attr: {
+					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+				},
+				text: 'settings documentation',
+			});
+			frag.appendText(' for configuration guide.');
+		}),
 	installModuleFromFile: 'Install module from file',
 	installed: 'Installed',
 	integrityVerification: 'Integrity verification',
-	integrityVerificationDescription: (frag) => {
-		frag.appendText('Verify the hash each time the module is loaded, ');
-		frag.createEl('strong', {
-			text: 'protecting you from malicious module replacement attacks',
-		});
-		frag.appendText('.');
-	},
+	integrityVerificationDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('Verify the hash each time the module is loaded, ');
+			frag.createEl('strong', {
+				text: 'protecting you from malicious module replacement attacks',
+			});
+			frag.appendText('.');
+		}),
 	keepLocal: 'Keep local',
 	keepRemote: 'Keep remote',
 	latestSurvive: 'Latest survives',
@@ -219,13 +233,14 @@ const en: Translations = {
 	miscellaneous: 'Miscellaneous',
 	moduleAutoUpdate: 'Auto-update modules',
 	moduleAutoUpdateDescription: 'Automatically update installed modules from module sources.',
-	moduleExtensionWarning: (frag) => {
-		frag.appendText('Invalid module: the file needs to have ');
-		frag.createEl('code', { text: '.js' });
-		frag.appendText(' or ');
-		frag.createEl('code', { text: '.mjs' });
-		frag.appendText(' extension.');
-	},
+	moduleExtensionWarning: () =>
+		createFragment((frag) => {
+			frag.appendText('Invalid module: the file needs to have ');
+			frag.createEl('code', { text: '.js' });
+			frag.appendText(' or ');
+			frag.createEl('code', { text: '.mjs' });
+			frag.appendText(' extension.');
+		}),
 	moduleManagement: 'Module management',
 	moduleManagementDescription:
 		'Manage modules in a dedicated page. You can install, uninstall, update, enable, disable, and edit modules.',
@@ -275,21 +290,26 @@ const en: Translations = {
 	scheduledSyncPlaceholder: 'Enter interval (e.g. 10min, 0.5h)',
 	searchModules: 'Search modules',
 	selectAll: 'Select all',
-	settingTips: (frag, { labels, addLabel }) => {
-		const p = frag.createEl('p', { text: 'Thanks for choosing Sync Engine! Access ' });
-		p.createEl('a', {
-			attr: { href: 'https://sync.consensia.cc/usage/settings' },
-			text: 'the documentation',
-		});
-		p.appendText(' for more detailed explanation of each setting. Labels on settings:');
-		const ul = frag.createEl('ul', 'list-none ps-0!');
-		for (const label of labels) {
-			const li = ul.createEl('li');
-			const flair = addLabel(li, label);
-			flair.addClass('m-0');
-			li.appendText(` ${flair.ariaLabel}`);
-		}
-	},
+	settingTips: ({ labels, addLabel }) =>
+		createFragment((frag) => {
+			const paragraph = frag.createEl('p', {
+				text: 'Thanks for choosing Sync Engine! Access ',
+			});
+			paragraph.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/settings' },
+				text: 'the documentation',
+			});
+			paragraph.appendText(
+				' for more detailed explanation of each setting. Labels on settings:',
+			);
+			const ul = frag.createEl('ul', 'list-none ps-0!');
+			for (const label of labels) {
+				const li = ul.createEl('li');
+				const flair = addLabel(li, label);
+				flair.addClass('m-0');
+				li.appendText(` ${flair.ariaLabel}`);
+			}
+		}),
 	showInstalledOnly: 'Show installed only',
 	showProgress: 'Show progress',
 	skip: 'Skip',
@@ -311,42 +331,45 @@ const en: Translations = {
 		'Select the synchronization strategy to resolve file changes. More strategies can be found in modules.',
 	toggleWithoutMigration: 'Toggle without migration',
 	unknownModule: 'Unknown module',
-	unknownModuleDescription: (frag, { fileName, size, path, mtime, ctime }) => {
-		const p1 = frag.createEl('p');
-		p1.appendText('Sync Engine detected an installed module named ');
-		p1.createEl('code', { text: fileName });
-		p1.appendText(
-			' in its module directory. This module is neither installed in Sync Engine module management page, nor registered anywhere to be exempt from provenance validation. ',
-		);
-		p1.createEl('strong', { text: 'Please review following information before proceeding:' });
-		const ul = frag
-			.createDiv(
-				'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
-			)
-			.createEl('ul');
-		const li1 = ul.createEl('li');
-		li1.appendText('File name: ');
-		li1.createEl('code', { text: fileName });
-		const li2 = ul.createEl('li');
-		li2.appendText('File path: ');
-		li2.createEl('code', { text: path });
-		const li3 = ul.createEl('li');
-		li3.appendText('Size: ');
-		li3.createEl('code', { text: size });
-		const li4 = ul.createEl('li');
-		li4.appendText('Created at: ');
-		li4.createEl('code', { text: ctime });
-		const li5 = ul.createEl('li');
-		li5.appendText('Modified at: ');
-		li5.createEl('code', { text: mtime });
-		const p2 = frag.createEl('p');
-		p2.createEl('strong', {
-			text: 'Please avoid loading modules with unknown sources, as this could be a malicious attack.',
-		});
-		p2.appendText(
-			' If you do not know where does it come from, directly deleting it is the best option. If you control the module and it is intentional, you can choose "Configure" and enable it.',
-		);
-	},
+	unknownModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p');
+			p1.appendText('Sync Engine detected an installed module named ');
+			p1.createEl('code', { text: fileName });
+			p1.appendText(
+				' in its module directory. This module is neither installed in Sync Engine module management page, nor registered anywhere to be exempt from provenance validation. ',
+			);
+			p1.createEl('strong', {
+				text: 'Please review following information before proceeding:',
+			});
+			const ul = frag
+				.createDiv(
+					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
+				)
+				.createEl('ul');
+			const li1 = ul.createEl('li');
+			li1.appendText('File name: ');
+			li1.createEl('code', { text: fileName });
+			const li2 = ul.createEl('li');
+			li2.appendText('File path: ');
+			li2.createEl('code', { text: path });
+			const li3 = ul.createEl('li');
+			li3.appendText('Size: ');
+			li3.createEl('code', { text: size });
+			const li4 = ul.createEl('li');
+			li4.appendText('Created at: ');
+			li4.createEl('code', { text: ctime });
+			const li5 = ul.createEl('li');
+			li5.appendText('Modified at: ');
+			li5.createEl('code', { text: mtime });
+			const p2 = frag.createEl('p');
+			p2.createEl('strong', {
+				text: 'Please avoid loading modules with unknown sources, as this could be a malicious attack.',
+			});
+			p2.appendText(
+				' If you do not know where does it come from, directly deleting it is the best option. If you control the module and it is intentional, you can choose "Configure" and enable it.',
+			);
+		}),
 	update: 'Update',
 	updateAvailable: 'Update available',
 	updateDescription:
@@ -355,9 +378,9 @@ const en: Translations = {
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Upload',
 	walkingRemote: 'Discovering remote files',
-	xConfigured: '{{x}} configured',
-	xEnabled: '{{x}} enabled',
-	xSelected: '({{x}} selected)',
+	xConfigured: (count) => `${count} configured`,
+	xEnabled: (count) => `${count} enabled`,
+	xSelected: (count) => `(${count} selected)`,
 };
 
 export default en;

@@ -2,7 +2,7 @@
 	{
 		"id": "webdav",
 		"name": "WebDAV",
-		"version": "0.1.14",
+		"version": "0.1.15",
 		"description": "WebDAV backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/webdav.js",
@@ -12,59 +12,59 @@
 	{
 		"id": "s3",
 		"name": "S3",
-		"version": "0.1.4",
+		"version": "0.1.5",
 		"description": "S3 and S3-compatible backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/s3.js",
-		"minPluginVersion": "3.1.0",
+		"minPluginVersion": "3.1.5",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/s3"
 	},
 	{
 		"id": "gdrive",
 		"name": "Google Drive",
-		"version": "0.0.5",
+		"version": "0.0.6",
 		"description": "Google Drive backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/gdrive.js",
-		"minPluginVersion": "3.1.0",
+		"minPluginVersion": "3.1.5",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/gdrive"
 	},
 	{
 		"id": "encryption",
 		"name": "Encryption",
-		"version": "0.1.2",
+		"version": "0.1.3",
 		"description": "Client-side encrypt vault files before uploading to backend.",
 		"icon": "key-round",
 		"main": "https://sync.consensia.cc/modules/encryption.js",
-		"minPluginVersion": "3.1.0",
+		"minPluginVersion": "3.1.5",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/encryption"
 	},
 	{
 		"id": "i18n-zh",
 		"name": "I18n 简体中文",
-		"version": "0.0.13",
+		"version": "0.1.0",
 		"description": "Simplified Chinese UI language pack. / 简体中文介面语言包。",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-zh.js",
-		"minPluginVersion": "3.1.3"
+		"minPluginVersion": "3.1.5"
 	},
 	{
 		"id": "i18n-zh-TW",
 		"name": "I18n 繁體中文",
-		"version": "0.0.5",
+		"version": "0.1.0",
 		"description": "Traditional Chinese UI language pack. / 繁體中文介面語言包。",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-zh-TW.js",
-		"minPluginVersion": "3.1.3"
+		"minPluginVersion": "3.1.5"
 	},
 	{
 		"id": "i18n-ru",
 		"name": "I18n Русский",
-		"version": "0.0.5",
+		"version": "0.1.0",
 		"description": "Russian UI language pack. / Пакет русского интерфейса.",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-ru.js",
-		"minPluginVersion": "3.1.3"
+		"minPluginVersion": "3.1.5"
 	},
 	{
 		"id": "smart-merge",

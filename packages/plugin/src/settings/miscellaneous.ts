@@ -2,7 +2,7 @@ import type { Settings } from '@';
 import type { App, SettingGroupItem } from 'obsidian';
 import type { DatabaseSync } from 'uni-kv';
 import { SecretComponent } from 'obsidian';
-import type { Translate } from '@/modules/I18n';
+import type { Snippet, Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { General } from '@/types';
 import { generateEditableList, reactivelyValidate, s } from './utils';
@@ -22,7 +22,7 @@ export type MiscellaneousSettingTranslations = {
 	customHeaders: string;
 	customHeadersDescription: string;
 	edit: string;
-	xConfigured: string;
+	xConfigured: Snippet<number>;
 	addHeader: string;
 	noHeaderConfigured: string;
 	headerKeyPlaceholder: string;
@@ -58,8 +58,7 @@ export default function miscellaneousSettings({
 				1000: s(
 					(self) => ({
 						desc: translate('customHeadersDescription'),
-						displayValue: () =>
-							translate('xConfigured', { x: settings.customHeaders.length }),
+						displayValue: () => translate('xConfigured', settings.customHeaders.length),
 						items: Object.values(self).map((node) => node(node)),
 						name: translate('customHeaders'),
 						type: 'page',

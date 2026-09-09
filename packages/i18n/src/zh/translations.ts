@@ -8,38 +8,40 @@ const zh: Translations = {
 	addSecretHeader: '添加机密请求头',
 	addSource: '添加源',
 	asymmetricStorage: '非对称存储',
-	asymmetricStorageDescription: (frag) => {
-		frag.appendText('使用 ');
-		frag.createEl('a', {
-			attr: {
-				href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage',
-			},
-			text: '非对称存储',
-		});
-		frag.appendText(' 来大幅提升同步速度。');
-	},
-	asymmetricStorageMigration: (frag, flag) => {
-		if (flag === 'enable') {
-			frag.createEl('p', { text: '⚠️ 在启用非对称存储之前，您需要注意以下几点：' });
-			const ol = frag.createEl('ol');
-			ol.createEl('li', {
-				text: '远程存储将不再镜像本地的层级结构。所有文件都将被平铺上传到基目录，并附加随机字符串锚点。',
+	asymmetricStorageDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('使用 ');
+			frag.createEl('a', {
+				attr: {
+					href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage',
+				},
+				text: '非对称存储',
 			});
-			ol.createEl('li', { text: '如果您需要远程端保持人类可读性，请不要启用此功能。' });
-			ol.createEl('li', { text: '启用后，请确保所有设备都已启用非对称存储。' });
-			ol.createEl('li', {
-				text: '如果该库此前在未启用非对称存储的情况下上传过，则必须进行迁移。',
-			});
-		} else {
-			frag.createEl('p', { text: '⚠️ 在禁用非对称存储之前，您需要注意以下几点：' });
-			const ol = frag.createEl('ol');
-			ol.createEl('li', { text: '后续的所有上传都将镜像本地的层级结构。' });
-			ol.createEl('li', { text: '请确保所有设备都已禁用非对称存储。' });
-			ol.createEl('li', {
-				text: '如果该库此前在启用非对称存储的情况下上传过，则必须进行迁移。',
-			});
-		}
-	},
+			frag.appendText(' 来大幅提升同步速度。');
+		}),
+	asymmetricStorageMigration: (flag) =>
+		createFragment((frag) => {
+			if (flag) {
+				frag.createEl('p', { text: '在启用非对称存储之前，您需要注意以下几点：' });
+				const ol = frag.createEl('ol');
+				ol.createEl('li', {
+					text: '远程存储将不再镜像本地的层级结构。所有文件都将被平铺上传到基目录，并附加随机字符串锚点。',
+				});
+				ol.createEl('li', { text: '如果您需要远程端保持人类可读性，请不要启用此功能。' });
+				ol.createEl('li', { text: '启用后，请确保所有设备都已启用非对称存储。' });
+				ol.createEl('li', {
+					text: '如果该库此前在未启用非对称存储的情况下上传过，则必须进行迁移。',
+				});
+			} else {
+				frag.createEl('p', { text: '在禁用非对称存储之前，您需要注意以下几点：' });
+				const ol = frag.createEl('ol');
+				ol.createEl('li', { text: '后续的所有上传都将镜像本地的层级结构。' });
+				ol.createEl('li', { text: '请确保所有设备都已禁用非对称存储。' });
+				ol.createEl('li', {
+					text: '如果该库此前在启用非对称存储的情况下上传过，则必须进行迁移。',
+				});
+			}
+		}),
 	avoidAutoSyncWhenOffline: '离线时避免自动同步',
 	avoidAutoSyncWhenOfflineDescription: '当无网络连接时，静默跳过非手动触发的同步任务。',
 	awaitingConfirmation: '等待确认',
@@ -60,21 +62,23 @@ const zh: Translations = {
 	completedNoop: '已是最新状态',
 	configure: '配置',
 	confirm: '确认',
-	confirmDeleteDescription: '请确认即将被删除的 {{x}} 个本地文件，未选中的文件将被重新上传。',
+	confirmDeleteDescription: (count) =>
+		`请确认即将被删除的 ${count} 个本地文件，未选中的文件将被重新上传。`,
 	confirmDeleteInAutoSync: '自动同步时确认删除',
 	confirmDeleteInAutoSyncDescription:
 		'在自动触发的同步过程中，显示将被删除的本地文件的确认提示。您可以选择删除或重新上传它们。',
-	confirmTasksDescription: (frag, { total, conflict, deleteLocal, deleteRemote }) => {
+	confirmTasksDescription: ({ total, conflict, deleteLocal, deleteRemote }) => {
 		const deleteOr = deleteLocal + deleteRemote !== 0;
-		frag.appendText(`同步将总共执行 ${total} 个操作`);
-		if (deleteOr || conflict !== 0) frag.appendText('。其中包含');
-		if (deleteOr) frag.appendText(' 删除');
-		if (deleteLocal !== 0) frag.appendText(` ${deleteLocal} 个本地项目`);
-		if (deleteLocal !== 0 && deleteRemote !== 0) frag.appendText(' 以及');
-		if (deleteRemote !== 0) frag.appendText(` ${deleteRemote} 个远程项目`);
-		if (deleteOr && conflict !== 0) frag.appendText('，并');
-		if (conflict !== 0) frag.appendText(` 解决 ${conflict} 个冲突`);
-		frag.appendText('：');
+		let result = `同步将总共执行 ${total} 个操作`;
+		if (deleteOr || conflict !== 0) result += '。其中包含';
+		if (deleteOr) result += '删除';
+		if (deleteLocal !== 0) result += ` ${deleteLocal} 个本地项目`;
+		if (deleteLocal !== 0 && deleteRemote !== 0) result += ' 以及';
+		if (deleteRemote !== 0) result += ` ${deleteRemote} 个远程项目`;
+		if (deleteOr && conflict !== 0) result += '，并';
+		if (conflict !== 0) result += ` 解决 ${conflict} 个冲突`;
+		result += '：';
+		return result;
 	},
 	confirmTasksInSync: '手动同步时确认操作',
 	confirmTasksInSyncDescription: '显示待处理的操作并在确认后执行（不影响自动同步）。',
@@ -104,20 +108,21 @@ const zh: Translations = {
 	enableDescription: '设置是否加载此模块。',
 	enableModule: '启用模块',
 	exclusionRules: '排除规则',
-	exclusionRulesDescription: (frag) => {
-		frag.appendText(
-			'匹配这些 Glob 模式的文件 / 文件夹将不会被同步。如果您想排除文件，请记得添加文件扩展名（例如 ',
-		);
-		frag.createEl('code', { text: '.md' });
-		frag.appendText('）。请参阅 ');
-		frag.createEl('a', {
-			attr: {
-				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-			},
-			text: '设置文档',
-		});
-		frag.appendText('了解配置指南。');
-	},
+	exclusionRulesDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'匹配这些 Glob 模式的文件 / 文件夹将不会被同步。如果您想排除文件，请记得添加文件扩展名（例如 ',
+			);
+			frag.createEl('code', { text: '.md' });
+			frag.appendText('）。请参阅 ');
+			frag.createEl('a', {
+				attr: {
+					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+				},
+				text: '设置文档',
+			});
+			frag.appendText('了解配置指南。');
+		}),
 	executing: '正在执行',
 	export: '导出',
 	exportLogsDescription: '将插件日志导出到仓库中的文件。请在输入框中设置日志导出目录。',
@@ -125,10 +130,10 @@ const zh: Translations = {
 	exportLogsFailed: '导出日志失败',
 	exportLogsToFile: '导出日志到文件',
 	failed: '失败',
-	failedTasksDescription: '同步期间有 {{x}} 个任务失败：',
-	failedToDownloadModule: '下载模块 “{{name}}” 失败',
-	failedToFetchSource: '从 “{{url}}” 获取源失败',
-	failedToLoadModule: '加载模块 “{{name}}” 失败',
+	failedTasksDescription: (count) => `同步期间有 ${count} 个操作失败：`,
+	failedToDownloadModule: (name) => `下载模块 “${name}” 失败`,
+	failedToFetchSource: (url) => `从 “${url}” 获取源失败`,
+	failedToLoadModule: (name) => `加载模块 “${name}” 失败`,
 	features: '功能',
 	filterPlaceholder: '例如 temp.md, .trash/**/*',
 	filterRules: '过滤规则',
@@ -136,37 +141,42 @@ const zh: Translations = {
 	headerValuePlaceholder: '请求头值',
 	hide: '隐藏',
 	icon: '图标',
-	iconDescription: (frag) => {
-		frag.appendText('设置在模块卡片中显示的图标，完整图标列表可在 ');
-		frag.createEl('a', {
-			attr: { href: 'https://lucide.dev/icons/' },
-			text: 'Lucide 图标目录',
-		});
-		frag.appendText(' 中找到。');
-	},
+	iconDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('设置在模块卡片中显示的图标，完整图标列表可在 ');
+			frag.createEl('a', {
+				attr: { href: 'https://lucide.dev/icons/' },
+				text: 'Lucide 图标目录',
+			});
+			frag.appendText(' 中找到。');
+		}),
 	iconPlaceholder: '输入图标代码（例如 puzzle）',
 	idle: '空闲',
 	inclusionRules: '包含规则',
-	inclusionRulesDescription: (frag) => {
-		frag.appendText('匹配排除规则但同时也匹配这些 Glob 模式的文件 / 文件夹仍会被同步。请参阅 ');
-		frag.createEl('a', {
-			attr: {
-				href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-			},
-			text: '设置文档',
-		});
-		frag.appendText('了解配置指南。');
-	},
+	inclusionRulesDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'匹配排除规则但同时也匹配这些 Glob 模式的文件 / 文件夹仍会被同步。请参阅 ',
+			);
+			frag.createEl('a', {
+				attr: {
+					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
+				},
+				text: '设置文档',
+			});
+			frag.appendText('了解配置指南。');
+		}),
 	installModuleFromFile: '从文件安装模块',
 	installed: '已安装',
 	integrityVerification: '完整性验证',
-	integrityVerificationDescription: (frag) => {
-		frag.appendText('每次加载模块时验证其哈希值，');
-		frag.createEl('strong', {
-			text: '保护您免受恶意模块替换攻击',
-		});
-		frag.appendText('。');
-	},
+	integrityVerificationDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('每次加载模块时验证其哈希值，');
+			frag.createEl('strong', {
+				text: '保护您免受恶意模块替换攻击',
+			});
+			frag.appendText('。');
+		}),
 	keepLocal: '保留本地',
 	keepRemote: '保留远程',
 	latestSurvive: '保留最新修改',
@@ -201,13 +211,14 @@ const zh: Translations = {
 	miscellaneous: '杂项',
 	moduleAutoUpdate: '自动更新模块',
 	moduleAutoUpdateDescription: '从模块源自动更新已安装的模块。',
-	moduleExtensionWarning: (frag) => {
-		frag.appendText('无效的模块：文件扩展名必须为 ');
-		frag.createEl('code', { text: '.js' });
-		frag.appendText(' 或 ');
-		frag.createEl('code', { text: '.mjs' });
-		frag.appendText('。');
-	},
+	moduleExtensionWarning: () =>
+		createFragment((frag) => {
+			frag.appendText('无效的模块：文件扩展名必须为 ');
+			frag.createEl('code', { text: '.js' });
+			frag.appendText(' 或 ');
+			frag.createEl('code', { text: '.mjs' });
+			frag.appendText('。');
+		}),
 	moduleManagement: '模块管理',
 	moduleManagementDescription:
 		'在专用面板中管理模块。您可以安装、卸载、更新、启用、禁用、编辑模块，或编辑模块源。',
@@ -254,21 +265,22 @@ const zh: Translations = {
 	scheduledSyncPlaceholder: '输入间隔（例如 10min, 0.5h）',
 	searchModules: '搜索模块',
 	selectAll: '全选',
-	settingTips: (frag, { addLabel, labels }) => {
-		const p = frag.createEl('p', { text: '感谢您选择 Sync Engine！访问 ' });
-		p.createEl('a', {
-			attr: { href: 'https://sync.consensia.cc/usage/settings' },
-			text: '文档',
-		});
-		p.appendText('以了解每个设置的详细说明。设置标签：');
-		const ul = frag.createEl('ul', 'list-none ps-0!');
-		for (const label of labels) {
-			const li = ul.createEl('li');
-			const flair = addLabel(li, label);
-			flair.addClass('m-0');
-			li.appendText(` ${flair.ariaLabel}`);
-		}
-	},
+	settingTips: ({ addLabel, labels }) =>
+		createFragment((frag) => {
+			const p = frag.createEl('p', { text: '感谢您选择 Sync Engine！访问 ' });
+			p.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/settings' },
+				text: '文档',
+			});
+			p.appendText('以了解每个设置的详细说明。设置标签：');
+			const ul = frag.createEl('ul', 'list-none ps-0!');
+			for (const label of labels) {
+				const li = ul.createEl('li');
+				const flair = addLabel(li, label);
+				flair.addClass('m-0');
+				li.appendText(` ${flair.ariaLabel}`);
+			}
+		}),
 	showInstalledOnly: '仅显示已安装',
 	showProgress: '显示进度',
 	skip: '跳过',
@@ -288,42 +300,43 @@ const zh: Translations = {
 	syncStrategyDescription: '选择用于解决文件更改的同步策略。更多策略可以在模块中找到。',
 	toggleWithoutMigration: '直接切换（不进行迁移）',
 	unknownModule: '未知模块',
-	unknownModuleDescription: (frag, { fileName, size, path, mtime, ctime }) => {
-		const p1 = frag.createEl('p');
-		p1.appendText('Sync Engine 在其模块目录中检测到一个名为 ');
-		p1.createEl('code', { text: fileName });
-		p1.appendText(
-			' 的已安装模块。该模块既未安装在 Sync Engine 模块面板中，也未在任何地方注册以豁免出处验证。',
-		);
-		p1.createEl('strong', { text: '在继续操作之前，请核对以下信息：' });
-		const ul = frag
-			.createDiv(
-				'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
-			)
-			.createEl('ul');
-		const li1 = ul.createEl('li');
-		li1.appendText('文件名：');
-		li1.createEl('code', { text: fileName });
-		const li2 = ul.createEl('li');
-		li2.appendText('文件路径：');
-		li2.createEl('code', { text: path });
-		const li3 = ul.createEl('li');
-		li3.appendText('大小：');
-		li3.createEl('code', { text: size });
-		const li4 = ul.createEl('li');
-		li4.appendText('创建时间：');
-		li4.createEl('code', { text: ctime });
-		const li5 = ul.createEl('li');
-		li5.appendText('修改时间：');
-		li5.createEl('code', { text: mtime });
-		const p2 = frag.createEl('p');
-		p2.createEl('strong', {
-			text: '请避免加载来源不明的模块，因为这可能是一种恶意攻击。',
-		});
-		p2.appendText(
-			'如果您不知道它来自何处，直接删除是最佳选择。如果您了解该模块且此操作符合预期，您可以选择"配置"并启用它。',
-		);
-	},
+	unknownModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p');
+			p1.appendText('Sync Engine 在其模块目录中检测到一个名为 ');
+			p1.createEl('code', { text: fileName });
+			p1.appendText(
+				' 的已安装模块。该模块既未安装在 Sync Engine 模块面板中，也未在任何地方注册以豁免出处验证。',
+			);
+			p1.createEl('strong', { text: '在继续操作之前，请核对以下信息：' });
+			const ul = frag
+				.createDiv(
+					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
+				)
+				.createEl('ul');
+			const li1 = ul.createEl('li');
+			li1.appendText('文件名：');
+			li1.createEl('code', { text: fileName });
+			const li2 = ul.createEl('li');
+			li2.appendText('文件路径：');
+			li2.createEl('code', { text: path });
+			const li3 = ul.createEl('li');
+			li3.appendText('大小：');
+			li3.createEl('code', { text: size });
+			const li4 = ul.createEl('li');
+			li4.appendText('创建时间：');
+			li4.createEl('code', { text: ctime });
+			const li5 = ul.createEl('li');
+			li5.appendText('修改时间：');
+			li5.createEl('code', { text: mtime });
+			const p2 = frag.createEl('p');
+			p2.createEl('strong', {
+				text: '请避免加载来源不明的模块，因为这可能是一种恶意攻击。',
+			});
+			p2.appendText(
+				'如果您不知道它来自何处，直接删除是最佳选择。如果您了解该模块且此操作符合预期，您可以选择"配置"并启用它。',
+			);
+		}),
 	update: '更新',
 	updateAvailable: '有可用更新',
 	updateDescription:
@@ -332,9 +345,9 @@ const zh: Translations = {
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: '上传',
 	walkingRemote: '正在探测远程文件',
-	xConfigured: '已配置 {{x}} 项',
-	xEnabled: '已启用 {{x}} 个模块',
-	xSelected: '（已选择 {{x}} 项）',
+	xConfigured: (count) => `已配置 ${count} 项`,
+	xEnabled: (count) => `已启用 ${count} 个模块`,
+	xSelected: (count) => `（已选择 ${count} 项）`,
 };
 
 export default zh;

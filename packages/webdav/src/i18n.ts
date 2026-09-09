@@ -60,7 +60,7 @@ export const ru: WebdavTranslations = {
 	endpointPlaceholder: 'https://example.com/webdav',
 	password: 'Пароль',
 	passwordDescription:
-		'Введите пароль от вашего аккаунта. Пароль хранится в связке ключей Obsidian keychain.',
+		'Введите пароль от вашего аккаунта. Пароль хранится в связке ключей Obsidian.',
 	username: 'Имя пользователя',
 	usernameDescription: 'Введите имя пользователя вашей учётной записи WebDAV.',
 	usernamePlaceholder: 'Введите имя пользователя',

@@ -133,7 +133,7 @@ export default class ModuleManagement extends SettingPage {
 function pickFile(item: MenuItem, handler: (file: File) => MaybePromise<void>) {
 	item.dom.addClass('relative');
 	const input = item.dom.createEl('input', {
-		attr: { accept: '.js,.mjs' },
+		attr: { accept: '.js,.mjs', title: '' },
 		cls: 'absolute top-0 bottom-0 left-0 right-0 opacity-0',
 		type: 'file',
 	});

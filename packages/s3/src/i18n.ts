@@ -26,13 +26,14 @@ export const en: S3Translations = {
 	sessionToken: 'Session token',
 	sessionTokenDescription: 'Configure optional AWS session token, stored in Obsidian keychain.',
 	urlStyle: 'URL style',
-	urlStyleDescription: (frag) => {
-		frag.appendText('Select the URL style for your S3 service. Virtual-hosted style: ');
-		frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
-		frag.appendText('. Path style: ');
-		frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
-		frag.appendText('. Some S3-compatible services require path style.');
-	},
+	urlStyleDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('Select the URL style for your S3 service. Virtual-hosted style: ');
+			frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
+			frag.appendText('. Path style: ');
+			frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
+			frag.appendText('. Some S3-compatible services require path style.');
+		}),
 	urlStylePath: 'Path style',
 	urlStyleVirtualHosted: 'Virtual-hosted',
 };
@@ -63,13 +64,14 @@ export const zh: S3Translations = {
 	sessionToken: 'Session Token',
 	sessionTokenDescription: '配置可选的 AWS 临时会话令牌，存储在 Obsidian 密钥环中。',
 	urlStyle: 'URL 样式',
-	urlStyleDescription: (frag) => {
-		frag.appendText('选择适用于您的 S3 服务的 URL 样式。虚拟主机样式：');
-		frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
-		frag.appendText('。路径样式：');
-		frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
-		frag.appendText('。某些 S3 兼容的服务要求使用路径样式。');
-	},
+	urlStyleDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('选择适用于您的 S3 服务的 URL 样式。虚拟主机样式：');
+			frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
+			frag.appendText('。路径样式：');
+			frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
+			frag.appendText('。某些 S3 兼容的服务要求使用路径样式。');
+		}),
 	urlStylePath: '路径样式（Path）',
 	urlStyleVirtualHosted: '虚拟主机样式（Virtual-hosted）',
 };
@@ -97,18 +99,23 @@ export const ru: S3Translations = {
 	s3: 'S3',
 	secretAccessKey: 'Секретный ключ доступа',
 	secretAccessKeyDescription:
-		'Введите ваш секретный ключ доступа S3. Он хранится в связке ключей Obsidian keychain.',
+		'Введите ваш секретный ключ доступа S3. Он хранится в связке ключей Obsidian.',
 	sessionToken: 'Токен сессии',
 	sessionTokenDescription:
-		'Настройте необязательный токен сессии AWS. Хранится в связке ключей Obsidian keychain.',
+		'Настройте необязательный токен сессии AWS. Хранится в связке ключей Obsidian.',
 	urlStyle: 'Стиль URL',
-	urlStyleDescription: (frag) => {
-		frag.appendText('Выберите стиль URL для вашего сервиса S3. Стиль виртуального хостинга: ');
-		frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
-		frag.appendText('. Путевой стиль: ');
-		frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
-		frag.appendText('. Некоторые S3-совместимые сервисы требуют использования путевого стиля.');
-	},
+	urlStyleDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'Выберите стиль URL для вашего сервиса S3. Стиль виртуального хостинга: ',
+			);
+			frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
+			frag.appendText('. Путевой стиль: ');
+			frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
+			frag.appendText(
+				'. Некоторые S3-совместимые сервисы требуют использования путевого стиля.',
+			);
+		}),
 	urlStylePath: 'Путевой стиль',
 	urlStyleVirtualHosted: 'Стиль виртуального хостинга',
 };
@@ -138,13 +145,14 @@ export const zhTW: S3Translations = {
 	sessionToken: '工作階段權杖',
 	sessionTokenDescription: '設定可選的 AWS 臨時工作階段權杖，儲存於 Obsidian 金鑰圈。',
 	urlStyle: 'URL 樣式',
-	urlStyleDescription: (frag) => {
-		frag.appendText('選擇您 S3 服務的 URL 樣式。虛擬主機樣式：');
-		frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
-		frag.appendText('。路徑樣式：');
-		frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
-		frag.appendText('。某些相容 S3 的服務需要使用路徑樣式。');
-	},
+	urlStyleDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('選擇您 S3 服務的 URL 樣式。虛擬主機樣式：');
+			frag.createEl('code', { text: 'https://bucket.s3.amazonaws.com' });
+			frag.appendText('。路徑樣式：');
+			frag.createEl('code', { text: 'https://s3.amazonaws.com/bucket' });
+			frag.appendText('。某些相容 S3 的服務需要使用路徑樣式。');
+		}),
 	urlStylePath: '路徑樣式',
 	urlStyleVirtualHosted: '虛擬主機樣式',
 };

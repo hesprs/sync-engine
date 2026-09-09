@@ -1,7 +1,7 @@
 import type { Settings } from '@';
 import type { SettingGroupItem } from 'obsidian';
 import type { DatabaseSync } from 'uni-kv';
-import type { Fragment, Translate } from '@/modules/I18n';
+import type { Fragment, Snippet, Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { General, GlobMatchRule } from '@/types';
 import { normalizeGlob } from '@/utils/glob-match';
@@ -14,7 +14,7 @@ export type FilterSettingTranslations = {
 	inclusionRulesDescription: Fragment;
 	exclusionRules: string;
 	exclusionRulesDescription: Fragment;
-	xConfigured: string;
+	xConfigured: Snippet<number>;
 	addInclusionRule: string;
 	addExclusionRule: string;
 	noRuleConfigured: string;
@@ -49,7 +49,7 @@ export default function filterSettings({
 					(self) => ({
 						desc: translate('inclusionRulesDescription'),
 						displayValue: () =>
-							translate('xConfigured', { x: settings.inclusionRules.length }),
+							translate('xConfigured', settings.inclusionRules.length),
 						items: Object.values(self).map((node) => node(node)),
 						labels: [speedLabel()],
 						name: translate('inclusionRules'),
@@ -70,7 +70,7 @@ export default function filterSettings({
 					(self) => ({
 						desc: translate('exclusionRulesDescription'),
 						displayValue: () =>
-							translate('xConfigured', { x: settings.exclusionRules.length }),
+							translate('xConfigured', settings.exclusionRules.length),
 						items: Object.values(self).map((node) => node(node)),
 						labels: [speedLabel()],
 						name: translate('exclusionRules'),

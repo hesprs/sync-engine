@@ -43,10 +43,10 @@
 | Storage              | `RecordStore`, `StoreAsync`, `StoreSync`, `StoreOperations`, `DatabaseAsync`, `DatabaseSync`                                                                                                                                                                                                                 |
 | Modules              | `ModuleMeta`, `AugmentedModuleMeta`                                                                                                                                                                                                                                                                          |
 | Request              | `VaultRequest`, `RequestParam`, `RequestResponse` (the response type returned by `Request`)                                                                                                                                                                                                                  |
-| Internationalization | `ObsidianLanguageCode`, `Fragment`, `TranslationResource`, `Translate`                                                                                                                                                                                                                                       |
+| Internationalization | `ObsidianLanguageCode`, `Fragment`, `Snippet`, `TranslationResource`, `Translate`                                                                                                                                                                                                                            |
 | Other                | `ExistingMemoryDB`                                                                                                                                                                                                                                                                                           |
 
-Internal supporting types can appear in exported signatures but are not standalone root exports. They include `TogglableValue`, `GlobMatchRule`, `Infras`, `BaseTaskOptions`, `TaskOptions`, `TaskOptionsMap`, `TaskInfo`, `FailedTaskInfo`, `DeleteConfirmReturn`, `CustomHeaders`, and `InterpolationValues`.
+Internal supporting types can appear in exported signatures but are not standalone root exports. They include `TogglableValue`, `GlobMatchRule`, `Infras`, `BaseTaskOptions`, `TaskOptions`, `TaskOptionsMap`, `TaskInfo`, `FailedTaskInfo`, `DeleteConfirmReturn`, and `CustomHeaders`.
 
 ## Settings
 

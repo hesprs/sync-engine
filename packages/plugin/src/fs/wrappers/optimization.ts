@@ -23,6 +23,12 @@ type OptimizationCompanionOptions = {
 
 type Omitted<T> = Omit<T, 'resolve' | 'reject'>;
 
+type EarlyWrite = {
+	op: () => MaybePromise<string>;
+	reject: (reason: Error) => void;
+	resolve: (uid: string) => void;
+};
+
 const executeAtom = ({ execute }: OutputAtom) => {
 	const result = execute();
 	if (result instanceof Promise) return result;
@@ -31,12 +37,13 @@ const executeAtom = ({ execute }: OutputAtom) => {
 
 class OptimizationFs implements WrappedFs {
 	private scheduled = false;
-	private readonly writeKeys: Array<string> = [];
+	private readonly writeKeys = new Set<string>();
 	private readonly queue: Array<InputAtom> = [];
 	private readonly pendingWrites = new Map<
 		string,
 		(write: () => MaybePromise<string>) => Promise<string>
 	>();
+	private readonly earlyWrites = new Map<string, EarlyWrite>();
 
 	constructor(
 		readonly original: Fs,
@@ -61,7 +68,7 @@ class OptimizationFs implements WrappedFs {
 		// Terminate the needle and obtain transformed key
 		const { thisPool } = this.options;
 		if (thisPool.has(stat.key)) {
-			this.writeKeys.push(key);
+			this.writeKeys.add(key);
 			thisPool.delete(stat.key);
 			this.scheduleFlush();
 			throw new Error('Terminate key needle.');
@@ -90,15 +97,22 @@ class OptimizationFs implements WrappedFs {
 	}
 
 	write(key: string, value: Binary, stat: FileStat) {
-		const anticipated = this.pendingWrites.get(key);
-		if (anticipated) return anticipated(() => this.original.write(key, value, stat));
-		return this.original.write(key, value, stat);
+		return this.dispatchWrite(key, () => this.original.write(key, value, stat));
 	}
 
 	writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+		return this.dispatchWrite(key, () => this.original.writeStream(key, value, stat));
+	}
+
+	// The opposite side read gating a write can complete before the flush timer fires, a write whose key was already discovered by a needle must be held until the flush registers the anticipated write, keeping it inside the optimized batch.
+	private dispatchWrite(key: string, op: () => MaybePromise<string>) {
 		const anticipated = this.pendingWrites.get(key);
-		if (anticipated) return anticipated(() => this.original.writeStream(key, value, stat));
-		return this.original.writeStream(key, value, stat);
+		if (anticipated) return anticipated(op);
+		if (this.writeKeys.has(key))
+			return new Promise<string>((resolve, reject) => {
+				this.earlyWrites.set(key, { op, reject, resolve });
+			});
+		return op();
 	}
 
 	move(oldKey: string, newKey: string) {
@@ -133,18 +147,21 @@ class OptimizationFs implements WrappedFs {
 	}
 
 	private async flush() {
-		if (this.queue.length + this.writeKeys.length === 1) {
-			const queueItem = this.queue.pop();
-			if (queueItem) await queueItem.execute();
-			this.writeKeys.length = 0;
+		if (this.queue.length + this.writeKeys.size === 1) {
+			await this.queue.pop()?.execute();
+			this.writeKeys.clear();
+			for (const [key, early] of this.earlyWrites) {
+				this.earlyWrites.delete(key);
+				await Promise.resolve(early.op()).then(early.resolve, early.reject);
+			}
 			return;
 		}
-		const writeAtoms = this.writeKeys.splice(0).map((key): WriteAtom => {
+		const writeAtoms = [...this.writeKeys].map((key): WriteAtom => {
 			let result: string | undefined;
 			let anticipatedError: Error | undefined;
 			let rejectInner: ((reason: Error) => void) | undefined;
 			const anticipateWrite = new Promise<() => MaybePromise<string>>((resolve, reject) => {
-				this.pendingWrites.set(key, (write: () => MaybePromise<string>) => {
+				const pendingWrite = (write: () => MaybePromise<string>) => {
 					this.pendingWrites.delete(key);
 					const {
 						execute,
@@ -161,7 +178,13 @@ class OptimizationFs implements WrappedFs {
 						resolve(execute);
 					}
 					return defer;
-				});
+				};
+				this.pendingWrites.set(key, pendingWrite);
+				const early = this.earlyWrites.get(key);
+				if (early) {
+					this.earlyWrites.delete(key);
+					pendingWrite(early.op).then(early.resolve, early.reject);
+				}
 			});
 			return {
 				execute: () => anticipateWrite.then((write) => write()),
@@ -175,6 +198,7 @@ class OptimizationFs implements WrappedFs {
 				type: 'write',
 			};
 		});
+		this.writeKeys.clear();
 		const atoms = [...this.queue.splice(0), ...writeAtoms];
 		const optimizedAtoms = this.options.batchOptimizer({
 			atoms,
@@ -185,7 +209,7 @@ class OptimizationFs implements WrappedFs {
 	}
 }
 
-// Write operation always cannot reach the optimization wrapper before the flush because they need opposite side to read, which yields. Companion wrapper observes reads and dispatches needle reads to the opposite side FS as an anticipation of write, and allows it to obtain ahead-of-time transformed write keys
+// Write operations race the flush timer, since the opposite side read gating them can complete before the timer fires. Companion wrapper observes reads and dispatches needle reads to the opposite side FS as an anticipation of write, and allows it to obtain ahead-of-time transformed write keys. Writes that arrive before the flush are held until it registers the anticipated write.
 class OptimizationCompanionFs implements WrappedFs {
 	constructor(
 		readonly original: Fs,

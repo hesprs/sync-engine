@@ -1,6 +1,6 @@
 import type { JSX } from 'solid-js';
 import { setIcon, setTooltip } from 'obsidian';
-import { createEffect, For } from 'solid-js';
+import { createEffect, For, Show } from 'solid-js';
 import type { Translate } from '@/modules/I18n';
 import type { FileTreeTranslations } from '.';
 import type { FileTreeData } from './types';
@@ -22,9 +22,12 @@ export default function App(props: {
 	};
 
 	return (
-		<div class="flex flex-col gap-1">
-			<div class="flex min-h-7 items-center" onClick={toggleAll}>
-				<div class="mx-1 flex min-w-0 items-center gap-2">
+		<div class="flex flex-col gap-2">
+			<Show when={props.data.taskNodeIds.length > 1}>
+				<div
+					class="flex items-center gap-2 whitespace-nowrap w-fit pr-3"
+					onClick={toggleAll}
+				>
 					<input
 						checked={allSelected()}
 						class="m-0! cursor-pointer accent-[--interactive-accent]"
@@ -36,14 +39,14 @@ export default function App(props: {
 						type="checkbox"
 					/>
 					<div class="h-4 w-4" ref={(element) => setIcon(element, 'folders')} />
-					<div class="min-w-0 break-words text-[--text-normal]">
+					<div class="text-[--text-normal] whitespace-nowrap">
 						{props.translate('selectAll')}
 						<span class="ml-2 color-[--text-muted]">
-							{props.translate('xSelected', { x: selectedCount() })}
+							{props.translate('xSelected', selectedCount())}
 						</span>
 					</div>
 				</div>
-			</div>
+			</Show>
 			<For each={props.data.orderedNodeIds}>
 				{(nodeId) => {
 					const node = props.data.nodes[nodeId];
@@ -52,41 +55,33 @@ export default function App(props: {
 					const isSelected = () => (task ? props.isSelected(nodeId) : false);
 					return (
 						<div
-							class="flex min-h-7 items-center"
+							class="flex w-fit items-center gap-2 pr-3"
+							onClick={() => task && props.toggle(nodeId, !isSelected())}
 							style={{ 'padding-left': `${node.depth * 24}px` }}
 						>
-							<div
-								class="flex min-w-0 items-center gap-2 mx-1"
-								onClick={() => task && props.toggle(nodeId, !isSelected())}
-							>
-								{task ? (
-									<input
-										checked={isSelected()}
-										class="m-0 accent-[--interactive-accent] cursor-pointer"
-										style={{ 'margin-inline-end': '0' }}
-										type="checkbox"
-									/>
-								) : (
-									<div class="m-1 h-2 w-2 flex-shrink-0 rounded-full bg-[--text-muted]" />
-								)}
-								<div
-									class="w-[--icon-size] h-[--icon-size]"
-									ref={(element) => {
-										if (task) {
-											constructTaskIcon(element, task.name, taskIsDir);
-											setTooltip(element, task.prettyName);
-										} else setIcon(element, 'folder-open');
-									}}
+							{task ? (
+								<input
+									checked={isSelected()}
+									class="m-0 accent-[--interactive-accent] cursor-pointer"
+									style={{ 'margin-inline-end': '0' }}
+									type="checkbox"
 								/>
-								<div
-									class={
-										task && !isSelected()
-											? 'min-w-0 break-words text-[--text-muted]'
-											: 'min-w-0 break-words text-[--text-normal]'
-									}
-								>
-									{node.compressedLabel}
-								</div>
+							) : (
+								<div class="m-1 h-2 w-2 flex-shrink-0 rounded-full bg-[--text-muted]" />
+							)}
+							<div
+								class="w-[--icon-size] h-[--icon-size]"
+								ref={(element) => {
+									if (task) {
+										constructTaskIcon(element, task.name, taskIsDir);
+										setTooltip(element, task.prettyName);
+									} else setIcon(element, 'folder-open');
+								}}
+							/>
+							<div
+								class={`whitespace-nowrap ${task && !isSelected() ? 'text-[--text-muted]' : 'text-[--text-normal]'}`}
+							>
+								{node.compressedLabel}
 							</div>
 						</div>
 					);

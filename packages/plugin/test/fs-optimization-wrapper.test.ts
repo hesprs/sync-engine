@@ -180,6 +180,76 @@ test('optimization companion swallows failed discovery reads', async () => {
 	await flush();
 });
 
+test('optimization wrapper holds write arriving before flush until batch registration', async () => {
+	const local = fs();
+	const localPool = new Set(['note.md']);
+	const wrapper = optimizationWrapper(local.fs, {
+		batchOptimizer: ({ atoms }) => atoms,
+		thisPool: localPool,
+	});
+	const stat = file('note.md');
+
+	expect(() => wrapper.read('transformed/note.md', stat)).toThrow('Terminate key needle.');
+
+	const pendingMkdir = wrapper.mkdir('folder/');
+	const pendingWrite = wrapper.write('transformed/note.md', bytes('body'), stat);
+	await flush();
+
+	expect(local.calls.write).toStrictEqual([]);
+
+	await flushOptimization();
+	await Promise.all([pendingMkdir, pendingWrite]);
+
+	expect(local.calls.write).toStrictEqual([['transformed/note.md', bytes('body'), stat]]);
+});
+
+test('optimization wrapper holds writeStream arriving before flush until batch registration', async () => {
+	const local = fs();
+	const localPool = new Set(['stream.md']);
+	const wrapper = optimizationWrapper(local.fs, {
+		batchOptimizer: ({ atoms }) => atoms,
+		thisPool: localPool,
+	});
+	const stat = file('stream.md');
+
+	expect(() => wrapper.read('transformed/stream.md', stat)).toThrow('Terminate key needle.');
+
+	const pendingMkdir = wrapper.mkdir('folder/');
+	const pendingWriteStream = wrapper.writeStream('transformed/stream.md', stream(['body']), stat);
+	await flush();
+
+	expect(local.calls.writeStream).toStrictEqual([]);
+
+	await flushOptimization();
+	await Promise.all([pendingMkdir, pendingWriteStream]);
+
+	expect(local.calls.writeStream).toStrictEqual([['transformed/stream.md', stat]]);
+});
+
+test('optimization wrapper executes held write directly when no batch forms', async () => {
+	const local = fs();
+	const localPool = new Set(['note.md']);
+	const wrapper = optimizationWrapper(local.fs, {
+		batchOptimizer: () => {
+			throw new Error('batch optimizer should not run');
+		},
+		thisPool: localPool,
+	});
+	const stat = file('note.md');
+
+	expect(() => wrapper.read('transformed/note.md', stat)).toThrow('Terminate key needle.');
+
+	const pendingWrite = wrapper.write('transformed/note.md', bytes('body'), stat);
+	await flush();
+
+	expect(local.calls.write).toStrictEqual([]);
+
+	await flushOptimization();
+	await pendingWrite;
+
+	expect(local.calls.write).toStrictEqual([['transformed/note.md', bytes('body'), stat]]);
+});
+
 test('optimization wrapper bypasses batch optimizer for single call', async () => {
 	const remote = fs();
 	const batchOptimizer: BatchOptimizer = () => {

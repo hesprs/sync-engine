@@ -10,7 +10,7 @@ import renderFailedTasks from '@/components/render-failed-tasks';
 import renderProgress from '@/components/render-progress';
 import roundPercent from '@/utils/round-percent';
 import type { Dispatch, On } from './EventBus';
-import type { Fragment, Translate } from './I18n';
+import type { Snippet, Translate } from './I18n';
 import type { SyncStage } from './Observability';
 import type { FailedTaskInfo, TaskInfo } from './Sync';
 
@@ -65,9 +65,7 @@ export default class ProgressModal extends Modal {
 					this.open();
 					this.renderDone();
 				}
-				this.description?.setText(
-					this.t('failedTasksDescription', { x: failedTasks.length }),
-				);
+				this.description?.setText(this.t('failedTasksDescription', failedTasks.length));
 				renderFailedTasks(this.detailContainer as HTMLDivElement, failedTasks);
 				this.showDetails();
 				failedTasks.length = 0;
@@ -84,7 +82,7 @@ export default class ProgressModal extends Modal {
 					this.t,
 				);
 				const cleanupUnmount = this.modalCleanupCallbacks.subscribe(unmount);
-				this.description?.setText(this.t('confirmDeleteDescription', { x: tasks.length }));
+				this.description?.setText(this.t('confirmDeleteDescription', tasks.length));
 				this.showDetails();
 				this.renderConfirmCancel(() => {
 					const { selected, deselected } = getState();
@@ -137,9 +135,9 @@ export default class ProgressModal extends Modal {
 	declare readonly i18n: {
 		syncProgress: string;
 		completed: string;
-		failedTasksDescription: string;
-		confirmDeleteDescription: string;
-		confirmTasksDescription: Fragment<TaskCounts>;
+		failedTasksDescription: Snippet<number>;
+		confirmDeleteDescription: Snippet<number>;
+		confirmTasksDescription: Snippet<TaskCounts>;
 		hide: string;
 		confirm: string;
 		cancel: string;
@@ -270,7 +268,7 @@ export default class ProgressModal extends Modal {
 		const { bar, left, right } = renderProgress(container);
 		this.description = container.createEl('p', 'whitespace-pre-line hidden my-0');
 		this.detailContainer = container.createDiv(
-			'max-h-[50vh] overflow-y-auto rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] p-2 hidden',
+			'max-h-[50vh] overflow-y-auto rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] p-3 hidden',
 		);
 
 		this.modalCleanupCallbacks.subscribe(

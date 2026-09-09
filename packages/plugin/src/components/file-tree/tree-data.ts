@@ -7,7 +7,6 @@ type InternalNode = {
 	id: string;
 	name: string;
 	path: string;
-	depth: number;
 	childIds: Array<string>;
 	task?: BaseTask;
 	isFolderTask: boolean;
@@ -20,7 +19,6 @@ type InternalNode = {
 
 type VisibleEndpoint = {
 	nodeId: string;
-	depth: number;
 	compressedLabel: string;
 };
 
@@ -60,7 +58,6 @@ function createNode(input: {
 	id: string;
 	name: string;
 	path: string;
-	depth: number;
 	task?: BaseTask;
 }): InternalNode {
 	const task = input.task;
@@ -68,7 +65,6 @@ function createNode(input: {
 		ancestorCreateFolderTaskIds: [],
 		ancestorDeleteFolderTaskIds: [],
 		childIds: [],
-		depth: input.depth,
 		id: input.id,
 		isCreateFolderTask: task ? isCreateFolderTask(task) : false,
 		isDeleteFolderTask: task ? isDeleteFolderTask(task) : false,
@@ -100,7 +96,6 @@ function resolveVisibleEndpoint(
 	}
 	return {
 		compressedLabel: labelSegments.join(' / '),
-		depth: nodes[startNodeId].depth,
 		nodeId: current.id,
 	};
 }
@@ -177,12 +172,14 @@ function buildVisibleTree({
 	nodeId,
 	visibleEndpoint,
 	orderedNodeIds,
+	visibleDepth,
 	visibleNodes,
 }: {
 	nodes: Record<string, InternalNode>;
 	nodeId: string;
 	visibleEndpoint: VisibleEndpoint;
 	orderedNodeIds: Array<string>;
+	visibleDepth: number;
 	visibleNodes: Record<string, FileTreeNode>;
 }) {
 	const node = nodes[nodeId];
@@ -192,7 +189,7 @@ function buildVisibleTree({
 		ancestorDeleteFolderTaskIds: node.ancestorDeleteFolderTaskIds,
 		childIds: visibleChildren.map((child) => child.nodeId),
 		compressedLabel: visibleEndpoint.compressedLabel,
-		depth: visibleEndpoint.depth,
+		depth: visibleDepth,
 		id: node.id,
 		isCreateFolderTask: node.isCreateFolderTask,
 		isDeleteFolderTask: node.isDeleteFolderTask,
@@ -208,6 +205,7 @@ function buildVisibleTree({
 			nodeId: child.nodeId,
 			nodes,
 			orderedNodeIds,
+			visibleDepth: visibleDepth + 1,
 			visibleEndpoint: child,
 			visibleNodes,
 		});
@@ -215,7 +213,7 @@ function buildVisibleTree({
 
 export default function createFileTreeData(tasks: Array<BaseTask>): FileTreeData {
 	const nodes: Record<string, InternalNode> = {
-		[ROOT_NODE_ID]: createNode({ depth: -1, id: ROOT_NODE_ID, name: '', path: '' }),
+		[ROOT_NODE_ID]: createNode({ id: ROOT_NODE_ID, name: '', path: '' }),
 	};
 	const taskNodeIds: Array<string> = [];
 	const taskNodeIdSet = new Set<string>();
@@ -233,7 +231,6 @@ export default function createFileTreeData(tasks: Array<BaseTask>): FileTreeData
 			const existing = nodes[nodeId];
 			if (!existing) {
 				nodes[nodeId] = createNode({
-					depth: index,
 					id: nodeId,
 					name: segment,
 					path: currentPath,
@@ -265,6 +262,7 @@ export default function createFileTreeData(tasks: Array<BaseTask>): FileTreeData
 			nodeId: child.nodeId,
 			nodes,
 			orderedNodeIds,
+			visibleDepth: 0,
 			visibleEndpoint: child,
 			visibleNodes,
 		});

@@ -14,6 +14,7 @@ export { s, reactivelyValidate, generateEditableList } from '@/settings/utils';
 export type {
 	Translate,
 	Fragment,
+	Snippet,
 	ObsidianLanguageCode,
 	TranslationResource,
 } from '@/modules/I18n';

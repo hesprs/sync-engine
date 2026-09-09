@@ -14,7 +14,7 @@ import { SecretComponent } from 'obsidian';
 export type EncryptionTranslations = {
 	encryption: string;
 	encryptionDescription: string;
-	encryptionMigration: Fragment<'enable' | 'disable'>;
+	encryptionMigration: Fragment<boolean>;
 };
 
 export default function encryptionSetting(
@@ -51,8 +51,7 @@ export default function encryptionSetting(
 									settings.enabled = value;
 									void saveSettings();
 								},
-								content: (value) =>
-									translate('encryptionMigration', value ? 'enable' : 'disable'),
+								content: (value) => translate('encryptionMigration', value),
 								needMigration: () => recordStoreExists(),
 								toggle: toggle.setValue(settings.enabled),
 							}),
