@@ -633,12 +633,14 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 	]);
 
 	const ranges: Array<string> = [];
+	const encodings: Array<string | undefined> = [];
 	const pending = new Map<string, ReturnType<typeof deferred<RequestResponse>>>();
 	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav' });
 	webdav.setRequest((params) => {
 		if (params.method === 'PROPFIND') return response;
 		const range = params.headers?.Range ?? '';
 		ranges.push(range);
+		encodings.push(params.headers?.['Accept-Encoding']);
 		const wait = deferred<RequestResponse>();
 		pending.set(range, wait);
 		return wait.promise;
@@ -654,6 +656,7 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 	);
 	await flush();
 	expect(ranges).toStrictEqual(expectedRanges);
+	expect(encodings.every((encoding) => encoding === 'identity')).toBe(true);
 
 	const makeResponse = (byte: number): RequestResponse => ({
 		bytes: () => new Uint8Array([byte]),

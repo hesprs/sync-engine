@@ -234,6 +234,8 @@ export default class WebdavFs implements RootFs {
 			requestRange: async (start, endInclusive) => {
 				const response = await this.request({
 					headers: {
+						// Prevents intermediaries and servers from content-encoding the body, which makes them ignore the Range header and return the whole file: https://github.com/hesprs/sync-engine/issues/263
+						'Accept-Encoding': 'identity',
 						Authorization: this.auth,
 						Range: `bytes=${start}-${endInclusive}`,
 					},

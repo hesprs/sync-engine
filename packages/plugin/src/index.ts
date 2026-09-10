@@ -141,7 +141,7 @@ export default class SyncEngine extends Plugin {
 	readonly saveSettings = () => this.saveData(this.settings);
 }
 
-// TODO: remove after November 20
+// TODO: remove after September 20
 function migrateGlobMatchRules(settings: Settings) {
 	const { inclusionRules, exclusionRules } = settings;
 	const migrateRules = (rules: Array<GlobMatchRule>) => {

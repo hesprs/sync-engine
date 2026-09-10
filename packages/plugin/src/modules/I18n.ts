@@ -109,7 +109,12 @@ export default class I18n {
 	private readonly translate = ((key: string, arg: unknown) => {
 		const value = (this.i18n as TranslationResource)[key];
 		if (typeof value === 'string') return value;
-		if (typeof value === 'function') return value(arg);
+		// TODO: 3.1.5 i18n refactor makes all users with any of the legacy i18n modules fail to load. Catch errors to allow the plugin to load. Remove in October 10
+		try {
+			return value(arg);
+		} catch {
+			return createFragment();
+		}
 	}) as Translate<TranslationResource>;
 
 	root = {

@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.1.6 - 2026-09-10
+
+### Core
+
+- Fixed the plugin loading failure due to the 3.1.5 update when the user have installed any of the legacy i18n modules.
+
+### WebDAV Module
+
+- Fixed ranged downloading header being ignored on Apache or Apache-like servers.
+
 ## Sync Engine v3.1.5 - 2026-09-09
 
 ### Core
