@@ -2,7 +2,7 @@
 	{
 		"id": "webdav",
 		"name": "WebDAV",
-		"version": "0.1.15",
+		"version": "0.1.16",
 		"description": "WebDAV backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/webdav.js",
