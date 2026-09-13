@@ -68,7 +68,7 @@ test('list should throw when encountering too many malformed or orphan flattened
 	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});
 
 	expect(() => wrapper.list('/', () => 'include')).toThrow(
-		"There are too many files at remote that don't adopt asymmetric storage, maybe you want to turn it off in settings.",
+		"There are too many remote files that don't adopt asymmetric storage, maybe you want to turn it off in settings.",
 	);
 });
 

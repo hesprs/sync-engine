@@ -46,7 +46,7 @@ import type {
 	FsWrapperEntry,
 	RemoteRequestMiddlewareEntry,
 	LocalRequestMiddlewareEntry,
-	RemoteListerEntry,
+	TriggerEntry,
 } from './Registrar';
 
 export type CustomHeaders = Array<{ type: 'plaintext' | 'secret'; value: string; key: string }>;
@@ -54,7 +54,7 @@ export type ExistingMemoryDB = DatabaseSync<
 	{ localContext20000: Stat; remoteContext10000: Stat; remoteContext20000: Stat },
 	{
 		localContext20000Marker: string;
-		remoteContext10000Marker: string;
+		remoteContext10000Marker?: string;
 		remoteContext20000Marker: string;
 	}
 >;
@@ -102,6 +102,8 @@ export default class Bootstrap {
 		realtimeSyncFastMode: boolean;
 		asymmetricStorage: boolean;
 		customHeaders: CustomHeaders;
+		confirmDeleteInAutoSync: boolean;
+		confirmTasksInSync: boolean;
 	};
 
 	constructor(
@@ -120,7 +122,7 @@ export default class Bootstrap {
 			optimizeRemote: BatchOptimizer;
 			registerLocalOptimizer: (optimizer: OptimizerEntry) => void;
 			registerRemoteOptimizer: (optimizer: OptimizerEntry) => void;
-			registerRemoteLister: (entry: RemoteListerEntry) => () => boolean;
+			registerTrigger: (key: string, entry: TriggerEntry) => () => boolean;
 			registerConflictResolver: (id: string, entry: ConflictResolverEntry) => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => void;
 			registerLocalRequestMiddleware: (entry: LocalRequestMiddlewareEntry) => void;
@@ -140,7 +142,7 @@ export default class Bootstrap {
 			translate: t,
 			registerLocalOptimizer,
 			registerRemoteOptimizer,
-			registerRemoteLister,
+			registerTrigger,
 			registerConflictResolver,
 			registerRemoteRequestMiddleware,
 			registerLocalRequestMiddleware,
@@ -155,45 +157,55 @@ export default class Bootstrap {
 		const getMaxConcurrency = () =>
 			maxRequestConcurrency.enabled ? maxRequestConcurrency.value : Infinity;
 		const getMinInterval = () => (minRequestInterval.enabled ? minRequestInterval.value : 0);
+		const getDeletionConfirm = () => this.settings.confirmDeleteInAutoSync;
 
-		registerRemoteLister({
-			apply: ({ trigger, reporter }) => {
-				if (trigger === 'realtime' && this.settings.realtimeSyncFastMode) {
-					const entries = memoryDB
-						.getStore('remoteContext20000')
-						.entries()
-						.map(([, stat]) => stat);
-					if (!entries.length) return;
-					const filtered: Array<Stat> = [];
-					return Promise.all(
-						entries.map(async (stat, index) => {
-							if (
-								(await reporter({
-									completed: index + 1,
-									current: stat.key,
-									total: entries.length,
-								})) === 'exclude'
-							)
-								return;
-							filtered.push(stat);
-						}),
-					).then(() => filtered);
-				}
-			},
+		const context20000 = memoryDB.getStore('remoteContext20000');
+		registerTrigger('realtime', {
+			options: () => ({
+				needConfirmDeletion: getDeletionConfirm(),
+				remoteLister:
+					this.settings.realtimeSyncFastMode && context20000.keys().length
+						? ({ reporter }) => {
+								const entries = context20000.values();
+								const filtered: Array<Stat> = [];
+								return Promise.all(
+									entries.map(async (stat, index) => {
+										if (
+											(await reporter({
+												completed: index + 1,
+												current: stat.key,
+												total: entries.length,
+											})) === 'exclude'
+										)
+											return;
+										filtered.push(stat);
+									}),
+								).then(() => filtered);
+							}
+						: undefined,
+			}),
 			priority: 1000,
 		});
-		registerRemoteLister({
-			apply: async ({ remoteFs, record, reporter }) => {
-				try {
-					return await remoteFs.list('/', reporter);
-				} catch (error) {
-					if (await remoteFs.exists('/')) throw error;
-					dispatch('logSync', 'Remote root deleted, recreating.');
-					await Promise.all([remoteFs.mkdir('/', true), record.clear()]);
-					return [];
-				}
-			},
-			priority: 10_000,
+		registerTrigger('interval', {
+			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
+			priority: 2000,
+		});
+		registerTrigger('startup', {
+			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
+			priority: 3000,
+		});
+		registerTrigger('migration', {
+			options: () => ({
+				decider: mirrorLocalDecider,
+				detectMoves: false,
+				remoteLister: () => [], // Remote has already been cleared in phase 2
+			}),
+			priority: 3980,
+		});
+		registerTrigger('nonInteractiveManual', { priority: 3990 });
+		registerTrigger('manual', {
+			options: () => ({ needConfirmTasks: this.settings.confirmTasksInSync }),
+			priority: 4000,
 		});
 
 		registerLocalOptimizer({ apply: hierarchicalOptimizer, priority: 10_000 });
@@ -269,12 +281,14 @@ export default class Bootstrap {
 			priority: 3000,
 		});
 		registerRemoteFsWrapper({
-			apply: (fs) =>
-				contextWrapper(fs, {
-					db: memoryDB,
-					marker: 'remoteContext10000Marker',
-					store: 'remoteContext10000',
-				}),
+			apply: (fs) => {
+				if (this.settings.asymmetricStorage)
+					return contextWrapper(fs, {
+						db: memoryDB,
+						marker: 'remoteContext10000Marker',
+						store: 'remoteContext10000',
+					});
+			},
 			priority: 10_000,
 		});
 		registerRemoteFsWrapper({

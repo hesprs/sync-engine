@@ -183,7 +183,7 @@ class AsymmetricStorageFs implements WrappedFs {
 		);
 		if (ignoredCount / (stats.length || 1) >= 0.3)
 			throw new Error(
-				"There are too many files at remote that don't adopt asymmetric storage, maybe you want to turn it off in settings.",
+				"There are too many remote files that don't adopt asymmetric storage, maybe you want to turn it off in settings.",
 			);
 		return result;
 	}

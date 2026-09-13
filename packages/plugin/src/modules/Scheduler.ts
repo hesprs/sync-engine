@@ -6,7 +6,7 @@ import { prepareGlobMatch } from '@/utils/glob-match';
 import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
 import type { SyncStage } from './Observability';
-import type { SyncTerminateReason } from './Sync';
+import type { SyncOptions, SyncTerminateReason } from './Sync';
 
 type SyncRequest = {
 	trigger: string;
@@ -23,8 +23,9 @@ export default class Scheduler {
 	constructor(
 		private readonly ctx: {
 			syncStage: Ref<SyncStage>;
-			executeSync: (trigger: string) => Promise<SyncTerminateReason>;
+			executeSync: (trigger: string, options?: SyncOptions) => Promise<SyncTerminateReason>;
 			registerEvent: (ref: EventRef) => void;
+			reduceTriggers: (triggers: Array<string>) => { trigger: string; options?: SyncOptions };
 			app: App;
 			isIdle: Ref<boolean>;
 			dispatch: Dispatch<Events>;
@@ -134,8 +135,11 @@ export default class Scheduler {
 	};
 
 	private readonly flush = async () => {
+		const { executeSync, reduceTriggers } = this.ctx;
 		const batch = this.pendingRequests.splice(0);
-		const result = await this.ctx.executeSync(batch.last()?.trigger ?? 'unknown');
+		const triggers = batch.map(({ trigger }) => trigger);
+		const { trigger, options } = reduceTriggers(triggers);
+		const result = await executeSync(trigger, options);
 		for (const request of batch) request.resolve(result);
 	};
 

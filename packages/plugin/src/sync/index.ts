@@ -24,7 +24,7 @@ export type {
 	DeciderInput,
 } from './decision/interface';
 export { taskMap } from './decision/interface';
-export { default as detectMoves } from './utils/detect-moves';
+export { default as convertMoves } from './utils/detect-moves';
 export { default as bidirectionalDecider } from './decision/bidirectional';
 export { mirrorLocalDecider, mirrorRemoteDecider } from './decision/mirror';
 export { default as keepRemoteResolver } from './conflict-resolve/keep-remote';

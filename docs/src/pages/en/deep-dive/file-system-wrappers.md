@@ -74,7 +74,7 @@ Applied to the remote FS when asymmetric storage is enabled. It flattens hierarc
 ## Context Wrapper
 
 - Target: local and remote `Fs`
-- Priority: `20000` for local; `10000` and `20000` for remote
+- Priority: `20000` for local; `20000` for remote, plus `10000` for remote only when asymmetric storage is enabled
 
 Intercepts `list()`, `stat()`, `write()`, `writeStream()`, `delete()`, `move()`, and `mkdir()` calls, and builds a copy of best-effort known stats in a `uni-kv` memory store that survives sync runs.
 

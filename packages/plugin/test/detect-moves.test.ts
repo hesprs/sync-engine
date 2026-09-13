@@ -1,7 +1,7 @@
 import { expect, test } from 'bun:test';
 import type { BaseTask, TaskNames } from '@/sync';
 import type { RecordStatsMap, Stat } from '@/types';
-import { detectMoves } from '@/sync';
+import { convertMoves } from '@/sync';
 
 function file(key: string, uid: string): Stat {
 	return { isDir: false, key, mtime: 0, size: 0, uid };
@@ -48,7 +48,7 @@ test('pairs file tasks using opposite-side record UIDs', () => {
 		['old.md', { isDir: false, local: 'local-old', remote: 'remote-new' }],
 	]);
 
-	const [move] = detectMoves(tasks, translate, records);
+	const [move] = convertMoves(tasks, translate, records);
 
 	expect(move.name).toBe('moveLocal');
 	expect(move.key).toBe('new.md');
@@ -75,7 +75,7 @@ test('keeps folder tasks when child basenames change', () => {
 		['old/note.md', { isDir: false, local: 'note-local', remote: 'note-remote' }],
 	]);
 
-	const result = detectMoves(tasks, translate, records);
+	const result = convertMoves(tasks, translate, records);
 
 	expect(result.map((task) => task.name)).toStrictEqual([
 		'removeLocal',
@@ -108,7 +108,7 @@ test('collapses nested folders while retaining child moves', () => {
 		['old/nested/note.md', { isDir: false, local: 'note-local', remote: 'note-remote' }],
 	]);
 
-	const result = detectMoves(tasks, translate, records);
+	const result = convertMoves(tasks, translate, records);
 
 	expect(result.map((task) => [task.name, task.key, oldKey(task)])).toStrictEqual([
 		['moveLocal', 'new/nested/note.md', 'old/nested/note.md'],

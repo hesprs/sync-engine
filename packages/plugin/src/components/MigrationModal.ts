@@ -1,12 +1,13 @@
 import type { Events } from '@';
 import type { App, ToggleComponent } from 'obsidian';
 import { Modal, Notice, Setting } from 'obsidian';
+import { ref } from 'synthkernel';
 import type { ExistingMemoryDB } from '@/modules/Bootstrap';
-import type { Dispatch, On } from '@/modules/EventBus';
+import type { Dispatch } from '@/modules/EventBus';
 import type { Translate } from '@/modules/I18n';
 import type { Infras } from '@/modules/Registrar';
 import type { SyncTerminateReason } from '@/modules/Sync';
-import type { MaybePromise, Progress } from '@/types';
+import type { MaybePromise } from '@/types';
 import renderProgress from '@/components/render-progress';
 import roundPercent from '@/utils/round-percent';
 import toErrorMessage from '@/utils/to-error-message';
@@ -27,15 +28,9 @@ export type MigrationModalTranslations = {
 	done: string;
 };
 
-type MigrationEvents = {
-	migrationProgress: Progress;
-	migrationFailed: string;
-};
-
 type MigrationContext = {
 	app: App;
-	on: On<MigrationEvents>;
-	dispatch: Dispatch<MigrationEvents & Events>;
+	dispatch: Dispatch<Events>;
 	translate: Translate<MigrationModalTranslations>;
 	requestSync: (trigger: string) => Promise<SyncTerminateReason>;
 	initializeSync: () => Infras;
@@ -44,6 +39,8 @@ type MigrationContext = {
 
 class MigrationModal extends Modal {
 	private readonly cleanupCallbacks: Array<() => void> = [];
+	private readonly completed = ref(0);
+	private readonly current = ref('');
 
 	constructor(
 		private readonly ctx: MigrationContext,
@@ -92,56 +89,58 @@ class MigrationModal extends Modal {
 	}
 
 	private readonly handleMigration = () => {
-		const { on, translate, dispatch } = this.ctx;
-		this.contentEl.empty();
+		const { current, completed, ctx, cleanupCallbacks, contentEl, migrate } = this;
+		const { translate, dispatch } = ctx;
+		contentEl.empty();
 		this.setTitle(translate('migrationProcess'));
-		const { left, right, bar } = renderProgress(this.contentEl, 'mb-3');
+		const { left, right, bar } = renderProgress(contentEl, 'mb-3');
 
 		let controls: HTMLElement | undefined;
 		const renderControls = (text: 'hide' | 'done') => {
 			controls?.remove();
-			controls = new Setting(this.contentEl).addButton((button) =>
-				button.setButtonText(translate(text)).onClick(this.close.bind(this)),
+			controls = new Setting(contentEl).addButton((button) =>
+				button.setButtonText(translate(text)).onClick(() => this.close()),
 			).settingEl;
 		};
 		renderControls('hide');
 
-		this.cleanupCallbacks.push(
-			on('migrationProgress', ({ total, completed, current }) => {
-				if (completed === 0) dispatch('logGeneral', 'Migration started.');
-				const percent = roundPercent(completed, total);
-				right.setText(`${completed}/${total} ${translate('completed')}`);
-				if (current) left.setText(current);
-				bar.setValue(percent);
-				if (percent === 100) renderControls('done');
+		cleanupCallbacks.push(
+			completed.subscribe((value) => {
+				right.setText(`${value}/3 ${translate('completed')}`);
+				bar.setValue(roundPercent(value, 3));
 			}),
-			on('migrationFailed', () => {
-				dispatch('errorGeneral', 'Migration failed.');
-				left.setText(translate('migrationFailed'));
-				renderControls('done');
-			}),
+			current.subscribe((value) => left.setText(value)),
 		);
 
-		void this.migrate();
+		void migrate().then((result) => {
+			renderControls('done');
+			if (!result.success) {
+				dispatch('errorGeneral', 'Migration failed.');
+				left.setText(translate('migrationFailed'));
+			}
+		});
 	};
 
-	private readonly migrate = async () => {
-		const { dispatch, requestSync, initializeSync, translate, memoryDB } = this.ctx;
-		dispatch('migrationProgress', {
-			completed: 0,
-			current: translate('migrationPhase1Description'),
-			total: 3,
-		});
-		const phase1 = (await requestSync('migration')).result;
-		if (phase1 === 'cancelled' || phase1 === 'failed') {
-			dispatch('migrationFailed', 'phase 1 failed');
-			return;
-		}
-		dispatch('migrationProgress', {
-			completed: 1,
-			current: translate('migrationPhase2Description'),
-			total: 3,
-		});
+	private readonly migrate = async (): Promise<
+		{ success: true } | { success: false; reason: string }
+	> => {
+		const { current, completed, ctx } = this;
+		const { dispatch, requestSync, initializeSync, translate, memoryDB } = ctx;
+		const handleSyncResult = (sync: SyncTerminateReason, phase: number) => {
+			if (sync.result === 'failed')
+				return { reason: `Phase ${phase}: ${sync.error}`, success: false };
+			else if (sync.result === 'cancelled')
+				return { reason: `Phase ${phase}: sync cancelled`, success: false };
+		};
+		dispatch('logGeneral', 'Migration started.');
+		completed(0);
+		current(translate('migrationPhase1Description'));
+
+		const phase1 = handleSyncResult(await requestSync('nonInteractiveManual'), 1);
+		if (phase1) return phase1;
+		completed(1);
+		current(translate('migrationPhase2Description'));
+
 		try {
 			const { record, remoteFs } = initializeSync();
 			await Promise.all([
@@ -149,31 +148,23 @@ class MigrationModal extends Modal {
 				this.options.apply(),
 				...memoryDB
 					.getStore('remoteContext20000')
-					.entries()
-					.sort(([a], [b]) => b.length - a.length)
-					.map(([key]) => remoteFs.delete(key)),
+					.keys()
+					.sort((a, b) => b.length - a.length)
+					.map((key) => remoteFs.delete(key)),
 			]);
 		} catch (error) {
 			const message = toErrorMessage(error);
 			new Notice(`${translate('migrationFailed')}: ${message}`);
-			dispatch('migrationFailed', message);
-			return;
+			return { reason: `Phase 2: ${message}`, success: false };
 		}
-		dispatch('migrationProgress', {
-			completed: 2,
-			current: translate('migrationPhase3Description'),
-			total: 3,
-		});
-		const phase3 = (await requestSync('migration')).result;
-		if (phase3 === 'cancelled' || phase3 === 'failed') {
-			dispatch('migrationFailed', 'phase 3 failed');
-			return;
-		}
-		dispatch('migrationProgress', {
-			completed: 3,
-			current: translate('completed'),
-			total: 3,
-		});
+		completed(2);
+		current(translate('migrationPhase3Description'));
+
+		const phase3 = handleSyncResult(await requestSync('migration'), 3);
+		if (phase3) return phase3;
+		completed(3);
+		current(translate('completed'));
+		return { success: true };
 	};
 
 	onClose() {

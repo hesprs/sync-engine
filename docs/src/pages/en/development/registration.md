@@ -87,19 +87,19 @@ ctx.registerRemoteRequestMiddleware(entry: RemoteRequestMiddlewareEntry): () => 
 ctx.registerLocalRequestMiddleware(entry: LocalRequestMiddlewareEntry): () => boolean;
 ```
 
-## Remote Lister
+## Sync Trigger
 
-Register a remote listing strategy. See [sync: remote lister](./sync#remote-lister).
+Register an entry that supplies sync options for a trigger name. See [sync: sync trigger](./sync#sync-trigger).
 
 ```ts
-type RemoteListerEntry = {
+type TriggerEntry = {
   priority: number;
-  apply: (info: Parameters<RemoteLister>[0]) => MaybePromise<Array<Stat>> | undefined;
+  options?: () => SyncOptions;
 };
 ```
 
 ```ts
-ctx.registerRemoteLister(entry: RemoteListerEntry): () => boolean;
+ctx.registerTrigger(key: string, entry: TriggerEntry): () => boolean;
 ```
 
 ## Decider
