@@ -5,7 +5,8 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 #### Context
 
 - When exploring the repo, you must read related pages in `docs/src/pages/en/`, especially inside the `deep-dive/` folder: this is the fastest way to understand the engineering sophistication.
-- This repo is also an Obsidian vault used for testing. The config folder is at `.obsidian`, and plugin dist folder is symlinked to `.obsidian/plugins/sync-engine`. The folder also contains plugin settings `data.json` and module binaries.
+- This repo is also an Obsidian vault used for testing. The config folder is at `.obsidian`, and plugin dist folder is symlinked to `.obsidian/plugins/sync-engine`. The folder also contains plugin settings in `data.json` and module binaries.
+- `./test-files` are and are the only files used for local sync testing. You can do anything inside the folder without caring about changes or losses.
 
 #### Techstack
 

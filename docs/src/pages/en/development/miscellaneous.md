@@ -32,19 +32,19 @@
 
 ### Root type exports
 
-| Group                | Exports                                                                                                                                                                                                                                                                                                      |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Context              | `Context`, `Settings`, `Events`, `Translations`, `SelectFromContext`                                                                                                                                                                                                                                         |
-| Events               | `Dispatch`, `On`                                                                                                                                                                                                                                                                                             |
-| Core data            | `Binary`, `MaybePromise`, `Progress`, `FileStat`, `FolderStat`, `Stat`, `StatsMap`, `RecordStat`, `RecordStatsMap`                                                                                                                                                                                           |
-| Filesystem           | `RootFs`, `WrappedFs`, `Fs`, `WriteAtom`, `DeleteAtom`, `MoveAtom`, `MkdirAtom`, `InputAtom`, `CustomAtom`, `OutputAtom`, `OptimizerInput`, `OptimizerOutput`, `BatchOptimizer`                                                                                                                              |
-| Registration         | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `RemoteLister`, `RemoteListerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request`, `CheckConnectionResult`              |
-| Sync                 | `TaskNames`, `BaseTask`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
-| Storage              | `RecordStore`, `StoreAsync`, `StoreSync`, `StoreOperations`, `DatabaseAsync`, `DatabaseSync`                                                                                                                                                                                                                 |
-| Modules              | `ModuleMeta`, `AugmentedModuleMeta`                                                                                                                                                                                                                                                                          |
-| Request              | `VaultRequest`, `RequestParam`, `RequestResponse` (the response type returned by `Request`)                                                                                                                                                                                                                  |
-| Internationalization | `ObsidianLanguageCode`, `Fragment`, `Snippet`, `TranslationResource`, `Translate`                                                                                                                                                                                                                            |
-| Other                | `ExistingMemoryDB`                                                                                                                                                                                                                                                                                           |
+| Group                | Exports                                                                                                                                                                                                                                                                                                                                     |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Context              | `Context`, `Settings`, `Events`, `Translations`, `SelectFromContext`                                                                                                                                                                                                                                                                        |
+| Events               | `Dispatch`, `On`                                                                                                                                                                                                                                                                                                                            |
+| Core data            | `Binary`, `MaybePromise`, `Progress`, `FileStat`, `FolderStat`, `Stat`, `StatsMap`, `RecordStat`, `RecordStatsMap`                                                                                                                                                                                                                          |
+| Filesystem           | `RootFs`, `WrappedFs`, `Fs`, `WriteAtom`, `DeleteAtom`, `MoveAtom`, `MkdirAtom`, `InputAtom`, `CustomAtom`, `OutputAtom`, `OptimizerInput`, `OptimizerOutput`, `BatchOptimizer`                                                                                                                                                             |
+| Registration         | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `TriggerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request`, `CheckConnectionResult`                                                                  |
+| Sync                 | `TaskNames`, `BaseTask`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `SyncOptions`, `RemoteLister`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
+| Storage              | `RecordStore`, `StoreAsync`, `StoreSync`, `StoreOperations`, `DatabaseAsync`, `DatabaseSync`                                                                                                                                                                                                                                                |
+| Modules              | `ModuleMeta`, `AugmentedModuleMeta`                                                                                                                                                                                                                                                                                                         |
+| Request              | `VaultRequest`, `RequestParam`, `RequestResponse` (the response type returned by `Request`)                                                                                                                                                                                                                                                 |
+| Internationalization | `ObsidianLanguageCode`, `Fragment`, `Snippet`, `TranslationResource`, `Translate`                                                                                                                                                                                                                                                           |
+| Other                | `ExistingMemoryDB`                                                                                                                                                                                                                                                                                                                          |
 
 Internal supporting types can appear in exported signatures but are not standalone root exports. They include `TogglableValue`, `GlobMatchRule`, `Infras`, `BaseTaskOptions`, `TaskOptions`, `TaskOptionsMap`, `TaskInfo`, `FailedTaskInfo`, `DeleteConfirmReturn`, and `CustomHeaders`.
 
@@ -104,25 +104,25 @@ These Context members are not commonly used by modules. Explore source code to o
 
 ### Filesystem and Sync
 
-| Member                          | Purpose                                                      |
-| ------------------------------- | ------------------------------------------------------------ |
-| `createLocalFs()`               | Creates wrapped local filesystem.                            |
-| `createRemoteFs(id?)`           | Creates selected wrapped remote filesystem.                  |
-| `getRequest()`                  | Gets composed remote request function.                       |
-| `getVaultRequest()`             | Gets composed local vault request function.                  |
-| `getNamespace(local?, remote?)` | Creates storage namespace for optional local/remote FS pair. |
-| `initializeSync()`              | Creates local FS, remote FS, and record store for sync.      |
-| `getCheckConnection()`          | Gets selected backend connection-check function.             |
-| `getDecider()`                  | Gets selected `Decider`.                                     |
-| `getConflictResolver()`         | Gets selected `ConflictResolver`.                            |
-| `optimizeLocal(input)`          | Applies selected local `BatchOptimizer`.                     |
-| `optimizeRemote(input)`         | Applies selected remote `BatchOptimizer`.                    |
-| `listRemote(info)`              | Lists remote entries for a sync trigger.                     |
-| `executeSync(tasks)`            | Executes synchronization immediately.                        |
-| `requestSync(trigger)`          | Queues sync; resolves with `SyncTerminateReason`.            |
-| `remoteFsRegistry`              | `Map<string, RemoteFsEntry>`.                                |
-| `deciderRegistry`               | `Map<string, DeciderEntry>`.                                 |
-| `conflictResolverRegistry`      | `Map<string, ConflictResolverEntry>`.                        |
+| Member                           | Purpose                                                      |
+| -------------------------------- | ------------------------------------------------------------ |
+| `createLocalFs()`                | Creates wrapped local filesystem.                            |
+| `createRemoteFs(id?)`            | Creates selected wrapped remote filesystem.                  |
+| `getRequest()`                   | Gets composed remote request function.                       |
+| `getVaultRequest()`              | Gets composed local vault request function.                  |
+| `getNamespace(local?, remote?)`  | Creates storage namespace for optional local/remote FS pair. |
+| `initializeSync()`               | Creates local FS, remote FS, and record store for sync.      |
+| `getCheckConnection()`           | Gets selected backend connection-check function.             |
+| `getDecider()`                   | Gets selected `Decider`.                                     |
+| `getConflictResolver()`          | Gets selected `ConflictResolver`.                            |
+| `optimizeLocal(input)`           | Applies selected local `BatchOptimizer`.                     |
+| `optimizeRemote(input)`          | Applies selected remote `BatchOptimizer`.                    |
+| `reduceTriggers(triggers)`       | Reduces trigger names to the highest-priority entry.         |
+| `executeSync(trigger, options?)` | Executes synchronization immediately.                        |
+| `requestSync(trigger)`           | Queues sync; resolves with `SyncTerminateReason`.            |
+| `remoteFsRegistry`               | `Map<string, RemoteFsEntry>`.                                |
+| `deciderRegistry`                | `Map<string, DeciderEntry>`.                                 |
+| `conflictResolverRegistry`       | `Map<string, ConflictResolverEntry>`.                        |
 
 ### UI and Observability
 

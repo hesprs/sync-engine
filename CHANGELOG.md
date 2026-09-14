@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.1.7 - 2026-09-14
+
+- Fixed critical data loss caused by running the migration on devices with "Sync strategy" set to "Mirror remote".
+- Refactor sync trigger registration and enable more extensions.
+- Optimized migration performance.
+
 ## Sync Engine v3.1.6 - 2026-09-10
 
 ### Core

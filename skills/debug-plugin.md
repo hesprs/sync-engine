@@ -1,6 +1,6 @@
 ---
 name: debug-plugin
-description: Write a temporary Sync Engine module for local debugging. Use when diagnosing unreasonable bugs that can be experimented locally.
+description: Local E2E debugging. Use when diagnosing unreasonable bugs that can be experimented locally.
 ---
 
 Sync Engine repo contains a real Obsidian vault, with configs in `./obsidian/` and files for testing at `./test-files/`. The workflow below requires a live Obsidian instance, when there's no instance, start one first.

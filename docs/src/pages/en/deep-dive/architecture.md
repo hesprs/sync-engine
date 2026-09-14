@@ -58,14 +58,14 @@ SynthKernel also supplies reactive primitives used across module boundaries. `Re
 3. **`Storage`** owns the Uni-KV memory database and IndexedDB database. It exposes persistent record stores, module metadata storage, and per-local/remote-pair namespaces.
 4. **`Extensibility`** discovers module metadata, validates sources and integrity, loads enabled JavaScript modules, persists metadata, and manages enable, disable, update, and unload operations. Its security and trust rules are documented in the [Extensibility Contract](./extensibility).
 5. **`Setting`** owns the native Obsidian settings tab, nested setting-definition tree, module setting registration, labels, and settings-page refreshes.
-6. **`Registrar`** is the capability and registry layer. It creates local and remote file systems, applies request middleware and wrappers, selects listers, optimizers, deciders, and conflict resolvers, and exposes registration functions to modules.
+6. **`Registrar`** is the capability and registry layer. It creates local and remote file systems, applies request middleware and wrappers, selects optimizers, deciders, and conflict resolvers, reduces trigger entries, and exposes registration functions to modules.
 7. **`Sync`** executes one sync run: initialize infrastructure, traverse both sides, filter stats, create and transform tasks, request confirmations, execute tasks, and publish lifecycle events. See [Core Sync Routine](./sync).
 8. **`Observability`** converts events into user-visible status, progress, notices, commands, ribbon controls, and exported logs. Its reactive values are consumed by the progress modal.
-9. **`Scheduler`** turns manual, startup, scheduled, realtime, and vault-change triggers into queued sync requests. It waits for idle state, batches pending requests, and resolves every request in a batch with the same result.
+9. **`Scheduler`** turns manual, startup, scheduled, realtime, and vault-change triggers into queued sync requests. It waits for idle state, batches pending requests, reduces the batch's triggers to the highest-priority registered entry, and resolves every request in a batch with the same result.
 10. **`ProgressModal`** handles progress display, task confirmation, deletion confirmation, cancellation, and failed-task details. SynthKernel `computed()` values and `hook()` cleanup keep modal state scoped to the modal lifecycle.
 11. **`Bootstrap`** installs built-in sync capabilities through `Registrar` and supplies core translations. Settings are registered by `Setting`, which starts before `Bootstrap` completes the plugin lifecycle.
 
-The dependency direction is intentionally visible in the constructors. For example, `Sync` receives `initializeSync`, `listRemote`, `getDecider`, and `getConflictResolver`; it does not know which backend, wrapper, or middleware supplied them. `Bootstrap` assembles those policies without changing the sync algorithm.
+The dependency direction is intentionally visible in the constructors. For example, `Sync` receives `initializeSync`, `getDecider`, and `getConflictResolver`; it does not know which backend, wrapper, or middleware supplied them. `Bootstrap` assembles those policies without changing the sync algorithm.
 
 ## Extensibility Framework
 
@@ -82,13 +82,14 @@ Most extension points are exposed by `Registrar.root` as `register*` functions. 
 - CSS registration appends a style element and returns a remover.
 - `registerI18n()` follows language selection rules rather than the Registrar registries.
 
-Examples include `registerRemoteFs`, `registerRemoteFsWrapper`, `registerRemoteRequestMiddleware`, `registerRemoteLister`, `registerDecider`, `registerConflictResolver`, `registerSetting`, and their local counterparts. A module can therefore add a backend, policy, wrapper, or UI contribution without modifying core code.
+Examples include `registerRemoteFs`, `registerRemoteFsWrapper`, `registerRemoteRequestMiddleware`, `registerTrigger`, `registerDecider`, `registerConflictResolver`, `registerSetting`, and their local counterparts. A module can therefore add a backend, policy, wrapper, or UI contribution without modifying core code.
 
 Registration entries are consumed according to their role:
 
 - **Factories and ID maps:** the selected remote backend, decider, and conflict resolver are looked up by the ID in settings. Missing IDs fail with an explicit error.
 - **Wrappers:** request and file-system wrappers are grouped by numeric priority and applied in ascending priority order. Within one priority, the first wrapper that returns a replacement wins; returning `undefined` declines the current value.
-- **First-match pipelines:** listers and optimizers are also priority ordered. The first entry that returns a result supplies the implementation for that operation.
+- **First-match pipelines:** optimizers are also priority ordered. The first entry that returns a result supplies the implementation for that operation.
+- **Triggers:** trigger entries are keyed by trigger name. A flushed sync batch is reduced to its highest-priority entry, whose options customize the run.
 - **Settings:** setting-definition trees are ordered by priority and merged into the native plugin settings tab. See [Settings and UI](../development/settings-and-ui).
 
 Bootstrap uses these same APIs to build the production pipeline. For example, cancellation, rate limiting, retry, custom headers, memory control, optimization, context caching, and asymmetric storage are independent registrations layered around the base request and file-system implementations. Their behavior is specified in [Request Middleware](./request-middleware) and [File System Wrappers](./file-system-wrappers).

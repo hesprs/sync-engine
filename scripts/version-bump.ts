@@ -1,6 +1,6 @@
-import man from '../manifest.json' with { type: 'json' };
-import pkg from '../packages/plugin/package.json' with { type: 'json' };
-import versions from '../versions.json' with { type: 'json' };
+import man from '../manifest.json';
+import pkg from '../packages/plugin/package.json';
+import versions from '../versions.json';
 
 const { version, minAppVersion } = man;
 

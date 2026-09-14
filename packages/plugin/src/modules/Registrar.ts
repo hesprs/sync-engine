@@ -3,11 +3,12 @@ import type { StoreAsync } from 'uni-kv';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import hash from '@repo/shared/crypto';
 import { requestUrl } from 'obsidian';
-import type { BatchOptimizer, Fs, ListReporter, RootFs, VaultRequest } from '@/fs';
+import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
 import type { ConflictResolver, Decider } from '@/sync';
-import type { General, MaybePromise, RecordStat, Stat, Binary } from '@/types';
+import type { General, MaybePromise, RecordStat, Binary } from '@/types';
 import { createVaultRequest, VaultFs } from '@/fs';
 import type { RecordStore } from './Storage';
+import type { SyncOptions } from './Sync';
 
 type RejectableWrapper<T> = (value: T) => T | undefined;
 type OrderedWrapperEntry<T> = { priority: number; apply: RejectableWrapper<T> };
@@ -28,11 +29,9 @@ type GeneralFn = (...args: ReadonlyArray<General>) => unknown;
 type RejectableApply<F extends GeneralFn> = (...input: Parameters<F>) => ReturnType<F> | undefined;
 type OrderedApplyEntry<F extends GeneralFn> = { apply: RejectableApply<F>; priority: number };
 
-export type RemoteLister = (
-	info: Infras & { trigger: string; reporter: ListReporter },
-) => MaybePromise<Array<Stat>>;
-export type RemoteListerEntry = OrderedApplyEntry<RemoteLister>;
 export type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
+
+export type TriggerEntry = { priority: number; options?: () => SyncOptions };
 
 export type RequestParam = Omit<RequestUrlParam, 'body'> & { body?: string | Binary };
 export type RequestResponse = {
@@ -65,11 +64,11 @@ export default class Registrar {
 	private readonly remoteFsWrapperRegistry = new Set<FsWrapperEntry>();
 	private readonly localOptimizerRegistry = new Set<OptimizerEntry>();
 	private readonly remoteOptimizerRegistry = new Set<OptimizerEntry>();
-	private readonly remoteListerRegistry = new Set<RemoteListerEntry>();
 	private readonly remoteRequestMiddlewareRegistry = new Set<RemoteRequestMiddlewareEntry>();
 	private readonly localRequestMiddlewareRegistry = new Set<LocalRequestMiddlewareEntry>();
 	private readonly remoteFsRegistry = new Map<string, RemoteFsEntry>();
 	private readonly deciderRegistry = new Map<string, DeciderEntry>();
+	private readonly triggerRegistry = new Map<string, TriggerEntry>();
 	private readonly conflictResolverRegistry = new Map<string, ConflictResolverEntry>();
 
 	declare readonly settings: { remoteFs: string; decider: string; conflictResolver: string };
@@ -122,8 +121,19 @@ export default class Registrar {
 		applyFirst(this.localOptimizerRegistry, input);
 	private readonly optimizeRemote: BatchOptimizer = (input) =>
 		applyFirst(this.remoteOptimizerRegistry, input);
-	private readonly listRemote: RemoteLister = (input) =>
-		applyFirst(this.remoteListerRegistry, input);
+	private readonly reduceTriggers = (
+		triggers: Array<string>,
+	): { trigger: string; options?: SyncOptions } => {
+		let highest: (TriggerEntry & { trigger: string }) | undefined;
+		for (const trigger of triggers) {
+			const entry = this.triggerRegistry.get(trigger);
+			if (!entry) continue;
+			const { priority, options } = entry;
+			if (!highest || entry.priority > highest.priority)
+				highest = { options, priority, trigger };
+		}
+		return { options: highest?.options?.(), trigger: highest?.trigger ?? 'unknown' };
+	};
 
 	private readonly getConflictResolver = () => {
 		const id = this.settings.conflictResolver;
@@ -158,9 +168,9 @@ export default class Registrar {
 		getRequest: this.getRequest,
 		getVaultRequest: this.getVaultRequest,
 		initializeSync: this.initializeSync,
-		listRemote: this.listRemote,
 		optimizeLocal: this.optimizeLocal,
 		optimizeRemote: this.optimizeRemote,
+		reduceTriggers: this.reduceTriggers,
 		registerConflictResolver: mapRegister(this.conflictResolverRegistry),
 		registerCss: (css: string) => {
 			const style = createEl('style', { text: css, type: 'text/css' });
@@ -173,9 +183,9 @@ export default class Registrar {
 		registerLocalRequestMiddleware: setRegister(this.localRequestMiddlewareRegistry),
 		registerRemoteFs: mapRegister(this.remoteFsRegistry),
 		registerRemoteFsWrapper: setRegister(this.remoteFsWrapperRegistry),
-		registerRemoteLister: setRegister(this.remoteListerRegistry),
 		registerRemoteOptimizer: setRegister(this.remoteOptimizerRegistry),
 		registerRemoteRequestMiddleware: setRegister(this.remoteRequestMiddlewareRegistry),
+		registerTrigger: mapRegister(this.triggerRegistry),
 		remoteFsRegistry: this.remoteFsRegistry,
 	};
 

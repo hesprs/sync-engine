@@ -66,7 +66,10 @@ export default class Observability {
 		},
 	);
 
-	declare readonly settings: { noticeStatusOnMobile: boolean; exportLogsDirectory: string };
+	declare readonly settings: {
+		noticeStatusOnMobile: boolean;
+		exportLogsDirectory: string;
+	};
 	declare readonly i18n: {
 		startSync: string;
 		startNonInteractiveSync: string;

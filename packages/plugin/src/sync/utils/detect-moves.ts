@@ -10,7 +10,7 @@ type MoveInfo = { key: string; oldKey: string; side: MoveSide };
 type Candidate = { key: string; side: MoveSide; task: BaseTask; uid?: string };
 type FolderPair = { create: Candidate; delete: Candidate; newKey: string };
 
-export default function detectMoves(
+export default function convertMoves(
 	tasks: Array<BaseTask>,
 	translate: (name: TaskNames) => string,
 	records: RecordStatsMap,

@@ -1,27 +1,52 @@
 # Sync
 
-Sync Engine's sync pipeline is extensible at three points: remote listing, decision-making, and conflict resolution. For the internal sync pipeline architecture, see [deep dive: sync](../deep-dive/sync).
+Sync Engine's sync pipeline is extensible at three points: sync trigger options, decision-making, and conflict resolution. For the internal sync pipeline architecture, see [deep dive: sync](../deep-dive/sync).
 
-## Remote Lister
+## Sync Trigger
 
-A `RemoteLister` produces the remote file listing during sync. The plugin registers a normal traversal (priority 10000) and a realtime fast-mode candidate (priority 1000). Entries are evaluated in ascending order; the first result is used.
+Every sync run is launched with a trigger name and a set of options. A `TriggerEntry` is registered under a trigger name and supplies the options factory; when the scheduler flushes a batch of sync requests, it selects the entry with the highest priority among the batch's trigger names and passes its `options()` to the run.
 
 ```ts
-type RemoteLister = (
-  info: Infras & { trigger: string; reporter: ListReporter },
-) => MaybePromise<Array<Stat>>;
-
-type RemoteListerEntry = {
+type TriggerEntry = {
   priority: number;
-  apply: (info: Parameters<RemoteLister>[0]) => MaybePromise<Array<Stat>> | undefined;
+  options?: () => SyncOptions;
 };
 ```
 
-`Infras` is `{ localFs: Fs; remoteFs: Fs; record: RecordStore }`. The `reporter` must be passed through to `remoteFs.list()` calls. For how listers integrate with the sync flow, see [deep dive: sync](../deep-dive/sync#remote-lister).
+```ts
+ctx.registerTrigger(key: string, entry: TriggerEntry): () => boolean;
+```
 
-### Registering a Lister
+`SyncOptions` customizes one run. Unset fields fall back to defaults: the selected decider and conflict resolver, the configured inclusion and exclusion rules, move detection on, and no confirmations.
 
-See [registration](registration#remote-lister).
+```ts
+type SyncOptions = {
+  decider?: Decider;
+  remoteLister?: RemoteLister;
+  conflictResolver?: ConflictResolver;
+  detectMoves?: boolean;
+  needConfirmTasks?: boolean;
+  needConfirmDeletion?: boolean;
+  inclusionRules?: Array<GlobMatchRule>;
+  exclusionRules?: Array<GlobMatchRule>;
+};
+```
+
+The plugin registers built-in entries: `realtime` (priority 1000), `interval` (2000), `startup` (3000), `migration` (3980), `nonInteractiveManual` (3990), and `manual` (4000). Registering under an existing name replaces the entry.
+
+### Remote Lister
+
+`SyncOptions.remoteLister` supplies the remote file listing instead of a fresh traversal.
+
+```ts
+type RemoteLister = (info: Infras & { reporter: ListReporter }) => MaybePromise<Array<Stat>>;
+```
+
+`Infras` is `{ localFs: Fs; remoteFs: Fs; record: RecordStore }`. The `reporter` must be passed through to `remoteFs.list()` calls. For how trigger options integrate with the sync flow, see [deep dive: sync](../deep-dive/sync#sync-trigger).
+
+### Registering a Trigger Entry
+
+See [registration](./registration#sync-trigger).
 
 ## Decider
 

@@ -65,7 +65,7 @@ Despite the determinism in generation algorithm, the implementation doesn't assu
 
 Asymmetric storage is implemented as a _file system wrapper_. It depends on a direct adjacent _context wrapper_ nearer to root to provide initial list of flattened file names to infer.
 
-The wrapper maintains two symmetric maps of folder key to anchor and anchor to folder key, used by flattening and de-flattening. The two maps are built only once per sync lifecycle from the keys stored in `memoryDB` `remoteStatContext` store when the first non-root key needing flattening / de-flattening arrives.
+The wrapper maintains two symmetric maps of folder key to anchor and anchor to folder key, used by flattening and de-flattening. The two maps are built only once per sync lifecycle from the keys stored in `memoryDB` `remoteContext10000` store when the first non-root key needing flattening / de-flattening arrives.
 
 Per-method specification:
 

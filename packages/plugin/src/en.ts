@@ -32,7 +32,7 @@ const en: Translations = {
 				});
 				const ol = frag.createEl('ol');
 				ol.createEl('li', {
-					text: 'Remote storage will no longer mirror local hierarchical structure. All files will be uploaded flatly to the base directory with random string anchors appended.',
+					text: 'Remote storage will no longer mirror local hierarchical structure. All files will be uploaded flatly to the base directory with random string anchors prepended.',
 				});
 				ol.createEl('li', {
 					text: "If you need the remote to remain readable by humans, please don't enable this feature.",

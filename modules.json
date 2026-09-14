@@ -32,7 +32,7 @@
 	{
 		"id": "encryption",
 		"name": "Encryption",
-		"version": "0.1.3",
+		"version": "0.1.4",
 		"description": "Client-side encrypt vault files before uploading to backend.",
 		"icon": "key-round",
 		"main": "https://sync.consensia.cc/modules/encryption.js",
