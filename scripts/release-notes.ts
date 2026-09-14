@@ -1,5 +1,6 @@
 // oxlint-disable no-console
-const CHANGELOG_PATH = 'packages/plugin/CHANGELOG.md';
+import changelog from '../CHANGELOG.md' with { type: 'text' };
+
 const OUTPUT_PATH = 'release-notes.md';
 
 function getSemVer(version: string): string {
@@ -10,14 +11,9 @@ function getSemVer(version: string): string {
 	return match.groups?.semver ?? '';
 }
 
-async function extractNotes(version: string): Promise<string> {
-	if (!(await Bun.file(CHANGELOG_PATH).exists()))
-		throw new Error(`CHANGELOG.md not found at ${CHANGELOG_PATH}`);
-
-	const content = await Bun.file(CHANGELOG_PATH).text();
-	const lines = content.split('\n');
+function extractNotes(version: string): string {
+	const lines = changelog.split('\n');
 	const targetSemVer = getSemVer(version);
-
 	let found = false;
 	const notes: Array<string> = [];
 
@@ -31,10 +27,8 @@ async function extractNotes(version: string): Promise<string> {
 				continue;
 			}
 		}
-
 		if (found) notes.push(line);
 	}
-
 	if (!found) throw new Error(`Release notes for version ${version} not found in CHANGELOG.md`);
 
 	// Trim leading/trailing empty lines for cleanliness
@@ -51,8 +45,8 @@ async function main(): Promise<void> {
 
 	console.log(`Extracting release notes for ${versionTag}...`);
 	const notes = versionTag.includes('-')
-		? 'Development release built for debug purpose, not recommended for real usage.'
-		: await extractNotes(versionTag);
+		? 'Development release built for debug purpose, not recommended for daily usage.'
+		: extractNotes(versionTag);
 	await Bun.write(OUTPUT_PATH, notes);
 	Bun.spawnSync({ cmd: ['bun', 'oxfmt', OUTPUT_PATH] });
 
@@ -65,6 +59,3 @@ try {
 	console.error('Error:', error instanceof Error ? error.message : error);
 	throw error;
 }
-
-// oxlint-disable-next-line unicorn/require-module-specifiers
-export {};
