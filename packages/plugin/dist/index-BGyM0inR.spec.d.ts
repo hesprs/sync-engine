@@ -609,7 +609,7 @@ declare class Extensibility {
   };
 }
 //#endregion
-//#region src/components/UnknownModuleModal.d.ts
+//#region src/components/UntrustedModuleModal.d.ts
 type FileInfo = {
   path: string;
   size: string;
@@ -617,9 +617,9 @@ type FileInfo = {
   ctime: string;
   fileName: string;
 };
-type UnknownModuleTranslations = {
-  unknownModule: string;
-  unknownModuleDescription: Fragment<FileInfo>;
+type UntrustedModuleTranslations = {
+  untrustedModule: string;
+  untrustedModuleDescription: Fragment<FileInfo>;
   delete: string;
   configure: string;
 };
@@ -981,7 +981,7 @@ declare class Bootstrap {
     keepRemote: string;
     renameAndKeepBoth: string;
     skip: string;
-  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UnknownModuleTranslations & FileTreeTranslations & ModulesTranslations;
+  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
     maxMemoryConsumption: TogglableValue;
     maxRequestConcurrency: TogglableValue;

@@ -1,6 +1,6 @@
 import type { CheckConnectionResult, Request } from '@hesprs/sync-engine-sdk';
 import { normalizeUrl } from '@repo/shared/path';
-import { buildUrl, getAuthorization } from './utils';
+import { buildUrl, getAuthorization, parseWebDAVError } from './utils';
 
 export type WebdavConnectionOptions = {
 	endpoint: string;
@@ -28,7 +28,10 @@ export async function checkConnection(
 			url: buildUrl(normalizeUrl(options.endpoint), '/'),
 		});
 		if (response.status === 200 || response.status === 207) return { success: true } as const;
-		return { reason: response.status.toString(), success: false } as const;
+		return {
+			reason: parseWebDAVError(response.text()) ?? response.status.toString(),
+			success: false,
+		} as const;
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
 		return { reason: errorMessage, success: false } as const;

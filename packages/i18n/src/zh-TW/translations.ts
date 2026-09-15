@@ -12,9 +12,7 @@ const zhTW: Translations = {
 		createFragment((frag) => {
 			frag.appendText('使用');
 			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage',
-				},
+				attr: { href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage' },
 				text: '非對稱儲存',
 			});
 			frag.appendText('來大幅提升同步速度。');
@@ -299,16 +297,16 @@ const zhTW: Translations = {
 	syncStrategy: '同步策略',
 	syncStrategyDescription: '選擇用來處理檔案變更的同步策略。更多策略可透過模組提供。',
 	toggleWithoutMigration: '直接切換（不執行遷移）',
-	unknownModule: '未知模組',
-	unknownModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
+	untrustedModule: '非信任模組',
+	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
 			const p1 = frag.createEl('p');
-			p1.appendText('Sync Engine 在模組目錄中偵測到名為 ');
+			p1.appendText('Sync Engine 偵測到一個已安裝的模組，名為 ');
 			p1.createEl('code', { text: fileName });
-			p1.appendText(
-				' 的已安裝模組。此模組既未在 Sync Engine 模組面板中安裝，也未在任何地方註冊以豁免來源驗證。',
-			);
-			p1.createEl('strong', { text: '在繼續操作前，請仔細核對以下資訊：' });
+			p1.appendText('，此模組從未在此庫中向 Sync Engine 註冊。');
+			p1.createEl('strong', {
+				text: '請在繼續之前檢閱以下資訊：',
+			});
 			const ul = frag
 				.createDiv(
 					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
@@ -321,7 +319,7 @@ const zhTW: Translations = {
 			li2.appendText('檔案路徑：');
 			li2.createEl('code', { text: path });
 			const li3 = ul.createEl('li');
-			li3.appendText('檔案大小：');
+			li3.appendText('大小：');
 			li3.createEl('code', { text: size });
 			const li4 = ul.createEl('li');
 			li4.appendText('建立時間：');
@@ -330,12 +328,15 @@ const zhTW: Translations = {
 			li5.appendText('修改時間：');
 			li5.createEl('code', { text: mtime });
 			const p2 = frag.createEl('p');
-			p2.createEl('strong', {
-				text: '請避免載入來源不明的模組，這可能是惡意攻擊。',
-			});
+			p2.createEl('strong', { text: '請避免啟用來源不明的模組。' });
 			p2.appendText(
-				' 若您不清楚其來源，直接刪除是最好的做法。若此模組是由您掌控且為預期行為，您可以選擇「設定」並將其啟用。',
+				'如果您不知道它來自何處，請直接將其刪除；如果它由您掌控，您可以選擇「設定」並加以啟用。如需了解此警告的說明，請參閱 ',
 			);
+			p2.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
+				text: '文件頁面',
+			});
+			p2.appendText('。');
 		}),
 	update: '更新',
 	updateAvailable: '有可用更新',

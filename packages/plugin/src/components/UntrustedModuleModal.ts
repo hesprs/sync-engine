@@ -9,9 +9,9 @@ import ModuleEditorModal from './ModuleEditorModal';
 
 type FileInfo = { path: string; size: string; mtime: string; ctime: string; fileName: string };
 
-export type UnknownModuleTranslations = {
-	unknownModule: string;
-	unknownModuleDescription: Fragment<FileInfo>;
+export type UntrustedModuleTranslations = {
+	untrustedModule: string;
+	untrustedModuleDescription: Fragment<FileInfo>;
 	delete: string;
 	configure: string;
 };
@@ -20,7 +20,7 @@ export default class UnknownModuleModal extends Modal {
 	private cachedInfo?: FileInfo;
 
 	constructor(
-		private readonly ctx: { app: App; translate: Translate<UnknownModuleTranslations> },
+		private readonly ctx: { app: App; translate: Translate<UntrustedModuleTranslations> },
 		private readonly options: {
 			onSave: (meta: AugmentedModuleMeta) => MaybePromise<void>;
 			path: string;
@@ -28,16 +28,17 @@ export default class UnknownModuleModal extends Modal {
 		},
 	) {
 		super(ctx.app);
+		this.setTitle(ctx.translate('untrustedModule'));
+		this.contentEl.addClass('markdown-rendered');
 	}
 
 	onOpen() {
 		const { translate, app } = this.ctx;
 		const { id, path, onSave } = this.options;
-		this.setTitle(translate('unknownModule'));
-		this.contentEl.addClass('markdown-rendered');
 
 		const content = this.contentEl.createDiv();
-		if (this.cachedInfo) content.append(translate('unknownModuleDescription', this.cachedInfo));
+		if (this.cachedInfo)
+			content.append(translate('untrustedModuleDescription', this.cachedInfo));
 		else
 			void app.vault.adapter.stat(path).then((stat) => {
 				if (!stat) {
@@ -53,7 +54,7 @@ export default class UnknownModuleModal extends Modal {
 					size: formatFileSize(size),
 				};
 				this.cachedInfo = fileInfo;
-				content.append(translate('unknownModuleDescription', fileInfo));
+				content.append(translate('untrustedModuleDescription', fileInfo));
 			});
 
 		new Setting(this.contentEl)

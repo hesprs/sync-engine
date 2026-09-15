@@ -345,17 +345,15 @@ const ru: Translations = {
 	syncStrategyDescription:
 		'Выберите стратегию синхронизации для обработки изменений в файлах. Дополнительные стратегии доступны в модулях.',
 	toggleWithoutMigration: 'Переключить без миграции',
-	unknownModule: 'Неизвестный модуль',
-	unknownModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
+	untrustedModule: 'Модуль из недоверенного источника',
+	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
 			const p1 = frag.createEl('p');
 			p1.appendText('Sync Engine обнаружил установленный модуль с именем ');
 			p1.createEl('code', { text: fileName });
-			p1.appendText(
-				' в своей директории модулей. Этот модуль не установлен на странице управления модулями Sync Engine и не зарегистрирован нигде для освобождения от проверки происхождения. ',
-			);
+			p1.appendText(', который никогда не регистрировался в Sync Engine в этом хранилище. ');
 			p1.createEl('strong', {
-				text: 'Перед продолжением проверьте следующее:',
+				text: 'Пожалуйста, ознакомьтесь со следующей информацией перед продолжением:',
 			});
 			const ul = frag
 				.createDiv(
@@ -379,11 +377,16 @@ const ru: Translations = {
 			li5.createEl('code', { text: mtime });
 			const p2 = frag.createEl('p');
 			p2.createEl('strong', {
-				text: 'Не загружайте модули из неизвестных источников — это может быть атака.',
+				text: 'Пожалуйста, не включайте модули из неизвестных источников.',
 			});
 			p2.appendText(
-				' Если вы не знаете, откуда появился этот модуль, лучше всего сразу удалить его. Если модуль под вашим контролем и его установка намеренна, вы можете выбрать «Настроить» и включить его.',
+				'Если вы не знаете, откуда появился этот модуль, лучше всего сразу удалить его. Если модуль под вашим контролем, вы можете выбрать «Настроить» и включить его. Пояснение к этому предупреждению см. в ',
 			);
+			p2.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
+				text: 'документации',
+			});
+			p2.appendText('.');
 		}),
 	update: 'Обновить',
 	updateAvailable: 'Доступно обновление',

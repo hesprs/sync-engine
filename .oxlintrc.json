@@ -122,7 +122,8 @@
 		"unicorn/import-style": "off",
 		"unicorn/no-process-exit": "off",
 		"eslint/one-var": ["warn", "never"],
-		"unicorn/max-nested-calls": ["warn", { "max": 5 }]
+		"unicorn/max-nested-calls": ["warn", { "max": 5 }],
+		"eslint/require-await": "off", // overlaps with typescript
 	},
 	"env": {
 		"builtin": true,
