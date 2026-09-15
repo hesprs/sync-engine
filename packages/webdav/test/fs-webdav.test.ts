@@ -383,14 +383,22 @@ test('delete swallows 404 and rethrows other failures', async () => {
 	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com' });
 	webdav.setRequest(() => {
 		attempts += 1;
-		// oxlint-disable-next-line typescript/only-throw-error
-		if (attempts === 1) throw { res: { status: 404 } };
-		// oxlint-disable-next-line typescript/only-throw-error
-		throw { res: { status: 500 } };
+		return { ...defaultResponse, status: attempts === 1 ? 404 : 500 };
 	});
 
 	await webdav.fs.delete('Notes/file.md');
-	expect(webdav.fs.delete('Notes/file.md')).rejects.toStrictEqual({ res: { status: 500 } });
+	expect(webdav.fs.delete('Notes/file.md')).rejects.toThrow('WebDAV request failed: 500 DELETE');
+});
+
+test('requestOrThrow throws parsed WebDAV error message with status', () => {
+	const webdav = createWebdavFs();
+	webdav.setRequest(() => ({ ...defaultResponse, status: 409 }));
+	parsedResponse = { error: { message: 'File name is too long' } } as never;
+
+	return expect(webdav.fs.move('Notes/a.md', 'Notes/b.md')).rejects.toMatchObject({
+		message: 'File name is too long',
+		status: 409,
+	});
 });
 
 test('mkdir recursively creates parent folders in order', async () => {
@@ -398,8 +406,7 @@ test('mkdir recursively creates parent folders in order', async () => {
 	webdav.setRequest((params) => {
 		if (params.url === 'https://dav.example.com/dav/Notes/') return response;
 		if (params.url === 'https://dav.example.com/dav/Notes/Folder%20A/')
-			// oxlint-disable-next-line typescript/only-throw-error
-			throw { res: { status: 405 } };
+			return { ...defaultResponse, status: 405 };
 		if (params.url === 'https://dav.example.com/dav/Notes/Folder%20A/Child/') return response;
 		throw new Error(`Unexpected URL: ${params.url}`);
 	});
