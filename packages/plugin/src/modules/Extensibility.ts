@@ -7,7 +7,7 @@ import { importCode } from '@repo/shared/e2e-utils.spec';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
 import type { General } from '@/types';
-import UnknownModuleModal from '@/components/UnknownModuleModal';
+import UntrustedModuleModal from '@/components/UntrustedModuleModal';
 import sha256 from '@/utils/sha-256';
 import toErrorMessage from '@/utils/to-error-message';
 import untilTrue from '@/utils/until-true';
@@ -136,7 +136,7 @@ export default class Extensibility {
 				this.discoveredModules.set(id, meta);
 				if (meta.enabled) factory.load(meta);
 			} else
-				new UnknownModuleModal(this.ctx, {
+				new UntrustedModuleModal(this.ctx, {
 					id,
 					onSave: async (newMeta) => {
 						this.discoveredModules.set(id, newMeta);

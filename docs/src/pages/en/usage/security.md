@@ -25,7 +25,7 @@ These safeguards reduce accidental or unauthorized module execution. They do not
 ## Improve Your Security
 
 - Install modules from sources you recognize. Review a module's source and requested function before enabling it, remove module sources you no longer trust.
-- Keep integrity verification enabled. Do not approve an unknown module or disable verification unless you understand why it is necessary.
+- Keep integrity verification enabled. Do not approve an untrusted module or disable verification unless you understand why it is necessary.
 - Avoid HTTP sources, especially on networks you do not control. Use HTTPS for backend and module source URL
 - Enable the Encryption module for sensitive vaults. Use a strong, unique password, keep it in Obsidian's secret storage, and configure it on every device before syncing encrypted files. Read the [encryption spec](../deep-dive/modules/encryption) before relying on it.
 - Protect your device and Obsidian vault with your operating system's updates, account protection, and disk encryption where available.

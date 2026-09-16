@@ -330,15 +330,13 @@ const en: Translations = {
 	syncStrategyDescription:
 		'Select the synchronization strategy to resolve file changes. More strategies can be found in modules.',
 	toggleWithoutMigration: 'Toggle without migration',
-	unknownModule: 'Unknown module',
-	unknownModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
+	untrustedModule: 'Untrusted module',
+	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
 			const p1 = frag.createEl('p');
 			p1.appendText('Sync Engine detected an installed module named ');
 			p1.createEl('code', { text: fileName });
-			p1.appendText(
-				' in its module directory. This module is neither installed in Sync Engine module management page, nor registered anywhere to be exempt from provenance validation. ',
-			);
+			p1.appendText(', which is never registered in Sync Engine in this vault. ');
 			p1.createEl('strong', {
 				text: 'Please review following information before proceeding:',
 			});
@@ -363,12 +361,15 @@ const en: Translations = {
 			li5.appendText('Modified at: ');
 			li5.createEl('code', { text: mtime });
 			const p2 = frag.createEl('p');
-			p2.createEl('strong', {
-				text: 'Please avoid loading modules with unknown sources, as this could be a malicious attack.',
-			});
+			p2.createEl('strong', { text: 'Please avoid enabling modules from unknown sources.' });
 			p2.appendText(
-				' If you do not know where does it come from, directly deleting it is the best option. If you control the module and it is intentional, you can choose "Configure" and enable it.',
+				'Directly deleting it if you don\'t know where does it come from; you can choose "Configure" and enable it if it is under your control. For an explanation of this warning, see ',
 			);
+			p2.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
+				text: 'documentation page',
+			});
+			p2.appendText('.');
 		}),
 	update: 'Update',
 	updateAvailable: 'Update available',

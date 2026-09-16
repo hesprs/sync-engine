@@ -1,0 +1,42 @@
+name: Deploy modules
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - modules.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-slim
+    environment:
+      name: modules
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build modules
+        run: bun compile
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+
+      - name: Deploy modules
+        run: bun scripts/deploy-modules.ts

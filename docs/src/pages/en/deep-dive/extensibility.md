@@ -81,10 +81,10 @@ Startup loading performs the following steps:
 3. Remove folders and files that do not end in `.js`.
 4. Parse each JavaScript filename into a module ID.
 5. Match each file with metadata from the local IndexedDB store.
-6. Open a warning modal for a file with no stored metadata.
+6. Open a warning modal for a file with no stored metadata (untrusted module).
 7. Load a module only when its stored metadata has `enabled: true`.
 
-An unknown module is not loaded automatically. The user may configure it through the warning modal or delete it. Configuring an unknown module creates metadata for the local file. Its integrity value is calculated from the file when integrity verification is enabled.
+An untrusted module is not loaded automatically. The user may configure it through the warning modal or delete it. Configuring an untrusted module creates metadata for the local file. Its integrity value is calculated from the file when integrity verification is enabled.
 
 When loading an installed artifact, the loader reads it through the vault `DataAdapter`. During a download, it may instead verify the fetched response text directly. When integrity check is not disabled by the user, it calculates SHA-256 over the module text and compares the result with the stored value.
 

@@ -1,5 +1,16 @@
 import type { Stat } from '@hesprs/sync-engine-sdk';
+import parseXML from '@repo/shared/parse-xml';
 import { encodeUrl } from '@repo/shared/path';
+
+type WebdavError = { error?: { message?: string } };
+
+export function parseWebDAVError(xml: string): string | undefined {
+	try {
+		return (parseXML<WebdavError>(xml).error?.message ?? xml).trim() || undefined;
+	} catch {
+		/* Ignore malformed error XML and use the HTTP fallback. */
+	}
+}
 
 export function getAuthorization(username: string, password: string) {
 	return `Basic ${btoa(`${username}:${password}`)}`;

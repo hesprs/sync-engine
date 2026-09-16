@@ -1,11 +1,10 @@
-name: Deploy modules and docs
+name: Deploy docs
 
 on:
   push:
     branches: [main]
     paths:
       - docs/**
-      - modules.json
   workflow_dispatch:
 
 permissions:
@@ -13,13 +12,13 @@ permissions:
 
 concurrency:
   group: 'pages'
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-slim
     environment:
-      name: modules
+      name: docs
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
@@ -34,19 +33,15 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build modules
-        run: bun compile
-        env:
-          GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
-          GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
-
-      - name: Sync modules
-        run: bun scripts/deploy-modules.ts
-
       - name: Build docs
         run: bun build:docs
 
       - name: Deploy docs
+        id: deployment
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: './docs/dist'
+          clean-exclude: |
+            modules/**
+            modules.json
+            modules-alternative.json

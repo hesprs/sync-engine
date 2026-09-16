@@ -1,4 +1,4 @@
-import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
+import type { Binary, RequestParam, RequestResponse, Stat } from '@hesprs/sync-engine-sdk';
 import { concatBinary } from '@repo/shared/binary';
 import { encodeURIComponent3986 } from '@repo/shared/path';
 import { buildUrl, getFileUid, getHeader } from './utils';
@@ -6,10 +6,12 @@ import { buildUrl, getFileUid, getHeader } from './utils';
 const NEXTCLOUD_CHUNK_SIZE = 5 * 1024 * 1024;
 const NEXTCLOUD_MAX_CONCURRENT = 3;
 
+type ThrowRequest = (params: RequestParam) => Promise<RequestResponse>;
+
 type NextcloudChunkedUploadOptions = {
 	auth: string;
 	endpoint: string;
-	request: Request;
+	request: ThrowRequest;
 	stat: (key: string) => Promise<Stat>;
 	username: string;
 };
@@ -23,7 +25,7 @@ function getUploadEndpoint(endpoint: string, username: string) {
 		: `${endpoint.slice(0, filesMarkerIndex)}/uploads/${encodedUsername}`;
 }
 
-async function deleteChunkUpload(request: Request, auth: string, uploadFolderUrl: string) {
+async function deleteChunkUpload(request: ThrowRequest, auth: string, uploadFolderUrl: string) {
 	await request({
 		headers: { Authorization: auth },
 		method: 'DELETE',

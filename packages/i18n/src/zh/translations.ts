@@ -299,16 +299,16 @@ const zh: Translations = {
 	syncStrategy: '同步策略',
 	syncStrategyDescription: '选择用于解决文件更改的同步策略。更多策略可以在模块中找到。',
 	toggleWithoutMigration: '直接切换（不进行迁移）',
-	unknownModule: '未知模块',
-	unknownModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
+	untrustedModule: '非信任模块',
+	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
 			const p1 = frag.createEl('p');
-			p1.appendText('Sync Engine 在其模块目录中检测到一个名为 ');
+			p1.appendText('Sync Engine 检测到一个名为 ');
 			p1.createEl('code', { text: fileName });
-			p1.appendText(
-				' 的已安装模块。该模块既未安装在 Sync Engine 模块面板中，也未在任何地方注册以豁免出处验证。',
-			);
-			p1.createEl('strong', { text: '在继续操作之前，请核对以下信息：' });
+			p1.appendText(' 的已安装模块，该模块从未在当前仓库的 Sync Engine 中注册。');
+			p1.createEl('strong', {
+				text: '请在继续之前查看以下信息：',
+			});
 			const ul = frag
 				.createDiv(
 					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
@@ -330,12 +330,15 @@ const zh: Translations = {
 			li5.appendText('修改时间：');
 			li5.createEl('code', { text: mtime });
 			const p2 = frag.createEl('p');
-			p2.createEl('strong', {
-				text: '请避免加载来源不明的模块，因为这可能是一种恶意攻击。',
-			});
+			p2.createEl('strong', { text: '请避免启用来自未知来源的模块。' });
 			p2.appendText(
-				'如果您不知道它来自何处，直接删除是最佳选择。如果您了解该模块且此操作符合预期，您可以选择"配置"并启用它。',
+				'如果您不知道它来自哪里，请直接将其删除；如果它在您的控制之下，您可以选择“配置”并启用它。有关此警告的说明，请参阅',
 			);
+			p2.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
+				text: '文档页面',
+			});
+			p2.appendText('。');
 		}),
 	update: '更新',
 	updateAvailable: '有可用更新',
