@@ -45,7 +45,7 @@ Encryption implementation in this module welcomes volunteer auditing.
 - Prevent unintended renaming or movement
 - Prevent deletion at server side
 - Obfuscate file size or modification time
-- Obfuscate total file number
+- Obfuscate total file count
 - Obfuscate remote root directory name
 
 ### Algorithms
@@ -91,8 +91,7 @@ On each sync, generate a promise to obtain _root file key_ and _name key_ that w
 
 Then come to the traversal and syncing logic:
 
-- encryption should be isolated at the end site, directly in the push task and mkdir task
-- decryption should happen immediately when the encrypted file touches local machine, directly during remote traversal, pull task, and `getRemoteContent`.
+- encryption and decryption are isolated in a remote [filesystem wrapper](../file-system-wrappers). The wrapper transparently transforms keys and contents of every file system operation.
 - assume all files are encrypted when "Encryption" is enabled, assume all plain when not enabled.
 
 ## File / Folder Path Encryption
@@ -196,6 +195,6 @@ Path segments and derived keys are cached, persistent beyond sync runs. The cach
 Behavior:
 
 - `memoryDB` from context is of different type, cast it to ` MemoryDatabase<EncryptionDBSchema, EncryptionDBMeta>`.
-- `lastEncryptionUid` = `RemoteFs.getUid()` || `~` || _user password_
+- `encryptionMarker` = `RemoteFs.getUid()` || `~` || _user password_
 - Cached derived keys are stared in store meta `encryptionKeys` field
-- Only once when the wrapper is activated: check if store meta `lastEncryptionUid` is aligned with the current one. If not, clear stores and `encryptionKeys`, and update the meta to the current uid.
+- Only once when the wrapper is activated: check if store meta `encryptionMarker` is aligned with the current one. If not, clear stores and `encryptionKeys`, and update the meta to the current uid.

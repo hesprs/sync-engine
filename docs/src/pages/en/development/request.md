@@ -30,15 +30,15 @@ Local vault operation function used by the local filesystem. Modules rarely inte
 ```ts
 type VaultRequestParam =
   | { method: 'GET'; key: string }
-  | { method: 'GET_STREAM'; key: string }
-  | { method: 'PUT'; key: string; value: Binary; headers?: { mtime?: number; ctime?: number } }
-  | { method: 'APPEND'; key: string; value: Binary; headers?: { mtime?: number; ctime?: number } }
-  | { method: 'DELETE'; key: string; headers?: { permanent?: boolean } }
-  | { method: 'MOVE'; key: string; headers: { destination: string } }
+  | { method: 'GET_STREAM'; key: string; size: number }
+  | { method: 'PUT'; key: string; value: Binary; mtime?: number; ctime?: number }
+  | { method: 'APPEND'; key: string; value: Binary; mtime?: number; ctime?: number }
+  | { method: 'DELETE'; key: string; trash?: 'local' | 'system' | 'permanent' }
+  | { method: 'MOVE'; key: string; destination: string }
   | { method: 'MKDIR'; key: string }
   | { method: 'EXISTS'; key: string }
-  | { method: 'STAT'; key: string; headers?: { cached?: boolean } }
-  | { method: 'LIST'; key: string; headers?: { cached?: boolean } };
+  | { method: 'STAT'; key: string; cached?: boolean }
+  | { method: 'LIST'; key: string; cached?: boolean };
 
 type VaultRequest = <T extends VaultRequestParam>(
   params: T,
@@ -47,7 +47,7 @@ type VaultRequest = <T extends VaultRequestParam>(
 
 For the method-to-Obsidian-adapter mapping, see [deep dive: request](../deep-dive/request#vault-request).
 
-`STAT` and `LIST` use cached vault objects by default when the layout is ready. Set `headers.cached` to `false` to bypass those caches and query the vault adapter instead. The option defaults to `true` when omitted.
+`STAT` and `LIST` use cached vault objects by default when the layout is ready. Set `cached` to `false` to bypass those caches and query the vault adapter instead. The option defaults to `true` when omitted.
 
 ## Middleware
 

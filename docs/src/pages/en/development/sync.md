@@ -114,7 +114,7 @@ import { pipe } from '@hesprs/sync-engine-sdk';
 function pipe(options: { from: Fs; to: Fs; key: string; stat: FileStat }): Promise<void>;
 ```
 
-Reads a file from `from` and writes it to `to` under the same `key`. Automatically selects buffered or streaming mode based on file size (2.5 MiB threshold). Silently succeeds if the source file does not exist (swallows TOCTOU 404 / `ENOENT` errors).
+Reads a file from `from` and writes it to `to` under the same `key`. Automatically selects buffered or streaming mode based on file size (device-adaptive). Silently succeeds if the source file does not exist (swallows TOCTOU 404 / `ENOENT` errors).
 
 ```ts
 await pipe({ from: remoteFs, to: localFs, key: 'folder/note.md', stat });

@@ -95,7 +95,7 @@ export default function createVaultRequest(app: App): VaultRequest {
 		if (method === 'GET_STREAM') {
 			const url = adapter.getResourcePath(path);
 			// Local file fetch streaming isn't supported in iOS
-			if (OS.iOS || (OS.iPadOS && isMediaExtension(key)))
+			if ((OS.iOS || OS.iPadOS) && isMediaExtension(key))
 				return createRangeReadStream({
 					chunkSize,
 					concurrency,
