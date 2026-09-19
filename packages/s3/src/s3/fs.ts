@@ -13,9 +13,9 @@ import { concatBinary, textToUint8Array } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/get-status';
 import parseXML from '@repo/shared/parse-xml';
 import { dirname, encodeUrl, isFolder } from '@repo/shared/path';
+import createRangeReadStream from '@repo/shared/read-stream';
 import type { UrlStyle } from './sigv4';
 import { PART_SIZE, multipartUpload } from './multipart';
-import createS3ReadStream from './read-stream';
 import { md5Base64 } from './sigv4';
 import { buildUrl, buildUrlWithQuery, getHeader } from './url';
 
@@ -167,23 +167,21 @@ export default class S3Fs implements RootFs {
 		return response.bytes();
 	}
 
-	readStream(key: string, { size }: FileStat): Promise<ReadableStream<Binary>> {
+	readStream(key: string, { size }: FileStat) {
 		const url = this.buildUrl(key);
-		return Promise.resolve(
-			createS3ReadStream({
-				chunkSize,
-				concurrency,
-				requestRange: async (start, endInclusive) => {
-					const response = await this.requestOrThrow({
-						headers: { Range: `bytes=${start}-${endInclusive}` },
-						method: 'GET',
-						url,
-					});
-					return response.bytes();
-				},
-				size,
-			}),
-		);
+		return createRangeReadStream({
+			chunkSize,
+			concurrency,
+			requestRange: async (start, endInclusive) => {
+				const response = await this.requestOrThrow({
+					headers: { Range: `bytes=${start}-${endInclusive}` },
+					method: 'GET',
+					url,
+				});
+				return response.bytes();
+			},
+			size,
+		});
 	}
 
 	async write(key: string, value: Binary): Promise<string> {

@@ -21,8 +21,8 @@ import {
 	normalizeUrl,
 	stripEndSlash,
 } from '@repo/shared/path';
+import createRangeReadStream from '@repo/shared/read-stream';
 import writeNextcloudChunkedUpload from './chunked-upload';
-import createWebDAVReadStream from './read-stream';
 import { buildUrl, getAuthorization, getFileUid, getHeader, parseWebDAVError } from './utils';
 
 export type WebdavFsOptions = {
@@ -240,7 +240,7 @@ export default class WebdavFs implements RootFs {
 	}
 
 	readStream(key: string, { size }: FileStat) {
-		return createWebDAVReadStream({
+		return createRangeReadStream({
 			chunkSize,
 			concurrency,
 			requestRange: async (start, endInclusive) => {

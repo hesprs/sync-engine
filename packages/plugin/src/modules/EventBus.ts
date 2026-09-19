@@ -6,7 +6,7 @@ import formatDateTime from '@/utils/format-date';
 import { formatTime } from '@/utils/unit-converter';
 
 // oxlint-disable-next-line sort-keys
-const OS = {
+export const OS = {
 	'Android Tablet': Platform.isTablet && Platform.isAndroidApp,
 	iPadOS: Platform.isTablet && Platform.isMacOS,
 	Android: Platform.isAndroidApp,
