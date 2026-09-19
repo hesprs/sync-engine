@@ -7,7 +7,10 @@ Sync Engine has two request systems: `Request` for remote HTTP calls and `VaultR
 Remote HTTP request function. Backends receive a composed `Request` instance in their constructor and must use it for all network calls.
 
 ```ts
-type RequestParam = Omit<RequestUrlParam, 'body'> & { body?: string | Binary };
+type RequestParam = Omit<RequestUrlParam, 'body'> & {
+  body?: string | Binary;
+  ignoreCancellation?: boolean;
+};
 
 type RequestResponse = {
   text: () => string;
@@ -22,6 +25,8 @@ type Request = (params: RequestParam | string) => Promise<RequestResponse>;
 
 `RequestParam` extends Obsidian's `RequestUrlParam` (minus `body`) with a `body` field accepting `string | Binary`. Passing a plain string instead of a `RequestParam` object uses it as the URL.
 `RequestResponse` is an exported SDK type for the response returned by `Request`.
+
+Set `ignoreCancellation` to `true` to let a request through after the sync has been cancelled. Reserve it for cleanup calls that release remote resources the backend already created, such as aborting an incomplete multipart upload — without it the cancellation middleware rejects the call and the resource is left behind.
 
 ## `VaultRequest`
 
