@@ -201,6 +201,31 @@ test('writeStream aborts multipart upload after part failure', () => {
 	expect(s3.calls.map(({ method }) => method)).toStrictEqual(['POST', 'PUT', 'DELETE']);
 });
 
+test('writeStream retries the abort and reports parts left on the bucket', async () => {
+	const s3 = createS3Fs();
+	const uploadError = new Error('part failed');
+	s3.setRequest((params) => {
+		const url = new URL(params.url);
+		if (params.method === 'POST' && url.searchParams.has('uploads')) {
+			parsedResponse = { InitiateMultipartUploadResult: { UploadId: 'upload-3' } };
+			return response({
+				text: '<InitiateMultipartUploadResult><UploadId>upload-3</UploadId></InitiateMultipartUploadResult>',
+			});
+		}
+		if (params.method === 'PUT') throw uploadError;
+		expect(params.method).toBe('DELETE');
+		expect(params.ignoreCancellation).toBe(true);
+		throw new Error('abort failed');
+	});
+
+	const source = createStream([bytes('failed')]);
+	const destination = file('orphaned.bin', { size: 5 * 1024 * 1024 });
+	await expect(s3.fs.writeStream('orphaned.bin', source, destination)).rejects.toMatchObject({
+		cause: uploadError,
+	});
+	expect(s3.calls.filter(({ method }) => method === 'DELETE')).toHaveLength(3);
+});
+
 test('delete and exists treat 404 as absent but propagate other statuses', async () => {
 	const calls: Array<string> = [];
 	const s3 = createS3Fs();

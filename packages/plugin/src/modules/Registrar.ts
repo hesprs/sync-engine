@@ -33,7 +33,11 @@ export type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
 
 export type TriggerEntry = { priority: number; options?: () => SyncOptions };
 
-export type RequestParam = Omit<RequestUrlParam, 'body'> & { body?: string | Binary };
+export type RequestParam = Omit<RequestUrlParam, 'body'> & {
+	body?: string | Binary;
+	/** Cleanup requests that must still run after the sync has been cancelled. */
+	ignoreCancellation?: boolean;
+};
 export type RequestResponse = {
 	text: () => string;
 	bytes: () => Binary;
@@ -46,8 +50,11 @@ export type Request = (params: RequestParam | string) => Promise<RequestResponse
 export type Infras = { localFs: Fs; remoteFs: Fs; record: RecordStore };
 
 const request: Request = async (params: RequestParam | string) => {
-	if (typeof params === 'object' && params.body instanceof Uint8Array)
-		(params as RequestUrlParam).body = toArrayBuffer(params.body);
+	if (typeof params === 'object') {
+		if (params.body instanceof Uint8Array)
+			(params as RequestUrlParam).body = toArrayBuffer(params.body);
+		delete params.ignoreCancellation;
+	}
 	const response = await requestUrl(params as RequestUrlParam);
 	return {
 		bytes: () => toUint8Array(response.arrayBuffer),

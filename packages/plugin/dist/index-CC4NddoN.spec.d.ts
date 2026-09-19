@@ -1251,6 +1251,8 @@ type TriggerEntry = {
 };
 type RequestParam = Omit<RequestUrlParam, 'body'> & {
   body?: string | Binary;
+  /** Cleanup requests that must still run after the sync has been cancelled. */
+  ignoreCancellation?: boolean;
 };
 type RequestResponse = {
   text: () => string;

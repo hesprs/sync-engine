@@ -6,6 +6,8 @@ import { buildUrlWithQuery, getHeader } from './url';
 
 export const PART_SIZE = 5 * 1024 * 1024; // 5 MiB — S3 minimum part size
 const MAX_CONCURRENT = 3;
+const ABORT_MAX_ATTEMPTS = 3;
+const ABORT_DELAY = 500;
 
 type InitiateMultipartUploadResponse = {
 	InitiateMultipartUploadResult?: {
@@ -71,7 +73,7 @@ async function uploadPart(
 	return { etag, partNumber };
 }
 
-async function abortMultipart(options: MultipartUploadOptions, uploadId: string) {
+async function abortMultipart(options: MultipartUploadOptions, uploadId: string): Promise<boolean> {
 	const url = buildUrlWithQuery(
 		{
 			bucket: options.bucket,
@@ -81,7 +83,17 @@ async function abortMultipart(options: MultipartUploadOptions, uploadId: string)
 		},
 		{ uploadId },
 	);
-	await options.request({ method: 'DELETE', url }).catch(() => {});
+	for (let attempt = 0; attempt < ABORT_MAX_ATTEMPTS; attempt++) {
+		if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, attempt * ABORT_DELAY));
+		try {
+			// The upload failed or was cancelled, so this cleanup bypasses cancellation
+			await options.request({ ignoreCancellation: true, method: 'DELETE', url });
+			return true;
+		} catch {
+			/* Retry, then report the leftover to the caller. */
+		}
+	}
+	return false;
 }
 
 export async function multipartUpload(
@@ -174,7 +186,11 @@ export async function multipartUpload(
 		return stat.uid;
 	} catch (error) {
 		await Promise.allSettled(inFlight);
-		if (uploadId) await abortMultipart(options, uploadId);
+		if (uploadId && !(await abortMultipart(options, uploadId)))
+			throw new Error(
+				`S3 multipart upload of ${options.key} failed and its uploaded parts could not be removed. They stay on the bucket and consume storage until aborted (uploadId ${uploadId}).`,
+				{ cause: error },
+			);
 		throw error;
 	} finally {
 		reader.releaseLock();
