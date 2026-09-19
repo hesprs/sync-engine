@@ -14,6 +14,7 @@ import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/get-status';
 import { basename, dirname, isFolder } from '@repo/shared/path';
+import createRangeReadStream from '@repo/shared/read-stream';
 import type { DriveFile, DriveFileList } from './api';
 import {
 	DRIVE_API,
@@ -25,7 +26,6 @@ import {
 	parseDriveError,
 	toFileStat,
 } from './api';
-import createRangeReadStream from './read-stream';
 import { guessMimeType, resumableUpload, singlePutUpload } from './upload';
 
 export type GdriveFsOptions = {
@@ -168,7 +168,7 @@ export default class GdriveFs implements RootFs {
 		return response.bytes();
 	}
 
-	readStream(key: string, { size }: FileStat): ReadableStream<Binary> {
+	readStream(key: string, { size }: FileStat) {
 		const id = this.resolveId(key);
 		if (id === undefined) throw notFoundError(key);
 		const url = buildUrl(DRIVE_API, `/files/${id}`, { alt: 'media' });

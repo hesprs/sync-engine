@@ -12,4 +12,4 @@ await Promise.all([
 	Bun.write('packages/plugin/package.json', JSON.stringify(pkg, undefined, '\t')),
 ]);
 
-Bun.spawnSync({ cmd: ['bun', 'oxfmt', 'versions.json', 'manifest.json'] });
+Bun.spawnSync({ cmd: ['bun', 'oxfmt', 'versions.json', 'packages/plugin/package.json'] });

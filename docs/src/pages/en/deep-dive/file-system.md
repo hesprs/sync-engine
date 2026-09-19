@@ -14,7 +14,7 @@ Vault file system consumes [`VaultRequest`](./request#vault-request), a typed op
 
 `read()`: delegates to `VaultRequest` `GET`, which wraps `vault.adapter.readBinary()` and converts the result to `Binary`.
 
-`readStream()`: delegates to `GET_STREAM`, which fetches `vault.adapter.getResourcePath(path)` and returns the response body. It throws if no response body is available.
+`readStream()`: delegates to `GET_STREAM` with the file size from the supplied stat. The `size` enables range-based streaming on platforms without local file stream support, see [request](./request#vault-request).
 
 `write()`: delegates to `PUT`, then calls `this.stat()` and returns the file UID.
 

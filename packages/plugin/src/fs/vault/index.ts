@@ -1,4 +1,4 @@
-import type { Stat, Binary } from '@/types';
+import type { Stat, Binary, FileStat } from '@/types';
 import type { ListReporter, RootFs } from '../interface';
 import type { VaultRequest } from './request';
 
@@ -40,8 +40,8 @@ export default class VaultFs implements RootFs {
 		return this.request({ key, method: 'GET' });
 	}
 
-	readStream(key: string) {
-		return this.request({ key, method: 'GET_STREAM' });
+	readStream(key: string, { size }: FileStat) {
+		return this.request({ key, method: 'GET_STREAM', size });
 	}
 
 	async write(key: string, value: Binary): Promise<string> {
@@ -81,11 +81,11 @@ export default class VaultFs implements RootFs {
 	}
 
 	delete(key: string, permanent = false): Promise<void> {
-		return this.request({ headers: { permanent }, key, method: 'DELETE' });
+		return this.request({ key, method: 'DELETE', trash: permanent ? 'permanent' : undefined });
 	}
 
 	move(oldKey: string, newKey: string): Promise<void> {
-		return this.request({ headers: { destination: newKey }, key: oldKey, method: 'MOVE' });
+		return this.request({ destination: newKey, key: oldKey, method: 'MOVE' });
 	}
 
 	mkdir(key: string): Promise<void> {
@@ -103,7 +103,7 @@ export default class VaultFs implements RootFs {
 		const visit = async (dir: string) => {
 			// https://github.com/hesprs/sync-engine/issues/222
 			const { files, folders } = await this.request({
-				headers: { cached: false },
+				cached: false,
 				key: dir,
 				method: 'LIST',
 			});

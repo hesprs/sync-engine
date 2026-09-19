@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  deploy-docs:
     runs-on: ubuntu-slim
     environment:
       name: docs

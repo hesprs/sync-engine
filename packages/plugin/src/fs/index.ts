@@ -7,7 +7,7 @@ export { default as rateLimiterMiddleware } from './middlewares/rate-limiter';
 export { default as retryMiddleware } from './middlewares/retry';
 export { default as customHeadersMiddleware } from './middlewares/custom-headers';
 export { default as VaultFs } from './vault';
-export type * from './vault/request';
+export type { VaultRequest } from './vault/request';
 export { default as createVaultRequest } from './vault/request';
 export { default as hierarchicalOptimizer } from './hierarchical-optimizer';
 export type { MemoryControlSharedState } from './wrappers/memory-control';

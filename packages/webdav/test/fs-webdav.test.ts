@@ -5,7 +5,6 @@ import { beforeEach, expect, mock, test } from 'bun:test';
 import type { WebdavFsOptions } from '@/webdav/fs';
 import { checkConnection } from '@/webdav/check-connection';
 import WebdavFs from '@/webdav/fs';
-import createWebDAVReadStream from '@/webdav/read-stream';
 
 const { bytes, deferred, file, flush, stream: createStream } = testKit;
 const sharedDate = new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf();
@@ -591,38 +590,6 @@ test('list reporter can exclude entries and stop descent', async () => {
 	expect(webdav.calls).toHaveLength(1);
 });
 
-test('readStream reorders out-of-order ranged responses', async () => {
-	const requestRanges: Array<{ start: number; end: number }> = [];
-	const resolvers: Array<ReturnType<typeof deferred<Binary>>> = [];
-	const toBytes = (buffer: Binary) => [...buffer];
-
-	const stream = createWebDAVReadStream({
-		chunkSize: 2,
-		concurrency: 3,
-		requestRange: (start, end) => {
-			requestRanges.push({ end, start });
-			const pending = deferred<Binary>();
-			resolvers.push(pending);
-			return pending.promise;
-		},
-		size: 6,
-	});
-
-	const collected = collectStream(stream);
-	await flush();
-	expect(requestRanges).toStrictEqual([
-		{ end: 1, start: 0 },
-		{ end: 3, start: 2 },
-		{ end: 5, start: 4 },
-	]);
-
-	resolvers[2]?.resolve(filledBinary(2, 3));
-	resolvers[0]?.resolve(filledBinary(2, 1));
-	resolvers[1]?.resolve(filledBinary(2, 2));
-
-	expect(toBytes(await collected)).toStrictEqual([1, 1, 2, 2, 3, 3]);
-});
-
 test('readStream requests SDK chunk size ranges from stat size', async () => {
 	const size = 5 * 1024 * 1024 + 1;
 	setXmlResponse([
@@ -681,51 +648,4 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 	expect(await collected).toStrictEqual(
 		new Uint8Array(expectedRanges.map((_, index) => index + 1)),
 	);
-});
-
-test('readStream waits for consumer demand before scheduling', async () => {
-	setXmlResponse([
-		{
-			href: 'https://dav.example.com/dav/Notes/file.bin',
-			propstat: {
-				prop: {
-					getcontentlength: '4',
-					getlastmodified: 'Mon, 01 Jan 2024 00:00:00 GMT',
-					resourcetype: {},
-				},
-				status: 'HTTP/1.1 200 OK',
-			},
-		},
-	]);
-
-	const ranges: Array<string> = [];
-	const pending = new Map<string, ReturnType<typeof deferred<RequestResponse>>>();
-	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav' });
-	webdav.setRequest((params) => {
-		if (params.method === 'PROPFIND') return response;
-		const range = params.headers?.Range ?? '';
-		ranges.push(range);
-		const wait = deferred<RequestResponse>();
-		pending.set(range, wait);
-		return wait.promise;
-	});
-
-	const stream = await webdav.fs.readStream(
-		'Notes/file.bin',
-		file('Notes/file.bin', { size: 4 }),
-	);
-	await flush();
-	expect(ranges).toStrictEqual([]);
-
-	const collected = collectStream(stream);
-	await flush();
-	expect(ranges).toStrictEqual(['bytes=0-3']);
-	pending.get('bytes=0-3')?.resolve({
-		bytes: () => new Uint8Array([1, 2, 3, 4]),
-		headers: {},
-		json: () => void 0,
-		status: 206,
-		text: () => '',
-	});
-	expect(await collected).toStrictEqual(new Uint8Array([1, 2, 3, 4]));
 });

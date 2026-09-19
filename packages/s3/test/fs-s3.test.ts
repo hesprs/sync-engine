@@ -6,7 +6,6 @@ import type {
 	RequestParam,
 	RequestResponse,
 } from '@hesprs/sync-engine-sdk';
-import { chunkSize } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, mock, test } from 'bun:test';
 import type { S3FsOptions } from '@/s3/fs';
@@ -21,7 +20,7 @@ import {
 	response,
 } from './helpers';
 
-const { bytes, deferred, file, stream: createStream } = testKit;
+const { bytes, file, stream: createStream } = testKit;
 
 let parsedResponse: unknown = {};
 
@@ -68,29 +67,6 @@ function assertSignedRequest(params: RequestParam, method: string) {
 	expect(params.headers?.authorization).toMatch(
 		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/u,
 	);
-}
-
-async function collectStream(source: ReadableStream<Binary>): Promise<Binary> {
-	const reader = source.getReader();
-	const chunks: Array<Binary> = [];
-	let total = 0;
-	try {
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			chunks.push(value);
-			total += value.byteLength;
-		}
-	} finally {
-		reader.releaseLock();
-	}
-	const result = new Uint8Array(total);
-	let offset = 0;
-	for (const chunk of chunks) {
-		result.set(chunk, offset);
-		offset += chunk.byteLength;
-	}
-	return result;
 }
 
 function textBody(params: RequestParam): string {
@@ -145,53 +121,6 @@ test('write sends binary PUT and uses ETag or HEAD metadata fallback', async () 
 	expect(await fallback.fs.write('Notes/file.md', bytes('hello'))).toBe(
 		`${new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf()}~5`,
 	);
-});
-
-test('readStream requests SDK chunk size ranges and emits responses in file order', async () => {
-	const size = 5 * 1024 * 1024 + 1;
-	const expectedRanges = Array.from({ length: Math.ceil(size / chunkSize) }, (_, index) => {
-		const start = index * chunkSize;
-		return `bytes=${start}-${Math.min(start + chunkSize - 1, size - 1)}`;
-	});
-	const pending = new Map<string, ReturnType<typeof deferred<RequestResponse>>>();
-	const scheduled = deferred<void>();
-	const s3 = createS3Fs();
-	s3.setRequest((params) => {
-		const range = params.headers?.Range;
-		if (!range) throw new Error('Expected range');
-		const wait = deferred<RequestResponse>();
-		pending.set(range, wait);
-		if (pending.size === expectedRanges.length) scheduled.resolve();
-		return wait.promise;
-	});
-	const stream = await s3.fs.readStream('Notes/file.bin', file('Notes/file.bin', { size }));
-	const collected = collectStream(stream);
-	await scheduled.promise;
-	expect(new Set(s3.calls.map((call) => call.headers?.Range))).toStrictEqual(
-		new Set(expectedRanges),
-	);
-	for (let index = expectedRanges.length - 1; index >= 0; index--)
-		pending
-			.get(expectedRanges[index])
-			?.resolve(response({ body: new Uint8Array([index + 1]), status: 206 }));
-	expect(await collected).toStrictEqual(
-		new Uint8Array(expectedRanges.map((_, index) => index + 1)),
-	);
-});
-
-test('readStream handles empty files and ranged request errors', async () => {
-	const empty = createS3Fs();
-	const emptyStream = await empty.fs.readStream('empty', file('empty', { size: 0 }));
-	expect(await collectStream(emptyStream)).toStrictEqual(new Uint8Array(0));
-	expect(empty.calls).toHaveLength(0);
-
-	const requestError = new Error('range failed');
-	const failed = createS3Fs();
-	failed.setRequest(() => {
-		throw requestError;
-	});
-	const stream = await failed.fs.readStream('file', file('file', { size: 1 }));
-	expect(collectStream(stream)).rejects.toBe(requestError);
 });
 
 test('writeStream buffers below-part-size input into one PUT', async () => {
