@@ -19,9 +19,9 @@ export default function createRangeReadStream({
 	const maxBufferedBytes = chunkSize * concurrency;
 	let finalized = false;
 	const runFinalize = () => {
-		if (finalized) return;
+		if (!finalize || finalized) return;
 		finalized = true;
-		void finalize?.();
+		void finalize();
 	};
 	if (totalChunks === 0) {
 		runFinalize();
@@ -64,7 +64,7 @@ export default function createRangeReadStream({
 	};
 
 	const canScheduleNext = () =>
-		controllerRef !== undefined &&
+		controllerRef &&
 		!closed &&
 		consumerReady &&
 		inFlight < concurrency &&

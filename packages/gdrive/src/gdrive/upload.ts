@@ -1,6 +1,7 @@
 import type { Binary, Request, RequestResponse } from '@hesprs/sync-engine-sdk';
-import { chunkSize } from '@hesprs/sync-engine-sdk';
-import { concatBinary, textToUint8Array } from '@repo/shared/binary';
+import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
+import { textToUint8Array } from '@repo/shared/binary';
+import chunkedUpload from '@repo/shared/chunked-upload';
 import type { DriveFile } from './api';
 import { getHeader, parseDriveError } from './api';
 
@@ -26,10 +27,7 @@ const MIME_BY_EXTENSION: Record<string, string> = {
 	webp: 'image/webp',
 };
 
-/**
- * Content type declared for uploaded bytes so files keep useful previews in
- * the Drive web interface.
- */
+// Content type declared for uploaded bytes so files keep useful previews in the Drive web interface.
 export function guessMimeType(name: string): string {
 	const dotIndex = name.lastIndexOf('.');
 	if (dotIndex === -1) return 'application/octet-stream';
@@ -72,7 +70,7 @@ async function startSession({
 	return { location, request };
 }
 
-/** Returns `undefined` when Drive answers 308 (chunk stored, upload incomplete). */
+// Returns `undefined` when Drive answers 308 (chunk stored, upload incomplete).
 async function putChunk(
 	{ request, location }: { request: Request; location: string },
 	chunk: Binary,
@@ -107,30 +105,21 @@ export async function resumableUpload(
 ): Promise<DriveFile> {
 	const session = await startSession(options);
 	const total = options.size;
-	let offset = 0;
 	let final: RequestResponse | undefined;
-	const reader = value.getReader();
-	let pending = new Uint8Array(0);
-	try {
-		while (!final) {
-			const { done, value: chunk } = await reader.read();
-			if (done) break;
-			pending = concatBinary(pending, chunk);
-			while (pending.byteLength >= chunkSize && !final) {
-				const part = pending.slice(0, chunkSize);
-				pending = pending.slice(chunkSize);
-				final = await putChunk(session, part, offset, total);
-				offset += part.byteLength;
-			}
-		}
-		final ??= await putChunk(session, pending, offset, total);
-	} catch (error) {
+	await chunkedUpload<RequestResponse | undefined>({
+		chunkSize,
+		concurrency,
+		onChunkResult: (response) => {
+			if (response) final = response;
+		},
+		uploadChunk: (chunk, _index, offset) => putChunk(session, chunk, offset, total),
+		value,
+	}).catch(async (error: unknown) => {
 		// Best-effort session cancellation; Drive also expires sessions on its own.
 		await options.request({ method: 'DELETE', url: session.location }).catch(() => {});
 		throw error;
-	} finally {
-		reader.releaseLock();
-	}
+	});
+	final ??= await putChunk(session, new Uint8Array(0), total, total);
 	if (!final) throw new Error('Google Drive upload finished incomplete.');
 	return final.json<DriveFile>();
 }

@@ -1,12 +1,13 @@
 import type { Binary, RequestParam, RequestResponse, Stat } from '@hesprs/sync-engine-sdk';
-import { concatBinary } from '@repo/shared/binary';
+import chunkedUpload from '@repo/shared/chunked-upload';
 import { encodeURIComponent3986 } from '@repo/shared/path';
 import { buildUrl, getFileUid, getHeader } from './utils';
 
+type ThrowRequest = (params: RequestParam) => Promise<RequestResponse>;
+
+// Nextcloud rejects non-final chunks below 5 MiB
 const NEXTCLOUD_CHUNK_SIZE = 5 * 1024 * 1024;
 const NEXTCLOUD_MAX_CONCURRENT = 3;
-
-type ThrowRequest = (params: RequestParam) => Promise<RequestResponse>;
 
 type NextcloudChunkedUploadOptions = {
 	auth: string;
@@ -46,63 +47,31 @@ export default async function writeNextcloudChunkedUpload(
 	const uploadFolderUrl = buildUrl(uploadEndpoint, uploadFolderKey);
 	const uploadFileUrl = buildUrl(uploadEndpoint, `${uploadId}/.file`);
 	const destination = buildUrl(options.endpoint, key);
-	const reader = value.getReader();
-	const inFlight = new Set<Promise<void>>();
-	let nextChunkNumber = 1;
-	let pending = new Uint8Array(0);
 
-	const trackUpload = (promise: Promise<void>) => {
-		inFlight.add(promise);
-		promise.then(
-			() => inFlight.delete(promise),
-			() => {},
-		);
-	};
-
-	const waitForSlot = async () => {
-		while (inFlight.size >= NEXTCLOUD_MAX_CONCURRENT) await Promise.race(inFlight);
-	};
-
-	const uploadChunk = async (chunkNumber: number, chunk: Binary) => {
-		await options.request({
-			body: chunk,
-			headers: {
-				Authorization: options.auth,
-				Destination: destination,
-				'OC-Total-Length': String(size),
-			},
-			method: 'PUT',
-			url: buildUrl(uploadEndpoint, `${uploadFolderKey}${chunkNumber}`),
-		});
-	};
-
-	const enqueueChunk = async (chunk: Binary) => {
-		await waitForSlot();
-		const chunkNumber = nextChunkNumber;
-		nextChunkNumber += 1;
-		trackUpload(uploadChunk(chunkNumber, chunk));
-	};
+	await options.request({
+		headers: { Authorization: options.auth, Destination: destination },
+		method: 'MKCOL',
+		url: uploadFolderUrl,
+	});
 
 	try {
-		await options.request({
-			headers: { Authorization: options.auth, Destination: destination },
-			method: 'MKCOL',
-			url: uploadFolderUrl,
+		await chunkedUpload({
+			chunkSize: NEXTCLOUD_CHUNK_SIZE,
+			concurrency: NEXTCLOUD_MAX_CONCURRENT,
+			uploadChunk: async (chunk, chunkNumber) => {
+				await options.request({
+					body: chunk,
+					headers: {
+						Authorization: options.auth,
+						Destination: destination,
+						'OC-Total-Length': String(size),
+					},
+					method: 'PUT',
+					url: buildUrl(uploadEndpoint, `${uploadFolderKey}${chunkNumber}`),
+				});
+			},
+			value,
 		});
-
-		while (true) {
-			const { done, value: chunk } = await reader.read();
-			if (done) break;
-			pending = concatBinary(pending, chunk);
-			while (pending.byteLength >= NEXTCLOUD_CHUNK_SIZE) {
-				const upload = pending.slice(0, NEXTCLOUD_CHUNK_SIZE);
-				pending = pending.slice(NEXTCLOUD_CHUNK_SIZE);
-				await enqueueChunk(upload);
-			}
-		}
-
-		if (pending.byteLength > 0) await enqueueChunk(pending);
-		await Promise.all(inFlight);
 
 		const response = await options.request({
 			headers: { Authorization: options.auth, Destination: destination },
@@ -114,10 +83,7 @@ export default async function writeNextcloudChunkedUpload(
 		if (etag) return etag;
 		return getFileUid(await options.stat(key), key);
 	} catch (error) {
-		await Promise.allSettled(inFlight);
 		await deleteChunkUpload(options.request, options.auth, uploadFolderUrl);
 		throw error;
-	} finally {
-		reader.releaseLock();
 	}
 }
