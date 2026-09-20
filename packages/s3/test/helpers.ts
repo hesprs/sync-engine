@@ -1,5 +1,4 @@
 import type { Binary } from '@hesprs/sync-engine-sdk';
-import type { ResponseOverrides } from '@hesprs/sync-engine-sdk/dev';
 import { openMemoryDB } from 'uni-kv';
 
 export const memoryDB = openMemoryDB<
@@ -34,7 +33,7 @@ export function response(
 		status?: number;
 		text?: string;
 	} = {},
-): ResponseOverrides {
+) {
 	return {
 		bytes: () => options.body ?? emptyBinary,
 		headers: options.headers ?? {},

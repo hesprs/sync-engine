@@ -1,11 +1,11 @@
 import type { Events, Translations } from '@';
 import type { App, Command, DataAdapter, IconName } from 'obsidian';
 import type { Ref } from 'synthkernel';
+import { getMessage } from '@repo/shared/error';
 import { Notice, Platform, setIcon } from 'obsidian';
 import { computed, ref } from 'synthkernel';
 import type { Progress } from '@/types';
 import roundPercent from '@/utils/round-percent';
-import toErrorMessage from '@/utils/to-error-message';
 import { formatTime } from '@/utils/unit-converter';
 import type { Dispatch, On } from './EventBus';
 import type { Translate } from './I18n';
@@ -298,7 +298,7 @@ export default class Observability {
 			const file = await app.vault.create(filePath, log);
 			await app.workspace.getLeaf().openFile(file);
 		} catch (error) {
-			const message = toErrorMessage(error);
+			const message = getMessage(error);
 			new Notice(`${translate('exportLogsFailed')}: ${message}`);
 			dispatch('errorGeneral', `Export log failed: \`${message}\`.`);
 		}

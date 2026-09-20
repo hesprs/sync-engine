@@ -15,7 +15,7 @@ test('retry middleware retries retryable request and waits between attempts', ()
 	});
 	const wrapped = retryMiddleware(harness.request, { maxRetry: 2, retryDelay: () => 25 });
 
-	expect(wrapped({ url: 'retry.md' })).resolves.toMatchObject({ status: 200 });
+	expect(wrapped('retry.md')).resolves.toMatchObject({ status: 200 });
 	expect(harness.calls).toStrictEqual([
 		{ url: 'retry.md' },
 		{ url: 'retry.md' },
@@ -37,7 +37,7 @@ test('retry middleware stops on non-retryable error', () => {
 		retryDelay: () => 25,
 	});
 
-	expect(wrapped({ url: 'missing.md' })).rejects.toStrictEqual({ res: { status: 404 } });
+	expect(wrapped('missing.md')).rejects.toStrictEqual({ res: { status: 404 } });
 	expect(harness.calls).toStrictEqual([{ url: 'missing.md' }]);
 	expect(sleepSpy).not.toHaveBeenCalled();
 });
@@ -57,7 +57,7 @@ test('retry middleware retries iOS timeout error with localized message and nume
 	});
 	const wrapped = retryMiddleware(harness.request, { maxRetry: 2, retryDelay: () => 25 });
 
-	expect(wrapped({ url: 'timeout.md' })).resolves.toMatchObject({ status: 200 });
+	expect(wrapped('timeout.md')).resolves.toMatchObject({ status: 200 });
 	expect(harness.calls).toStrictEqual([{ url: 'timeout.md' }, { url: 'timeout.md' }]);
 	expect(sleepSpy).toHaveBeenCalledTimes(1);
 });
@@ -69,7 +69,7 @@ test('retry middleware retries Capacitor-bridged URLSession error with domain st
 	});
 	const wrapped = retryMiddleware(harness.request, { maxRetry: 2, retryDelay: () => 25 });
 
-	expect(wrapped({ url: 'capacitor.md' })).rejects.toStrictEqual({
+	expect(wrapped('capacitor.md')).rejects.toStrictEqual({
 		code: 'NSURLErrorDomain',
 		message: '请求超时。',
 	});
@@ -88,7 +88,7 @@ test('retry middleware stops on non-retryable URLSession error code', () => {
 	});
 	const wrapped = retryMiddleware(harness.request, { maxRetry: 3, retryDelay: () => 25 });
 
-	expect(wrapped({ url: 'ssl.md' })).rejects.toStrictEqual({
+	expect(wrapped('ssl.md')).rejects.toStrictEqual({
 		code: -1200,
 		domain: 'NSURLErrorDomain',
 		message: 'An SSL error has occurred.',
@@ -106,7 +106,7 @@ test('retry middleware retries returned retryable status response', () => {
 	});
 	const wrapped = retryMiddleware(harness.request, { maxRetry: 2, retryDelay: () => 25 });
 
-	expect(wrapped({ throw: false, url: 'flaky.md' })).resolves.toMatchObject({ status: 200 });
+	expect(wrapped('flaky.md', { throw: false })).resolves.toMatchObject({ status: 200 });
 	expect(harness.calls).toStrictEqual([
 		{ throw: false, url: 'flaky.md' },
 		{ throw: false, url: 'flaky.md' },
@@ -120,7 +120,7 @@ test('retry middleware returns retryable status response after exhausting retrie
 	const harness = request(() => ({ status: 503 }));
 	const wrapped = retryMiddleware(harness.request, { maxRetry: 2, retryDelay: () => 25 });
 
-	expect(wrapped({ throw: false, url: 'down.md' })).resolves.toMatchObject({ status: 503 });
+	expect(wrapped('down.md', { throw: false })).resolves.toMatchObject({ status: 503 });
 	expect(harness.calls).toHaveLength(3);
 	expect(sleepSpy).toHaveBeenCalledTimes(2);
 });

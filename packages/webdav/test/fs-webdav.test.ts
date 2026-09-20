@@ -1,5 +1,10 @@
-import type { Binary, Progress, Request, RootFs } from '@hesprs/sync-engine-sdk';
-import type { ResponseControl, ResponseOverrides } from '@hesprs/sync-engine-sdk/dev';
+import type {
+	Binary,
+	MaybePromise,
+	Progress,
+	RequestParam,
+	RequestResponse,
+} from '@hesprs/sync-engine-sdk';
 import { chunkSize } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, mock, test } from 'bun:test';
@@ -10,21 +15,16 @@ import WebdavFs from '@/webdav/fs';
 const { bytes, deferred, file, flush, request, stream: createStream } = testKit;
 const sharedDate = new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf();
 
-type RequestParam = Exclude<Parameters<Request>[0], string>;
+type Control = (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>;
 type ParsedResponse = { multistatus: { response: Array<unknown> } };
-type WebdavHarness = {
-	calls: Array<RequestParam>;
-	fs: RootFs;
-	setRequest: (handler: ResponseControl<RequestParam>) => void;
-};
 
 const emptyBinary: Binary = new Uint8Array(0);
-const defaultResponse: ResponseOverrides = {
+const defaultResponse = {
 	bytes: () => emptyBinary,
 	text: () => '',
 };
 
-let response: ResponseOverrides;
+let response: Partial<RequestResponse>;
 let parsedResponse: ParsedResponse;
 
 const defaultOptions = {
@@ -47,14 +47,14 @@ beforeEach(() => {
 	};
 });
 
-function createWebdavFs(options: Partial<WebdavFsOptions> = {}): WebdavHarness {
-	let requestHandler: ResponseControl<RequestParam> = () => response;
-	const harness = request<RequestParam>((params) => requestHandler(params));
+function createWebdavFs(options: Partial<WebdavFsOptions> = {}) {
+	let requestHandler: Control = () => response;
+	const harness = request((url, params) => requestHandler(url, params));
 
 	return {
 		calls: harness.calls,
 		fs: new WebdavFs({ ...defaultOptions, ...options, request: harness.request }),
-		setRequest: (handler: ResponseControl<RequestParam>) => {
+		setRequest: (handler: Control) => {
 			requestHandler = handler;
 		},
 	};
@@ -97,7 +97,7 @@ async function collectStream(source: ReadableStream<Binary>): Promise<Binary> {
 }
 
 test('checkConnection returns success for a healthy endpoint', async () => {
-	const harness = request<RequestParam>(() => defaultResponse);
+	const harness = request(() => defaultResponse);
 
 	expect(await checkConnection(defaultOptions, harness.request)).toStrictEqual({ success: true });
 	expect(harness.calls[0]).toMatchObject({
@@ -151,9 +151,9 @@ test('stat parses dav fields and prefers etag for uid', async () => {
 
 test('writeStream buffers chunks into one put', async () => {
 	const webdav = createWebdavFs();
-	webdav.setRequest((params) => {
+	webdav.setRequest((url, params) => {
 		expect(params.method).toBe('PUT');
-		expect(params.url).toBe('https://dav.example.com/dav/Notes/file.md');
+		expect(url).toBe('https://dav.example.com/dav/Notes/file.md');
 		expect(params.body).toStrictEqual(bytes('hello'));
 		return { ...defaultResponse, headers: { etag: 'buffered-uid' } };
 	});
@@ -175,16 +175,16 @@ test('chunked writeStream uses exact Nextcloud urls and headers', async () => {
 	});
 	let uploadFolderUrl = '';
 	const destination = 'https://dav.example.com/remote.php/dav/files/alice/Notes/file.md';
-	webdav.setRequest((params) => {
+	webdav.setRequest((url, params) => {
 		if (params.method === 'MKCOL') {
-			uploadFolderUrl = params.url;
+			uploadFolderUrl = url;
 			expect(params.headers).toMatchObject({
 				Destination: destination,
 			});
 			return { ...defaultResponse, status: 201 };
 		}
 		if (params.method === 'PUT') {
-			expect(params.url).toBe(`${uploadFolderUrl}1`);
+			expect(url).toBe(`${uploadFolderUrl}1`);
 			expect(params.headers).toMatchObject({
 				Destination: destination,
 				'OC-Total-Length': '7',
@@ -192,7 +192,7 @@ test('chunked writeStream uses exact Nextcloud urls and headers', async () => {
 			return { ...defaultResponse, status: 200 };
 		}
 		if (params.method === 'MOVE') {
-			expect(params.url).toBe(`${uploadFolderUrl}.file`);
+			expect(url).toBe(`${uploadFolderUrl}.file`);
 			expect(params.headers).toMatchObject({
 				Destination: destination,
 			});
@@ -221,9 +221,9 @@ test('chunked writeStream uses exact Nextcloud urls and headers', async () => {
 test('empty chunked stream skips put and still mkcol move', async () => {
 	const webdav = createWebdavFs({ chunkedUpload: true });
 	let uploadFolderUrl = '';
-	webdav.setRequest((params) => {
+	webdav.setRequest((url, params) => {
 		if (params.method === 'MKCOL') {
-			uploadFolderUrl = params.url;
+			uploadFolderUrl = url;
 			return { ...defaultResponse, status: 201 };
 		}
 		if (params.method === 'MOVE') return { ...defaultResponse, headers: { etag: 'empty-uid' } };
@@ -247,9 +247,9 @@ test('chunked upload error deletes temp folder and rethrows original error', () 
 	const webdav = createWebdavFs({ chunkedUpload: true });
 	let uploadFolderUrl = '';
 	const uploadError = new Error('upload failed');
-	webdav.setRequest((params) => {
+	webdav.setRequest((url, params) => {
 		if (params.method === 'MKCOL') {
-			uploadFolderUrl = params.url;
+			uploadFolderUrl = url;
 			return { ...defaultResponse, status: 201 };
 		}
 		if (params.method === 'PUT') throw uploadError;
@@ -272,9 +272,9 @@ test('chunked finalization error deletes temp folder and rethrows original error
 	const webdav = createWebdavFs({ chunkedUpload: true });
 	let uploadFolderUrl = '';
 	const moveError = new Error('move failed');
-	webdav.setRequest((params) => {
+	webdav.setRequest((url, params) => {
 		if (params.method === 'MKCOL') {
-			uploadFolderUrl = params.url;
+			uploadFolderUrl = url;
 			return { ...defaultResponse, status: 201 };
 		}
 		if (params.method === 'PUT') return { ...defaultResponse, status: 200 };
@@ -320,12 +320,12 @@ test('requestOrThrow throws parsed WebDAV error message with status', () => {
 
 test('mkdir recursively creates parent folders in order', async () => {
 	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav' });
-	webdav.setRequest((params) => {
-		if (params.url === 'https://dav.example.com/dav/Notes/') return response;
-		if (params.url === 'https://dav.example.com/dav/Notes/Folder%20A/')
+	webdav.setRequest((url, _params) => {
+		if (url === 'https://dav.example.com/dav/Notes/') return response;
+		if (url === 'https://dav.example.com/dav/Notes/Folder%20A/')
 			return { ...defaultResponse, status: 405 };
-		if (params.url === 'https://dav.example.com/dav/Notes/Folder%20A/Child/') return response;
-		throw new Error(`Unexpected URL: ${params.url}`);
+		if (url === 'https://dav.example.com/dav/Notes/Folder%20A/Child/') return response;
+		throw new Error(`Unexpected URL: ${url}`);
 	});
 
 	await webdav.fs.mkdir('Notes/Folder A/Child/', true);
@@ -427,16 +427,16 @@ test('list bfs updates progress when infinity is disabled', async () => {
 	];
 
 	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav' });
-	webdav.setRequest((params) => {
-		if (params.url === 'https://dav.example.com/dav/Notes/') {
+	webdav.setRequest((url, _params) => {
+		if (url === 'https://dav.example.com/dav/Notes/') {
 			setXmlResponse(rootItems);
 			return response;
 		}
-		if (params.url === 'https://dav.example.com/dav/Notes/Folder%20A/') {
+		if (url === 'https://dav.example.com/dav/Notes/Folder%20A/') {
 			setXmlResponse(childItems);
 			return response;
 		}
-		throw new Error(`Unexpected URL: ${params.url}`);
+		throw new Error(`Unexpected URL: ${url}`);
 	});
 
 	let storedProgress: Progress = { completed: 0, total: 0 };
@@ -492,12 +492,12 @@ test('list reporter can exclude entries and stop descent', async () => {
 	];
 
 	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav' });
-	webdav.setRequest((params) => {
-		if (params.url === 'https://dav.example.com/dav/Notes/') {
+	webdav.setRequest((url, _params) => {
+		if (url === 'https://dav.example.com/dav/Notes/') {
 			setXmlResponse(rootItems);
 			return response;
 		}
-		throw new Error(`Unexpected recursive request: ${params.url}`);
+		throw new Error(`Unexpected recursive request: ${url}`);
 	});
 
 	const list = await webdav.fs.list('Notes/', ({ current }) =>
@@ -526,14 +526,14 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 
 	const ranges: Array<string> = [];
 	const encodings: Array<string | undefined> = [];
-	const pending = new Map<string, ReturnType<typeof deferred<ResponseOverrides>>>();
+	const pending = new Map<string, ReturnType<typeof deferred<Partial<RequestResponse>>>>();
 	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav' });
-	webdav.setRequest((params) => {
+	webdav.setRequest((_url, params) => {
 		if (params.method === 'PROPFIND') return response;
 		const range = params.headers?.Range ?? '';
 		ranges.push(range);
 		encodings.push(params.headers?.['Accept-Encoding']);
-		const wait = deferred<ResponseOverrides>();
+		const wait = deferred<Partial<RequestResponse>>();
 		pending.set(range, wait);
 		return wait.promise;
 	});
@@ -544,13 +544,13 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 	});
 
 	const collected = collectStream(
-		await webdav.fs.readStream('Notes/file.bin', file('Notes/file.bin', { size })),
+		webdav.fs.readStream('Notes/file.bin', file('Notes/file.bin', { size })),
 	);
 	await flush();
 	expect(ranges).toStrictEqual(expectedRanges);
 	expect(encodings.every((encoding) => encoding === 'identity')).toBe(true);
 
-	const makeResponse = (byte: number): ResponseOverrides => ({
+	const makeResponse = (byte: number): Partial<RequestResponse> => ({
 		bytes: () => new Uint8Array([byte]),
 		status: 206,
 	});

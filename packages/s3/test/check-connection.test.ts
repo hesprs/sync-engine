@@ -1,4 +1,3 @@
-import type { RequestParam } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
 import { checkConnection } from '@/s3/check-connection';
@@ -13,7 +12,7 @@ const connectionOptions = {
 };
 
 test('checkConnection uses the request pipeline for a signed head bucket request', async () => {
-	const harness = testKit.request<RequestParam>(() => response());
+	const harness = testKit.request(() => response());
 
 	const request = sigv4Middleware(harness.request, defaultCredentials, memoryDB);
 	expect(await checkConnection(connectionOptions, request)).toStrictEqual({ success: true });

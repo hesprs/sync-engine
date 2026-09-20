@@ -1,4 +1,4 @@
-import { At as FileStat, Dt as RootFs, Ft as RecordStatsMap, It as Stat, Lt as StatsMap, Mt as MaybePromise, Ot as WrappedFs, Pt as RecordStat, Rt as Binary, d as RequestParam, f as RequestResponse, jt as FolderStat, lt as TaskNames, q as Decider, u as Request, yt as Fs } from "./index-DI2LCB_s.spec.js";
+import { At as FileStat, Dt as RootFs, Ft as RecordStatsMap, It as Stat, Lt as StatsMap, Mt as MaybePromise, Ot as WrappedFs, Pt as RecordStat, Rt as Binary, d as RequestParam, f as RequestResponse, jt as FolderStat, lt as TaskNames, q as Decider, u as Request, yt as Fs } from "./index-C66-NLE8.spec.js";
 //#region src/sdk/debug-wrapper.d.ts
 declare function debugWrapper(original: Fs, log: (content: string) => void): WrappedFs;
 //#endregion
@@ -24,8 +24,11 @@ type FsHarness = {
   control: Fs;
   fs: RootFs;
 };
-type RequestHarness<T = RequestParam | string> = {
-  calls: Array<T>;
+type ResponseControl = (url: string, params: RequestParam) => MaybePromise<ResponseOverrides>;
+type RequestHarness = {
+  calls: Array<RequestParam & {
+    url: string;
+  }>;
   request: Request;
 };
 type ExtractedTask = {
@@ -61,8 +64,7 @@ declare function flush(turns?: number): Promise<void>;
 type ResponseOverrides = Partial<Omit<RequestResponse, 'json'>> & {
   json?: () => unknown;
 };
-type ResponseControl<T> = (params: T) => MaybePromise<ResponseOverrides>;
-declare function request<T extends RequestParam | string = RequestParam | string>(control: ResponseControl<T>): RequestHarness<T>;
+declare function request(control: ResponseControl): RequestHarness;
 declare function fs(options?: FsOptions): FsHarness;
 declare const testKit: {
   bytes: typeof bytes;
@@ -84,4 +86,4 @@ declare const testKit: {
 //#region src/utils/sha-256.d.ts
 declare function sha256(input: string): Promise<string>;
 //#endregion
-export { type ResponseControl, type ResponseOverrides, debugWrapper, sha256, testKit };
+export { debugWrapper, sha256, testKit };

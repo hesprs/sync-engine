@@ -33,11 +33,11 @@ export default class VaultFs implements RootFs {
 	}
 
 	read(key: string): Promise<Binary> {
-		return this.request({ key, method: 'GET' });
+		return this.request(key);
 	}
 
 	readStream(key: string, { size }: FileStat) {
-		return this.request({ key, method: 'GET_STREAM', size });
+		return this.request(key, { method: 'GET_STREAM', size });
 	}
 
 	async write(key: string, value: Binary): Promise<string> {
@@ -46,7 +46,7 @@ export default class VaultFs implements RootFs {
 		let uid: string | undefined;
 		let trial = 0;
 		do {
-			await this.request({ key, method: 'PUT', value });
+			await this.request(key, { key, method: 'PUT', value });
 			uid = await getFileUid(this, key, value.byteLength);
 			trial++;
 		} while (!uid && trial < MAX_WRITE_TRIAL);
@@ -62,18 +62,17 @@ export default class VaultFs implements RootFs {
 			while (true) {
 				const result = await reader.read();
 				if (result.done) break;
-				await this.request({ key: tempPath, method: 'APPEND', value: result.value });
+				await this.request(tempPath, { method: 'APPEND', value: result.value });
 			}
 			if (await this.exists(key))
-				await this.request({ key, method: 'DELETE', trash: 'permanent' });
+				await this.request(key, { method: 'DELETE', trash: 'permanent' });
 			await this.move(tempPath, key);
 			return await getFileUid(this, key);
 		} catch (error) {
 			await Promise.all([
 				reader.cancel(),
-				this.request({
+				this.request(tempPath, {
 					ignoreCancellation: true,
-					key: tempPath,
 					method: 'DELETE',
 					trash: 'permanent',
 				}),
@@ -85,19 +84,19 @@ export default class VaultFs implements RootFs {
 	}
 
 	delete(key: string): Promise<void> {
-		return this.request({ key, method: 'DELETE' });
+		return this.request(key, { method: 'DELETE' });
 	}
 
 	move(oldKey: string, newKey: string): Promise<void> {
-		return this.request({ destination: newKey, key: oldKey, method: 'MOVE' });
+		return this.request(oldKey, { destination: newKey, method: 'MOVE' });
 	}
 
 	mkdir(key: string): Promise<void> {
-		return this.request({ key, method: 'MKDIR' });
+		return this.request(key, { method: 'MKDIR' });
 	}
 
 	exists(key: string) {
-		return this.request({ key, method: 'EXISTS' });
+		return this.request(key, { method: 'EXISTS' });
 	}
 
 	async list(key: string, reporter: ListReporter): Promise<Array<Stat>> {
@@ -106,11 +105,7 @@ export default class VaultFs implements RootFs {
 		let total = 1;
 		const visit = async (dir: string) => {
 			// https://github.com/hesprs/sync-engine/issues/222
-			const { files, folders } = await this.request({
-				cached: false,
-				key: dir,
-				method: 'LIST',
-			});
+			const { files, folders } = await this.request(dir, { cached: false, method: 'LIST' });
 			completed++;
 			total += files.length + folders.length;
 			await Promise.all([
@@ -137,7 +132,7 @@ export default class VaultFs implements RootFs {
 	}
 
 	async stat(key: string): Promise<Stat> {
-		const { type, mtime, size } = await this.request({ key, method: 'STAT' });
+		const { type, mtime, size } = await this.request(key, { method: 'STAT' });
 		return type === 'file'
 			? { isDir: false, key, mtime, size, uid: `${mtime}~${size}` }
 			: { isDir: true, key };

@@ -7,15 +7,13 @@ const { deferred, flush, request } = testKit;
 
 test('rate limiter middleware queues second request until first resolves', async () => {
 	const firstDeferred = deferred<Partial<RequestResponse>>();
-	const harness = request((params) => {
-		const url = typeof params === 'string' ? params : params.url;
-		if (url === 'first.md') return firstDeferred.promise;
-		return { status: 202 };
-	});
+	const harness = request((url) =>
+		url === 'first.md' ? firstDeferred.promise : { status: 202 },
+	);
 	const wrapped = rateLimiterMiddleware(harness.request, { maxConcurrency: 1, minInterval: 0 });
 
-	const firstPending = wrapped({ url: 'first.md' });
-	const secondPending = wrapped({ url: 'second.md' });
+	const firstPending = wrapped('first.md');
+	const secondPending = wrapped('second.md');
 
 	await flush();
 	expect(harness.calls).toStrictEqual([{ url: 'first.md' }]);

@@ -1249,7 +1249,12 @@ type TriggerEntry = {
   priority: number;
   options?: () => SyncOptions;
 };
-type RequestParam = Omit<RequestUrlParam, 'body'> & {
+type Infras = {
+  localFs: Fs;
+  remoteFs: Fs;
+  record: RecordStore;
+};
+type RequestParam = Omit<RequestUrlParam, 'body' | 'url'> & {
   body?: string | Binary;
   ignoreCancellation?: boolean;
 };
@@ -1260,12 +1265,7 @@ type RequestResponse = {
   headers: Record<string, string>;
   status: number;
 };
-type Request = (params: RequestParam | string) => Promise<RequestResponse>;
-type Infras = {
-  localFs: Fs;
-  remoteFs: Fs;
-  record: RecordStore;
-};
+type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
 declare class Registrar {
   private readonly ctx;
   private readonly cleanupCallbacks;
@@ -1367,7 +1367,6 @@ type VaultRequestParam = ({
   method: 'LIST';
   cached?: boolean;
 }) & {
-  key: string;
   ignoreCancellation?: boolean;
 };
 type VaultRequestResponseMap = {
@@ -1382,7 +1381,9 @@ type VaultRequestResponseMap = {
   STAT: Stat;
   LIST: ListedFiles;
 };
-type VaultRequest = <T extends VaultRequestParam>(params: T) => Promise<VaultRequestResponseMap[T['method']]>;
+type VaultRequest = <T extends VaultRequestParam = {
+  method: 'GET';
+}>(key: string, params?: T) => Promise<VaultRequestResponseMap[T['method']]>;
 type TrashOption = 'local' | 'system' | 'permanent';
 //#endregion
 export { RemoveRecord as $, setNeedMigration as A, FileStat as At, ObsidianLanguageCode as B, digOriginal as C, MoveAtom as Ct, readWithSize as D, RootFs as Dt, pipe as E, OutputAtom as Et, CallableOrObjectTree as F, RecordStatsMap as Ft, On as G, Translate as H, SettingEntry as I, Stat$1 as It, DeciderInput as J, CreateLocalDir as K, AugmentedModuleMeta as L, StatsMap as Lt, generateEditableList as M, MaybePromise as Mt, reactivelyValidate as N, Progress as Nt, writeWithValue as O, WrappedFs as Ot, s as P, RecordStat as Pt, RemoveRemote as Q, ModuleMeta as R, Binary as Rt, SelectFromContext as S, MkdirAtom as St, concurrency as T, OptimizerOutput as Tt, TranslationResource as U, Snippet as V, Dispatch as W, Upload as X, TaskFactory as Y, ResolveConflict as Z, Context as _, CustomAtom as _t, FsWrapperEntry as a, AddRecord as at, Translations as b, InputAtom as bt, RemoteFsEntry as c, ConflictResolverPayload as ct, RequestParam as d, DatabaseAsync as dt, RemoveLocal as et, RequestResponse as f, DatabaseSync as ft, SyncTerminateReason as g, BatchOptimizer as gt, SyncOptions as h, StoreSync as ht, DeciderEntry as i, CreateRemoteDir as it, LabelDefinition as j, FolderStat as jt, prefixWrapper as k, WriteAtom as kt, RemoteRequestMiddlewareEntry as l, TaskNames as lt, RemoteLister as m, StoreOperations as mt, CheckConnectionResult as n, MoveLocal as nt, LocalRequestMiddlewareEntry as o, BaseTask as ot, TriggerEntry as p, StoreAsync as pt, Decider as q, ConflictResolverEntry as r, Download as rt, OptimizerEntry as s, ConflictResolver as st, VaultRequest as t, MoveRemote as tt, Request as u, RecordStore as ut, Events as v, DeleteAtom as vt, chunkSize as w, OptimizerInput as wt, ExistingMemoryDB as x, ListReporter as xt, Settings as y, Fs as yt, Fragment as z };

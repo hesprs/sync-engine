@@ -144,12 +144,12 @@ export default class S3 {
 					} catch {
 						throw new Error('Please enter a valid S3 proxy URL!');
 					}
-					return (params) => {
-						const originalUrl = typeof params === 'string' ? params : params.url;
-						const original = new URL(originalUrl);
-						const rewritten = `${proxy.protocol}//${proxy.host}${original.pathname}${original.search}`;
-						if (typeof params === 'string') return request(rewritten);
-						return request({ ...params, url: rewritten });
+					return (url, params) => {
+						const original = new URL(url);
+						return request(
+							`${proxy.protocol}//${proxy.host}${original.pathname}${original.search}`,
+							params,
+						);
 					};
 				},
 				priority: 303,

@@ -11,7 +11,7 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary } from '@repo/shared/binary';
-import { getStatus } from '@repo/shared/get-status';
+import { getStatus } from '@repo/shared/error';
 import parseXML from '@repo/shared/parse-xml';
 import {
 	dirname,
@@ -151,19 +151,18 @@ function extractNextLink(linkHeader: string): string | undefined {
 
 type PropfindPayload = {
 	depth?: '0' | '1' | 'infinity';
-	request: (params: RequestParam) => Promise<RequestResponse>;
+	request: Request;
 	auth: string;
 } & ({ key: string; endpoint: string } | { url: string });
 
 async function propfind(args: PropfindPayload) {
 	const { request, depth = '0', auth } = args;
 	const url = 'url' in args ? args.url : buildUrl(args.endpoint, args.key);
-	const response = await request({
+	const response = await request(url, {
 		body: PROPFIND_BODY,
 		contentType: 'application/xml',
 		headers: { Authorization: auth, Depth: depth },
 		method: 'PROPFIND',
-		url,
 	});
 	const parsed = parseXML<WebDAVMultistatus>(response.text());
 	const items = asArray(parsed.multistatus.response);
@@ -215,8 +214,11 @@ export default class WebdavFs implements RootFs {
 		this.endpoint = normalizeUrl(options.endpoint);
 	}
 
-	private readonly requestOrThrow = async (params: RequestParam): Promise<RequestResponse> => {
-		const response = await this.request(Object.assign(params, { throw: false }));
+	private readonly requestOrThrow = async (
+		url: string,
+		params: RequestParam = {},
+	): Promise<RequestResponse> => {
+		const response = await this.request(url, { ...params, throw: false });
 		if (response.status >= 200 && response.status < 300) return response;
 		const error = new Error(
 			parseWebDAVError(response.text()) ??
@@ -231,10 +233,9 @@ export default class WebdavFs implements RootFs {
 	}
 
 	async read(key: string) {
-		const response = await this.requestOrThrow({
+		const response = await this.requestOrThrow(buildUrl(this.endpoint, key), {
 			headers: { Authorization: this.auth },
 			method: 'GET',
-			url: buildUrl(this.endpoint, key),
 		});
 		return response.bytes();
 	}
@@ -244,7 +245,7 @@ export default class WebdavFs implements RootFs {
 			chunkSize,
 			concurrency,
 			requestRange: async (start, endInclusive) => {
-				const response = await this.requestOrThrow({
+				const response = await this.requestOrThrow(buildUrl(this.endpoint, key), {
 					headers: {
 						// Prevents intermediaries and servers from content-encoding the body, which makes them ignore the Range header and return the whole file: https://github.com/hesprs/sync-engine/issues/263
 						'Accept-Encoding': 'identity',
@@ -252,7 +253,6 @@ export default class WebdavFs implements RootFs {
 						Range: `bytes=${start}-${endInclusive}`,
 					},
 					method: 'GET',
-					url: buildUrl(this.endpoint, key),
 				});
 
 				return response.bytes();
@@ -262,11 +262,10 @@ export default class WebdavFs implements RootFs {
 	}
 
 	async write(key: string, value: Binary) {
-		const response = await this.requestOrThrow({
+		const response = await this.requestOrThrow(buildUrl(this.endpoint, key), {
 			body: value,
 			headers: { Authorization: this.auth },
 			method: 'PUT',
-			url: buildUrl(this.endpoint, key),
 		});
 		const etag = getHeader(response.headers, 'etag');
 		return etag ? normalizeEtag(etag) : getFileUid(await this.stat(key), key);
@@ -278,7 +277,7 @@ export default class WebdavFs implements RootFs {
 				{
 					auth: this.auth,
 					endpoint: this.endpoint,
-					request: (params) => this.requestOrThrow(params),
+					request: this.requestOrThrow,
 					stat: (targetKey) => this.stat(targetKey),
 					username: this.options.username,
 				},
@@ -291,10 +290,9 @@ export default class WebdavFs implements RootFs {
 
 	async delete(key: string) {
 		try {
-			await this.requestOrThrow({
+			await this.requestOrThrow(buildUrl(this.endpoint, key), {
 				headers: { Authorization: this.auth },
 				method: 'DELETE',
-				url: buildUrl(this.endpoint, key),
 			});
 		} catch (error) {
 			if (getStatus(error) === 404) return;
@@ -303,10 +301,9 @@ export default class WebdavFs implements RootFs {
 	}
 
 	async move(oldKey: string, newKey: string) {
-		await this.requestOrThrow({
+		await this.requestOrThrow(buildUrl(this.endpoint, oldKey), {
 			headers: { Authorization: this.auth, Destination: buildUrl(this.endpoint, newKey) },
 			method: 'MOVE',
-			url: buildUrl(this.endpoint, oldKey),
 		});
 	}
 
@@ -314,10 +311,9 @@ export default class WebdavFs implements RootFs {
 		const directoryKeys = recursive ? getRecursiveKeys(key) : [key];
 		for (const directoryKey of directoryKeys)
 			try {
-				await this.requestOrThrow({
+				await this.requestOrThrow(buildUrl(this.endpoint, directoryKey), {
 					headers: { Authorization: this.auth },
 					method: 'MKCOL',
-					url: buildUrl(this.endpoint, directoryKey),
 				});
 			} catch (error) {
 				if (getStatus(error) === 405) continue;

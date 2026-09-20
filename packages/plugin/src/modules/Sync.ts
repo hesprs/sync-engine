@@ -1,5 +1,6 @@
 import type { Events, Translations } from '@';
 import type { Ref } from 'synthkernel';
+import { getMessage } from '@repo/shared/error';
 import { isSub } from '@repo/shared/path';
 import { ref } from 'synthkernel';
 import type { Fs, ListReporter } from '@/fs';
@@ -31,7 +32,6 @@ import {
 	taskMap,
 } from '@/sync';
 import { prepareGlobMatch } from '@/utils/glob-match';
-import toErrorMessage from '@/utils/to-error-message';
 import type { Dispatch, On } from './EventBus';
 import type { Translate } from './I18n';
 import type { DeleteConfirmReturn } from './ProgressModal';
@@ -265,7 +265,7 @@ export default class Sync {
 						failedCount++;
 						dispatch('taskFailed', {
 							...toTaskInfo(task),
-							error: toErrorMessage(error),
+							error: getMessage(error),
 						});
 					}
 				}),
@@ -282,7 +282,7 @@ export default class Sync {
 		} catch (error) {
 			terminateReason = isCancelled()
 				? { result: 'cancelled' }
-				: ({ error: toErrorMessage(error), result: 'failed' } as const);
+				: ({ error: getMessage(error), result: 'failed' } as const);
 		} finally {
 			cleanup();
 			dispatch('syncTerminated', terminateReason);

@@ -1,4 +1,5 @@
 import type { CheckConnectionResult, Request } from '@hesprs/sync-engine-sdk';
+import { getMessage } from '@repo/shared/error';
 import type { UrlStyle } from './sigv4';
 import { buildUrl } from './url';
 
@@ -20,14 +21,13 @@ export async function checkConnection(
 			key: '/',
 			urlStyle: options.urlStyle,
 		});
-		const response = await request({ method: 'HEAD', throw: false, url });
+		const response = await request(url, { method: 'HEAD', throw: false });
 		if (response.status >= 200 && response.status < 300) return { success: true } as const;
 		return {
 			reason: `HTTP ${response.status}`,
 			success: false,
 		} as const;
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : String(error);
-		return { reason: errorMessage, success: false } as const;
+		return { reason: getMessage(error), success: false } as const;
 	}
 }

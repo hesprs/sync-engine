@@ -53,7 +53,7 @@ async function startSession({
 	size,
 	url,
 }: SessionOptions): Promise<{ request: Request; location: string }> {
-	const response = await request({
+	const response = await request(url, {
 		body: textToUint8Array(JSON.stringify(metadata)),
 		headers: {
 			'Content-Type': 'application/json; charset=UTF-8',
@@ -61,7 +61,6 @@ async function startSession({
 		},
 		method,
 		throw: false,
-		url,
 	});
 	if (response.status < 200 || response.status >= 300)
 		throw new Error(
@@ -81,14 +80,13 @@ async function putChunk(
 	total: number,
 ): Promise<RequestResponse | undefined> {
 	const end = start + chunk.byteLength - 1;
-	const response = await request({
+	const response = await request(location, {
 		body: chunk,
 		headers: {
 			'Content-Range': end < start ? `bytes */${total}` : `bytes ${start}-${end}/${total}`,
 		},
 		method: 'PUT',
 		throw: false,
-		url: location,
 	});
 	if (response.status === 308) return;
 	if (response.status >= 200 && response.status < 300) return response;
@@ -106,12 +104,11 @@ export async function singleUpload(options: MultipartOptions, value: Binary): Pr
 		value,
 		textToUint8Array(`\r\n--${boundary}--`),
 	);
-	const response = await options.request({
+	const response = await options.request(options.url, {
 		body,
 		headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
 		method: options.method,
 		throw: false,
-		url: options.url,
 	});
 	if (response.status < 200 || response.status >= 300)
 		throw new Error(
@@ -138,7 +135,7 @@ export async function resumableUpload(
 	}).catch((error: unknown) => {
 		// Best-effort session cancellation; Drive also expires sessions on its own.
 		void options
-			.request({ ignoreCancellation: true, method: 'DELETE', url: session.location })
+			.request(session.location, { ignoreCancellation: true, method: 'DELETE' })
 			.catch(() => {});
 		throw error;
 	});

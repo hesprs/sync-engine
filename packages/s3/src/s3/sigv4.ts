@@ -14,13 +14,6 @@ export type SigV4Options = {
 	service: string;
 };
 
-type InternalRequest = {
-	method: string;
-	url: string;
-	headers: Record<string, string>;
-	body?: Binary | string;
-};
-
 const encoder = new TextEncoder();
 
 function toHex(bytes: Binary): string {
@@ -103,12 +96,11 @@ export async function signRequest(
 		method,
 		url,
 		headers: rawHeaders,
-		body,
-	}: RequestParam & { method: string; headers: Record<string, string> },
+	}: RequestParam & { method: string; url: string; headers: Record<string, string> },
 	{ sessionToken, secretAccessKey, region, service, accessKeyId }: SigV4Options,
 	date: Date,
 	db: S3DB,
-): Promise<InternalRequest> {
+): Promise<Record<string, string>> {
 	const host = new URL(url).host;
 
 	const headers: Record<string, string> = { ...rawHeaders };
@@ -158,16 +150,19 @@ export async function signRequest(
 
 	// Strips host from actually sent headers to prevent Electron throwing
 	delete headers.host;
-	return { body, headers, method, url };
+	return headers;
 }
 
 export function sigv4Middleware(request: Request, credentials: SigV4Options, db: S3DB): Request {
-	return async (params) => {
-		const input =
-			typeof params === 'string'
-				? { headers: {}, method: 'GET', url: params }
-				: { ...params, headers: params.headers ?? {}, method: params.method ?? 'GET' };
-		return request(await signRequest(input, credentials, new Date(), db));
+	return async (url, params = {}) => {
+		const input = { ...params, method: params.method ?? 'GET' };
+		const headers = await signRequest(
+			{ ...input, headers: input.headers ?? {}, url },
+			credentials,
+			new Date(),
+			db,
+		);
+		return request(url, { ...input, headers });
 	};
 }
 

@@ -18,3 +18,7 @@ export function getStatus(error: unknown): number | undefined {
 	const candidates = [err.status, err.res?.status, err.response?.status];
 	for (const candidate of candidates) if (typeof candidate === 'number') return candidate;
 }
+
+export function getMessage(error: unknown): string {
+	return error instanceof Error ? error.message : String(error);
+}

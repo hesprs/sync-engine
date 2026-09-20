@@ -7,7 +7,7 @@ Sync Engine has two request systems: `Request` for remote HTTP calls and `VaultR
 Remote HTTP request function. Backends receive a composed `Request` instance in their constructor and must use it for all network calls.
 
 ```ts
-type RequestParam = Omit<RequestUrlParam, 'body'> & {
+type RequestParam = Omit<RequestUrlParam, 'body' | 'url'> & {
   body?: string | Binary;
   ignoreCancellation?: boolean;
 };
@@ -20,10 +20,10 @@ type RequestResponse = {
   status: number;
 };
 
-type Request = (params: RequestParam | string) => Promise<RequestResponse>;
+type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
 ```
 
-`RequestParam` extends Obsidian's `RequestUrlParam` (minus `body`) with a `body` field accepting `string | Binary`. Passing a plain string instead of a `RequestParam` object uses it as the URL.
+`RequestParam` extends Obsidian's `RequestUrlParam` (minus `body` and `url`) with a `body` field accepting `string | Binary`. The URL is always the first argument; omitting `params` performs a plain `GET`.
 `RequestResponse` is an exported SDK type for the response returned by `Request`.
 
 Set `ignoreCancellation` to `true` to let a request through after the sync has been cancelled. Reserve it for cleanup calls that release remote resources the backend already created, such as aborting an incomplete multipart upload.
@@ -44,10 +44,11 @@ type VaultRequestParam = (
   | { method: 'EXISTS' }
   | { method: 'STAT'; cached?: boolean }
   | { method: 'LIST'; cached?: boolean }
-) & { key: string; ignoreCancellation?: boolean };
+) & { ignoreCancellation?: boolean };
 
-type VaultRequest = <T extends VaultRequestParam>(
-  params: T,
+type VaultRequest = <T extends VaultRequestParam = { method: 'GET' }>(
+  key: string,
+  params?: T,
 ) => Promise<VaultRequestResponseMap[T['method']]>;
 ```
 

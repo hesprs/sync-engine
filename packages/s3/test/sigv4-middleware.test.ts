@@ -11,7 +11,7 @@ beforeEach(() => {
 });
 
 function createTransport() {
-	const harness = testKit.request<RequestParam>(() => response());
+	const harness = testKit.request(() => response());
 	return { calls: harness.calls, transport: harness.request };
 }
 
@@ -29,11 +29,10 @@ test('middleware signs request parameters without changing body or URL', async (
 	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);
 	const body = new Uint8Array([1, 2, 3]);
 
-	await request({
+	await request('https://s3.example.com/vault/file.bin', {
 		body,
 		headers: { 'Content-Type': 'application/octet-stream' },
 		method: 'PUT',
-		url: 'https://s3.example.com/vault/file.bin',
 	});
 
 	const call = calls[0];
@@ -58,7 +57,7 @@ test('middleware signs temporary session credentials with the security token', a
 	expect(call.headers?.authorization).toContain('x-amz-security-token');
 });
 
-test('middleware treats string requests as GET requests', async () => {
+test('middleware defaults to GET when no params are given', async () => {
 	const { calls, transport } = createTransport();
 	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);
 
@@ -75,21 +74,16 @@ test('middleware signs custom headers before proxy rewrites the URL', async () =
 	const { calls, transport } = createTransport();
 	const proxy =
 		(request: Request): Request =>
-		(params) => {
-			if (typeof params === 'string') return request(params);
-			const original = new URL(params.url);
-			return request({
-				...params,
-				url: `https://proxy.example.com${original.pathname}${original.search}`,
-			});
+		(url, params) => {
+			const original = new URL(url);
+			return request(
+				`https://proxy.example.com${original.pathname}${original.search}`,
+				params,
+			);
 		};
 	const signed = sigv4Middleware(proxy(transport), defaultCredentials, memoryDB);
 
-	await signed({
-		headers: { 'x-custom': 'value' },
-		method: 'GET',
-		url: 'https://s3.example.com/vault/file.md',
-	});
+	await signed('https://s3.example.com/vault/file.md', { headers: { 'x-custom': 'value' } });
 
 	const call = calls[0];
 	if (!call) throw new Error('Expected transport request');

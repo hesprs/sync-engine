@@ -12,10 +12,10 @@ Both are function objects returning promises. They provide a small, middleware-f
 `Request` is defined in `packages/plugin/src/modules/Registrar.ts`:
 
 ```ts
-type Request = (params: RequestParam | string) => Promise<RequestResponse>;
+type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
 ```
 
-`RequestParam` follows Obsidian's `RequestUrlParam`, except `body` uses the project's `Binary` (`Uint8Array`) instead of `ArrayBuffer` in Obsidian raw API. A string argument is treated as a `GET` toward this URL.
+`RequestParam` follows Obsidian's `RequestUrlParam`, except `body` uses the project's `Binary` (`Uint8Array`) instead of `ArrayBuffer` in Obsidian raw API, and `url` moves from the parameters to the first argument. Omitting `params` performs a plain `GET` toward the URL.
 
 `RequestResponse` is an exported SDK type describing the response returned by `Request`.
 
@@ -46,8 +46,9 @@ Remote file-system modules receive `getRequest()` in context, not the base funct
 `VaultRequest` is the local counterpart used by `VaultFs`, uses Obsidian vault cache smartly to improve performance. It is a discriminated operation function:
 
 ```ts
-type VaultRequest = <T extends VaultRequestParam>(
-  params: T,
+type VaultRequest = <T extends VaultRequestParam = { method: 'GET' }>(
+  key: string,
+  params?: T,
 ) => Promise<VaultRequestResponseMap[T['method']]>;
 ```
 

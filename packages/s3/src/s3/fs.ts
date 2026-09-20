@@ -10,7 +10,7 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
-import { getStatus } from '@repo/shared/get-status';
+import { getStatus } from '@repo/shared/error';
 import parseXML from '@repo/shared/parse-xml';
 import { dirname, encodeUrl, isFolder } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
@@ -146,24 +146,24 @@ export default class S3Fs implements RootFs {
 		});
 	}
 
-	private async requestOrThrow(params: RequestParam): Promise<RequestResponse> {
-		const response = await this.request(Object.assign(params, { throw: false }));
+	private readonly requestOrThrow = async (
+		url: string,
+		params: RequestParam = {},
+	): Promise<RequestResponse> => {
+		const response = await this.request(url, { ...params, throw: false });
 		if (response.status >= 200 && response.status < 300) return response;
 
 		const body = response.text();
 		const s3Error = parseS3Error(body);
 		const error = new Error(
-			s3Error ?? `S3 request failed: ${response.status} ${params.method} ${params.url}`,
+			s3Error ?? `S3 request failed: ${response.status} ${params.method} ${url}`,
 		);
 		(error as { status?: number }).status = response.status;
 		throw error;
-	}
+	};
 
 	async read(key: string): Promise<Binary> {
-		const response = await this.requestOrThrow({
-			method: 'GET',
-			url: this.buildUrl(key),
-		});
+		const response = await this.requestOrThrow(this.buildUrl(key), { method: 'GET' });
 		return response.bytes();
 	}
 
@@ -173,10 +173,9 @@ export default class S3Fs implements RootFs {
 			chunkSize,
 			concurrency,
 			requestRange: async (start, endInclusive) => {
-				const response = await this.requestOrThrow({
+				const response = await this.requestOrThrow(url, {
 					headers: { Range: `bytes=${start}-${endInclusive}` },
 					method: 'GET',
-					url,
 				});
 				return response.bytes();
 			},
@@ -185,11 +184,10 @@ export default class S3Fs implements RootFs {
 	}
 
 	async write(key: string, value: Binary): Promise<string> {
-		const response = await this.requestOrThrow({
+		const response = await this.requestOrThrow(this.buildUrl(key), {
 			body: value,
 			headers: { 'Content-Type': 'application/octet-stream' },
 			method: 'PUT',
-			url: this.buildUrl(key),
 		});
 		const etag = getHeader(response.headers, 'etag');
 		if (etag) return etag;
@@ -205,7 +203,7 @@ export default class S3Fs implements RootFs {
 				bucket: this.bucket,
 				endpoint: this.endpoint,
 				key,
-				request: (params) => this.requestOrThrow(params),
+				request: this.requestOrThrow,
 				stat: (k) => this.stat(k),
 				urlStyle: this.urlStyle,
 			},
@@ -215,10 +213,7 @@ export default class S3Fs implements RootFs {
 
 	async delete(key: string): Promise<void> {
 		try {
-			await this.requestOrThrow({
-				method: 'DELETE',
-				url: this.buildUrl(key),
-			});
+			await this.requestOrThrow(this.buildUrl(key), { method: 'DELETE' });
 		} catch (error) {
 			if (getStatus(error) === 404) return;
 			throw error;
@@ -238,14 +233,13 @@ export default class S3Fs implements RootFs {
 				{ bucket: this.bucket, endpoint: this.endpoint, key: '/', urlStyle: this.urlStyle },
 				{ delete: '' },
 			);
-			const response = await this.requestOrThrow({
+			const response = await this.requestOrThrow(url, {
 				body: textToUint8Array(body),
 				headers: {
 					'Content-MD5': await md5Base64(body),
 					'Content-Type': 'application/xml',
 				},
 				method: 'POST',
-				url,
 			});
 			Object.assign(result, parseBatchDeleteResponse(response.text(), batch));
 		}
@@ -256,13 +250,12 @@ export default class S3Fs implements RootFs {
 		// S3 has no native rename — copy then delete
 		const copySource = `${this.bucket}/${encodeUrl(oldKey)}`;
 		const destUrl = this.buildUrl(newKey);
-		await this.requestOrThrow({
+		await this.requestOrThrow(destUrl, {
 			headers: {
 				'Content-Type': 'application/octet-stream',
 				'x-amz-copy-source': copySource,
 			},
 			method: 'PUT',
-			url: destUrl,
 		});
 		await this.delete(oldKey);
 	}
@@ -273,11 +266,10 @@ export default class S3Fs implements RootFs {
 			// S3 has no real folders — create a 0-byte placeholder object
 			const url = this.buildUrl(dirKey);
 			try {
-				await this.requestOrThrow({
+				await this.requestOrThrow(url, {
 					body: new Uint8Array(0),
 					headers: { 'Content-Type': 'application/octet-stream' },
 					method: 'PUT',
-					url,
 				});
 			} catch (error) {
 				if (getStatus(error) === 409) continue;
@@ -288,7 +280,7 @@ export default class S3Fs implements RootFs {
 
 	async stat(key: string): Promise<Stat> {
 		if (isFolder(key)) return { isDir: true, key };
-		const response = await this.requestOrThrow({ method: 'HEAD', url: this.buildUrl(key) });
+		const response = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
 		const etag = getHeader(response.headers, 'etag');
 		const contentLength = getHeader(response.headers, 'content-length');
 		const lastModified = getHeader(response.headers, 'last-modified');
@@ -323,7 +315,7 @@ export default class S3Fs implements RootFs {
 				{ bucket: this.bucket, endpoint: this.endpoint, key: '/', urlStyle: this.urlStyle },
 				query,
 			);
-			const response = await this.requestOrThrow({ method: 'GET', url });
+			const response = await this.requestOrThrow(url, { method: 'GET' });
 			const { ListBucketResult: listing } = parseXML<S3ListBucketResult>(response.text());
 			const contents = asArray(listing.Contents);
 			await Promise.all(

@@ -1,5 +1,4 @@
-import type { Binary, RequestParam } from '@hesprs/sync-engine-sdk';
-import type { ResponseControl, ResponseOverrides } from '@hesprs/sync-engine-sdk/dev';
+import type { Binary, MaybePromise, RequestParam, RequestResponse } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
@@ -12,27 +11,26 @@ const db: GdriveDB = openMemoryDB<{ gdriveIds: string }, { gdriveIdsMarker?: str
 	'gdrive-fs-test',
 );
 
-function response(
-	value: unknown = {},
-	status = 200,
-	headers: Record<string, string> = {},
-): ResponseOverrides {
+type Control = (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>;
+
+function response(value: unknown = {}, status = 200, headers: Record<string, string> = {}) {
 	const body = new TextEncoder().encode(JSON.stringify(value));
 	return {
 		bytes: () => body,
 		headers,
-		json: () => value,
+		// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
+		json: <T extends object = object>() => value as T,
 		status,
 		text: () => new TextDecoder().decode(body),
 	};
 }
 
-function binaryResponse(value: Binary, status = 200): ResponseOverrides {
+function binaryResponse(value: Binary, status = 200) {
 	return { ...response({}, status), bytes: () => value };
 }
 
-function createFs(handler: ResponseControl<RequestParam>) {
-	const harness = request<RequestParam>(handler);
+function createFs(handler: Control) {
+	const harness = request(handler);
 	return {
 		calls: harness.calls,
 		fs: new GdriveFs(harness.request, { useTrash: true, userId: 'user-1' }, db),
@@ -45,12 +43,11 @@ beforeEach(() => {
 });
 
 test('writes and reads a file through Drive multipart upload', async () => {
-	const { calls, fs } = createFs((params) => {
-		if (params.url.startsWith(DRIVE_UPLOAD_API) && params.method === 'POST')
+	const { calls, fs } = createFs((url, params) => {
+		if (url.startsWith(DRIVE_UPLOAD_API) && params.method === 'POST')
 			return response({ id: 'file-1', md5Checksum: 'drive-uid' });
-		if (params.url === `${DRIVE_API}/files/file-1?alt=media`)
-			return binaryResponse(bytes('hello'));
-		throw new Error(`Unexpected request: ${params.method} ${params.url}`);
+		if (url === `${DRIVE_API}/files/file-1?alt=media`) return binaryResponse(bytes('hello'));
+		throw new Error(`Unexpected request: ${params.method} ${url}`);
 	});
 
 	const stat = file('note.md', { mtime: 1_700_000_000_000, size: 5 });
@@ -65,8 +62,8 @@ test('writes and reads a file through Drive multipart upload', async () => {
 });
 
 test('creates folders, lists visible descendants, and honors excluded subtrees', async () => {
-	const { calls, fs } = createFs((params) => {
-		if (params.method === 'POST' && params.url.startsWith(`${DRIVE_API}/files`))
+	const { calls, fs } = createFs((url, params) => {
+		if (params.method === 'POST' && url.startsWith(`${DRIVE_API}/files`))
 			return response({ id: 'folder-1' });
 		return response({
 			files: [
@@ -94,11 +91,11 @@ test('creates folders, lists visible descendants, and honors excluded subtrees',
 });
 
 test('moves a cached file with Drive native rename', async () => {
-	const { calls, fs } = createFs((params) => {
-		if (params.method === 'POST' && params.url.startsWith(DRIVE_UPLOAD_API))
+	const { calls, fs } = createFs((url, params) => {
+		if (params.method === 'POST' && url.startsWith(DRIVE_UPLOAD_API))
 			return response({ id: 'file-1' });
 		if (params.method === 'PATCH') return response({ id: 'file-1' });
-		throw new Error(`Unexpected request: ${params.method} ${params.url}`);
+		throw new Error(`Unexpected request: ${params.method} ${url}`);
 	});
 
 	await fs.write('old.md', bytes('x'), file('old.md', { size: 1 }));

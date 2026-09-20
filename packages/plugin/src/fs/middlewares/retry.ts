@@ -1,5 +1,5 @@
-import type { ErrorLike } from '@repo/shared/get-status';
-import { getStatus } from '@repo/shared/get-status';
+import type { ErrorLike } from '@repo/shared/error';
+import { getStatus } from '@repo/shared/error';
 import type { Request } from '@/modules/Registrar';
 
 type RetryOptions = {
@@ -15,10 +15,10 @@ const backoff = (count: number, baseMs = 1000, maxMs = 30_000): number => {
 
 export default function retryMiddleware(request: Request, options?: RetryOptions): Request {
 	const { maxRetry = 4, isRetryable = isRetryableError, retryDelay = backoff } = options ?? {};
-	return async (args) => {
+	return async (url, params) => {
 		for (let i = 0; ; i++)
 			try {
-				const response = await request(args);
+				const response = await request(url, params);
 				if (RETRYABLE_STATUS_CODES.has(response.status) && i < maxRetry) {
 					await sleep(retryDelay(i));
 					continue;

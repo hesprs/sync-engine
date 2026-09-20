@@ -327,7 +327,7 @@ test('list should report hidden entries the file tree omits', async () => {
 test('LIST should keep using the file tree when the caller does not opt out', async () => {
 	const vault = createVaultStub(HIDDEN_OPTIONS);
 
-	expect(await vault.request({ key: 'folder/', method: 'LIST' })).toStrictEqual({
+	expect(await vault.request('folder/', { method: 'LIST' })).toStrictEqual({
 		files: ['folder/note.md'],
 		folders: [],
 	});

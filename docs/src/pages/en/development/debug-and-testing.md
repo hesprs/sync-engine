@@ -40,7 +40,7 @@ type FsHarness = {
 };
 
 type RequestHarness = {
-  calls: Array<RequestParam | string>;
+  calls: Array<RequestParam & { url: string }>;
   request: Request;
 };
 ```
@@ -59,21 +59,23 @@ const testKit: {
   folder: (key: string) => FolderStat;
   flush: (turns?: number) => Promise<void>;
   fs: (options?: FsOptions) => FsHarness;
-  request: (control: Request) => RequestHarness;
+  request: (
+    control: (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>,
+  ) => RequestHarness;
   stream: (chunks?: Array<Binary | string>) => ReadableStream<Binary>;
 };
 ```
 
-| Helper                | Description                                                                              |
-| --------------------- | ---------------------------------------------------------------------------------------- |
-| `bytes(value)`        | Convert a string to `Binary`.                                                            |
-| `deferred()`          | Create a controlled promise.                                                             |
-| `file(key, options?)` | Create a `FileStat`.                                                                     |
-| `folder(key)`         | Create a `FolderStat`.                                                                   |
-| `flush(turns?)`       | Wait for several microtask queues to finish (default 4).                                 |
-| `fs(options?)`        | Create a stub filesystem. `control` overrides individual methods; `uid` sets `getUid()`. |
-| `request(control)`    | Wrap a request stub to record calls.                                                     |
-| `stream(chunks?)`     | Create a fake `ReadableStream` from an array.                                            |
+| Helper                | Description                                                                                                                                                                             |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bytes(value)`        | Convert a string to `Binary`.                                                                                                                                                           |
+| `deferred()`          | Create a controlled promise.                                                                                                                                                            |
+| `file(key, options?)` | Create a `FileStat`.                                                                                                                                                                    |
+| `folder(key)`         | Create a `FolderStat`.                                                                                                                                                                  |
+| `flush(turns?)`       | Wait for several microtask queues to finish (default 4).                                                                                                                                |
+| `fs(options?)`        | Create a stub filesystem. `control` overrides individual methods; `uid` sets `getUid()`.                                                                                                |
+| `request(control)`    | Wrap a response control to record calls. The control receives the same arguments as `Request` and returns response overrides; each recorded call is the url merged into its parameters. |
+| `stream(chunks?)`     | Create a fake `ReadableStream` from an array.                                                                                                                                           |
 
 ### `fs()` Details
 

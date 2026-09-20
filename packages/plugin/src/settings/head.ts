@@ -1,5 +1,6 @@
 import type { Context, Events, Settings } from '@';
 import type { DatabaseSync } from 'uni-kv';
+import { getMessage } from '@repo/shared/error';
 import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
 import type { ModuleCtor } from '@/modules/Extensibility';
 import type { Fragment, Snippet, Translate } from '@/modules/I18n';
@@ -12,7 +13,6 @@ import type {
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { Dispatch } from '@/sdk';
 import type { General, MaybePromise } from '@/types';
-import toErrorMessage from '@/utils/to-error-message';
 import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
 import ModuleManagement from './module-management';
 import { s } from './utils';
@@ -239,7 +239,7 @@ function setupCheckConnection({
 			}
 		} catch (error) {
 			setError();
-			const message = toErrorMessage(error);
+			const message = getMessage(error);
 			log(`Check connection to \`${settings.remoteFs}\` failed: \`${message}\`.`);
 			if (force) new Notice(`${translate('checkConnectionFailed')}: ${message}`);
 			else scheduleCheckConnection();

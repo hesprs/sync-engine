@@ -4,7 +4,7 @@ import { customHeadersMiddleware } from '@/fs';
 
 const { request } = testKit;
 
-test('custom headers middleware normalizes string input to request params', () => {
+test('custom headers middleware adds headers to a bare url request', () => {
 	const harness = request(() => ({}));
 	const wrapped = customHeadersMiddleware(harness.request, { 'x-added': 'value' });
 
@@ -20,12 +20,11 @@ test('custom headers middleware merges supplied headers and overrides duplicates
 	});
 
 	expect(
-		wrapped({
+		wrapped('note.md', {
 			headers: {
 				'x-keep': 'keep',
 				'x-override': 'old',
 			},
-			url: 'note.md',
 		}),
 	).resolves.toMatchObject({ status: 200 });
 	expect(harness.calls).toStrictEqual([
