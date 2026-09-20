@@ -124,6 +124,7 @@
 		"eslint/one-var": ["warn", "never"],
 		"unicorn/max-nested-calls": ["warn", { "max": 5 }],
 		"eslint/require-await": "off", // overlaps with typescript
+		"typescript/ban-types": "off"
 	},
 	"env": {
 		"builtin": true,
@@ -164,7 +165,8 @@
 				"import/no-namespace": "off",
 				"vitest/prefer-importing-vitest-globals": "off",
 				"vitest/require-hook": "off",
-				"eslint/max-lines": ["warn", { "max": 2000 }]
+				"eslint/max-lines": ["warn", { "max": 2000 }],
+				"typescript/only-throw-error": "off"
 			}
 		}
 	],

@@ -1,4 +1,5 @@
-import type { Binary, Request, RequestParam, RequestResponse } from '@hesprs/sync-engine-sdk';
+import type { Binary, RequestParam } from '@hesprs/sync-engine-sdk';
+import type { ResponseControl, ResponseOverrides } from '@hesprs/sync-engine-sdk/dev';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
@@ -6,7 +7,7 @@ import type { GdriveDB } from '@/gdrive/fs';
 import { DRIVE_API, DRIVE_UPLOAD_API, FOLDER_MIME } from '@/gdrive/api';
 import GdriveFs from '@/gdrive/fs';
 
-const { bytes, file } = testKit;
+const { bytes, file, request } = testKit;
 const db: GdriveDB = openMemoryDB<{ gdriveIds: string }, { gdriveIdsMarker?: string }>(
 	'gdrive-fs-test',
 );
@@ -15,7 +16,7 @@ function response(
 	value: unknown = {},
 	status = 200,
 	headers: Record<string, string> = {},
-): RequestResponse {
+): ResponseOverrides {
 	const body = new TextEncoder().encode(JSON.stringify(value));
 	return {
 		bytes: () => body,
@@ -26,18 +27,16 @@ function response(
 	};
 }
 
-function binaryResponse(value: Binary, status = 200): RequestResponse {
+function binaryResponse(value: Binary, status = 200): ResponseOverrides {
 	return { ...response({}, status), bytes: () => value };
 }
 
-function createFs(handler: (params: RequestParam) => RequestResponse | Promise<RequestResponse>) {
-	const calls: Array<RequestParam> = [];
-	const request: Request = (params) => {
-		if (typeof params === 'string') throw new Error('Unexpected string request');
-		calls.push(params);
-		return Promise.resolve(handler(params));
+function createFs(handler: ResponseControl<RequestParam>) {
+	const harness = request<RequestParam>(handler);
+	return {
+		calls: harness.calls,
+		fs: new GdriveFs(harness.request, { useTrash: true, userId: 'user-1' }, db),
 	};
-	return { calls, fs: new GdriveFs(request, { useTrash: true, userId: 'user-1' }, db) };
 }
 
 beforeEach(() => {

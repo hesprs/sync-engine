@@ -4,7 +4,6 @@ import type { Context as KernelContext, MergeSingleKey } from 'synthkernel';
 import { Plugin } from 'obsidian';
 import { createContext } from 'synthkernel';
 import type { AddRibbonIcon } from '@/modules/Observability';
-import type { GlobMatchRule } from '@/types';
 import Bootstrap from '@/modules/Bootstrap';
 import EventBus from '@/modules/EventBus';
 import Extensibility, { OFFICIAL_SOURCE } from '@/modules/Extensibility';
@@ -16,7 +15,6 @@ import Scheduler from '@/modules/Scheduler';
 import Setting from '@/modules/Setting';
 import Storage from '@/modules/Storage';
 import Sync from '@/modules/Sync';
-import { normalizeGlob } from '@/utils/glob-match';
 
 const internalModules = [
 	EventBus,
@@ -65,21 +63,21 @@ export default class SyncEngine extends Plugin {
 			customHeaders: [],
 			decider: 'bidirectional',
 			exclusionRules: [
-				'**/.git',
-				'**/.github',
-				'**/.gitlab',
-				'**/.svn',
-				'**/node_modules',
-				'**/.DS_Store',
-				'**/__MACOSX',
-				'**/desktop.ini',
-				'**/Thumbs.db',
-				'**/~$*.doc',
-				'**/~$*.docx',
-				'**/~$*.ppt',
-				'**/~$*.pptx',
-				'**/~$*.xls',
-				'**/~$*.xlsx',
+				'.git',
+				'.github',
+				'.gitlab',
+				'.svn',
+				'node_modules',
+				'.DS_Store',
+				'__MACOSX',
+				'desktop.ini',
+				'Thumbs.db',
+				'~$*.doc',
+				'~$*.docx',
+				'~$*.ppt',
+				'~$*.pptx',
+				'~$*.xls',
+				'~$*.xlsx',
 				`${this.app.vault.configDir}/plugins/sync-engine/modules`,
 				'.trash',
 				this.app.vault.configDir,
@@ -101,8 +99,6 @@ export default class SyncEngine extends Plugin {
 			startupSync: { enabled: false, value: 5000 },
 			...((await this.loadData()) as Record<string, unknown>),
 		};
-
-		migrateGlobMatchRules(settings);
 		void this.saveSettings();
 
 		// https://github.com/microsoft/TypeScript/issues/62995
@@ -139,30 +135,4 @@ export default class SyncEngine extends Plugin {
 	}
 
 	readonly saveSettings = () => this.saveData(this.settings);
-}
-
-// TODO: remove after September 20
-function migrateGlobMatchRules(settings: Settings) {
-	const { inclusionRules, exclusionRules } = settings;
-	const migrateRules = (rules: Array<GlobMatchRule>) => {
-		const typedRules = rules as Array<{
-			expr: string;
-			caseSensitive: boolean;
-			invalid?: true;
-			options?: { caseSensitive: boolean };
-		}>;
-		typedRules.forEach((rule) => {
-			const normalized = normalizeGlob(rule.expr);
-			if (normalized) rule.expr = normalized;
-			else rule.invalid = true;
-			if (!rule.options) return;
-			rule.caseSensitive = rule.options.caseSensitive;
-			delete rule.options;
-		});
-		const rulesCopy = structuredClone(typedRules);
-		rules.length = 0;
-		rules.push(...rulesCopy.filter(({ invalid }) => !invalid));
-	};
-	migrateRules(inclusionRules);
-	migrateRules(exclusionRules);
 }

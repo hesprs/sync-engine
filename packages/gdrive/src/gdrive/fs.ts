@@ -26,7 +26,7 @@ import {
 	parseDriveError,
 	toFileStat,
 } from './api';
-import { guessMimeType, resumableUpload, singlePutUpload } from './upload';
+import { guessMimeType, resumableUpload, singleUpload } from './upload';
 
 export type GdriveFsOptions = {
 	userId: string;
@@ -117,7 +117,7 @@ export default class GdriveFs implements RootFs {
 					q: `'${parentId}' in parents and name = '${escapeQuery(segment)}' and mimeType ${folder ? '=' : '!='} '${FOLDER_MIME}' and trashed = false`,
 				}),
 			});
-			const id = (response.json() as DriveFileList).files?.[0]?.id;
+			const id = response.json<DriveFileList>().files?.[0]?.id;
 			if (!id) return undefined;
 			this.ids.set(childKey, id);
 			parentId = id;
@@ -188,7 +188,7 @@ export default class GdriveFs implements RootFs {
 	}
 
 	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
-		const file = await singlePutUpload(
+		const file = await singleUpload(
 			{
 				...this.sessionFor(key, stat),
 				request: this.request,
@@ -269,7 +269,7 @@ export default class GdriveFs implements RootFs {
 			method: 'POST',
 			url: buildUrl(DRIVE_API, '/files', { fields: 'id' }),
 		});
-		const created = response.json() as DriveFile;
+		const created = response.json<DriveFile>();
 		if (!created.id) throw new Error('Google Drive did not return an id for a created folder!');
 		this.ids.set(key, created.id);
 	}
@@ -284,7 +284,7 @@ export default class GdriveFs implements RootFs {
 			q: `'${parentId}' in parents and name = '${escapeQuery(basename(key))}' and trashed = false`,
 		});
 		const response = await this.requestOrThrow({ method: 'GET', url });
-		const entry = (response.json() as DriveFileList).files?.[0];
+		const entry = response.json<DriveFileList>().files?.[0];
 		if (!entry) throw notFoundError(key);
 		return toFileStat(key, entry);
 	}
@@ -314,7 +314,7 @@ export default class GdriveFs implements RootFs {
 				method: 'GET',
 				url: buildUrl(DRIVE_API, '/files', query),
 			});
-			const parsed = response.json() as DriveFileList;
+			const parsed = response.json<DriveFileList>();
 			all.push(...(parsed.files ?? []));
 			pageToken = parsed.nextPageToken;
 		} while (pageToken);

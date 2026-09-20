@@ -1,7 +1,8 @@
 import type { Request, RequestParam } from '@hesprs/sync-engine-sdk';
+import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, test } from 'bun:test';
 import { sigv4Middleware } from '@/s3/sigv4';
-import { defaultCredentials, defaultResponse, memoryDB } from './helpers';
+import { defaultCredentials, memoryDB, response } from './helpers';
 
 beforeEach(() => {
 	memoryDB.clearStores();
@@ -10,13 +11,8 @@ beforeEach(() => {
 });
 
 function createTransport() {
-	const calls: Array<RequestParam> = [];
-	const transport: Request = (params) => {
-		if (typeof params === 'string') throw new Error('Unexpected string request');
-		calls.push(params);
-		return Promise.resolve(defaultResponse);
-	};
-	return { calls, transport };
+	const harness = testKit.request<RequestParam>(() => response());
+	return { calls: harness.calls, transport: harness.request };
 }
 
 function assertSignature(params: RequestParam) {

@@ -8,17 +8,20 @@ import type { Binary, MaybePromise } from '@/types';
 import { OS } from '@/modules/EventBus';
 import { chunkSize, concurrency } from '@/utils/pipe';
 
-type VaultRequestParam =
-	| { method: 'GET'; key: string }
-	| { method: 'GET_STREAM'; key: string; size: number }
-	| { method: 'PUT'; key: string; value: Binary; mtime?: number; ctime?: number }
-	| { method: 'APPEND'; key: string; value: Binary; mtime?: number; ctime?: number }
-	| { method: 'DELETE'; key: string; trash?: TrashOption }
-	| { method: 'MOVE'; key: string; destination: string }
-	| { method: 'MKDIR'; key: string }
-	| { method: 'EXISTS'; key: string }
-	| { method: 'STAT'; key: string; cached?: boolean }
-	| { method: 'LIST'; key: string; cached?: boolean };
+export const TEMP_FOLDER = '.trash';
+
+type VaultRequestParam = (
+	| { method: 'GET' }
+	| { method: 'GET_STREAM'; size: number }
+	| { method: 'PUT'; value: Binary; mtime?: number; ctime?: number }
+	| { method: 'APPEND'; value: Binary; mtime?: number; ctime?: number }
+	| { method: 'DELETE'; trash?: TrashOption }
+	| { method: 'MOVE'; destination: string }
+	| { method: 'MKDIR' }
+	| { method: 'EXISTS' }
+	| { method: 'STAT'; cached?: boolean }
+	| { method: 'LIST'; cached?: boolean }
+) & { key: string; ignoreCancellation?: boolean };
 
 type VaultRequestResponseMap = {
 	GET: Binary;
@@ -93,12 +96,23 @@ export default function createVaultRequest(app: App): VaultRequest {
 		if (method === 'GET')
 			return adapter.readBinary(path).then((buffer) => toUint8Array(buffer)) as never;
 		if (method === 'GET_STREAM') {
-			const url = adapter.getResourcePath(path);
+			let url = adapter.getResourcePath(path);
 			// Local file fetch streaming isn't supported in iOS
-			if ((OS.iOS || OS.iPadOS) && isMediaExtension(key))
+			if (OS.iOS || OS.iPadOS) {
+				let newPath: string | undefined;
+				// Workaround by masquerading to be a media file
+				if (!isMediaExtension(key)) {
+					newPath = `${TEMP_FOLDER}/${crypto.randomUUID()}.mov`;
+					if (!(await adapter.exists(TEMP_FOLDER))) await adapter.mkdir(TEMP_FOLDER);
+					await adapter.copy(path, newPath);
+					url = adapter.getResourcePath(newPath);
+				}
 				return createRangeReadStream({
 					chunkSize,
 					concurrency,
+					finalize: () => {
+						if (newPath) return adapter.remove(newPath).catch(() => {});
+					},
 					requestRange: async (start, end) =>
 						(
 							await requestNative(url, {
@@ -108,6 +122,7 @@ export default function createVaultRequest(app: App): VaultRequest {
 						).bytes(),
 					size: params.size,
 				}) as never;
+			}
 			const response = await requestNative(url);
 			if (!response.body) throw new Error('Streaming vault file is not supported!');
 			return response.body as never;

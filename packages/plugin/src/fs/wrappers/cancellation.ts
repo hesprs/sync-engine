@@ -68,20 +68,17 @@ class CancellationFs implements WrappedFs {
 	}
 }
 
-function ignoresCancellation(param: General): boolean {
-	return (
-		typeof param === 'object' &&
-		param !== null &&
-		(param as { ignoreCancellation?: boolean }).ignoreCancellation === true
-	);
-}
-
 export function cancellationMiddleware<
 	T extends (...args: ReadonlyArray<General>) => Promise<General>,
 >(request: T, isCancelled: Ref<boolean>): T {
 	return ((...params: Parameters<T>) => {
-		// Cleanup requests have to survive cancellation, otherwise they can never be sent
-		if (ignoresCancellation(params[0])) return request(...params);
+		const payload = params[0];
+		if (
+			payload &&
+			typeof payload === 'object' &&
+			(payload as { ignoreCancellation?: boolean }).ignoreCancellation
+		)
+			return request(...params);
 		assertNotCancelled(isCancelled);
 		const promise = new Promise<Awaited<ReturnType<T>>>((resolve, reject) => {
 			const unsub = isCancelled.subscribe((cancelled) => {

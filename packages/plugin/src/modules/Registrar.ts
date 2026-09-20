@@ -35,13 +35,13 @@ export type TriggerEntry = { priority: number; options?: () => SyncOptions };
 
 export type RequestParam = Omit<RequestUrlParam, 'body'> & {
 	body?: string | Binary;
-	/** Cleanup requests that must still run after the sync has been cancelled. */
 	ignoreCancellation?: boolean;
 };
 export type RequestResponse = {
 	text: () => string;
 	bytes: () => Binary;
-	json: () => General;
+	// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
+	json: <T extends object = object>() => T;
 	headers: Record<string, string>;
 	status: number;
 };
@@ -50,16 +50,14 @@ export type Request = (params: RequestParam | string) => Promise<RequestResponse
 export type Infras = { localFs: Fs; remoteFs: Fs; record: RecordStore };
 
 const request: Request = async (params: RequestParam | string) => {
-	if (typeof params === 'object') {
-		if (params.body instanceof Uint8Array)
-			(params as RequestUrlParam).body = toArrayBuffer(params.body);
-		delete params.ignoreCancellation;
-	}
+	if (typeof params === 'object' && params.body instanceof Uint8Array)
+		(params as RequestUrlParam).body = toArrayBuffer(params.body);
 	const response = await requestUrl(params as RequestUrlParam);
 	return {
 		bytes: () => toUint8Array(response.arrayBuffer),
 		headers: response.headers,
-		json: () => response.json as object,
+		// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
+		json: <T extends object = object>() => response.json as T,
 		status: response.status,
 		text: () => response.text,
 	};

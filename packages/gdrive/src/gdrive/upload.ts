@@ -1,10 +1,8 @@
 import type { Binary, Request, RequestResponse } from '@hesprs/sync-engine-sdk';
+import { chunkSize } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
 import type { DriveFile } from './api';
 import { getHeader, parseDriveError } from './api';
-
-/** Google Drive resumable uploads require chunk sizes in multiples of 256 KiB. */
-export const RESUMABLE_CHUNK_SIZE = 5 * 1024 * 1024;
 
 const MIME_BY_EXTENSION: Record<string, string> = {
 	base: 'application/json',
@@ -61,6 +59,7 @@ async function startSession({
 			'X-Upload-Content-Length': String(size),
 		},
 		method,
+		throw: false,
 		url: initiateUrl,
 	});
 	if (response.status < 200 || response.status >= 300)
@@ -87,19 +86,19 @@ async function putChunk(
 			'Content-Range': end < start ? `bytes */${total}` : `bytes ${start}-${end}/${total}`,
 		},
 		method: 'PUT',
+		throw: false,
 		url: location,
 	});
-	if (response.status === 308) return undefined;
+	if (response.status === 308) return;
 	if (response.status >= 200 && response.status < 300) return response;
 	throw new Error(parseDriveError(response) ?? `Google Drive upload failed: ${response.status}`);
 }
 
-/** Uploads the whole value in a single PUT on a resumable session. */
-export async function singlePutUpload(options: SessionOptions, value: Binary): Promise<DriveFile> {
+export async function singleUpload(options: SessionOptions, value: Binary): Promise<DriveFile> {
 	const session = await startSession(options);
 	const response = await putChunk(session, value, 0, value.byteLength);
 	if (response === undefined) throw new Error('Google Drive upload ended prematurely.');
-	return response.json() as DriveFile;
+	return response.json<DriveFile>();
 }
 
 export async function resumableUpload(
@@ -113,14 +112,13 @@ export async function resumableUpload(
 	const reader = value.getReader();
 	let pending = new Uint8Array(0);
 	try {
-		while (final === undefined) {
+		while (!final) {
 			const { done, value: chunk } = await reader.read();
 			if (done) break;
 			pending = concatBinary(pending, chunk);
-			// Hold back at least one byte so the closing chunk is never empty.
-			while (pending.byteLength > RESUMABLE_CHUNK_SIZE && final === undefined) {
-				const part = pending.slice(0, RESUMABLE_CHUNK_SIZE);
-				pending = pending.slice(RESUMABLE_CHUNK_SIZE);
+			while (pending.byteLength >= chunkSize && !final) {
+				const part = pending.slice(0, chunkSize);
+				pending = pending.slice(chunkSize);
 				final = await putChunk(session, part, offset, total);
 				offset += part.byteLength;
 			}
@@ -133,6 +131,6 @@ export async function resumableUpload(
 	} finally {
 		reader.releaseLock();
 	}
-	if (final === undefined) throw new Error('Google Drive upload finished incomplete.');
-	return final.json() as DriveFile;
+	if (!final) throw new Error('Google Drive upload finished incomplete.');
+	return final.json<DriveFile>();
 }

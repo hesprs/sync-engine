@@ -9,6 +9,8 @@ export type ErrorLike = {
 	};
 	cause?: unknown;
 	error?: unknown;
+	code?: unknown;
+	domain?: unknown;
 };
 
 export function getStatus(error: unknown): number | undefined {

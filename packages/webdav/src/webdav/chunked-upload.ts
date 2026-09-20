@@ -28,6 +28,7 @@ function getUploadEndpoint(endpoint: string, username: string) {
 async function deleteChunkUpload(request: ThrowRequest, auth: string, uploadFolderUrl: string) {
 	await request({
 		headers: { Authorization: auth },
+		ignoreCancellation: true,
 		method: 'DELETE',
 		url: uploadFolderUrl,
 	}).catch(() => {});
