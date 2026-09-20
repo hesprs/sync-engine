@@ -44,11 +44,9 @@ beforeEach(() => {
 	db.setMeta('gdriveIdsMarker', undefined);
 });
 
-test('writes and reads a file through Drive resumable upload', async () => {
+test('writes and reads a file through Drive multipart upload', async () => {
 	const { calls, fs } = createFs((params) => {
 		if (params.url.startsWith(DRIVE_UPLOAD_API) && params.method === 'POST')
-			return response({}, 200, { Location: 'https://upload.example/session' });
-		if (params.url === 'https://upload.example/session')
 			return response({ id: 'file-1', md5Checksum: 'drive-uid' });
 		if (params.url === `${DRIVE_API}/files/file-1?alt=media`)
 			return binaryResponse(bytes('hello'));
@@ -58,8 +56,12 @@ test('writes and reads a file through Drive resumable upload', async () => {
 	const stat = file('note.md', { mtime: 1_700_000_000_000, size: 5 });
 	expect(await fs.write('note.md', bytes('hello'), stat)).toBe('drive-uid');
 	expect(await fs.read('note.md')).toStrictEqual(bytes('hello'));
-	expect(calls.map(({ method }) => method)).toStrictEqual(['POST', 'PUT', 'GET']);
-	expect(calls[0]?.url).toContain('uploadType=resumable');
+	expect(calls.map(({ method }) => method)).toStrictEqual(['POST', 'GET']);
+	expect(calls[0]?.url).toContain('uploadType=multipart');
+	expect(calls[0]?.headers?.['Content-Type']).toContain('multipart/related');
+	const body = new TextDecoder().decode(calls[0]?.body as Binary);
+	expect(body).toContain('"name":"note.md"');
+	expect(body).toMatch(/hello\r\n--sync-engine-[0-9a-f-]+--$/u);
 });
 
 test('creates folders, lists visible descendants, and honors excluded subtrees', async () => {
@@ -94,8 +96,7 @@ test('creates folders, lists visible descendants, and honors excluded subtrees',
 test('moves a cached file with Drive native rename', async () => {
 	const { calls, fs } = createFs((params) => {
 		if (params.method === 'POST' && params.url.startsWith(DRIVE_UPLOAD_API))
-			return response({}, 200, { location: 'https://upload.example/session' });
-		if (params.url === 'https://upload.example/session') return response({ id: 'file-1' });
+			return response({ id: 'file-1' });
 		if (params.method === 'PATCH') return response({ id: 'file-1' });
 		throw new Error(`Unexpected request: ${params.method} ${params.url}`);
 	});

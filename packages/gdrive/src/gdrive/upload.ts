@@ -1,6 +1,6 @@
 import type { Binary, Request, RequestResponse } from '@hesprs/sync-engine-sdk';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { textToUint8Array } from '@repo/shared/binary';
+import { concatBinary, textToUint8Array } from '@repo/shared/binary';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import type { DriveFile } from './api';
 import { getHeader, parseDriveError } from './api';
@@ -35,20 +35,23 @@ export function guessMimeType(name: string): string {
 	return MIME_BY_EXTENSION[extension] ?? 'application/octet-stream';
 }
 
-export type SessionOptions = {
-	initiateUrl: string;
+export type UploadOptions = {
 	method: 'PATCH' | 'POST';
 	metadata: object;
 	request: Request;
-	size: number;
+	url: string;
 };
 
+export type MultipartOptions = UploadOptions & { mimeType: string };
+
+export type SessionOptions = UploadOptions & { size: number };
+
 async function startSession({
-	initiateUrl,
 	method,
 	metadata,
 	request,
 	size,
+	url,
 }: SessionOptions): Promise<{ request: Request; location: string }> {
 	const response = await request({
 		body: textToUint8Array(JSON.stringify(metadata)),
@@ -58,7 +61,7 @@ async function startSession({
 		},
 		method,
 		throw: false,
-		url: initiateUrl,
+		url,
 	});
 	if (response.status < 200 || response.status >= 300)
 		throw new Error(
@@ -92,10 +95,28 @@ async function putChunk(
 	throw new Error(parseDriveError(response) ?? `Google Drive upload failed: ${response.status}`);
 }
 
-export async function singleUpload(options: SessionOptions, value: Binary): Promise<DriveFile> {
-	const session = await startSession(options);
-	const response = await putChunk(session, value, 0, value.byteLength);
-	if (response === undefined) throw new Error('Google Drive upload ended prematurely.');
+// Multipart upload sends metadata and content in a single request; no session needed.
+const createBoundary = () => `sync-engine-${crypto.randomUUID()}`;
+export async function singleUpload(options: MultipartOptions, value: Binary): Promise<DriveFile> {
+	const boundary = createBoundary();
+	const body = concatBinary(
+		textToUint8Array(
+			`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(options.metadata)}\r\n--${boundary}\r\nContent-Type: ${options.mimeType}\r\n\r\n`,
+		),
+		value,
+		textToUint8Array(`\r\n--${boundary}--`),
+	);
+	const response = await options.request({
+		body,
+		headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
+		method: options.method,
+		throw: false,
+		url: options.url,
+	});
+	if (response.status < 200 || response.status >= 300)
+		throw new Error(
+			parseDriveError(response) ?? `Google Drive upload failed: ${response.status}`,
+		);
 	return response.json<DriveFile>();
 }
 

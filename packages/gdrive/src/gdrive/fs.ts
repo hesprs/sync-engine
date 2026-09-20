@@ -126,28 +126,25 @@ export default class GdriveFs implements RootFs {
 		return parentId;
 	}
 
-	/** Session metadata for uploading `key`, updating the existing file when present. */
-	private sessionFor(
+	/** Upload target for `key`, updating the existing file when present. */
+	private uploadTarget(
 		key: string,
 		stat: FileStat,
-	): { initiateUrl: string; method: 'PATCH' | 'POST'; metadata: object } {
+		uploadType: 'multipart' | 'resumable',
+	): { method: 'PATCH' | 'POST'; metadata: object; url: string } {
 		const modifiedTime = new Date(stat.mtime).toISOString();
 		const existing = this.resolveId(key);
 		if (existing)
 			return {
-				initiateUrl: buildUrl(DRIVE_UPLOAD_API, `/files/${existing}`, {
-					fields: WRITE_FIELDS,
-					uploadType: 'resumable',
-				}),
 				metadata: { modifiedTime },
 				method: 'PATCH',
+				url: buildUrl(DRIVE_UPLOAD_API, `/files/${existing}`, {
+					fields: WRITE_FIELDS,
+					uploadType,
+				}),
 			};
 		const parentId = this.resolveId(dirname(key));
 		return {
-			initiateUrl: buildUrl(DRIVE_UPLOAD_API, '/files', {
-				fields: WRITE_FIELDS,
-				uploadType: 'resumable',
-			}),
 			metadata: {
 				mimeType: guessMimeType(basename(key)),
 				modifiedTime,
@@ -155,6 +152,7 @@ export default class GdriveFs implements RootFs {
 				parents: [parentId],
 			},
 			method: 'POST',
+			url: buildUrl(DRIVE_UPLOAD_API, '/files', { fields: WRITE_FIELDS, uploadType }),
 		};
 	}
 
@@ -190,9 +188,9 @@ export default class GdriveFs implements RootFs {
 	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
 		const file = await singleUpload(
 			{
-				...this.sessionFor(key, stat),
+				...this.uploadTarget(key, stat, 'multipart'),
+				mimeType: guessMimeType(basename(key)),
 				request: this.request,
-				size: value.byteLength,
 			},
 			value,
 		);
@@ -202,7 +200,11 @@ export default class GdriveFs implements RootFs {
 
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
 		const file = await resumableUpload(
-			{ ...this.sessionFor(key, stat), request: this.request, size: stat.size },
+			{
+				...this.uploadTarget(key, stat, 'resumable'),
+				request: this.request,
+				size: stat.size,
+			},
 			value,
 		);
 		if (file.id) this.ids.set(key, file.id);

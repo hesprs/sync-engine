@@ -96,3 +96,31 @@ test('retry middleware stops on non-retryable URLSession error code', () => {
 	expect(harness.calls).toStrictEqual([{ url: 'ssl.md' }]);
 	expect(sleepSpy).not.toHaveBeenCalled();
 });
+
+test('retry middleware retries returned retryable status response', () => {
+	sleepSpy.mockClear();
+	let attempts = 0;
+	const harness = request(() => {
+		attempts += 1;
+		return attempts < 3 ? { status: 503 } : { status: 200 };
+	});
+	const wrapped = retryMiddleware(harness.request, { maxRetry: 2, retryDelay: () => 25 });
+
+	expect(wrapped({ throw: false, url: 'flaky.md' })).resolves.toMatchObject({ status: 200 });
+	expect(harness.calls).toStrictEqual([
+		{ throw: false, url: 'flaky.md' },
+		{ throw: false, url: 'flaky.md' },
+		{ throw: false, url: 'flaky.md' },
+	]);
+	expect(sleepSpy).toHaveBeenCalledTimes(2);
+});
+
+test('retry middleware returns retryable status response after exhausting retries', () => {
+	sleepSpy.mockClear();
+	const harness = request(() => ({ status: 503 }));
+	const wrapped = retryMiddleware(harness.request, { maxRetry: 2, retryDelay: () => 25 });
+
+	expect(wrapped({ throw: false, url: 'down.md' })).resolves.toMatchObject({ status: 503 });
+	expect(harness.calls).toHaveLength(3);
+	expect(sleepSpy).toHaveBeenCalledTimes(2);
+});
