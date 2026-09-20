@@ -135,9 +135,11 @@ export async function resumableUpload(
 		},
 		uploadChunk: (chunk, _index, offset) => putChunk(session, chunk, offset, total),
 		value,
-	}).catch(async (error: unknown) => {
+	}).catch((error: unknown) => {
 		// Best-effort session cancellation; Drive also expires sessions on its own.
-		await options.request({ method: 'DELETE', url: session.location }).catch(() => {});
+		void options
+			.request({ ignoreCancellation: true, method: 'DELETE', url: session.location })
+			.catch(() => {});
 		throw error;
 	});
 	final ??= await putChunk(session, new Uint8Array(0), total, total);

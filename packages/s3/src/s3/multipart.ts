@@ -72,7 +72,7 @@ async function uploadPart(
 	return { etag, partNumber };
 }
 
-async function abortMultipart(options: MultipartUploadOptions, uploadId: string) {
+function abortMultipart(options: MultipartUploadOptions, uploadId: string) {
 	const url = buildUrlWithQuery(
 		{
 			bucket: options.bucket,
@@ -82,7 +82,7 @@ async function abortMultipart(options: MultipartUploadOptions, uploadId: string)
 		},
 		{ uploadId },
 	);
-	await options.request({ ignoreCancellation: true, method: 'DELETE', url }).catch(() => {});
+	return options.request({ ignoreCancellation: true, method: 'DELETE', url }).catch(() => {});
 }
 
 export async function multipartUpload(
@@ -138,7 +138,7 @@ export async function multipartUpload(
 			throw new Error(`S3 multipart upload returned a folder stat for ${options.key}.`);
 		return stat.uid;
 	} catch (error) {
-		await abortMultipart(options, uploadId);
+		void abortMultipart(options, uploadId);
 		throw error;
 	}
 }

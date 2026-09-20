@@ -26,8 +26,8 @@ function getUploadEndpoint(endpoint: string, username: string) {
 		: `${endpoint.slice(0, filesMarkerIndex)}/uploads/${encodedUsername}`;
 }
 
-async function deleteChunkUpload(request: ThrowRequest, auth: string, uploadFolderUrl: string) {
-	await request({
+function deleteChunkUpload(request: ThrowRequest, auth: string, uploadFolderUrl: string) {
+	return request({
 		headers: { Authorization: auth },
 		ignoreCancellation: true,
 		method: 'DELETE',
@@ -83,7 +83,7 @@ export default async function writeNextcloudChunkedUpload(
 		if (etag) return etag;
 		return getFileUid(await options.stat(key), key);
 	} catch (error) {
-		await deleteChunkUpload(options.request, options.auth, uploadFolderUrl);
+		void deleteChunkUpload(options.request, options.auth, uploadFolderUrl);
 		throw error;
 	}
 }

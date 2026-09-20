@@ -8,7 +8,7 @@ import S3Fs from '@/s3/fs';
 import { sigv4Middleware } from '@/s3/sigv4';
 import { defaultCredentials, defaultS3Options, memoryDB, response } from './helpers';
 
-const { bytes, file, stream: createStream } = testKit;
+const { bytes, deferred, file, stream: createStream } = testKit;
 
 let parsedResponse: unknown = {};
 
@@ -157,9 +157,10 @@ test('writeStream uploads exact multipart parts and completes with ETag', async 
 	expect(s3.calls.map(({ method }) => method)).toStrictEqual(['POST', 'PUT', 'PUT', 'POST']);
 });
 
-test('writeStream aborts multipart upload after part failure', () => {
+test('writeStream aborts multipart upload after part failure', async () => {
 	const s3 = createS3Fs();
 	const uploadError = new Error('part failed');
+	const aborted = deferred<void>();
 	s3.setRequest((params) => {
 		const url = new URL(params.url);
 		if (params.method === 'POST' && url.searchParams.has('uploads')) {
@@ -171,12 +172,15 @@ test('writeStream aborts multipart upload after part failure', () => {
 		if (params.method === 'PUT') throw uploadError;
 		expect(params.method).toBe('DELETE');
 		expect(url.searchParams.get('uploadId')).toBe('upload-2');
+		aborted.resolve();
 		return response({ status: 204 });
 	});
 
 	const source = createStream([bytes('failed')]);
 	const destination = file('failed.bin', { size: 5 * 1024 * 1024 });
 	expect(s3.fs.writeStream('failed.bin', source, destination)).rejects.toBe(uploadError);
+	// The abort request is fire-and-forget, so wait for it to be issued.
+	await aborted.promise;
 	expect(s3.calls.map(({ method }) => method)).toStrictEqual(['POST', 'PUT', 'DELETE']);
 });
 
