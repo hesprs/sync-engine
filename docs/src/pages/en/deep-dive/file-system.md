@@ -26,7 +26,7 @@ Vault file system consumes [`VaultRequest`](./request#vault-request), a typed op
 - calls `this.stat()` and returns the file UID
 - on failure, cancels the input stream and permanently removes the temporary file
 
-`delete()`: delegates to `DELETE`. Permanent deletes and `vault.config.trashOption: "none"` call `vault.adapter.remove()`. `"local"` calls `trashLocal()` directly; `"system"` or an unset option tries `trashSystem()` and falls back to `trashLocal()` when needed.
+`delete()`: delegates to `DELETE`, which follows the user's trash option. `vault.config.trashOption: "none"` calls `vault.adapter.remove()` for a permanent delete. `"local"` calls `trashLocal()` directly; `"system"` or an unset option tries `trashSystem()` and falls back to `trashLocal()` when needed.
 
 `move()`: delegates to `MOVE`, wrapping `vault.adapter.rename()` after normalizing the destination path.
 

@@ -1,13 +1,9 @@
 import type { Stat, Binary, FileStat } from '@/types';
 import type { ListReporter, RootFs } from '../interface';
 import type { VaultRequest } from './request';
+import { TEMP_FOLDER } from './request';
 
-const TEMP_FOLDER = '.trash';
 const MAX_WRITE_TRIAL = 5;
-
-async function removeIfExists(fs: VaultFs, key: string, permanent?: boolean): Promise<void> {
-	if (await fs.exists(key)) await fs.delete(key, permanent);
-}
 
 async function getFileUid(fs: VaultFs, key: string): Promise<string>;
 async function getFileUid(
@@ -68,20 +64,28 @@ export default class VaultFs implements RootFs {
 				if (result.done) break;
 				await this.request({ key: tempPath, method: 'APPEND', value: result.value });
 			}
-			await removeIfExists(this, key);
+			if (await this.exists(key))
+				await this.request({ key, method: 'DELETE', trash: 'permanent' });
 			await this.move(tempPath, key);
 			return await getFileUid(this, key);
 		} catch (error) {
-			await reader.cancel().catch(() => {});
-			await removeIfExists(this, tempPath, true);
+			await Promise.all([
+				reader.cancel(),
+				this.request({
+					ignoreCancellation: true,
+					key: tempPath,
+					method: 'DELETE',
+					trash: 'permanent',
+				}),
+			]).catch(() => {});
 			throw error;
 		} finally {
 			reader.releaseLock();
 		}
 	}
 
-	delete(key: string, permanent = false): Promise<void> {
-		return this.request({ key, method: 'DELETE', trash: permanent ? 'permanent' : undefined });
+	delete(key: string): Promise<void> {
+		return this.request({ key, method: 'DELETE' });
 	}
 
 	move(oldKey: string, newKey: string): Promise<void> {

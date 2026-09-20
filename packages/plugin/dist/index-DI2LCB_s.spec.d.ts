@@ -1251,11 +1251,12 @@ type TriggerEntry = {
 };
 type RequestParam = Omit<RequestUrlParam, 'body'> & {
   body?: string | Binary;
+  ignoreCancellation?: boolean;
 };
 type RequestResponse = {
   text: () => string;
   bytes: () => Binary;
-  json: () => General$1;
+  json: <T extends object = object>() => T;
   headers: Record<string, string>;
   status: number;
 };
@@ -1334,47 +1335,40 @@ declare class Registrar {
 }
 //#endregion
 //#region src/fs/vault/request.d.ts
-type VaultRequestParam = {
+type VaultRequestParam = ({
   method: 'GET';
-  key: string;
 } | {
   method: 'GET_STREAM';
-  key: string;
   size: number;
 } | {
   method: 'PUT';
-  key: string;
   value: Binary;
   mtime?: number;
   ctime?: number;
 } | {
   method: 'APPEND';
-  key: string;
   value: Binary;
   mtime?: number;
   ctime?: number;
 } | {
   method: 'DELETE';
-  key: string;
   trash?: TrashOption;
 } | {
   method: 'MOVE';
-  key: string;
   destination: string;
 } | {
   method: 'MKDIR';
-  key: string;
 } | {
   method: 'EXISTS';
-  key: string;
 } | {
   method: 'STAT';
-  key: string;
   cached?: boolean;
 } | {
   method: 'LIST';
-  key: string;
   cached?: boolean;
+}) & {
+  key: string;
+  ignoreCancellation?: boolean;
 };
 type VaultRequestResponseMap = {
   GET: Binary;

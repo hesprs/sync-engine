@@ -7,12 +7,15 @@ Sync Engine has two request systems: `Request` for remote HTTP calls and `VaultR
 Remote HTTP request function. Backends receive a composed `Request` instance in their constructor and must use it for all network calls.
 
 ```ts
-type RequestParam = Omit<RequestUrlParam, 'body'> & { body?: string | Binary };
+type RequestParam = Omit<RequestUrlParam, 'body'> & {
+  body?: string | Binary;
+  ignoreCancellation?: boolean;
+};
 
 type RequestResponse = {
   text: () => string;
   bytes: () => Binary;
-  json: () => General; // untyped JSON
+  json: <T extends object = object>() => T; // typed JSON
   headers: Record<string, string>;
   status: number;
 };
@@ -23,22 +26,25 @@ type Request = (params: RequestParam | string) => Promise<RequestResponse>;
 `RequestParam` extends Obsidian's `RequestUrlParam` (minus `body`) with a `body` field accepting `string | Binary`. Passing a plain string instead of a `RequestParam` object uses it as the URL.
 `RequestResponse` is an exported SDK type for the response returned by `Request`.
 
+Set `ignoreCancellation` to `true` to let a request through after the sync has been cancelled. Reserve it for cleanup calls that release remote resources the backend already created, such as aborting an incomplete multipart upload.
+
 ## `VaultRequest`
 
 Local vault operation function used by the local filesystem. Modules rarely interact with `VaultRequest` directly, but it is exported for advanced use cases.
 
 ```ts
-type VaultRequestParam =
-  | { method: 'GET'; key: string }
-  | { method: 'GET_STREAM'; key: string; size: number }
-  | { method: 'PUT'; key: string; value: Binary; mtime?: number; ctime?: number }
-  | { method: 'APPEND'; key: string; value: Binary; mtime?: number; ctime?: number }
-  | { method: 'DELETE'; key: string; trash?: 'local' | 'system' | 'permanent' }
-  | { method: 'MOVE'; key: string; destination: string }
-  | { method: 'MKDIR'; key: string }
-  | { method: 'EXISTS'; key: string }
-  | { method: 'STAT'; key: string; cached?: boolean }
-  | { method: 'LIST'; key: string; cached?: boolean };
+type VaultRequestParam = (
+  | { method: 'GET' }
+  | { method: 'GET_STREAM'; size: number }
+  | { method: 'PUT'; value: Binary; mtime?: number; ctime?: number }
+  | { method: 'APPEND'; value: Binary; mtime?: number; ctime?: number }
+  | { method: 'DELETE'; trash?: TrashOption }
+  | { method: 'MOVE'; destination: string }
+  | { method: 'MKDIR' }
+  | { method: 'EXISTS' }
+  | { method: 'STAT'; cached?: boolean }
+  | { method: 'LIST'; cached?: boolean }
+) & { key: string; ignoreCancellation?: boolean };
 
 type VaultRequest = <T extends VaultRequestParam>(
   params: T,

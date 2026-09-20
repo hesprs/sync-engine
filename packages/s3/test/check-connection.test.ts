@@ -1,14 +1,9 @@
-import type { Request, RequestParam } from '@hesprs/sync-engine-sdk';
+import type { RequestParam } from '@hesprs/sync-engine-sdk';
+import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
 import { checkConnection } from '@/s3/check-connection';
 import { sigv4Middleware } from '@/s3/sigv4';
-import {
-	defaultCredentials,
-	defaultResponse,
-	defaultS3Options,
-	memoryDB,
-	response,
-} from './helpers';
+import { defaultCredentials, defaultS3Options, memoryDB, response } from './helpers';
 
 const connectionOptions = {
 	bucket: defaultS3Options.bucket,
@@ -18,17 +13,12 @@ const connectionOptions = {
 };
 
 test('checkConnection uses the request pipeline for a signed head bucket request', async () => {
-	const calls: Array<RequestParam> = [];
-	const transport: Request = (params) => {
-		if (typeof params === 'string') throw new Error('Unexpected string request');
-		calls.push(params);
-		return Promise.resolve(defaultResponse);
-	};
+	const harness = testKit.request<RequestParam>(() => response());
 
-	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);
+	const request = sigv4Middleware(harness.request, defaultCredentials, memoryDB);
 	expect(await checkConnection(connectionOptions, request)).toStrictEqual({ success: true });
 
-	const call = calls[0];
+	const call = harness.calls[0];
 	if (!call) throw new Error('Expected checkConnection request');
 	expect(call.method).toBe('HEAD');
 	expect(call.headers?.['x-amz-content-sha256']).toBe('UNSIGNED-PAYLOAD');
@@ -41,14 +31,16 @@ test('checkConnection uses the request pipeline for a signed head bucket request
 });
 
 test('checkConnection returns HTTP and thrown request failures', async () => {
-	const failed = (() => Promise.resolve(response({ status: 403 }))) as Request;
+	const failed = testKit.request(() => response({ status: 403 })).request;
 	expect(await checkConnection(connectionOptions, failed)).toStrictEqual({
 		reason: 'HTTP 403',
 		success: false,
 	});
 
 	const requestError = new Error('network unavailable');
-	const thrown = (() => Promise.reject(requestError)) as Request;
+	const thrown = testKit.request(() => {
+		throw requestError;
+	}).request;
 	expect(await checkConnection(connectionOptions, thrown)).toStrictEqual({
 		reason: 'network unavailable',
 		success: false,

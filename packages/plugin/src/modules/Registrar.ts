@@ -33,11 +33,15 @@ export type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
 
 export type TriggerEntry = { priority: number; options?: () => SyncOptions };
 
-export type RequestParam = Omit<RequestUrlParam, 'body'> & { body?: string | Binary };
+export type RequestParam = Omit<RequestUrlParam, 'body'> & {
+	body?: string | Binary;
+	ignoreCancellation?: boolean;
+};
 export type RequestResponse = {
 	text: () => string;
 	bytes: () => Binary;
-	json: () => General;
+	// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
+	json: <T extends object = object>() => T;
 	headers: Record<string, string>;
 	status: number;
 };
@@ -52,7 +56,8 @@ const request: Request = async (params: RequestParam | string) => {
 	return {
 		bytes: () => toUint8Array(response.arrayBuffer),
 		headers: response.headers,
-		json: () => response.json as object,
+		// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
+		json: <T extends object = object>() => response.json as T,
 		status: response.status,
 		text: () => response.text,
 	};

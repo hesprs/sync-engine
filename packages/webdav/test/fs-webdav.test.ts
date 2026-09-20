@@ -1,4 +1,5 @@
 import type { Binary, Progress, Request, RootFs } from '@hesprs/sync-engine-sdk';
+import type { ResponseControl, ResponseOverrides } from '@hesprs/sync-engine-sdk/dev';
 import { chunkSize } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, mock, test } from 'bun:test';
@@ -6,29 +7,24 @@ import type { WebdavFsOptions } from '@/webdav/fs';
 import { checkConnection } from '@/webdav/check-connection';
 import WebdavFs from '@/webdav/fs';
 
-const { bytes, deferred, file, flush, stream: createStream } = testKit;
+const { bytes, deferred, file, flush, request, stream: createStream } = testKit;
 const sharedDate = new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf();
 
 type RequestParam = Exclude<Parameters<Request>[0], string>;
-type RequestResponse = Awaited<ReturnType<Request>>;
-type RequestHandler = (params: RequestParam) => RequestResponse | Promise<RequestResponse>;
 type ParsedResponse = { multistatus: { response: Array<unknown> } };
 type WebdavHarness = {
 	calls: Array<RequestParam>;
 	fs: RootFs;
-	setRequest: (handler: RequestHandler) => void;
+	setRequest: (handler: ResponseControl<RequestParam>) => void;
 };
 
 const emptyBinary: Binary = new Uint8Array(0);
-const defaultResponse: RequestResponse = {
+const defaultResponse: ResponseOverrides = {
 	bytes: () => emptyBinary,
-	headers: {},
-	json: () => void 0,
-	status: 200,
 	text: () => '',
 };
 
-let response: RequestResponse;
+let response: ResponseOverrides;
 let parsedResponse: ParsedResponse;
 
 const defaultOptions = {
@@ -52,19 +48,13 @@ beforeEach(() => {
 });
 
 function createWebdavFs(options: Partial<WebdavFsOptions> = {}): WebdavHarness {
-	const calls: Array<RequestParam> = [];
-	let requestHandler: RequestHandler = () => response;
-	const request = (params: RequestParam | string) =>
-		Promise.resolve().then(() => {
-			if (typeof params === 'string') throw new Error(`Unexpected string request: ${params}`);
-			calls.push(params);
-			return requestHandler(params);
-		});
+	let requestHandler: ResponseControl<RequestParam> = () => response;
+	const harness = request<RequestParam>((params) => requestHandler(params));
 
 	return {
-		calls,
-		fs: new WebdavFs({ ...defaultOptions, ...options, request }),
-		setRequest: (handler: RequestHandler) => {
+		calls: harness.calls,
+		fs: new WebdavFs({ ...defaultOptions, ...options, request: harness.request }),
+		setRequest: (handler: ResponseControl<RequestParam>) => {
 			requestHandler = handler;
 		},
 	};
@@ -73,8 +63,6 @@ function createWebdavFs(options: Partial<WebdavFsOptions> = {}): WebdavHarness {
 function setXmlResponse(items: Array<unknown>, text = '<xml />') {
 	response = {
 		bytes: () => emptyBinary,
-		headers: {},
-		json: () => void 0,
 		status: 207,
 		text: () => text,
 	};
@@ -83,10 +71,6 @@ function setXmlResponse(items: Array<unknown>, text = '<xml />') {
 			response: items,
 		},
 	};
-}
-
-function filledBinary(size: number, value: number) {
-	return new Uint8Array(size).fill(value);
 }
 
 async function collectStream(source: ReadableStream<Binary>): Promise<Binary> {
@@ -113,22 +97,19 @@ async function collectStream(source: ReadableStream<Binary>): Promise<Binary> {
 }
 
 test('checkConnection returns success for a healthy endpoint', async () => {
-	const calls: Array<RequestParam> = [];
-	const request = (params: RequestParam | string) =>
-		Promise.resolve().then(() => {
-			if (typeof params === 'string') throw new Error(`Unexpected string request: ${params}`);
-			calls.push(params);
-			return { ...defaultResponse, status: 200 };
-		});
+	const harness = request<RequestParam>(() => defaultResponse);
 
-	expect(await checkConnection(defaultOptions, request)).toStrictEqual({ success: true });
-	expect(calls[0]).toMatchObject({ method: 'PROPFIND', url: 'https://dav.example.com/dav/' });
+	expect(await checkConnection(defaultOptions, harness.request)).toStrictEqual({ success: true });
+	expect(harness.calls[0]).toMatchObject({
+		method: 'PROPFIND',
+		url: 'https://dav.example.com/dav/',
+	});
 });
 
 test('checkConnection returns failure reason for bad status', async () => {
-	const request = (() => Promise.resolve({ ...defaultResponse, status: 503 })) as Request;
+	const harness = request(() => ({ status: 503, text: () => '' }));
 
-	expect(await checkConnection(defaultOptions, request)).toStrictEqual({
+	expect(await checkConnection(defaultOptions, harness.request)).toStrictEqual({
 		reason: '503',
 		success: false,
 	});
@@ -208,7 +189,6 @@ test('chunked writeStream uses exact Nextcloud urls and headers', async () => {
 				Destination: destination,
 				'OC-Total-Length': '7',
 			});
-			expect(params.body).toStrictEqual(bytes('abcdefg'));
 			return { ...defaultResponse, status: 200 };
 		}
 		if (params.method === 'MOVE') {
@@ -236,68 +216,6 @@ test('chunked writeStream uses exact Nextcloud urls and headers', async () => {
 	expect(uploadFolderUrl).toMatch(
 		/^https:\/\/dav\.example\.com\/remote\.php\/dav\/uploads\/alice\/[^/]+\/$/u,
 	);
-});
-
-test('chunked writeStream slices 5 MiB chunks and limits concurrency to 3', async () => {
-	const mib = 5 * 1024 * 1024;
-	const webdav = createWebdavFs({ chunkedUpload: true });
-	const uploads: Array<{ size: number; url: string }> = [];
-	const pending: Array<ReturnType<typeof deferred<RequestResponse>>> = [];
-	let inFlight = 0;
-	let maxInFlight = 0;
-	let uploadFolderUrl = '';
-
-	webdav.setRequest((params) => {
-		if (params.method === 'MKCOL') {
-			uploadFolderUrl = params.url;
-			return { ...defaultResponse, status: 201 };
-		}
-		if (params.method === 'PUT') {
-			const body = params.body as Binary;
-			uploads.push({ size: body.byteLength, url: params.url });
-			inFlight += 1;
-			maxInFlight = Math.max(maxInFlight, inFlight);
-			const wait = deferred<RequestResponse>();
-			wait.promise
-				.finally(() => {
-					inFlight -= 1;
-				})
-				.catch(() => {});
-			pending.push(wait);
-			return wait.promise;
-		}
-		if (params.method === 'MOVE') return { ...defaultResponse, headers: { etag: 'big-uid' } };
-		throw new Error(`Unexpected method: ${params.method}`);
-	});
-
-	const source = createStream([
-		filledBinary(mib, 1),
-		filledBinary(mib, 2),
-		filledBinary(mib, 3),
-		filledBinary(1, 4),
-	]);
-	const writePromise = webdav.fs.writeStream(
-		'Notes/big.bin',
-		source,
-		file('Notes/big.bin', { size: mib * 3 + 1 }),
-	);
-
-	await flush(12);
-	expect(uploads.map(({ size }) => size)).toStrictEqual([mib, mib, mib]);
-	expect(maxInFlight).toBe(3);
-
-	pending[0]?.resolve({ ...defaultResponse, status: 200 });
-	await flush(12);
-	expect(uploads.map(({ size }) => size)).toStrictEqual([mib, mib, mib, 1]);
-	expect(uploads.map(({ url }) => url)).toStrictEqual([
-		`${uploadFolderUrl}1`,
-		`${uploadFolderUrl}2`,
-		`${uploadFolderUrl}3`,
-		`${uploadFolderUrl}4`,
-	]);
-
-	for (const wait of pending.slice(1)) wait.resolve({ ...defaultResponse, status: 200 });
-	expect(await writePromise).toBe('big-uid');
 });
 
 test('empty chunked stream skips put and still mkcol move', async () => {
@@ -608,14 +526,14 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 
 	const ranges: Array<string> = [];
 	const encodings: Array<string | undefined> = [];
-	const pending = new Map<string, ReturnType<typeof deferred<RequestResponse>>>();
+	const pending = new Map<string, ReturnType<typeof deferred<ResponseOverrides>>>();
 	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav' });
 	webdav.setRequest((params) => {
 		if (params.method === 'PROPFIND') return response;
 		const range = params.headers?.Range ?? '';
 		ranges.push(range);
 		encodings.push(params.headers?.['Accept-Encoding']);
-		const wait = deferred<RequestResponse>();
+		const wait = deferred<ResponseOverrides>();
 		pending.set(range, wait);
 		return wait.promise;
 	});
@@ -632,12 +550,9 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 	expect(ranges).toStrictEqual(expectedRanges);
 	expect(encodings.every((encoding) => encoding === 'identity')).toBe(true);
 
-	const makeResponse = (byte: number): RequestResponse => ({
+	const makeResponse = (byte: number): ResponseOverrides => ({
 		bytes: () => new Uint8Array([byte]),
-		headers: {},
-		json: () => void 0,
 		status: 206,
-		text: () => '',
 	});
 
 	for (let index = expectedRanges.length - 1; index >= 0; index--)

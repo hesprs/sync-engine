@@ -2,26 +2,18 @@ import testKit from '$/test-kit';
 import { expect, test } from 'bun:test';
 import { customHeadersMiddleware } from '@/fs';
 
-const { bytes, request } = testKit;
-
-const response = {
-	bytes: () => bytes('ok'),
-	headers: {},
-	json: () => {},
-	status: 200,
-	text: () => 'ok',
-};
+const { request } = testKit;
 
 test('custom headers middleware normalizes string input to request params', () => {
-	const harness = request(() => Promise.resolve(response));
+	const harness = request(() => ({}));
 	const wrapped = customHeadersMiddleware(harness.request, { 'x-added': 'value' });
 
-	expect(wrapped('note.md')).resolves.toStrictEqual(response);
+	expect(wrapped('note.md')).resolves.toMatchObject({ status: 200 });
 	expect(harness.calls).toStrictEqual([{ headers: { 'x-added': 'value' }, url: 'note.md' }]);
 });
 
 test('custom headers middleware merges supplied headers and overrides duplicates', () => {
-	const harness = request(() => Promise.resolve(response));
+	const harness = request(() => ({}));
 	const wrapped = customHeadersMiddleware(harness.request, {
 		'x-added': 'value',
 		'x-override': 'new',
@@ -35,7 +27,7 @@ test('custom headers middleware merges supplied headers and overrides duplicates
 			},
 			url: 'note.md',
 		}),
-	).resolves.toStrictEqual(response);
+	).resolves.toMatchObject({ status: 200 });
 	expect(harness.calls).toStrictEqual([
 		{
 			headers: {

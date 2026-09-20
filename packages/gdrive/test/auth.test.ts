@@ -1,7 +1,10 @@
-import type { Request, RequestParam, RequestResponse } from '@hesprs/sync-engine-sdk';
+import type { RequestParam } from '@hesprs/sync-engine-sdk';
 import type { SecretStorage } from 'obsidian';
+import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import ObsidianMock from '@repo/shared/obsidian-mock';
 import { expect, mock, test } from 'bun:test';
+
+const { request } = testKit;
 
 type HttpResponse = { json?: unknown; status?: number; throw?: Error };
 const requests: Array<RequestParam> = [];
@@ -178,7 +181,7 @@ test('caches tokens and retries bearer requests after a 401', async () => {
 	};
 	const manager = new TokenManager(storage as unknown as SecretStorage);
 	const seen: Array<string | undefined> = [];
-	const request: Request = (params) => {
+	const req = request((params) => {
 		if (typeof params === 'string') throw new Error('Unexpected string request');
 		seen.push(params.headers?.Authorization);
 		if (seen.length === 1) {
@@ -186,16 +189,10 @@ test('caches tokens and retries bearer requests after a 401', async () => {
 			error.status = 401;
 			return Promise.reject(error);
 		}
-		return Promise.resolve({
-			bytes: () => new Uint8Array(0),
-			headers: {},
-			json: () => ({}),
-			status: 200,
-			text: () => '',
-		} satisfies RequestResponse);
-	};
+		return { status: 200 };
+	});
 
-	const wrapped = bearerMiddleware(request, manager);
+	const wrapped = bearerMiddleware(req.request, manager);
 	expect((await wrapped({ method: 'GET', url: 'https://drive.test' })).status).toBe(200);
 	expect(seen).toStrictEqual(['Bearer first', 'Bearer second']);
 });

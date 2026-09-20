@@ -5,6 +5,7 @@ type CreateRangeReadStreamOptions = {
 	chunkSize: number;
 	concurrency: number;
 	requestRange: (start: number, endInclusive: number) => Promise<Binary>;
+	finalize?: () => Promise<void> | void;
 };
 
 export default function createRangeReadStream({
@@ -12,15 +13,24 @@ export default function createRangeReadStream({
 	chunkSize,
 	concurrency,
 	requestRange,
+	finalize,
 }: CreateRangeReadStreamOptions): ReadableStream<Binary> {
 	const totalChunks = size === 0 ? 0 : Math.ceil(size / chunkSize);
 	const maxBufferedBytes = chunkSize * concurrency;
-	if (totalChunks === 0)
+	let finalized = false;
+	const runFinalize = () => {
+		if (!finalize || finalized) return;
+		finalized = true;
+		void finalize();
+	};
+	if (totalChunks === 0) {
+		runFinalize();
 		return new ReadableStream<Binary>({
 			start(controller) {
 				controller.close();
 			},
 		});
+	}
 
 	let controllerRef: ReadableStreamDefaultController<Binary> | undefined;
 	let nextChunkIndex = 0;
@@ -36,6 +46,7 @@ export default function createRangeReadStream({
 		if (nextPendingIndex < totalChunks || inFlight > 0) return;
 		closed = true;
 		controllerRef.close();
+		runFinalize();
 	};
 
 	const flush = () => {
@@ -53,7 +64,7 @@ export default function createRangeReadStream({
 	};
 
 	const canScheduleNext = () =>
-		controllerRef !== undefined &&
+		controllerRef &&
 		!closed &&
 		consumerReady &&
 		inFlight < concurrency &&
@@ -79,6 +90,7 @@ export default function createRangeReadStream({
 				if (closed) return;
 				closed = true;
 				controllerRef?.error(error);
+				runFinalize();
 			});
 	};
 
@@ -94,6 +106,7 @@ export default function createRangeReadStream({
 		{
 			cancel() {
 				closed = true;
+				runFinalize();
 			},
 			pull(controller) {
 				controllerRef = controller;

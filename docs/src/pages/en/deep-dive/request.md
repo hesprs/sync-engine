@@ -64,7 +64,7 @@ Before calling the adapter, `VaultRequest` removes a trailing slash from every n
 ### Operation mapping
 
 - `GET`: `adapter.readBinary()`, converted to `Binary`.
-- `GET_STREAM`: requires the file `size`. On iOS/iPadOS, files with media extensions stream through multiple ranged `fetch` `GET` requests, since Capacitor 5 only supports ranged local file requests for those extensions. Other files fetch `adapter.getResourcePath(path)` and return `response.body`; throws when no body is available.
+- `GET_STREAM`: requires the file `size`. On iOS/iPadOS, files stream through multiple ranged `fetch` `GET` requests, since Capacitor 5 only supports ranged local file requests for media extensions. Non-media files are first copied to `.trash/<random-UUID>.mov` to masquerade as a media file, creating `.trash` when needed; the copy is removed once the stream completes, errors, or is cancelled. Other platforms fetch `adapter.getResourcePath(path)` and return `response.body`; throws when no body is available.
 - `PUT`: `adapter.writeBinary()`, converting `Binary` to `ArrayBuffer` and forwarding optional `mtime`/`ctime` headers.
 - `APPEND`: `adapter.appendBinary()` with the same conversion and headers.
 - `DELETE`: calls `adapter.remove()`, `adapter.trashLocal()`, `adapter.trashSystem()` according to user trash options.

@@ -1,4 +1,5 @@
-import type { Binary, RequestResponse } from '@hesprs/sync-engine-sdk';
+import type { Binary } from '@hesprs/sync-engine-sdk';
+import type { ResponseOverrides } from '@hesprs/sync-engine-sdk/dev';
 import { openMemoryDB } from 'uni-kv';
 
 export const memoryDB = openMemoryDB<
@@ -7,14 +8,6 @@ export const memoryDB = openMemoryDB<
 >('s3-test');
 
 export const emptyBinary: Binary = new Uint8Array(0);
-
-export const defaultResponse: RequestResponse = {
-	bytes: () => emptyBinary,
-	headers: {},
-	json: () => void 0,
-	status: 200,
-	text: () => '',
-};
 
 export const defaultS3Options = {
 	accessKeyId: 'access-key',
@@ -41,11 +34,10 @@ export function response(
 		status?: number;
 		text?: string;
 	} = {},
-): RequestResponse {
+): ResponseOverrides {
 	return {
 		bytes: () => options.body ?? emptyBinary,
 		headers: options.headers ?? {},
-		json: () => void 0,
 		status: options.status ?? 200,
 		text: () => options.text ?? '',
 	};

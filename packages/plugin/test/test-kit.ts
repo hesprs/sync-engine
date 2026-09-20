@@ -1,10 +1,11 @@
 import type { Fs, ListReporter, RootFs } from '@/fs';
-import type { Request, RequestParam } from '@/modules/Registrar';
+import type { Request, RequestParam, RequestResponse } from '@/modules/Registrar';
 import type { Decider, TaskFactory, TaskNames, TaskOptions } from '@/sync';
 import type {
 	Binary,
 	FileStat,
 	FolderStat,
+	MaybePromise,
 	RecordStat,
 	RecordStatsMap,
 	Stat,
@@ -36,8 +37,8 @@ type FsHarness = {
 	fs: RootFs;
 };
 
-type RequestHarness = {
-	calls: Array<RequestParam | string>;
+type RequestHarness<T = RequestParam | string> = {
+	calls: Array<T>;
 	request: Request;
 };
 
@@ -189,13 +190,36 @@ function createControl(overrides: Partial<Fs> = {}): Fs {
 	};
 }
 
-function request(control: Request): RequestHarness {
-	const calls: Array<RequestParam | string> = [];
+const defaultBytes = () => bytes('ok');
+const defaultText = () => 'ok';
+const defaultJson = () => ({});
+
+export type ResponseOverrides = Partial<Omit<RequestResponse, 'json'>> & {
+	json?: () => unknown;
+};
+
+function response(overrides: ResponseOverrides = {}): RequestResponse {
+	return {
+		bytes: defaultBytes,
+		headers: {},
+		status: 200,
+		text: defaultText,
+		...overrides,
+		json: (overrides.json ?? defaultJson) as RequestResponse['json'],
+	};
+}
+
+export type ResponseControl<T> = (params: T) => MaybePromise<ResponseOverrides>;
+
+function request<T extends RequestParam | string = RequestParam | string>(
+	control: ResponseControl<T>,
+): RequestHarness<T> {
+	const calls: Array<T> = [];
 	return {
 		calls,
-		request: (params: RequestParam | string) => {
-			calls.push(params);
-			return control(params);
+		request: async (params: RequestParam | string) => {
+			calls.push(params as T);
+			return response(await control(params as T));
 		},
 	};
 }

@@ -18,7 +18,7 @@ A request middleware is a wrapper around [`Request` and `VaultRequest`](./reques
 
 - Target: `Request` and `VaultRequest`
 - Priority: `2000` for `VaultRequest`, `4000` for `Request`
-- Behavior: wraps request in with a throw if cancelled at before and during requests. Works together with [Cancellation Wrapper](./file-system-wrappers#cancellation-wrapper).
+- Behavior: wraps request in with a throw if cancelled at before and during requests. Works together with [Cancellation Wrapper](./file-system-wrappers#cancellation-wrapper). Requests carrying `ignoreCancellation: true` pass through untouched, so backends can still send cleanup calls after cancellation.
 
 ## Custom Header Middleware
 

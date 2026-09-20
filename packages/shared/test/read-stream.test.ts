@@ -123,3 +123,22 @@ test('propagates requestRange errors to the stream', () => {
 
 	expect(collectStream(stream)).rejects.toBe(requestError);
 });
+
+test('runs finally after the stream completes', async () => {
+	let finalized = false;
+	const stream = createRangeReadStream({
+		chunkSize: 2,
+		concurrency: 2,
+		finalize: () => {
+			finalized = true;
+		},
+		requestRange: (start, endInclusive) =>
+			Promise.resolve(new Uint8Array(endInclusive - start + 1)),
+		size: 4,
+	});
+
+	const reader = stream.getReader();
+	await reader.read();
+	await reader.cancel();
+	expect(finalized).toBe(true);
+});
