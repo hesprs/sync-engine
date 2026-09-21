@@ -15,12 +15,12 @@ const CHECK_CONNECTION_BODY = `<?xml version="1.0" encoding="utf-8"?>
 </D:propfind>`;
 
 export async function checkConnection(
-	options: WebdavConnectionOptions,
+	{ username, password, endpoint }: WebdavConnectionOptions,
 	request: Request,
 ): Promise<CheckConnectionResult> {
-	const Authorization = getAuthorization(options.username, options.password);
+	const Authorization = getAuthorization(username, password);
 	try {
-		const response = await request(buildUrl(normalizeUrl(options.endpoint), '/'), {
+		const response = await request(buildUrl(normalizeUrl(endpoint), '/'), {
 			body: CHECK_CONNECTION_BODY,
 			contentType: 'application/xml',
 			headers: { Authorization, Depth: '0' },

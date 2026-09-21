@@ -39,26 +39,26 @@ unsubscribe();
 
 `Events` is a merged event map contributed by all internal modules. Every event key and its payload type:
 
-| Event                  | Payload                                                                                                              |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `logSync`              | `string` sync log message                                                                                            |
-| `logGeneral`           | `string` general log message                                                                                         |
-| `errorSync`            | `string` sync error log message                                                                                      |
-| `errorGeneral`         | `string` general error log message                                                                                   |
-| `moduleLoaded`         | `string` module name                                                                                                 |
-| `moduleUnloaded`       | `string` module name                                                                                                 |
-| `syncStarted`          | `{ isCancelled: Ref<boolean>; trigger: string }`                                                                     |
-| `syncInitialized`      | `Infras & { match: (path: string) => GlobMatchResult }` — the run's file systems, record store, and compiled matcher |
-| `remoteWalkProgress`   | `Progress`                                                                                                           |
-| `syncTerminated`       | `SyncTerminateReason`                                                                                                |
-| `requestConfirmDelete` | `Array<RemoveLocal>` pending local-remove tasks                                                                      |
-| `requestConfirmTasks`  | `Array<BaseTask>`                                                                                                    |
-| `syncCanceled`         | `undefined` (no payload)                                                                                             |
-| `taskCompleted`        | `TaskInfo` (`{ name: TaskNames; key: string; prettyName: string; isDir: boolean }`)                                  |
-| `taskFailed`           | `FailedTaskInfo` (`TaskInfo` & `{ error: string }`)                                                                  |
-| `executionStarted`     | `Array<BaseTask>`                                                                                                    |
-| `tasksConfirmed`       | `Array<BaseTask>`                                                                                                    |
-| `deleteConfirmed`      | `{ delete: Array<RemoveLocal>; reupload: Array<RemoveLocal> }`                                                       |
+| Event                  | Payload                                                                                                             |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `logSync`              | `string` sync log message                                                                                           |
+| `logGeneral`           | `string` general log message                                                                                        |
+| `errorSync`            | `string` sync error log message                                                                                     |
+| `errorGeneral`         | `string` general error log message                                                                                  |
+| `moduleLoaded`         | `string` module name                                                                                                |
+| `moduleUnloaded`       | `string` module name                                                                                                |
+| `syncStarted`          | `{ isCancelled: Ref<boolean>; trigger: string }`                                                                    |
+| `syncInitialized`      | `Infras & { match: (path: string) => GlobMatchResult }`: the run's file systems, record store, and compiled matcher |
+| `remoteWalkProgress`   | `Progress`                                                                                                          |
+| `syncTerminated`       | `SyncTerminateReason`                                                                                               |
+| `requestConfirmDelete` | `Array<RemoveLocal>` pending local-remove tasks                                                                     |
+| `requestConfirmTasks`  | `Array<BaseTask>`                                                                                                   |
+| `syncCanceled`         | `undefined` (no payload)                                                                                            |
+| `taskCompleted`        | `TaskInfo` (`{ name: TaskNames; key: string; prettyName: string; isDir: boolean }`)                                 |
+| `taskFailed`           | `FailedTaskInfo` (`TaskInfo` & `{ error: string }`)                                                                 |
+| `executionStarted`     | `Array<BaseTask>`                                                                                                   |
+| `tasksConfirmed`       | `Array<BaseTask>`                                                                                                   |
+| `deleteConfirmed`      | `{ delete: Array<RemoveLocal>; reupload: Array<RemoveLocal> }`                                                      |
 
 ::: tip
 

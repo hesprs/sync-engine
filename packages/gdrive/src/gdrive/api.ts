@@ -24,6 +24,11 @@ export type DriveFileList = {
 	nextPageToken?: string;
 };
 
+type DriveError = {
+	error?: { code?: number; message?: string } | string;
+	error_description?: string;
+};
+
 const mtimeMissing = new Error('Google Drive did not return the modified time for a file!');
 
 /** Escapes a string literal used inside a Drive `q` search expression. */
@@ -48,14 +53,14 @@ export function getHeader(
 }
 
 export function parseDriveError(response: RequestResponse): string | undefined {
-	const parsed = response as {
-		error?: { code?: number; message?: string } | string;
-		error_description?: string;
-	};
-	if (typeof parsed.error === 'string')
-		return `Google Drive ${parsed.error}: ${parsed.error_description ?? ''}`;
-	if (parsed.error?.message)
-		return `Google Drive ${parsed.error.code ?? response.status}: ${parsed.error.message}`;
+	try {
+		const { error, error_description } = response.json<DriveError>();
+		if (typeof error === 'string') return `Google Drive ${error}: ${error_description ?? ''}`;
+		if (error?.message)
+			return `Google Drive ${error.code ?? response.status}: ${error.message}`;
+	} catch {
+		// Non-JSON error body (e.g. empty 503 responses).
+	}
 }
 
 export function toFileStat(key: string, file: DriveFile): FileStat {

@@ -1,9 +1,10 @@
 import type { Binary, Request, RequestResponse } from '@hesprs/sync-engine-sdk';
-import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
-import chunkedUpload from '@repo/shared/chunked-upload';
 import type { DriveFile } from './api';
 import { getHeader, parseDriveError } from './api';
+
+// Resumable uploads must be sequential (Drive rejects chunks that skip ahead of the uploaded size), so the SDK's memory-tuned chunk size does not apply here.
+const GDRIVE_CHUNK_SIZE = 8 * 1024 ** 2;
 
 const MIME_BY_EXTENSION: Record<string, string> = {
 	base: 'application/json',
@@ -122,23 +123,37 @@ export async function resumableUpload(
 	value: ReadableStream<Binary>,
 ): Promise<DriveFile> {
 	const session = await startSession(options);
-	const total = options.size;
+	const { size: total } = options;
+	const reader = value.getReader();
+	let buffer: Binary = new Uint8Array(0);
 	let final: RequestResponse | undefined;
-	await chunkedUpload<RequestResponse | undefined>({
-		chunkSize,
-		concurrency,
-		onChunkResult: (response) => {
-			if (response) final = response;
-		},
-		uploadChunk: (chunk, _index, offset) => putChunk(session, chunk, offset, total),
-		value,
-	}).catch((error: unknown) => {
+	let offset = 0;
+	// Sequential by necessity: a Drive session rejects any chunk whose offset
+	const upload = async (chunk: Binary) => {
+		const response = await putChunk(session, chunk, offset, total);
+		offset += chunk.byteLength;
+		if (response) final = response;
+	};
+	try {
+		let done = false;
+		while (!done) {
+			const read = await reader.read();
+			if (read.done) done = true;
+			else buffer = concatBinary(buffer, read.value);
+			while (buffer.byteLength >= GDRIVE_CHUNK_SIZE) {
+				const chunk = buffer.slice(0, GDRIVE_CHUNK_SIZE);
+				buffer = buffer.slice(GDRIVE_CHUNK_SIZE);
+				await upload(chunk);
+			}
+		}
+		if (buffer.byteLength > 0) await upload(buffer);
+	} catch (error) {
 		// Best-effort session cancellation; Drive also expires sessions on its own.
 		void options
 			.request(session.location, { ignoreCancellation: true, method: 'DELETE' })
 			.catch(() => {});
 		throw error;
-	});
+	}
 	final ??= await putChunk(session, new Uint8Array(0), total, total);
 	if (!final) throw new Error('Google Drive upload finished incomplete.');
 	return final.json<DriveFile>();

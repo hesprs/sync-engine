@@ -66,16 +66,16 @@ const testKit: {
 };
 ```
 
-| Helper                | Description                                                                                                                                                                             |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bytes(value)`        | Convert a string to `Binary`.                                                                                                                                                           |
-| `deferred()`          | Create a controlled promise.                                                                                                                                                            |
-| `file(key, options?)` | Create a `FileStat`.                                                                                                                                                                    |
-| `folder(key)`         | Create a `FolderStat`.                                                                                                                                                                  |
-| `flush(turns?)`       | Wait for several microtask queues to finish (default 4).                                                                                                                                |
-| `fs(options?)`        | Create a stub filesystem. `control` overrides individual methods; `uid` sets `getUid()`.                                                                                                |
-| `request(control)`    | Wrap a response control to record calls. The control receives the same arguments as `Request` and returns response overrides; each recorded call is the url merged into its parameters. |
-| `stream(chunks?)`     | Create a fake `ReadableStream` from an array.                                                                                                                                           |
+| Helper                | Description                                                                                                                   |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `bytes(value)`        | Convert a string to `Binary`.                                                                                                 |
+| `deferred()`          | Create a controlled promise.                                                                                                  |
+| `file(key, options?)` | Create a `FileStat`.                                                                                                          |
+| `folder(key)`         | Create a `FolderStat`.                                                                                                        |
+| `flush(turns?)`       | Wait for several microtask queues to finish (default 4).                                                                      |
+| `fs(options?)`        | Create a stub filesystem. `control` overrides individual methods; `uid` sets `getUid()`.                                      |
+| `request(control)`    | Wrap a response control to record calls. The control receives the same arguments as `Request` and returns response overrides. |
+| `stream(chunks?)`     | Create a fake `ReadableStream` from an array.                                                                                 |
 
 ### `fs()` Details
 
