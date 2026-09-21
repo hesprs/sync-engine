@@ -2,31 +2,31 @@
 	{
 		"id": "webdav",
 		"name": "WebDAV",
-		"version": "0.1.17",
+		"version": "0.1.18",
 		"description": "WebDAV backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/webdav.js",
-		"minPluginVersion": "3.1.0",
+		"minPluginVersion": "3.1.9",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/webdav"
 	},
 	{
 		"id": "s3",
 		"name": "S3",
-		"version": "0.1.5",
+		"version": "0.1.6",
 		"description": "S3 and S3-compatible backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/s3.js",
-		"minPluginVersion": "3.1.5",
+		"minPluginVersion": "3.1.9",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/s3"
 	},
 	{
 		"id": "gdrive",
 		"name": "Google Drive",
-		"version": "0.0.6",
+		"version": "0.1.0",
 		"description": "Google Drive backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/gdrive.js",
-		"minPluginVersion": "3.1.5",
+		"minPluginVersion": "3.1.9",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/gdrive"
 	},
 	{

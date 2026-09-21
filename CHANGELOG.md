@@ -2,6 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.1.9 - 2026-09-21
+
+### Core
+
+- Fixed local operation optimization fails to apply due to double local filesystem instantiation.
+- Made operation failures retry on abnormal status codes and iOS/macOS specific errors.
+- Improved iOS/iPadOS local file streaming to support all file formats.
+- Ensured proper cleanup of local file read or write streaming on failure or cancellation.
+
+### Google Drive Module
+
+- Improved small file upload speed by uploading those files in a single multipart request.
+- Fixed ineffective error message extraction.
+- Ensured proper cleanup of resumable upload sessions on failure or cancellation.
+
+### S3 Module
+
+- Fixed ineffective error handling due to request middleware parameter rewrite.
+- Made connection check return server message instead of generic error codes.
+- Ensured proper cleanup of multipart upload sessions on failure or cancellation.
+
+### WebDAV Module
+
+- Ensured proper cleanup of Nextcloud-style chunked upload sessions on failure or cancellation.
+
+### Contributors
+
+@kuznetsov-m, @hesprs
+
 ## Sync Engine v3.1.8 - 2026-09-19
 
 - Improved iOS/iPadOS local file streaming by ranged requests on supported file formats, instead of relying on the already-broken single `fetch` streaming.
