@@ -1,5 +1,5 @@
-import type { Request, RequestParam } from '@hesprs/sync-engine-sdk';
-import { getStatus } from '@repo/shared/get-status';
+import type { Request } from '@hesprs/sync-engine-sdk';
+import { getStatus } from '@repo/shared/error';
 import { Platform, requestUrl, SecretStorage } from 'obsidian';
 import {
 	buildUrl,
@@ -243,10 +243,12 @@ export class TokenManager {
 
 /** Injects the bearer token into every remote request and retries once on 401. */
 export function bearerMiddleware(request: Request, manager: TokenManager): Request {
-	return async (params) => {
-		const base: RequestParam = typeof params === 'string' ? { url: params } : params;
+	return async (url, params) => {
 		const send = (token: string) =>
-			request({ ...base, headers: { ...base.headers, Authorization: `Bearer ${token}` } });
+			request(url, {
+				...params,
+				headers: { ...params?.headers, Authorization: `Bearer ${token}` },
+			});
 		try {
 			return await send(await manager.getToken());
 		} catch (error: unknown) {

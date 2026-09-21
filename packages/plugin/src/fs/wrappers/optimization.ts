@@ -211,10 +211,22 @@ class OptimizationFs implements WrappedFs {
 
 // Write operations race the flush timer, since the opposite side read gating them can complete before the timer fires. Companion wrapper observes reads and dispatches needle reads to the opposite side FS as an anticipation of write, and allows it to obtain ahead-of-time transformed write keys. Writes that arrive before the flush are held until it registers the anticipated write.
 class OptimizationCompanionFs implements WrappedFs {
+	private unwrapped?: Fs;
+
 	constructor(
 		readonly original: Fs,
 		private readonly options: OptimizationCompanionOptions,
 	) {}
+
+	private getThatFs() {
+		if (this.unwrapped) return this.unwrapped;
+		let original: Fs = this.options.getThatFs();
+		while (!(original instanceof OptimizationCompanionFs) && 'original' in original)
+			original = original.original;
+		if ('original' in original) original = original.original as Fs;
+		this.unwrapped = original;
+		return original;
+	}
 
 	getUid() {
 		return this.original.getUid();
@@ -222,12 +234,12 @@ class OptimizationCompanionFs implements WrappedFs {
 	read(key: string, stat: FileStat) {
 		this.options.thatPool.add(stat.key);
 		// Dispatch a explore needle to opposite FS to observe the transformed key
-		attempt(() => this.options.getThatFs().read(key, stat));
+		attempt(() => this.getThatFs().read(key, stat));
 		return this.original.read(key, stat);
 	}
 	readStream(key: string, stat: FileStat) {
 		this.options.thatPool.add(stat.key);
-		attempt(() => this.options.getThatFs().read(key, stat));
+		attempt(() => this.getThatFs().read(key, stat));
 		return this.original.readStream(key, stat);
 	}
 	write(key: string, value: Binary, stat: FileStat) {

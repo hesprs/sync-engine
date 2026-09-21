@@ -1,3 +1,4 @@
+import parseXML from '@repo/shared/parse-xml';
 import { encodeUrl } from '@repo/shared/path';
 import type { UrlStyle } from './sigv4';
 
@@ -7,6 +8,24 @@ export type UrlOptions = {
 	key: string;
 	urlStyle: UrlStyle;
 };
+
+type S3ErrorResponse = {
+	Error?: {
+		Code?: string;
+		Message?: string;
+	};
+};
+export function parseS3Error(xml: string): string | undefined {
+	try {
+		const error = parseXML<S3ErrorResponse>(xml).Error;
+		if (error?.Code) return formatS3Error(error.Code, error.Message);
+	} catch {
+		/* Ignore malformed S3 error XML and use the HTTP fallback. */
+	}
+}
+export function formatS3Error(code: string, message?: string): string {
+	return `S3 ${code}: ${message ?? ''}`;
+}
 
 export function buildUrl({ endpoint, bucket, key, urlStyle }: UrlOptions): string {
 	const encodedPath = encodeUrl(key);

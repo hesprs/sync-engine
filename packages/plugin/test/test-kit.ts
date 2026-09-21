@@ -37,8 +37,10 @@ type FsHarness = {
 	fs: RootFs;
 };
 
-type RequestHarness<T = RequestParam | string> = {
-	calls: Array<T>;
+type ResponseControl = (url: string, params: RequestParam) => MaybePromise<ResponseOverrides>;
+
+type RequestHarness = {
+	calls: Array<RequestParam & { url: string }>;
 	request: Request;
 };
 
@@ -194,7 +196,7 @@ const defaultBytes = () => bytes('ok');
 const defaultText = () => 'ok';
 const defaultJson = () => ({});
 
-export type ResponseOverrides = Partial<Omit<RequestResponse, 'json'>> & {
+type ResponseOverrides = Partial<Omit<RequestResponse, 'json'>> & {
 	json?: () => unknown;
 };
 
@@ -209,17 +211,13 @@ function response(overrides: ResponseOverrides = {}): RequestResponse {
 	};
 }
 
-export type ResponseControl<T> = (params: T) => MaybePromise<ResponseOverrides>;
-
-function request<T extends RequestParam | string = RequestParam | string>(
-	control: ResponseControl<T>,
-): RequestHarness<T> {
-	const calls: Array<T> = [];
+function request(control: ResponseControl): RequestHarness {
+	const calls: Array<RequestParam & { url: string }> = [];
 	return {
 		calls,
-		request: async (params: RequestParam | string) => {
-			calls.push(params as T);
-			return response(await control(params as T));
+		request: async (url, params) => {
+			calls.push({ url, ...params });
+			return response(await control(url, params ?? {}));
 		},
 	};
 }

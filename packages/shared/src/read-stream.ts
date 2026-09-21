@@ -21,7 +21,12 @@ export default function createRangeReadStream({
 	const runFinalize = () => {
 		if (!finalize || finalized) return;
 		finalized = true;
-		void finalize();
+		try {
+			const result = finalize();
+			if (result instanceof Promise) result.catch(() => {});
+		} catch {
+			// Best-effort and silence errors
+		}
 	};
 	if (totalChunks === 0) {
 		runFinalize();

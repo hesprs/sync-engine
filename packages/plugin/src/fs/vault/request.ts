@@ -21,7 +21,7 @@ type VaultRequestParam = (
 	| { method: 'EXISTS' }
 	| { method: 'STAT'; cached?: boolean }
 	| { method: 'LIST'; cached?: boolean }
-) & { key: string; ignoreCancellation?: boolean };
+) & { ignoreCancellation?: boolean };
 
 type VaultRequestResponseMap = {
 	GET: Binary;
@@ -36,8 +36,9 @@ type VaultRequestResponseMap = {
 	LIST: ListedFiles;
 };
 
-export type VaultRequest = <T extends VaultRequestParam>(
-	params: T,
+export type VaultRequest = <T extends VaultRequestParam = { method: 'GET' }>(
+	key: string,
+	params?: T,
 ) => Promise<VaultRequestResponseMap[T['method']]>;
 
 // Capacitor ranged local file request only supports those extensions
@@ -88,13 +89,15 @@ export default function createVaultRequest(app: App): VaultRequest {
 	const canUseCache = () => workspace.layoutReady;
 
 	return async <T extends VaultRequestParam>(
-		params: T,
+		key: string,
+		params?: T,
 	): Promise<VaultRequestResponseMap[T['method']]> => {
-		const { method, key } = params;
 		const path = toVaultPath(key);
+		const get = () => adapter.readBinary(path).then((buffer) => toUint8Array(buffer)) as never;
+		if (!params) return get();
+		const { method } = params;
 
-		if (method === 'GET')
-			return adapter.readBinary(path).then((buffer) => toUint8Array(buffer)) as never;
+		if (method === 'GET') return get();
 		if (method === 'GET_STREAM') {
 			let url = adapter.getResourcePath(path);
 			// Local file fetch streaming isn't supported in iOS

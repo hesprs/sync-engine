@@ -1,5 +1,5 @@
-import type { ErrorLike } from '@repo/shared/get-status';
-import { getStatus } from '@repo/shared/get-status';
+import type { ErrorLike } from '@repo/shared/error';
+import { getStatus } from '@repo/shared/error';
 import { Platform } from 'obsidian';
 import type { Fs } from '@/fs';
 import type { Binary, FileStat } from '@/types';

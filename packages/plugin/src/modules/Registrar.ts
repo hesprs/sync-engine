@@ -33,7 +33,9 @@ export type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
 
 export type TriggerEntry = { priority: number; options?: () => SyncOptions };
 
-export type RequestParam = Omit<RequestUrlParam, 'body'> & {
+export type Infras = { localFs: Fs; remoteFs: Fs; record: RecordStore };
+
+export type RequestParam = Omit<RequestUrlParam, 'body' | 'url'> & {
 	body?: string | Binary;
 	ignoreCancellation?: boolean;
 };
@@ -45,14 +47,13 @@ export type RequestResponse = {
 	headers: Record<string, string>;
 	status: number;
 };
-export type Request = (params: RequestParam | string) => Promise<RequestResponse>;
-
-export type Infras = { localFs: Fs; remoteFs: Fs; record: RecordStore };
-
-const request: Request = async (params: RequestParam | string) => {
-	if (typeof params === 'object' && params.body instanceof Uint8Array)
-		(params as RequestUrlParam).body = toArrayBuffer(params.body);
-	const response = await requestUrl(params as RequestUrlParam);
+export type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
+const request: Request = async (url: string, params?: RequestParam) => {
+	const body = params?.body;
+	if (body instanceof Uint8Array) (params as RequestUrlParam).body = toArrayBuffer(body);
+	const response = await requestUrl(
+		params ? (Object.assign(params, { url }) as RequestUrlParam) : url,
+	);
 	return {
 		bytes: () => toUint8Array(response.arrayBuffer),
 		headers: response.headers,

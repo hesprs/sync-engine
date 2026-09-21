@@ -72,13 +72,9 @@ export function cancellationMiddleware<
 	T extends (...args: ReadonlyArray<General>) => Promise<General>,
 >(request: T, isCancelled: Ref<boolean>): T {
 	return ((...params: Parameters<T>) => {
-		const payload = params[0];
-		if (
-			payload &&
-			typeof payload === 'object' &&
-			(payload as { ignoreCancellation?: boolean }).ignoreCancellation
-		)
-			return request(...params);
+		// Both `Request` and `VaultRequest` take options as their second argument.
+		const options = params[1] as { ignoreCancellation?: boolean } | undefined;
+		if (options?.ignoreCancellation) return request(...params);
 		assertNotCancelled(isCancelled);
 		const promise = new Promise<Awaited<ReturnType<T>>>((resolve, reject) => {
 			const unsub = isCancelled.subscribe((cancelled) => {

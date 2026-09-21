@@ -1,5 +1,11 @@
-import type { Binary, InputAtom, OptimizerInput, RequestParam } from '@hesprs/sync-engine-sdk';
-import type { ResponseControl } from '@hesprs/sync-engine-sdk/dev';
+import type {
+	Binary,
+	InputAtom,
+	MaybePromise,
+	OptimizerInput,
+	RequestParam,
+	RequestResponse,
+} from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, mock, test } from 'bun:test';
 import type { S3FsOptions } from '@/s3/fs';
@@ -16,25 +22,20 @@ void mock.module('@repo/shared/parse-xml', () => ({
 	default: () => parsedResponse,
 }));
 
-type RequestHandler = ResponseControl<RequestParam>;
-type S3Harness = {
-	calls: Array<RequestParam>;
-	fs: S3Fs;
-	setRequest: (handler: RequestHandler) => void;
-};
+type Control = (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>;
 
 const defaultOptions = {
 	...defaultS3Options,
 } as const satisfies Omit<S3FsOptions, 'request'>;
 
-function createS3Fs(options: Partial<S3FsOptions> = {}): S3Harness {
-	let requestHandler: RequestHandler = () => response();
-	const harness = testKit.request<RequestParam>((params) => requestHandler(params));
+function createS3Fs(options: Partial<S3FsOptions> = {}) {
+	let requestHandler: Control = () => response();
+	const harness = testKit.request((url, params) => requestHandler(url, params));
 	const request = sigv4Middleware(harness.request, defaultCredentials, memoryDB);
 	return {
 		calls: harness.calls,
 		fs: new S3Fs({ ...defaultOptions, ...options, request }),
-		setRequest: (handler) => {
+		setRequest: (handler: Control) => {
 			requestHandler = handler;
 		},
 	};
@@ -57,9 +58,9 @@ function textBody(params: RequestParam): string {
 
 test('read gets encoded object bytes and maps S3 XML errors', async () => {
 	const s3 = createS3Fs();
-	s3.setRequest((params) => {
+	s3.setRequest((url, params) => {
 		assertSignedRequest(params, 'GET');
-		expect(params.url).toBe('https://s3.example.com/vault/Notes/file%20A.md');
+		expect(url).toBe('https://s3.example.com/vault/Notes/file%20A.md');
 		return response({ body: bytes('content') });
 	});
 	expect(await s3.fs.read('Notes/file A.md')).toStrictEqual(bytes('content'));
@@ -80,9 +81,9 @@ test('read gets encoded object bytes and maps S3 XML errors', async () => {
 
 test('write sends binary PUT and uses ETag or HEAD metadata fallback', async () => {
 	const s3 = createS3Fs();
-	s3.setRequest((params) => {
+	s3.setRequest((url, params) => {
 		assertSignedRequest(params, 'PUT');
-		expect(params.url).toBe('https://s3.example.com/vault/Notes/file.md');
+		expect(url).toBe('https://s3.example.com/vault/Notes/file.md');
 		expect(params.headers?.['Content-Type']).toBe('application/octet-stream');
 		expect(params.body).toStrictEqual(bytes('hello'));
 		return response({ headers: { ETag: '"write-etag"' } });
@@ -90,7 +91,7 @@ test('write sends binary PUT and uses ETag or HEAD metadata fallback', async () 
 	expect(await s3.fs.write('Notes/file.md', bytes('hello'))).toBe('"write-etag"');
 
 	const fallback = createS3Fs();
-	fallback.setRequest((params) => {
+	fallback.setRequest((_url, params) => {
 		if (params.method === 'PUT') return response();
 		expect(params.method).toBe('HEAD');
 		return response({
@@ -107,7 +108,7 @@ test('write sends binary PUT and uses ETag or HEAD metadata fallback', async () 
 
 test('writeStream buffers below-part-size input into one PUT', async () => {
 	const s3 = createS3Fs();
-	s3.setRequest((params) => {
+	s3.setRequest((_url, params) => {
 		expect(params.method).toBe('PUT');
 		expect(params.body).toStrictEqual(bytes('hello world'));
 		return response({ headers: { etag: 'buffered-etag' } });
@@ -122,9 +123,9 @@ test('writeStream buffers below-part-size input into one PUT', async () => {
 test('writeStream uploads exact multipart parts and completes with ETag', async () => {
 	const partSize = 5 * 1024 * 1024;
 	const s3 = createS3Fs();
-	s3.setRequest((params) => {
-		const url = new URL(params.url);
-		if (params.method === 'POST' && url.searchParams.has('uploads')) {
+	s3.setRequest((url, params) => {
+		const address = new URL(url);
+		if (params.method === 'POST' && address.searchParams.has('uploads')) {
 			expect(params.headers?.['x-amz-content-sha256']).toBe('UNSIGNED-PAYLOAD');
 			parsedResponse = { InitiateMultipartUploadResult: { UploadId: 'upload-1' } };
 			return response({
@@ -132,13 +133,13 @@ test('writeStream uploads exact multipart parts and completes with ETag', async 
 			});
 		}
 		if (params.method === 'PUT') {
-			expect(url.searchParams.get('uploadId')).toBe('upload-1');
+			expect(address.searchParams.get('uploadId')).toBe('upload-1');
 			expect(params.headers?.['Content-Type']).toBe('application/octet-stream');
-			const partNumber = url.searchParams.get('partNumber');
+			const partNumber = address.searchParams.get('partNumber');
 			return response({ headers: { etag: `part-${partNumber}` } });
 		}
 		expect(params.method).toBe('POST');
-		expect(url.searchParams.get('uploadId')).toBe('upload-1');
+		expect(address.searchParams.get('uploadId')).toBe('upload-1');
 		expect(params.headers?.['Content-Type']).toBe('application/xml');
 		expect(textBody(params)).toContain('<PartNumber>1</PartNumber><ETag>part-1</ETag>');
 		expect(textBody(params)).toContain('<PartNumber>2</PartNumber><ETag>part-2</ETag>');
@@ -161,9 +162,9 @@ test('writeStream aborts multipart upload after part failure', async () => {
 	const s3 = createS3Fs();
 	const uploadError = new Error('part failed');
 	const aborted = deferred<void>();
-	s3.setRequest((params) => {
-		const url = new URL(params.url);
-		if (params.method === 'POST' && url.searchParams.has('uploads')) {
+	s3.setRequest((url, params) => {
+		const address = new URL(url);
+		if (params.method === 'POST' && address.searchParams.has('uploads')) {
 			parsedResponse = { InitiateMultipartUploadResult: { UploadId: 'upload-2' } };
 			return response({
 				text: '<InitiateMultipartUploadResult><UploadId>upload-2</UploadId></InitiateMultipartUploadResult>',
@@ -171,7 +172,7 @@ test('writeStream aborts multipart upload after part failure', async () => {
 		}
 		if (params.method === 'PUT') throw uploadError;
 		expect(params.method).toBe('DELETE');
-		expect(url.searchParams.get('uploadId')).toBe('upload-2');
+		expect(address.searchParams.get('uploadId')).toBe('upload-2');
 		aborted.resolve();
 		return response({ status: 204 });
 	});
@@ -187,7 +188,7 @@ test('writeStream aborts multipart upload after part failure', async () => {
 test('delete and exists treat 404 as absent but propagate other statuses', async () => {
 	const calls: Array<string> = [];
 	const s3 = createS3Fs();
-	s3.setRequest((params) => {
+	s3.setRequest((_url, params) => {
 		calls.push(params.method ?? '');
 		if (calls.length === 1 || calls.length === 3) return response({ status: 404 });
 		return response({ status: 500, text: '<Error><Code>InternalError</Code></Error>' });
@@ -204,10 +205,10 @@ test('delete and exists treat 404 as absent but propagate other statuses', async
 test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async () => {
 	const s3 = createS3Fs();
 	const bodies: Array<string> = [];
-	s3.setRequest((params) => {
+	s3.setRequest((url, params) => {
 		expect(params.method).toBe('POST');
-		const url = new URL(params.url);
-		expect(url.searchParams.has('delete')).toBe(true);
+		const address = new URL(url);
+		expect(address.searchParams.has('delete')).toBe(true);
 		expect(params.headers?.['Content-Type']).toBe('application/xml');
 		expect(params.headers?.['Content-MD5']).toMatch(/^[A-Za-z0-9+/]{22}==$/u);
 		parsedResponse =
@@ -279,9 +280,9 @@ test('batch delete rejects only atoms with S3 partial failures', async () => {
 
 test('move copies encoded source before deleting old key', async () => {
 	const s3 = createS3Fs();
-	s3.setRequest((params) => {
+	s3.setRequest((url, params) => {
 		if (params.method === 'PUT') {
-			expect(params.url).toBe('https://s3.example.com/vault/new%20folder/new.md');
+			expect(url).toBe('https://s3.example.com/vault/new%20folder/new.md');
 			expect(params.headers).toMatchObject({
 				'Content-Type': 'application/octet-stream',
 				'x-amz-copy-source': 'vault/old%20folder/old.md',
@@ -289,7 +290,7 @@ test('move copies encoded source before deleting old key', async () => {
 			return response();
 		}
 		expect(params.method).toBe('DELETE');
-		expect(params.url).toBe('https://s3.example.com/vault/old%20folder/old.md');
+		expect(url).toBe('https://s3.example.com/vault/old%20folder/old.md');
 		return response();
 	});
 	await s3.fs.move('old folder/old.md', 'new folder/new.md');
@@ -298,11 +299,11 @@ test('move copies encoded source before deleting old key', async () => {
 
 test('mkdir recursively creates placeholders in ancestor order and ignores conflicts', async () => {
 	const s3 = createS3Fs();
-	s3.setRequest((params) => {
+	s3.setRequest((url, params) => {
 		expect(params.method).toBe('PUT');
 		expect(params.headers?.['Content-Type']).toBe('application/octet-stream');
 		expect(params.body).toStrictEqual(new Uint8Array(0));
-		if (params.url.endsWith('/Notes/A%20B/')) throw { res: { status: 409 } };
+		if (url.endsWith('/Notes/A%20B/')) throw { res: { status: 409 } };
 		return response({ status: 201 });
 	});
 	await s3.fs.mkdir('Notes/A B/Child/', true);
@@ -316,10 +317,9 @@ test('mkdir recursively creates placeholders in ancestor order and ignores confl
 test('stat returns root, folder placeholders, and file metadata with ETag fallback', async () => {
 	const s3 = createS3Fs();
 	expect(await s3.fs.stat('/')).toStrictEqual({ isDir: true, key: '/' });
-	s3.setRequest((params) => {
+	s3.setRequest((url, params) => {
 		expect(params.method).toBe('HEAD');
-		if (params.url.endsWith('/folder/'))
-			return response({ headers: { 'content-length': '0' } });
+		if (url.endsWith('/folder/')) return response({ headers: { 'content-length': '0' } });
 		return response({
 			headers: {
 				'content-length': '12',
@@ -340,14 +340,14 @@ test('stat returns root, folder placeholders, and file metadata with ETag fallba
 test('list returns files and prefixes, excludes queried key, reports exclusions, and paginates', async () => {
 	const s3 = createS3Fs();
 	const progress: Array<string> = [];
-	s3.setRequest((params) => {
-		const url = new URL(params.url);
+	s3.setRequest((url, params) => {
+		const address = new URL(url);
 		expect(params.method).toBe('GET');
-		expect(url.searchParams.get('list-type')).toBe('2');
-		expect(url.searchParams.has('delimiter')).toBe(false);
-		expect(url.searchParams.get('prefix')).toBe('Notes/');
-		if (url.searchParams.has('continuation-token')) {
-			expect(url.searchParams.get('continuation-token')).toBe('next-page');
+		expect(address.searchParams.get('list-type')).toBe('2');
+		expect(address.searchParams.has('delimiter')).toBe(false);
+		expect(address.searchParams.get('prefix')).toBe('Notes/');
+		if (address.searchParams.has('continuation-token')) {
+			expect(address.searchParams.get('continuation-token')).toBe('next-page');
 			parsedResponse = {
 				ListBucketResult: {
 					Contents: {
@@ -404,8 +404,8 @@ test('list returns files and prefixes, excludes queried key, reports exclusions,
 
 test('list maps unified root to an empty S3 prefix', async () => {
 	const s3 = createS3Fs();
-	s3.setRequest((params) => {
-		expect(new URL(params.url).searchParams.get('prefix')).toBe('');
+	s3.setRequest((url, _params) => {
+		expect(new URL(url).searchParams.get('prefix')).toBe('');
 		parsedResponse = { ListBucketResult: { IsTruncated: 'false' } };
 		return response({ text: '<ListBucketResult />' });
 	});

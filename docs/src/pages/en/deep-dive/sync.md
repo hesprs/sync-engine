@@ -20,6 +20,8 @@ Cancellation does not roll back completed operations. Task errors raised after c
 
 ## Traversal and Glob Matching
 
+After infrastructure initialization, the routine dispatches `syncInitialized` with the run's `Infras` and the compiled matcher.
+
 The routine compiles the configured matcher once, then starts local and remote discovery concurrently. Local traversal calls `localFs.list('/')` with the matcher. Full remote traversal receives a reporter that forwards progress and applies the matcher to each reported path.
 
 The default remote lister performs the full traversal. If the remote root does not exist, it recreates the root, clears records for the local/remote pair, and returns an empty list.

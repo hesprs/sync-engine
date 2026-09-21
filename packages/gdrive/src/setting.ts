@@ -11,6 +11,7 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import type { App, SettingGroupItem } from 'obsidian';
 import { s } from '@hesprs/sync-engine-sdk';
+import { getMessage } from '@repo/shared/error';
 import { normalizeBaseDir } from '@repo/shared/path';
 import { Modal, Notice, Setting } from 'obsidian';
 import type { TokenManager } from './gdrive/auth';
@@ -142,7 +143,7 @@ export default function gdriveSetting(
 			}
 		} catch (error) {
 			if (cancelled) return;
-			const reason = error instanceof Error ? error.message : String(error);
+			const reason = getMessage(error);
 			new Notice(translate('authorizationFailed', reason), 5);
 			dispatch('errorGeneral', `Google Drive auth failed: \`${reason}\`.`);
 		} finally {

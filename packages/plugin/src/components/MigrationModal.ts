@@ -1,5 +1,6 @@
 import type { Events } from '@';
 import type { App, ToggleComponent } from 'obsidian';
+import { getMessage } from '@repo/shared/error';
 import { Modal, Notice, Setting } from 'obsidian';
 import { ref } from 'synthkernel';
 import type { ExistingMemoryDB } from '@/modules/Bootstrap';
@@ -10,7 +11,6 @@ import type { SyncTerminateReason } from '@/modules/Sync';
 import type { MaybePromise } from '@/types';
 import renderProgress from '@/components/render-progress';
 import roundPercent from '@/utils/round-percent';
-import toErrorMessage from '@/utils/to-error-message';
 
 export type MigrationModalTranslations = {
 	cancel: string;
@@ -153,7 +153,7 @@ class MigrationModal extends Modal {
 					.map((key) => remoteFs.delete(key)),
 			]);
 		} catch (error) {
-			const message = toErrorMessage(error);
+			const message = getMessage(error);
 			new Notice(`${translate('migrationFailed')}: ${message}`);
 			return { reason: `Phase 2: ${message}`, success: false };
 		}

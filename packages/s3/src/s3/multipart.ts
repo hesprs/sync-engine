@@ -1,4 +1,4 @@
-import type { Binary, RequestParam, Stat } from '@hesprs/sync-engine-sdk';
+import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import parseXML from '@repo/shared/parse-xml';
@@ -25,10 +25,7 @@ export type MultipartUploadOptions = {
 	bucket: string;
 	urlStyle: UrlStyle;
 	key: string;
-	request: (params: RequestParam) => Promise<{
-		headers: Record<string, string>;
-		text: () => string;
-	}>;
+	request: Request;
 	stat: (key: string) => Promise<Stat>;
 };
 
@@ -61,11 +58,10 @@ async function uploadPart(
 		},
 		{ partNumber: String(partNumber), uploadId },
 	);
-	const response = await options.request({
+	const response = await options.request(url, {
 		body: chunk,
 		headers: { 'Content-Type': 'application/octet-stream' },
 		method: 'PUT',
-		url,
 	});
 	const etag = getHeader(response.headers, 'etag');
 	if (!etag) throw new Error(`S3 multipart: no ETag for part ${partNumber}`);
@@ -82,7 +78,7 @@ function abortMultipart(options: MultipartUploadOptions, uploadId: string) {
 		},
 		{ uploadId },
 	);
-	return options.request({ ignoreCancellation: true, method: 'DELETE', url }).catch(() => {});
+	return options.request(url, { ignoreCancellation: true, method: 'DELETE' }).catch(() => {});
 }
 
 export async function multipartUpload(
@@ -98,10 +94,9 @@ export async function multipartUpload(
 		},
 		{ uploads: '' },
 	);
-	const initiateResponse = await options.request({
+	const initiateResponse = await options.request(initiateUrl, {
 		headers: { 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' },
 		method: 'POST',
-		url: initiateUrl,
 	});
 	const uploadId = parseUploadId(initiateResponse.text());
 
@@ -123,11 +118,10 @@ export async function multipartUpload(
 			},
 			{ uploadId },
 		);
-		const completeResponse = await options.request({
+		const completeResponse = await options.request(completeUrl, {
 			body: textToUint8Array(completeBody),
 			headers: { 'Content-Type': 'application/xml' },
 			method: 'POST',
-			url: completeUrl,
 		});
 
 		const etag = parseXML<CompleteMultipartUploadResponse>(completeResponse.text())

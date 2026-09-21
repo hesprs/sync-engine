@@ -4,12 +4,12 @@ import type { Ref } from 'synthkernel';
 import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
 import hash from '@repo/shared/crypto';
 import { importCode } from '@repo/shared/e2e-utils.spec';
+import { getMessage } from '@repo/shared/error';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
 import type { General } from '@/types';
 import UntrustedModuleModal from '@/components/UntrustedModuleModal';
 import sha256 from '@/utils/sha-256';
-import toErrorMessage from '@/utils/to-error-message';
 import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
 import type { Snippet, Translate } from './I18n';
@@ -189,7 +189,7 @@ export default class Extensibility {
 						Object.assign(discoveredMeta, { enabled: false }),
 					);
 			}
-			const message = toErrorMessage(error);
+			const message = getMessage(error);
 			dispatch('errorGeneral', `Module \`${id}\` failed to load: ${message}`);
 			new Notice(`${translate('failedToLoadModule', name)}: ${message}`);
 		}
@@ -234,7 +234,7 @@ export default class Extensibility {
 			}
 			await this.installModule(meta, module);
 		} catch (error) {
-			const message = toErrorMessage(error);
+			const message = getMessage(error);
 			dispatch('errorGeneral', `Failed to download module \`${id}\`: ${message}`);
 			new Notice(`${translate('failedToDownloadModule', name)}: ${message}`);
 		}
@@ -262,7 +262,7 @@ export default class Extensibility {
 				this.sourceCache.set(url, content);
 				return content as Array<unknown>;
 			} catch (error) {
-				const message = toErrorMessage(error);
+				const message = getMessage(error);
 				dispatch('errorGeneral', `Failed to fetch source from \`${url}\`: ${message}`);
 				if (manual) new Notice(`${translate('failedToFetchSource', url)}: ${message}`);
 				return [];

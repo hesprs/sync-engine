@@ -1,9 +1,10 @@
 import type { Binary, Request, RequestResponse } from '@hesprs/sync-engine-sdk';
-import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
-import chunkedUpload from '@repo/shared/chunked-upload';
 import type { DriveFile } from './api';
 import { getHeader, parseDriveError } from './api';
+
+// Resumable uploads must be sequential (Drive rejects chunks that skip ahead of the uploaded size), so the SDK's memory-tuned chunk size does not apply here.
+const GDRIVE_CHUNK_SIZE = 8 * 1024 ** 2;
 
 const MIME_BY_EXTENSION: Record<string, string> = {
 	base: 'application/json',
@@ -53,7 +54,7 @@ async function startSession({
 	size,
 	url,
 }: SessionOptions): Promise<{ request: Request; location: string }> {
-	const response = await request({
+	const response = await request(url, {
 		body: textToUint8Array(JSON.stringify(metadata)),
 		headers: {
 			'Content-Type': 'application/json; charset=UTF-8',
@@ -61,7 +62,6 @@ async function startSession({
 		},
 		method,
 		throw: false,
-		url,
 	});
 	if (response.status < 200 || response.status >= 300)
 		throw new Error(
@@ -81,14 +81,13 @@ async function putChunk(
 	total: number,
 ): Promise<RequestResponse | undefined> {
 	const end = start + chunk.byteLength - 1;
-	const response = await request({
+	const response = await request(location, {
 		body: chunk,
 		headers: {
 			'Content-Range': end < start ? `bytes */${total}` : `bytes ${start}-${end}/${total}`,
 		},
 		method: 'PUT',
 		throw: false,
-		url: location,
 	});
 	if (response.status === 308) return;
 	if (response.status >= 200 && response.status < 300) return response;
@@ -106,12 +105,11 @@ export async function singleUpload(options: MultipartOptions, value: Binary): Pr
 		value,
 		textToUint8Array(`\r\n--${boundary}--`),
 	);
-	const response = await options.request({
+	const response = await options.request(options.url, {
 		body,
 		headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
 		method: options.method,
 		throw: false,
-		url: options.url,
 	});
 	if (response.status < 200 || response.status >= 300)
 		throw new Error(
@@ -125,23 +123,37 @@ export async function resumableUpload(
 	value: ReadableStream<Binary>,
 ): Promise<DriveFile> {
 	const session = await startSession(options);
-	const total = options.size;
+	const { size: total } = options;
+	const reader = value.getReader();
+	let buffer: Binary = new Uint8Array(0);
 	let final: RequestResponse | undefined;
-	await chunkedUpload<RequestResponse | undefined>({
-		chunkSize,
-		concurrency,
-		onChunkResult: (response) => {
-			if (response) final = response;
-		},
-		uploadChunk: (chunk, _index, offset) => putChunk(session, chunk, offset, total),
-		value,
-	}).catch((error: unknown) => {
+	let offset = 0;
+	// Sequential by necessity: a Drive session rejects any chunk whose offset
+	const upload = async (chunk: Binary) => {
+		const response = await putChunk(session, chunk, offset, total);
+		offset += chunk.byteLength;
+		if (response) final = response;
+	};
+	try {
+		let done = false;
+		while (!done) {
+			const read = await reader.read();
+			if (read.done) done = true;
+			else buffer = concatBinary(buffer, read.value);
+			while (buffer.byteLength >= GDRIVE_CHUNK_SIZE) {
+				const chunk = buffer.slice(0, GDRIVE_CHUNK_SIZE);
+				buffer = buffer.slice(GDRIVE_CHUNK_SIZE);
+				await upload(chunk);
+			}
+		}
+		if (buffer.byteLength > 0) await upload(buffer);
+	} catch (error) {
 		// Best-effort session cancellation; Drive also expires sessions on its own.
 		void options
-			.request({ ignoreCancellation: true, method: 'DELETE', url: session.location })
+			.request(session.location, { ignoreCancellation: true, method: 'DELETE' })
 			.catch(() => {});
 		throw error;
-	});
+	}
 	final ??= await putChunk(session, new Uint8Array(0), total, total);
 	if (!final) throw new Error('Google Drive upload finished incomplete.');
 	return final.json<DriveFile>();

@@ -181,8 +181,7 @@ test('caches tokens and retries bearer requests after a 401', async () => {
 	};
 	const manager = new TokenManager(storage as unknown as SecretStorage);
 	const seen: Array<string | undefined> = [];
-	const req = request((params) => {
-		if (typeof params === 'string') throw new Error('Unexpected string request');
+	const req = request((url, params) => {
 		seen.push(params.headers?.Authorization);
 		if (seen.length === 1) {
 			const error = new Error('Unauthorized') as Error & { status: number };
@@ -193,6 +192,6 @@ test('caches tokens and retries bearer requests after a 401', async () => {
 	});
 
 	const wrapped = bearerMiddleware(req.request, manager);
-	expect((await wrapped({ method: 'GET', url: 'https://drive.test' })).status).toBe(200);
+	expect((await wrapped('https://drive.test')).status).toBe(200);
 	expect(seen).toStrictEqual(['Bearer first', 'Bearer second']);
 });

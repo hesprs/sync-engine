@@ -12,7 +12,7 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
-import { getStatus } from '@repo/shared/get-status';
+import { getStatus } from '@repo/shared/error';
 import { basename, dirname, isFolder } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import type { DriveFile, DriveFileList } from './api';
@@ -73,12 +73,12 @@ export default class GdriveFs implements RootFs {
 		return `gdrive~${this.options.userId}`;
 	}
 
-	private async requestOrThrow(params: RequestParam): Promise<RequestResponse> {
-		const response = await this.request(Object.assign(params, { throw: false }));
+	private async requestOrThrow(url: string, params: RequestParam = {}): Promise<RequestResponse> {
+		const response = await this.request(url, { ...params, throw: false });
 		if (response.status >= 200 && response.status < 300) return response;
 		const error = new Error(
 			parseDriveError(response) ??
-				`Google Drive request failed: ${response.status} ${params.method} ${params.url}`,
+				`Google Drive request failed: ${response.status} ${params.method} ${url}`,
 		);
 		(error as { status?: number }).status = response.status;
 		throw error;
@@ -109,14 +109,14 @@ export default class GdriveFs implements RootFs {
 			const last = index === segments.length - 1;
 			const childKey = `${prefix}${segment}${last && !isFolder(key) ? '' : '/'}`;
 			const folder = !last || isFolder(key);
-			const response = await this.requestOrThrow({
-				method: 'GET',
-				url: buildUrl(DRIVE_API, '/files', {
+			const response = await this.requestOrThrow(
+				buildUrl(DRIVE_API, '/files', {
 					fields: 'files(id)',
 					pageSize: '1',
 					q: `'${parentId}' in parents and name = '${escapeQuery(segment)}' and mimeType ${folder ? '=' : '!='} '${FOLDER_MIME}' and trashed = false`,
 				}),
-			});
+				{ method: 'GET' },
+			);
 			const id = response.json<DriveFileList>().files?.[0]?.id;
 			if (!id) return undefined;
 			this.ids.set(childKey, id);
@@ -159,10 +159,10 @@ export default class GdriveFs implements RootFs {
 	async read(key: string): Promise<Binary> {
 		const id = this.resolveId(key);
 		if (id === undefined) throw notFoundError(key);
-		const response = await this.requestOrThrow({
-			method: 'GET',
-			url: buildUrl(DRIVE_API, `/files/${id}`, { alt: 'media' }),
-		});
+		const response = await this.requestOrThrow(
+			buildUrl(DRIVE_API, `/files/${id}`, { alt: 'media' }),
+			{ method: 'GET' },
+		);
 		return response.bytes();
 	}
 
@@ -174,10 +174,9 @@ export default class GdriveFs implements RootFs {
 			chunkSize,
 			concurrency,
 			requestRange: async (start, endInclusive) => {
-				const response = await this.requestOrThrow({
+				const response = await this.requestOrThrow(url, {
 					headers: { Range: `bytes=${start}-${endInclusive}` },
 					method: 'GET',
-					url,
 				});
 				return response.bytes();
 			},
@@ -214,19 +213,17 @@ export default class GdriveFs implements RootFs {
 	async delete(key: string): Promise<void> {
 		const id = this.resolveId(key);
 		if (id === undefined) return;
+		const trashed = this.options.useTrash;
 		try {
 			await this.requestOrThrow(
-				this.options.useTrash
+				buildUrl(DRIVE_API, `/files/${id}`, trashed ? { fields: 'id' } : {}),
+				trashed
 					? {
 							body: textToUint8Array(JSON.stringify({ trashed: true })),
 							headers: { 'Content-Type': 'application/json; charset=UTF-8' },
 							method: 'PATCH',
-							url: buildUrl(DRIVE_API, `/files/${id}`, { fields: 'id' }),
 						}
-					: {
-							method: 'DELETE',
-							url: buildUrl(DRIVE_API, `/files/${id}`),
-						},
+					: { method: 'DELETE' },
 			);
 		} catch (error) {
 			if (getStatus(error) !== 404) throw error;
@@ -245,11 +242,10 @@ export default class GdriveFs implements RootFs {
 			query.addParents = newParentId;
 			if (oldParentId !== undefined) query.removeParents = oldParentId;
 		}
-		await this.requestOrThrow({
+		await this.requestOrThrow(buildUrl(DRIVE_API, `/files/${id}`, query), {
 			body: textToUint8Array(JSON.stringify({ name: basename(newKey) })),
 			headers: { 'Content-Type': 'application/json; charset=UTF-8' },
 			method: 'PATCH',
-			url: buildUrl(DRIVE_API, `/files/${id}`, query),
 		});
 		this.dropCache(oldKey);
 	}
@@ -263,14 +259,20 @@ export default class GdriveFs implements RootFs {
 			parentId = this.resolveId(parent);
 		}
 		if (!parentId) throw new Error(`Parent is not created when creating "${key}"!`);
-		const response = await this.requestOrThrow({
-			body: textToUint8Array(
-				JSON.stringify({ mimeType: FOLDER_MIME, name: basename(key), parents: [parentId] }),
-			),
-			headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-			method: 'POST',
-			url: buildUrl(DRIVE_API, '/files', { fields: 'id' }),
-		});
+		const response = await this.requestOrThrow(
+			buildUrl(DRIVE_API, '/files', { fields: 'id' }),
+			{
+				body: textToUint8Array(
+					JSON.stringify({
+						mimeType: FOLDER_MIME,
+						name: basename(key),
+						parents: [parentId],
+					}),
+				),
+				headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+				method: 'POST',
+			},
+		);
 		const created = response.json<DriveFile>();
 		if (!created.id) throw new Error('Google Drive did not return an id for a created folder!');
 		this.ids.set(key, created.id);
@@ -285,7 +287,7 @@ export default class GdriveFs implements RootFs {
 			pageSize: '1',
 			q: `'${parentId}' in parents and name = '${escapeQuery(basename(key))}' and trashed = false`,
 		});
-		const response = await this.requestOrThrow({ method: 'GET', url });
+		const response = await this.requestOrThrow(url, { method: 'GET' });
 		const entry = response.json<DriveFileList>().files?.[0];
 		if (!entry) throw notFoundError(key);
 		return toFileStat(key, entry);
@@ -312,9 +314,8 @@ export default class GdriveFs implements RootFs {
 				q: 'trashed = false',
 			};
 			if (pageToken) query.pageToken = pageToken;
-			const response = await this.requestOrThrow({
+			const response = await this.requestOrThrow(buildUrl(DRIVE_API, '/files', query), {
 				method: 'GET',
-				url: buildUrl(DRIVE_API, '/files', query),
 			});
 			const parsed = response.json<DriveFileList>();
 			all.push(...(parsed.files ?? []));

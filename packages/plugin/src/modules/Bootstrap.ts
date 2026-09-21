@@ -242,9 +242,8 @@ export default class Bootstrap {
 			priority: 20_000,
 		});
 		registerLocalFsWrapper({
-			apply: (fs) => {
-				this.localFs = fs;
-				return optimizationCompanionWrapper(fs, {
+			apply: (fs) =>
+				optimizationCompanionWrapper(fs, {
 					getThatFs: () => {
 						if (!this.remoteFs)
 							throw new Error(
@@ -253,8 +252,7 @@ export default class Bootstrap {
 						return this.remoteFs;
 					},
 					thatPool: this.remotePool,
-				});
-			},
+				}),
 			priority: 21_000,
 		});
 
@@ -312,9 +310,8 @@ export default class Bootstrap {
 			priority: 20_000,
 		});
 		registerRemoteFsWrapper({
-			apply: (fs) => {
-				this.remoteFs = fs;
-				return optimizationCompanionWrapper(fs, {
+			apply: (fs) =>
+				optimizationCompanionWrapper(fs, {
 					getThatFs: () => {
 						if (!this.localFs)
 							throw new Error(
@@ -323,8 +320,7 @@ export default class Bootstrap {
 						return this.localFs;
 					},
 					thatPool: this.localPool,
-				});
-			},
+				}),
 			priority: 21_000,
 		});
 
@@ -402,15 +398,19 @@ export default class Bootstrap {
 		});
 
 		this.cleanupCallbacks.push(
-			on('syncStarted', ({ isCancelled }) => {
-				this.isCancelled = isCancelled;
+			on('syncStarted', ({ isCancelled }) => (this.isCancelled = isCancelled)),
+			on('syncInitialized', ({ localFs, remoteFs }) => {
+				this.localFs = localFs;
+				this.remoteFs = remoteFs;
+			}),
+			on('syncTerminated', () => {
+				this.isCancelled = undefined;
 				this.memoryStates.hangingOperations.length = 0;
 				this.localFs = undefined;
 				this.remoteFs = undefined;
 				this.localPool.clear();
 				this.remotePool.clear();
 			}),
-			on('syncTerminated', () => (this.isCancelled = undefined)),
 		);
 	};
 
