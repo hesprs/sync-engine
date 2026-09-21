@@ -1138,6 +1138,9 @@ type Events = MergeSingleKey<InternalModules, 'events'>;
 type Settings = MergeSingleKey<InternalModules, 'settings'>;
 type Translations = MergeSingleKey<InternalModules, 'i18n'>;
 //#endregion
+//#region src/utils/glob-match.d.ts
+type GlobMatchResult = 'include' | 'exclude' | 'advance' | 'probe';
+//#endregion
 //#region src/modules/Sync.d.ts
 type SyncTerminateReason = {
   result: 'cancelled';
@@ -1185,6 +1188,9 @@ declare class Sync {
     syncStarted: {
       isCancelled: Ref<boolean>;
       trigger: string;
+    };
+    syncInitialized: Infras & {
+      match: (path: string) => GlobMatchResult;
     };
     remoteWalkProgress: Progress;
     syncTerminated: SyncTerminateReason;

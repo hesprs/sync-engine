@@ -223,6 +223,12 @@ function setupCheckConnection({
 			setError();
 			return;
 		}
+		const onFailure = (message: string) => {
+			setError();
+			log(`Check connection to \`${settings.remoteFs}\` failed: \`${message}\`.`);
+			if (force) new Notice(`${translate('checkConnectionFailed')}: ${message}`, 5000);
+			else scheduleCheckConnection();
+		};
 
 		try {
 			setChecking();
@@ -231,18 +237,9 @@ function setupCheckConnection({
 				memoryDB.setMeta('lastCheckedFs', settings.remoteFs);
 				setSuccess();
 				if (force) new Notice(translate('checkConnectionSuccess'));
-			} else {
-				setError();
-				log(`Check connection to \`${settings.remoteFs}\` failed: \`${result.reason}\`.`);
-				if (force) new Notice(`${translate('checkConnectionFailed')}: ${result.reason}`);
-				else scheduleCheckConnection();
-			}
+			} else onFailure(result.reason);
 		} catch (error) {
-			setError();
-			const message = getMessage(error);
-			log(`Check connection to \`${settings.remoteFs}\` failed: \`${message}\`.`);
-			if (force) new Notice(`${translate('checkConnectionFailed')}: ${message}`);
-			else scheduleCheckConnection();
+			onFailure(getMessage(error));
 		}
 	};
 

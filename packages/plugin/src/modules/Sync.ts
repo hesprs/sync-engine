@@ -71,6 +71,7 @@ export default class Sync {
 
 	declare readonly events: {
 		syncStarted: { isCancelled: Ref<boolean>; trigger: string };
+		syncInitialized: Infras & { match: (path: string) => GlobMatchResult };
 		remoteWalkProgress: Progress;
 		syncTerminated: SyncTerminateReason;
 		requestConfirmDelete: Array<RemoveLocal>;
@@ -181,6 +182,7 @@ export default class Sync {
 			const match = prepareGlobMatch(inclusionRules, exclusionRules);
 			const { reporter: localReporter, pruner: localPruner } = prepareReporter(match);
 			const { reporter: remoteReporter, pruner: remotePruner } = prepareReporter(match);
+			dispatch('syncInitialized', { ...infras, match });
 
 			const [localList, remoteList] = await Promise.all([
 				localFs.list('/', localReporter),

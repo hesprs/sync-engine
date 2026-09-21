@@ -17,7 +17,7 @@ import createRangeReadStream from '@repo/shared/read-stream';
 import type { UrlStyle } from './sigv4';
 import { PART_SIZE, multipartUpload } from './multipart';
 import { md5Base64 } from './sigv4';
-import { buildUrl, buildUrlWithQuery, getHeader } from './url';
+import { buildUrl, buildUrlWithQuery, formatS3Error, getHeader, parseS3Error } from './url';
 
 export type S3FsOptions = {
 	accessKeyId: string;
@@ -29,13 +29,6 @@ export type S3FsOptions = {
 };
 
 export const BATCH_DELETE_MAX_KEYS = 1000;
-
-type S3ErrorResponse = {
-	Error?: {
-		Code?: string;
-		Message?: string;
-	};
-};
 
 type S3ListBucketResult = {
 	ListBucketResult: {
@@ -79,19 +72,6 @@ function escapeXml(str: string): string {
 		.replaceAll('>', '&gt;')
 		.replaceAll('"', '&quot;')
 		.replaceAll("'", '&apos;');
-}
-
-function parseS3Error(xml: string): string | undefined {
-	try {
-		const error = parseXML<S3ErrorResponse>(xml).Error;
-		if (error?.Code) return formatS3Error(error.Code, error.Message);
-	} catch {
-		/* Ignore malformed S3 error XML and use the HTTP fallback. */
-	}
-}
-
-function formatS3Error(code: string, message?: string): string {
-	return `S3 ${code}: ${message ?? ''}`;
 }
 
 function asArray<T>(value: T | Array<T> | undefined): Array<T> {
