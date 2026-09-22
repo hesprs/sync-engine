@@ -148,6 +148,8 @@ Sync Engine 设立了[功能需求清单](https://github.com/hesprs/sync-engine/
 
 </details>
 
+访问位于 [`sync.consensia.cc`](https://sync.consensia.cc) 的 Sync Engine 文档以获取更多详情。
+
 ## 开源协议
 
 本仓库中的 Sync Engine 源码及相关模块均采用 [MIT 开源协议](https://mit-license.org/) 授权。<br>

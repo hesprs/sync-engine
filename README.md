@@ -146,6 +146,8 @@ If you installed Sync Engine but its "Module management" option shows no availab
 
 </details>
 
+Access Sync Engine documentation at [`sync.consensia.cc`](https://sync.consensia.cc) for more detail.
+
 ## License
 
 The source code of Sync Engine and modules in this repository are licensed under the [MIT License](https://mit-license.org/).<br>
