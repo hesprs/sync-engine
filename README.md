@@ -135,6 +135,17 @@ According to this plugin's [file handling strategy](https://hesprs.github.io/pro
 
 </details>
 
+<details><summary>Why is Module management empty / loading forever?</summary>
+
+If you installed Sync Engine but its "Module management" option shows no available modules / is always loading. Please check the following:
+
+1. Are Obsidian and Sync Engine updated to the latest available versions? You can find the latest version of obsidian [here](https://github.com/obsidianmd/obsidian-releases/releases) and Sync Engine's version in the GitHub repository.
+2. If you can ensure Obsidian and Sync Engine have been updated to the latest version. Please try to access `https://sync.consensia.cc` in your browser; if you cannot, please go to Sync Engine's settings in Obsidian, find Development → Module sources, clear existing sources and add source `https://raw.githubusercontent.com/hesprs/sync-engine/refs/heads/gh-pages/modules-alternative.json`; then see whether the modules can load now.
+3. If there's still no modules shown, please test by varying your network setup. E.g. home WiFi, mobile network, with / without proxy.
+4. If none of the steps above can help you, please open a new issue in Sync Engine GitHub repository with the symptom and troubleshooting you've already tried.
+
+</details>
+
 ## License
 
 The source code of Sync Engine and modules in this repository are licensed under the [MIT License](https://mit-license.org/).<br>

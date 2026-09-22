@@ -9,23 +9,23 @@
 
 <p align="center">
     <a href="https://github.com/hesprs/sync-engine/releases/latest">
-        <img src="https://img.shields.io/github/downloads/hesprs/sync-engine/manifest.json.svg?label=%E2%AC%87%20%E4%B8%8B%E8%BD%BD%E9%87%8F&labelColor=008811&color=333333&displayAssetName=false" alt="累计下载量">
+        <img src="https://img.shields.io/github/downloads/hesprs/sync-engine/manifest.json.svg?label=%E2%AC%87%20Downloads&labelColor=008811&color=333333&displayAssetName=false" alt="accumulated downloads">
     </a>
     <a href="https://community.obsidian.md/plugins/sync-engine">
-        <img src="https://img.shields.io/badge/%EF%B8%8F%E6%8F%92%E4%BB%B6-%E5%B9%B3%E5%8F%B0%E5%B7%B2%E6%89%AB%E6%8F%8F-333333?logo=obsidian&logoColor=white&labelColor=a079ff" alt="插件安全扫描">
+        <img src="https://img.shields.io/badge/Plugin-Scanned-333333?logo=obsidian&logoColor=white&labelColor=a079ff" alt="plugin scan">
     </a>
     <a href="https://github.com/hesprs/sync-engine/actions">
-        <img src="https://img.shields.io/github/actions/workflow/status/hesprs/sync-engine/ci.yml?logo=github&logoColor=white&label=CI&labelColor=d4ab00&color=333333" alt="持续集成状态">
+        <img src="https://img.shields.io/github/actions/workflow/status/hesprs/sync-engine/ci.yml?logo=github&logoColor=white&label=CI&labelColor=d4ab00&color=333333" alt="ci">
     </a>
     <a href="https://sync.consensia.cc">
-        <img src="https://img.shields.io/badge/%E6%96%87%E6%A1%A3-%E5%B7%B2%E5%B0%B1%E7%BA%AA-333333?labelColor=5C73E7&logo=vitepress&logoColor=white" alt="官方文档" />
+        <img src="https://img.shields.io/badge/Documentation-Ready-333333?labelColor=5C73E7&logo=vitepress&logoColor=white" alt="Documentation" />
     </a>
-    <img src="https://img.shields.io/badge/%E7%B1%BB%E5%9E%8B-%E4%B8%B5%E5%AF%86-333333?logo=typescript&labelColor=blue&logoColor=white" alt="TypeScript">
-    <img src="https://img.shields.io/badge/%F0%9F%96%90%EF%B8%8F%20%E4%BA%BA%E7%B1%BB%E4%B9%8B%E4%BD%9C-333333?labelColor=15C2C0" alt="人类用心打造">
+    <img src="https://img.shields.io/badge/Types-Strict-333333?logo=typescript&labelColor=blue&logoColor=white" alt="TypeScript">
+    <img src="https://img.shields.io/badge/%F0%9F%96%90%EF%B8%8F%20Made%20by-Humans-333333?labelColor=15C2C0" alt="Made by Humans">
     <a href="https://www.npmjs.com/package/@hesprs/sync-engine-sdk">
         <img src="https://img.shields.io/npm/v/@hesprs/sync-engine-sdk?logo=npm&labelColor=red&logoColor=white&color=333333" alt="npm">
     </a>
-    <img src="https://img.shields.io/github/stars/hesprs/sync-engine" alt="GitHub 标星数量">
+    <img src="https://img.shields.io/github/stars/hesprs/sync-engine" alt="GitHub stars">
 </p>
 
 <p align="center">
@@ -132,6 +132,19 @@ Sync Engine 设立了[功能需求清单](https://github.com/hesprs/sync-engine/
 <details><summary>使用本插件时，该如何管理远端存储空间？</summary>
 
 根据本插件的[文件处理策略](https://hesprs.github.io/projects/sync-engine#technical-breakdown)，所有远端变更都会同步映射到各个本地 Vault 中。因此，除非您明确计划手动新增或删减文件，否则通常不建议直接手动修改远端存储内容。尤其在开启了加密或非对称存储功能时，更应避免手动干预远端。
+
+</details>
+
+</details>
+
+<details><summary>为什么“模块管理”为空或一直在加载？</summary>
+
+如果您安装了 Sync Engine，但其“模块管理”选项未显示任何可用模块或一直在加载中，请检查以下几点：
+
+1. Obsidian 和 Sync Engine 是否已更新至最新可用版本？您可以在 [这里](https://github.com/obsidianmd/obsidian-releases/releases) 查看 Obsidian 的最新版本，并在 GitHub 仓库中查看 Sync Engine 的版本。
+2. 如果您已确认 Obsidian 和 Sync Engine 均已更新至最新版本，请尝试在浏览器中访问 `https://sync.consensia.cc`；如果无法访问，请前往 Obsidian 中 Sync Engine 的设置页面，找到“开发者选项（Development）” → “模块源（Module sources）”，清除现有源并添加新源 `https://raw.githubusercontent.com/hesprs/sync-engine/refs/heads/gh-pages/modules-alternative.json`；然后查看现在是否可以正常加载模块。
+3. 如果依然没有显示任何模块，请尝试切换不同的网络环境进行测试。例如：家用 WiFi、移动网络、开启或关闭代理。
+4. 如果上述所有步骤都无法解决问题，请在 Sync Engine 的 GitHub 仓库中提交一个新的 Issue，并说明具体现象以及您已经尝试过的排查步骤。
 
 </details>
 
