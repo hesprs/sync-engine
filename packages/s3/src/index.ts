@@ -13,9 +13,14 @@ import type {
 	Context,
 	DatabaseSync,
 	Binary,
+	RecordStore,
+	StoreOperations,
+	Stat,
+	RecordStat,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
+import normalizeEtag from '@repo/shared/normalize-etag';
 import type { UrlStyle } from '@/s3/sigv4';
 import type { S3Translations } from '@/setting';
 import { sigv4Middleware } from '@/s3/sigv4';
@@ -59,6 +64,7 @@ export default class S3 {
 			registerRemoteOptimizer: (entry: OptimizerEntry) => () => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
 			memoryDB: S3DB;
+			getRecordStore: (namespace?: string) => RecordStore; // TODO: remove after October 13
 		}>,
 	) {
 		ctx.registerI18n('en', en);
@@ -96,6 +102,7 @@ export default class S3 {
 			registerRemoteOptimizer,
 			registerRemoteRequestMiddleware,
 			memoryDB,
+			getRecordStore,
 		} = this.ctx;
 		this.cleanup.push(
 			registerRemoteFs('s3', {
@@ -159,6 +166,8 @@ export default class S3 {
 				priority: 604,
 			}),
 		);
+
+		if (this.settings.remoteFs === 's3') void migrateEtag(getRecordStore()).catch(() => {});
 	};
 
 	private readonly resolveConfig = () => {
@@ -195,4 +204,17 @@ export default class S3 {
 		this.cleanup.forEach((fn) => fn());
 		this.cleanup.length = 0;
 	};
+}
+
+// TODO: remove after October 13
+async function migrateEtag(store: RecordStore) {
+	const changes: Array<StoreOperations<RecordStat>> = [];
+	for (const [key, stat] of await store.entries()) {
+		if (stat.isDir) return;
+		const remote = normalizeEtag(stat.remote);
+		if (remote !== stat.remote)
+			changes.push({ key, type: 'set', value: Object.assign(stat, { remote }) });
+	}
+	if (!changes.length) return;
+	await store.batch(changes);
 }

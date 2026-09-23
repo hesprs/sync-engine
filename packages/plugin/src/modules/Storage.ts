@@ -14,7 +14,7 @@ export default class Storage {
 
 	constructor(private readonly ctx: { getNamespace: () => string }) {}
 
-	private readonly getRecordStore = (namespace?: string) =>
+	private readonly getRecordStore = (namespace?: string): RecordStore =>
 		this.indexedDB.getStore(namespace || this.ctx.getNamespace());
 
 	private readonly deleteRecordStore = (namespace?: string): MaybePromise<void> => {

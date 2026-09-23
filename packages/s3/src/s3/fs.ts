@@ -11,13 +11,15 @@ import type {
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
+import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import { dirname, encodeUrl, isFolder } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import type { UrlStyle } from './sigv4';
 import { PART_SIZE, multipartUpload } from './multipart';
 import { md5Base64 } from './sigv4';
-import { buildUrl, buildUrlWithQuery, formatS3Error, getHeader, parseS3Error } from './url';
+import { buildUrl, buildUrlWithQuery, getHeader } from './url';
+import { formatS3Error, getFileUid, parseS3Error } from './utils';
 
 export type S3FsOptions = {
 	accessKeyId: string;
@@ -170,10 +172,7 @@ export default class S3Fs implements RootFs {
 			method: 'PUT',
 		});
 		const etag = getHeader(response.headers, 'etag');
-		if (etag) return etag;
-		const stat = await this.stat(key);
-		if (!stat.isDir) return stat.uid;
-		throw new Error(`S3 write returned a folder stat for ${key}.`);
+		return etag ? normalizeEtag(etag) : getFileUid(await this.stat(key), key);
 	}
 
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
@@ -268,7 +267,13 @@ export default class S3Fs implements RootFs {
 		if (!contentLength) throw sizeMissing;
 		const mtime = new Date(lastModified).valueOf();
 		const size = Number.parseInt(contentLength);
-		return { isDir: false, key, mtime, size, uid: etag ?? `${mtime}~${size}` };
+		return {
+			isDir: false,
+			key,
+			mtime,
+			size,
+			uid: etag ? normalizeEtag(etag) : `${mtime}~${size}`,
+		};
 	}
 
 	async exists(key: string): Promise<boolean> {
@@ -321,7 +326,7 @@ export default class S3Fs implements RootFs {
 							key: Key,
 							mtime,
 							size,
-							uid: ETag ?? `${mtime}~${size}`,
+							uid: ETag ? normalizeEtag(ETag) : `${mtime}~${size}`,
 						});
 					}
 				}),

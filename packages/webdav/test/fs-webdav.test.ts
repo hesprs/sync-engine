@@ -145,7 +145,7 @@ test('stat parses dav fields and prefers etag for uid', async () => {
 		key: 'Notes/file.md',
 		mtime: sharedDate,
 		size: 12,
-		uid: '"etag-123"',
+		uid: 'etag-123',
 	});
 });
 
@@ -540,27 +540,33 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 
 	const expectedRanges = Array.from({ length: Math.ceil(size / chunkSize) }, (_, index) => {
 		const start = index * chunkSize;
-		return `bytes=${start}-${Math.min(start + chunkSize - 1, size - 1)}`;
+		return {
+			byte: index + 1,
+			length: Math.min(chunkSize, size - start),
+			range: `bytes=${start}-${Math.min(start + chunkSize - 1, size - 1)}`,
+		};
 	});
 
 	const collected = collectStream(
 		webdav.fs.readStream('Notes/file.bin', file('Notes/file.bin', { size })),
 	);
 	await flush();
-	expect(ranges).toStrictEqual(expectedRanges);
+	expect(ranges).toStrictEqual(expectedRanges.map(({ range }) => range));
 	expect(encodings.every((encoding) => encoding === 'identity')).toBe(true);
 
-	const makeResponse = (byte: number): Partial<RequestResponse> => ({
-		bytes: () => new Uint8Array([byte]),
-		status: 206,
-	});
-
-	for (let index = expectedRanges.length - 1; index >= 0; index--)
-		pending.get(expectedRanges[index])?.resolve(makeResponse(index + 1));
+	for (const { byte, length, range } of [...expectedRanges].reverse())
+		pending.get(range)?.resolve({
+			bytes: () => new Uint8Array(length).fill(byte),
+			status: 206,
+		});
 
 	await flush();
-	expect(ranges).toStrictEqual(expectedRanges);
-	expect(await collected).toStrictEqual(
-		new Uint8Array(expectedRanges.map((_, index) => index + 1)),
-	);
+	expect(ranges).toStrictEqual(expectedRanges.map(({ range }) => range));
+	const expected = new Uint8Array(size);
+	let offset = 0;
+	for (const { byte, length } of expectedRanges) {
+		expected.fill(byte, offset, offset + length);
+		offset += length;
+	}
+	expect(await collected).toStrictEqual(expected);
 });

@@ -213,6 +213,7 @@ function setupCheckConnection({
 	};
 	const scheduleCheckConnection = () =>
 		(timeout = window.setTimeout(() => void check(), CHECK_CONNECTION_INTERVAL));
+	const cleanup = () => window.clearTimeout(timeout);
 
 	const check = async (force = false) => {
 		if (memoryDB.getMeta('lastCheckedFs') === settings.remoteFs && !force) {
@@ -227,7 +228,8 @@ function setupCheckConnection({
 			setError();
 			log(`Check connection to \`${settings.remoteFs}\` failed: \`${message}\`.`);
 			if (force) new Notice(`${translate('checkConnectionFailed')}: ${message}`, 5000);
-			else scheduleCheckConnection();
+			cleanup();
+			scheduleCheckConnection();
 		};
 
 		try {
@@ -243,7 +245,7 @@ function setupCheckConnection({
 		}
 	};
 
-	return { check, cleanup: () => window.clearTimeout(timeout) };
+	return { check, cleanup };
 }
 
 function addLabel(

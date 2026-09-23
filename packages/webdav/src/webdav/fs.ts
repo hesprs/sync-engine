@@ -12,6 +12,7 @@ import type {
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
+import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import {
 	dirname,
@@ -118,10 +119,6 @@ function toKey(href: string, endpoint: string, isDir: boolean) {
 	const stripped = stripEndpoint(endpoint, href);
 	if (!stripped) return '/';
 	return normalizeKey(normalizeChar(stripped), isDir);
-}
-
-function normalizeEtag(raw: string) {
-	return raw.startsWith('W/') ? raw.slice(2) : raw;
 }
 
 function toStat(endpoint: string, { propstat, href }: WebDAVResponseItem): Stat | undefined {

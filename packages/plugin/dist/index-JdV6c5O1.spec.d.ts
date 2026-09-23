@@ -212,16 +212,7 @@ declare class Storage {
   readonly root: {
     clearRecordStores: () => Promise<void>;
     deleteRecordStore: (namespace?: string) => MaybePromise<void>;
-    getRecordStore: (namespace?: string) => {
-      get(key: string): Promise<RecordStat | undefined>;
-      set(key: string, value: RecordStat): Promise<void>;
-      delete(key: string): Promise<void>;
-      clear(): Promise<void>;
-      keys(): Promise<string[]>;
-      values(): Promise<RecordStat[]>;
-      entries(): Promise<[string, RecordStat][]>;
-      batch(operations: StoreOperations<RecordStat>[]): Promise<GetResult<RecordStat>[]>;
-    };
+    getRecordStore: (namespace?: string) => RecordStore;
     indexedDB: DatabaseAsync<General$1, General$1>;
     memoryDB: {
       getStore<K extends string | number | symbol>(name: K): {
