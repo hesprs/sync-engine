@@ -10,7 +10,7 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
-import { getStatus } from '@repo/shared/error';
+import { getMessage, getStatus } from '@repo/shared/error';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import { dirname, encodeUrl, isFolder } from '@repo/shared/path';
@@ -64,7 +64,7 @@ const sizeMissing = new Error('S3 did not return size for objects!');
 
 function buildDeleteObjectsXml(keys: Array<string>): string {
 	const objects = keys.map((key) => `<Object><Key>${escapeXml(key)}</Key></Object>`).join('');
-	return `<?xml version="1.0" encoding="UTF-8"?><Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Quiet>true</Quiet>${objects}</Delete>`;
+	return `<Delete xmlns="http://s3.amazonaws.com/doc/2006-03-01/"><Quiet>true</Quiet>${objects}</Delete>`;
 }
 
 function escapeXml(str: string): string {
@@ -212,14 +212,29 @@ export default class S3Fs implements RootFs {
 				{ bucket: this.bucket, endpoint: this.endpoint, key: '/', urlStyle: this.urlStyle },
 				{ delete: '' },
 			);
-			const response = await this.requestOrThrow(url, {
-				body: textToUint8Array(body),
-				headers: {
-					'Content-MD5': await md5Base64(body),
-					'Content-Type': 'application/xml',
-				},
-				method: 'POST',
-			});
+			let response: RequestResponse;
+			try {
+				response = await this.requestOrThrow(url, {
+					body: textToUint8Array(body),
+					headers: {
+						'Content-MD5': await md5Base64(body),
+						'Content-Type': 'application/xml',
+					},
+					method: 'POST',
+				});
+			} catch {
+				await Promise.all(
+					batch.map(async (key) => {
+						try {
+							await this.delete(key);
+							result[key] = true;
+						} catch (error) {
+							result[key] = getMessage(error);
+						}
+					}),
+				);
+				continue;
+			}
 			Object.assign(result, parseBatchDeleteResponse(response.text(), batch));
 		}
 		return result;
