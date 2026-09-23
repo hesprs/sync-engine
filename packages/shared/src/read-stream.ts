@@ -85,6 +85,8 @@ export default function createRangeReadStream({
 		void requestRange(start, endInclusive)
 			.then((buffer) => {
 				if (closed) return;
+				if (buffer.byteLength !== endInclusive - start + 1)
+					throw new Error('Ranged request does not return content with correct length!');
 				pending.set(currentIndex, buffer);
 				pendingBytes += buffer.byteLength;
 				inFlight--;

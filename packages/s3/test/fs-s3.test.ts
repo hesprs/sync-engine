@@ -88,7 +88,7 @@ test('write sends binary PUT and uses ETag or HEAD metadata fallback', async () 
 		expect(params.body).toStrictEqual(bytes('hello'));
 		return response({ headers: { ETag: '"write-etag"' } });
 	});
-	expect(await s3.fs.write('Notes/file.md', bytes('hello'))).toBe('"write-etag"');
+	expect(await s3.fs.write('Notes/file.md', bytes('hello'))).toBe('write-etag');
 
 	const fallback = createS3Fs();
 	fallback.setRequest((_url, params) => {

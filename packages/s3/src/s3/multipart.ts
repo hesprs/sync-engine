@@ -1,24 +1,17 @@
 import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
 import chunkedUpload from '@repo/shared/chunked-upload';
+import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import type { UrlStyle } from './sigv4';
 import { buildUrlWithQuery, getHeader } from './url';
+import { getFileUid } from './utils';
 
 export const PART_SIZE = 5 * 1024 * 1024; // 5 MiB — S3 minimum part size
 const MAX_CONCURRENT = 3;
 
-type InitiateMultipartUploadResponse = {
-	InitiateMultipartUploadResult?: {
-		UploadId?: string;
-	};
-};
-
-type CompleteMultipartUploadResponse = {
-	CompleteMultipartUploadResult?: {
-		ETag?: string;
-	};
-};
+type InitiateMultipartUploadResponse = { InitiateMultipartUploadResult?: { UploadId?: string } };
+type CompleteMultipartUploadResponse = { CompleteMultipartUploadResult?: { ETag?: string } };
 
 export type MultipartUploadOptions = {
 	endpoint: string;
@@ -49,15 +42,7 @@ async function uploadPart(
 	partNumber: number,
 	chunk: Binary,
 ): Promise<{ partNumber: number; etag: string }> {
-	const url = buildUrlWithQuery(
-		{
-			bucket: options.bucket,
-			endpoint: options.endpoint,
-			key: options.key,
-			urlStyle: options.urlStyle,
-		},
-		{ partNumber: String(partNumber), uploadId },
-	);
+	const url = buildUrlWithQuery(options, { partNumber: String(partNumber), uploadId });
 	const response = await options.request(url, {
 		body: chunk,
 		headers: { 'Content-Type': 'application/octet-stream' },
@@ -69,15 +54,7 @@ async function uploadPart(
 }
 
 function abortMultipart(options: MultipartUploadOptions, uploadId: string) {
-	const url = buildUrlWithQuery(
-		{
-			bucket: options.bucket,
-			endpoint: options.endpoint,
-			key: options.key,
-			urlStyle: options.urlStyle,
-		},
-		{ uploadId },
-	);
+	const url = buildUrlWithQuery(options, { uploadId });
 	return options.request(url, { ignoreCancellation: true, method: 'DELETE' }).catch(() => {});
 }
 
@@ -85,16 +62,9 @@ export async function multipartUpload(
 	options: MultipartUploadOptions,
 	value: ReadableStream<Binary>,
 ): Promise<string> {
-	const initiateUrl = buildUrlWithQuery(
-		{
-			bucket: options.bucket,
-			endpoint: options.endpoint,
-			key: options.key,
-			urlStyle: options.urlStyle,
-		},
-		{ uploads: '' },
-	);
-	const initiateResponse = await options.request(initiateUrl, {
+	const { key, request, stat } = options;
+	const initiateUrl = buildUrlWithQuery(options, { uploads: '' });
+	const initiateResponse = await request(initiateUrl, {
 		headers: { 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' },
 		method: 'POST',
 	});
@@ -109,16 +79,8 @@ export async function multipartUpload(
 		});
 
 		const completeBody = buildCompleteMultipartXml(parts);
-		const completeUrl = buildUrlWithQuery(
-			{
-				bucket: options.bucket,
-				endpoint: options.endpoint,
-				key: options.key,
-				urlStyle: options.urlStyle,
-			},
-			{ uploadId },
-		);
-		const completeResponse = await options.request(completeUrl, {
+		const completeUrl = buildUrlWithQuery(options, { uploadId });
+		const completeResponse = await request(completeUrl, {
 			body: textToUint8Array(completeBody),
 			headers: { 'Content-Type': 'application/xml' },
 			method: 'POST',
@@ -126,11 +88,7 @@ export async function multipartUpload(
 
 		const etag = parseXML<CompleteMultipartUploadResponse>(completeResponse.text())
 			.CompleteMultipartUploadResult?.ETag;
-		if (etag) return etag;
-		const stat = await options.stat(options.key);
-		if (stat.isDir)
-			throw new Error(`S3 multipart upload returned a folder stat for ${options.key}.`);
-		return stat.uid;
+		return etag ? normalizeEtag(etag) : getFileUid(await stat(key), key);
 	} catch (error) {
 		void abortMultipart(options, uploadId);
 		throw error;

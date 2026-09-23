@@ -9,9 +9,13 @@ import type {
 	TranslationResource,
 	Settings,
 	Context,
+	RecordStore,
+	RecordStat,
+	StoreOperations,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
+import normalizeEtag from '@repo/shared/normalize-etag';
 import type { WebdavTranslations } from './setting';
 import { en, zh, zhTW, ru } from './i18n';
 import webdavSetting from './setting';
@@ -38,6 +42,7 @@ export default class Webdav {
 			registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => void;
 			registerSetting: (entry: SettingEntry) => () => void;
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
+			getRecordStore: (namespace?: string) => RecordStore; // TODO: remove after October 13
 		}>,
 	) {
 		if (!this.moduleSettings.baseDirectory)
@@ -66,6 +71,7 @@ export default class Webdav {
 			app: { secretStorage },
 			registerRemoteFsWrapper,
 			registerSetting,
+			getRecordStore,
 		} = this.ctx;
 		const resolveConfig = () => {
 			const {
@@ -100,10 +106,25 @@ export default class Webdav {
 				priority: 749,
 			}),
 		);
+
+		if (this.settings.remoteFs === 'webdav') void migrateEtag(getRecordStore()).catch(() => {});
 	};
 
 	readonly dispose = () => {
 		this.cleanup.forEach((fn) => fn());
 		this.cleanup.length = 0;
 	};
+}
+
+// TODO: remove after October 13
+async function migrateEtag(store: RecordStore) {
+	const changes: Array<StoreOperations<RecordStat>> = [];
+	for (const [key, stat] of await store.entries()) {
+		if (stat.isDir) return;
+		const remote = normalizeEtag(stat.remote);
+		if (remote !== stat.remote)
+			changes.push({ key, type: 'set', value: Object.assign(stat, { remote }) });
+	}
+	if (!changes.length) return;
+	await store.batch(changes);
 }
