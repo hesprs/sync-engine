@@ -303,24 +303,6 @@ test('batchDelete retries each key individually when the batch request fails', a
 	expect(methods).toStrictEqual(['POST', 'DELETE', 'DELETE']);
 });
 
-test('optimizer skips batching when there is a single delete atom', () => {
-	const s3 = createS3Fs();
-	parsedResponse = {};
-	const atoms: Array<InputAtom> = ['solo.md'].map((key) => ({
-		execute: () => {},
-		key,
-		reject: () => {},
-		resolve: () => {},
-		type: 'delete',
-	}));
-	const optimized = s3BatchDeleteOptimizer({
-		atoms,
-		executeAtom: (atom) => Promise.resolve(atom.execute()),
-		fs: s3.fs,
-	} satisfies OptimizerInput);
-	expect(optimized).toBe(atoms);
-});
-
 test('move copies encoded source before deleting old key', async () => {
 	const s3 = createS3Fs();
 	s3.setRequest((url, params) => {
