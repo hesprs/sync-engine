@@ -15,7 +15,6 @@ import type {
 	Binary,
 	RecordStore,
 	StoreOperations,
-	Stat,
 	RecordStat,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
