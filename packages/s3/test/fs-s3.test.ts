@@ -278,6 +278,31 @@ test('batch delete rejects only atoms with S3 partial failures', async () => {
 	);
 });
 
+test('batchDelete retries each key individually when the batch request fails', async () => {
+	const s3 = createS3Fs();
+	const methods: Array<string> = [];
+	parsedResponse = { Error: { Code: 'InternalError', Message: 'boom' } };
+	s3.setRequest((url, params) => {
+		methods.push(params.method ?? '');
+		if (params.method === 'POST')
+			return response({
+				status: 500,
+				text: '<Error><Code>InternalError</Code><Message>boom</Message></Error>',
+			});
+		expect(params.method).toBe('DELETE');
+		if (url.endsWith('/broken.md'))
+			return response({
+				status: 500,
+				text: '<Error><Code>InternalError</Code><Message>boom</Message></Error>',
+			});
+		return response({ status: 204 });
+	});
+	const result = await s3.fs.batchDelete(['ok.md', 'broken.md']);
+	expect(result['ok.md']).toBe(true);
+	expect(result['broken.md']).toBe('S3 InternalError: boom');
+	expect(methods).toStrictEqual(['POST', 'DELETE', 'DELETE']);
+});
+
 test('move copies encoded source before deleting old key', async () => {
 	const s3 = createS3Fs();
 	s3.setRequest((url, params) => {

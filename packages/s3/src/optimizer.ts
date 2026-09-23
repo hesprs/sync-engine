@@ -1,4 +1,4 @@
-import type { OptimizerInput, OptimizerOutput } from '@hesprs/sync-engine-sdk';
+import type { DeleteAtom, OptimizerInput, OptimizerOutput } from '@hesprs/sync-engine-sdk';
 import { digOriginal } from '@hesprs/sync-engine-sdk';
 import S3Fs, { BATCH_DELETE_MAX_KEYS } from './s3/fs';
 
@@ -9,10 +9,9 @@ export default function s3BatchDeleteOptimizer({
 	const original = digOriginal(fs);
 	if (!(original instanceof S3Fs)) return undefined;
 	const s3Fs = original;
-	type DeleteAtom = Extract<(typeof atoms)[number], { type: 'delete' }>;
 	const deleteAtoms = atoms.filter((a): a is DeleteAtom => a.type === 'delete');
+	if (deleteAtoms.length <= 1) return atoms;
 	const otherAtoms = atoms.filter((a) => a.type !== 'delete');
-	if (deleteAtoms.length === 0) return atoms;
 	const batchGroups: Array<Array<DeleteAtom>> = [];
 	for (let i = 0; i < deleteAtoms.length; i += BATCH_DELETE_MAX_KEYS)
 		batchGroups.push(deleteAtoms.slice(i, i + BATCH_DELETE_MAX_KEYS));
