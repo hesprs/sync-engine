@@ -234,6 +234,7 @@ export default class GdriveFs implements RootFs {
 	async move(oldKey: string, newKey: string): Promise<void> {
 		const id = this.resolveId(oldKey);
 		if (id === undefined) throw notFoundError(oldKey);
+		const existingId = this.resolveId(newKey);
 		const oldParentId = this.resolveId(dirname(oldKey));
 		const newParentId = this.resolveId(dirname(newKey));
 		if (!newParentId) throw new Error(`Parent not created when moving to "${newKey}"!`);
@@ -242,11 +243,14 @@ export default class GdriveFs implements RootFs {
 			query.addParents = newParentId;
 			if (oldParentId !== undefined) query.removeParents = oldParentId;
 		}
-		await this.requestOrThrow(buildUrl(DRIVE_API, `/files/${id}`, query), {
-			body: textToUint8Array(JSON.stringify({ name: basename(newKey) })),
-			headers: { 'Content-Type': 'application/json; charset=UTF-8' },
-			method: 'PATCH',
-		});
+		await Promise.all([
+			this.requestOrThrow(buildUrl(DRIVE_API, `/files/${id}`, query), {
+				body: textToUint8Array(JSON.stringify({ name: basename(newKey) })),
+				headers: { 'Content-Type': 'application/json; charset=UTF-8' },
+				method: 'PATCH',
+			}),
+			existingId ? this.delete(newKey) : Promise.resolve(), // GDrive can create duplicated keys
+		]);
 		this.dropCache(oldKey);
 	}
 

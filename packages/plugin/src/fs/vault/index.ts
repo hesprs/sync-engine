@@ -87,7 +87,8 @@ export default class VaultFs implements RootFs {
 		return this.request(key, { method: 'DELETE' });
 	}
 
-	move(oldKey: string, newKey: string): Promise<void> {
+	async move(oldKey: string, newKey: string): Promise<void> {
+		if (await this.exists(newKey)) await this.delete(newKey);
 		return this.request(oldKey, { destination: newKey, method: 'MOVE' });
 	}
 
