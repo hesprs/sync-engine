@@ -77,6 +77,7 @@ const ru: Translations = {
 	awaitingConfirmation: 'Ожидание подтверждения',
 	backend: 'Бэкенд хранилища',
 	backendDescription: 'Выберите облачный сервис. Бэкенды предоставляются модулями.',
+	backendNotInstalled: (name) => `Бэкенд «${name}» не установлен!`,
 	bidirectional: 'Двунаправленная',
 	cancel: 'Отмена',
 	cancelled: 'Отменено',
@@ -281,6 +282,7 @@ const ru: Translations = {
 		'Отображать всплывающее уведомление на мобильных устройствах во время синхронизации. Заменяет строку состояния, используемую на ПК.',
 	official: 'Официальный',
 	openReadme: 'Открыть страницу README модуля.',
+	pleaseSetBackend: 'Пожалуйста, выберите бэкенд!',
 	readmePage: 'Страница README',
 	readmePageDescription:
 		'Страница README модуля необязательна; пустое поле означает, что README нет.',

@@ -4,7 +4,7 @@ import type { Ref } from 'synthkernel';
 import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
 import hash from '@repo/shared/crypto';
 import { importCode } from '@repo/shared/e2e-utils.spec';
-import { getMessage } from '@repo/shared/error';
+import { describeError, toError } from '@repo/shared/error';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
 import type { General } from '@/types';
@@ -189,9 +189,9 @@ export default class Extensibility {
 						Object.assign(discoveredMeta, { enabled: false }),
 					);
 			}
-			const message = getMessage(error);
-			dispatch('errorGeneral', `Module \`${id}\` failed to load: ${message}`);
-			new Notice(`${translate('failedToLoadModule', name)}: ${message}`);
+			const parsedError = toError(error);
+			new Notice(`${translate('failedToLoadModule', name)}: ${parsedError.message}`);
+			dispatch('errorGeneral', describeError(parsedError, `Module \`${id}\` failed to load`));
 		}
 	};
 
@@ -234,9 +234,12 @@ export default class Extensibility {
 			}
 			await this.installModule(meta, module);
 		} catch (error) {
-			const message = getMessage(error);
-			dispatch('errorGeneral', `Failed to download module \`${id}\`: ${message}`);
-			new Notice(`${translate('failedToDownloadModule', name)}: ${message}`);
+			const parsedError = toError(error);
+			new Notice(`${translate('failedToDownloadModule', name)}: ${parsedError.message}`);
+			dispatch(
+				'errorGeneral',
+				describeError(parsedError, `Failed to download module \`${id}\``),
+			);
 		}
 		if (setBusy) isIdle(true);
 	};
@@ -262,9 +265,13 @@ export default class Extensibility {
 				this.sourceCache.set(url, content);
 				return content as Array<unknown>;
 			} catch (error) {
-				const message = getMessage(error);
-				dispatch('errorGeneral', `Failed to fetch source from \`${url}\`: ${message}`);
-				if (manual) new Notice(`${translate('failedToFetchSource', url)}: ${message}`);
+				const parsedError = toError(error);
+				if (manual)
+					new Notice(`${translate('failedToFetchSource', url)}: ${parsedError.message}`);
+				dispatch(
+					'errorGeneral',
+					describeError(parsedError, `Failed to fetch source from \`${url}\``),
+				);
 				return [];
 			}
 		};

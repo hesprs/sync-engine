@@ -1,12 +1,14 @@
+import type { Translations } from '@';
 import type { App, RequestUrlParam } from 'obsidian';
-import type { StoreAsync } from 'uni-kv';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import hash from '@repo/shared/crypto';
+import { toError } from '@repo/shared/error';
 import { requestUrl } from 'obsidian';
 import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
 import type { ConflictResolver, Decider } from '@/sync';
-import type { General, MaybePromise, RecordStat, Binary } from '@/types';
+import type { General, MaybePromise, Binary } from '@/types';
 import { createVaultRequest, VaultFs } from '@/fs';
+import type { Snippet, Translate } from './I18n';
 import type { RecordStore } from './Storage';
 import type { SyncOptions } from './Sync';
 
@@ -16,11 +18,10 @@ export type RemoteRequestMiddlewareEntry = OrderedWrapperEntry<Request>;
 export type LocalRequestMiddlewareEntry = OrderedWrapperEntry<VaultRequest>;
 export type FsWrapperEntry = OrderedWrapperEntry<Fs>;
 
-export type CheckConnectionResult = { success: true } | { success: false; reason: string };
 export type RemoteFsEntry = {
 	instantiate: (request: Request) => RootFs;
 	prettyName: () => string;
-	checkConnection: (request: Request) => MaybePromise<CheckConnectionResult>;
+	checkConnection: (request: Request) => MaybePromise<void | Error>;
 };
 export type DeciderEntry = { decider: Decider; prettyName: () => string };
 export type ConflictResolverEntry = { prettyName: () => string; resolver: ConflictResolver };
@@ -78,11 +79,13 @@ export default class Registrar {
 	private readonly conflictResolverRegistry = new Map<string, ConflictResolverEntry>();
 
 	declare readonly settings: { remoteFs: string; decider: string; conflictResolver: string };
+	declare readonly i18n: { pleaseSetBackend: string; backendNotInstalled: Snippet<string> };
 
 	constructor(
 		private readonly ctx: {
 			app: App;
-			getRecordStore: (namespace?: string) => StoreAsync<RecordStat>;
+			getRecordStore: (namespace: string) => RecordStore;
+			translate: Translate<Translations>;
 		},
 	) {}
 
@@ -97,13 +100,19 @@ export default class Registrar {
 		);
 	};
 
-	private readonly createRemoteFs = (remoteFs = this.settings.remoteFs) => {
+	// Returns the instantiated Fs or error
+	private readonly createRemoteFs = (remoteFs = this.settings.remoteFs): Fs | Error => {
 		const entry = this.remoteFsRegistry.get(remoteFs);
 		if (!entry) {
-			if (!remoteFs) throw new Error('Please set a backend!');
-			throw new Error(`Backend "${remoteFs}" is not installed!`);
+			const { translate } = this.ctx;
+			if (!remoteFs) return new Error(translate('pleaseSetBackend'));
+			return new Error(translate('backendNotInstalled', remoteFs));
 		}
-		return wrapInOrder(entry.instantiate(this.getRequest()), this.remoteFsWrapperRegistry);
+		try {
+			return wrapInOrder(entry.instantiate(this.getRequest()), this.remoteFsWrapperRegistry);
+		} catch (error) {
+			return toError(error);
+		}
 	};
 
 	private readonly getRequest = () => wrapInOrder(request, this.remoteRequestMiddlewareRegistry);
@@ -148,15 +157,23 @@ export default class Registrar {
 		return resolver.resolver;
 	};
 
-	private readonly getNamespace = (localFs?: Fs, remoteFs?: Fs) => {
+	private readonly getNamespace = <R extends Fs | undefined>(
+		localFs?: Fs,
+		remoteFs?: R,
+	): R extends Fs ? string : string | Error => {
 		localFs ??= this.createLocalFs();
-		remoteFs ??= this.createRemoteFs();
+		if (!remoteFs) {
+			const fs = this.createRemoteFs();
+			if (fs instanceof Error) return fs as never;
+			remoteFs = fs as never;
+		}
 		return hash(`${localFs.getUid()}~~${remoteFs.getUid()}`);
 	};
 
 	private readonly initializeSync = (): Infras => {
 		const localFs = this.createLocalFs();
 		const remoteFs = this.createRemoteFs();
+		if (remoteFs instanceof Error) throw remoteFs;
 		const namespace = this.getNamespace(localFs, remoteFs);
 		const record = this.ctx.getRecordStore(namespace);
 		return { localFs, record, remoteFs };

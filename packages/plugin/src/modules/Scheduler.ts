@@ -13,6 +13,8 @@ type SyncRequest = {
 	resolve: (result: SyncTerminateReason) => void;
 };
 
+const OFFLINE_ERROR = new Error('Device is offline.');
+
 export default class Scheduler {
 	private readonly pendingRequests: Array<SyncRequest> = [];
 	private isScheduling = false;
@@ -52,7 +54,7 @@ export default class Scheduler {
 				'logGeneral',
 				`Skipped offline auto sync with trigger \`${trigger}\`.`,
 			);
-			return Promise.resolve({ error: 'Device is offline.', result: 'failed' });
+			return Promise.resolve({ error: OFFLINE_ERROR, result: 'failed' });
 		}
 		return new Promise((resolve) => {
 			this.pendingRequests.push({ resolve, trigger });

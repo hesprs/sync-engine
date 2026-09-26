@@ -31,7 +31,6 @@ export default function retryMiddleware(request: Request, options?: RetryOptions
 	};
 }
 
-// 401 excluded: needs auth refresh, not retry (e.g. gdrive `bearerMiddleware`).
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
 const RETRYABLE_URL_ERROR_CODES = new Set([-1001, -1003, -1004, -1005, -1006, -1009]); // IOS/macOS native URLSession errors
 const URL_ERROR_DOMAINS = new Set(['NSURLErrorDomain', 'kCFErrorDomainCFNetwork']);

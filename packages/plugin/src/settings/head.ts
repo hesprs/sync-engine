@@ -1,15 +1,10 @@
 import type { Context, Events, Settings } from '@';
 import type { DatabaseSync } from 'uni-kv';
-import { getMessage } from '@repo/shared/error';
+import { describeError, toError } from '@repo/shared/error';
 import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
 import type { ModuleCtor } from '@/modules/Extensibility';
 import type { Fragment, Snippet, Translate } from '@/modules/I18n';
-import type {
-	CheckConnectionResult,
-	ConflictResolverEntry,
-	DeciderEntry,
-	RemoteFsEntry,
-} from '@/modules/Registrar';
+import type { ConflictResolverEntry, DeciderEntry, RemoteFsEntry } from '@/modules/Registrar';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { Dispatch } from '@/sdk';
 import type { General, MaybePromise } from '@/types';
@@ -47,7 +42,7 @@ export default function headSettings(
 		remoteFsRegistry: Map<string, RemoteFsEntry>;
 		deciderRegistry: Map<string, DeciderEntry>;
 		conflictResolverRegistry: Map<string, ConflictResolverEntry>;
-		getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
+		getCheckConnection: () => () => MaybePromise<void | Error>;
 		memoryDB: CheckConnectionDB;
 		loadedModules: Map<string, ModuleCtor>;
 		matchLabel: () => LabelDefinition;
@@ -109,7 +104,7 @@ export default function headSettings(
 								.setTooltip(translate('checkConnection'))
 								.onClick(() => void checks.check(true)),
 							getCheckConnection,
-							log: (str: string) => dispatch('errorGeneral', str),
+							logError: (error: Error) => dispatch('errorGeneral', error),
 							memoryDB,
 							settings,
 							translate,
@@ -174,14 +169,14 @@ function setupCheckConnection({
 	settings,
 	translate,
 	button,
-	log,
+	logError,
 }: {
 	memoryDB: CheckConnectionDB;
-	getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
+	getCheckConnection: () => () => MaybePromise<void | Error>;
 	settings: Settings;
 	translate: Translate<HeadSettingTranslations>;
 	button: ExtraButtonComponent;
-	log: (str: string) => void;
+	logError: (error: Error) => void;
 }) {
 	let timeout: number | undefined;
 	const possibleClasses = [
@@ -224,24 +219,25 @@ function setupCheckConnection({
 			setError();
 			return;
 		}
-		const onFailure = (message: string) => {
+		const onFailure = (error: Error) => {
 			setError();
-			log(`Check connection to \`${settings.remoteFs}\` failed: \`${message}\`.`);
-			if (force) new Notice(`${translate('checkConnectionFailed')}: ${message}`, 5000);
+			if (force) new Notice(`${translate('checkConnectionFailed')}: ${error.message}`, 5000);
+			logError(describeError(error, `Check connection to \`${settings.remoteFs}\` failed`));
 			cleanup();
 			scheduleCheckConnection();
 		};
 
 		try {
 			setChecking();
-			const result = await getCheckConnection()();
-			if (result.success) {
+			const failure = await getCheckConnection()();
+			if (failure) onFailure(failure);
+			else {
 				memoryDB.setMeta('lastCheckedFs', settings.remoteFs);
 				setSuccess();
 				if (force) new Notice(translate('checkConnectionSuccess'));
-			} else onFailure(result.reason);
+			}
 		} catch (error) {
-			onFailure(getMessage(error));
+			onFailure(toError(error));
 		}
 	};
 

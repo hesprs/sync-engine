@@ -38,7 +38,7 @@
 | Events               | `Dispatch`, `On`                                                                                                                                                                                                                                                                                                                            |
 | Core data            | `Binary`, `MaybePromise`, `Progress`, `FileStat`, `FolderStat`, `Stat`, `StatsMap`, `RecordStat`, `RecordStatsMap`                                                                                                                                                                                                                          |
 | Filesystem           | `RootFs`, `WrappedFs`, `Fs`, `WriteAtom`, `DeleteAtom`, `MoveAtom`, `MkdirAtom`, `InputAtom`, `CustomAtom`, `OutputAtom`, `OptimizerInput`, `OptimizerOutput`, `BatchOptimizer`                                                                                                                                                             |
-| Registration         | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `TriggerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request`, `CheckConnectionResult`                                                                  |
+| Registration         | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `TriggerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request`                                                                                           |
 | Sync                 | `TaskNames`, `BaseTask`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `SyncOptions`, `RemoteLister`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
 | Storage              | `RecordStore`, `StoreAsync`, `StoreSync`, `StoreOperations`, `DatabaseAsync`, `DatabaseSync`                                                                                                                                                                                                                                                |
 | Modules              | `ModuleMeta`, `AugmentedModuleMeta`                                                                                                                                                                                                                                                                                                         |
@@ -104,25 +104,25 @@ These Context members are not commonly used by modules. Explore source code to o
 
 ### Filesystem and Sync
 
-| Member                           | Purpose                                                      |
-| -------------------------------- | ------------------------------------------------------------ |
-| `createLocalFs()`                | Creates wrapped local filesystem.                            |
-| `createRemoteFs(id?)`            | Creates selected wrapped remote filesystem.                  |
-| `getRequest()`                   | Gets composed remote request function.                       |
-| `getVaultRequest()`              | Gets composed local vault request function.                  |
-| `getNamespace(local?, remote?)`  | Creates storage namespace for optional local/remote FS pair. |
-| `initializeSync()`               | Creates local FS, remote FS, and record store for sync.      |
-| `getCheckConnection()`           | Gets selected backend connection-check function.             |
-| `getDecider()`                   | Gets selected `Decider`.                                     |
-| `getConflictResolver()`          | Gets selected `ConflictResolver`.                            |
-| `optimizeLocal(input)`           | Applies selected local `BatchOptimizer`.                     |
-| `optimizeRemote(input)`          | Applies selected remote `BatchOptimizer`.                    |
-| `reduceTriggers(triggers)`       | Reduces trigger names to the highest-priority entry.         |
-| `executeSync(trigger, options?)` | Executes synchronization immediately.                        |
-| `requestSync(trigger)`           | Queues sync; resolves with `SyncTerminateReason`.            |
-| `remoteFsRegistry`               | `Map<string, RemoteFsEntry>`.                                |
-| `deciderRegistry`                | `Map<string, DeciderEntry>`.                                 |
-| `conflictResolverRegistry`       | `Map<string, ConflictResolverEntry>`.                        |
+| Member                           | Purpose                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `createLocalFs()`                | Creates wrapped local filesystem.                                                                       |
+| `createRemoteFs(id?)`            | Creates selected wrapped remote filesystem. Returns an `Error` when the backend is missing.             |
+| `getRequest()`                   | Gets composed remote request function.                                                                  |
+| `getVaultRequest()`              | Gets composed local vault request function.                                                             |
+| `getNamespace(local?, remote?)`  | Creates storage namespace for optional local/remote FS pair. Returns an `Error` when no backend is set. |
+| `initializeSync()`               | Creates local FS, remote FS, and record store for sync.                                                 |
+| `getCheckConnection()`           | Gets selected backend connection-check function.                                                        |
+| `getDecider()`                   | Gets selected `Decider`.                                                                                |
+| `getConflictResolver()`          | Gets selected `ConflictResolver`.                                                                       |
+| `optimizeLocal(input)`           | Applies selected local `BatchOptimizer`.                                                                |
+| `optimizeRemote(input)`          | Applies selected remote `BatchOptimizer`.                                                               |
+| `reduceTriggers(triggers)`       | Reduces trigger names to the highest-priority entry.                                                    |
+| `executeSync(trigger, options?)` | Executes synchronization immediately.                                                                   |
+| `requestSync(trigger)`           | Queues sync; resolves with `SyncTerminateReason`.                                                       |
+| `remoteFsRegistry`               | `Map<string, RemoteFsEntry>`.                                                                           |
+| `deciderRegistry`                | `Map<string, DeciderEntry>`.                                                                            |
+| `conflictResolverRegistry`       | `Map<string, ConflictResolverEntry>`.                                                                   |
 
 ### UI and Observability
 

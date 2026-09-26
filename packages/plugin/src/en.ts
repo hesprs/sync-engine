@@ -65,6 +65,7 @@ const en: Translations = {
 	awaitingConfirmation: 'Awaiting confirmation',
 	backend: 'Storage backend',
 	backendDescription: 'Select the cloud service to use. Backends are provided by modules.',
+	backendNotInstalled: (name) => `Backend "${name}" not installed!`,
 	bidirectional: 'Bidirectional',
 	cancel: 'Cancel',
 	cancelled: 'Cancelled',
@@ -265,6 +266,7 @@ const en: Translations = {
 		'Display a notice on mobile devices when synchronization is in progress. Replaces the status bar on desktop.',
 	official: 'Official',
 	openReadme: "Open the module's README page.",
+	pleaseSetBackend: 'Please set a backend!',
 	readmePage: 'README page',
 	readmePageDescription:
 		'Set the optional README page of the module, leaving empty means no README.',

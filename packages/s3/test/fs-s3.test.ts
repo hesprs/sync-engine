@@ -236,8 +236,8 @@ test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async 
 	expect(bodies[0]).toContain('<Key>a&lt;&amp;&quot;&apos;</Key>');
 	expect((bodies[0]?.match(/<Object>/gu) ?? []).length).toBe(1000);
 	expect((bodies[1]?.match(/<Object>/gu) ?? []).length).toBe(1);
-	expect(result['a<&"\'']).toBe('S3 AccessDenied: no permission');
-	expect(result['key-0']).toBe(true);
+	expect(result['a<&"\'']?.message).toBe('S3 AccessDenied: no permission');
+	expect(result['key-0']).toBeUndefined();
 });
 
 test('batch delete rejects only atoms with S3 partial failures', async () => {
@@ -298,8 +298,8 @@ test('batchDelete retries each key individually when the batch request fails', a
 		return response({ status: 204 });
 	});
 	const result = await s3.fs.batchDelete(['ok.md', 'broken.md']);
-	expect(result['ok.md']).toBe(true);
-	expect(result['broken.md']).toBe('S3 InternalError: boom');
+	expect(result['ok.md']).toBeUndefined();
+	expect(result['broken.md']?.message).toBe('S3 InternalError: boom');
 	expect(methods).toStrictEqual(['POST', 'DELETE', 'DELETE']);
 });
 

@@ -191,6 +191,6 @@ This is the return type of `ctx.requestSync`, `ctx.executeSync`, and the payload
 type SyncTerminateReason =
   | { result: 'cancelled' }
   | { result: 'completed' }
-  | { result: 'failed'; error: string }
+  | { result: 'failed'; error: Error }
   | { result: 'noop' };
 ```

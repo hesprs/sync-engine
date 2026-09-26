@@ -1,6 +1,6 @@
 import type { Events } from '@';
 import type { App, ToggleComponent } from 'obsidian';
-import { getMessage } from '@repo/shared/error';
+import { describeError, toError } from '@repo/shared/error';
 import { Modal, Notice, Setting } from 'obsidian';
 import { ref } from 'synthkernel';
 import type { ExistingMemoryDB } from '@/modules/Bootstrap';
@@ -112,25 +112,25 @@ class MigrationModal extends Modal {
 			current.subscribe((value) => left.setText(value)),
 		);
 
-		void migrate().then((result) => {
+		void migrate().then((failure) => {
 			renderControls('done');
-			if (!result.success) {
-				dispatch('errorGeneral', 'Migration failed.');
+			if (failure) {
+				dispatch(
+					'errorGeneral',
+					describeError(failure, `Migration failed in phase ${completed() + 1}`),
+				);
 				left.setText(translate('migrationFailed'));
 			}
 		});
 	};
 
-	private readonly migrate = async (): Promise<
-		{ success: true } | { success: false; reason: string }
-	> => {
+	private readonly migrate = async (): Promise<void | Error> => {
 		const { current, completed, ctx } = this;
 		const { dispatch, requestSync, initializeSync, translate, memoryDB } = ctx;
 		const handleSyncResult = (sync: SyncTerminateReason, phase: number) => {
-			if (sync.result === 'failed')
-				return { reason: `Phase ${phase}: ${sync.error}`, success: false };
+			if (sync.result === 'failed') return sync.error;
 			else if (sync.result === 'cancelled')
-				return { reason: `Phase ${phase}: sync cancelled`, success: false };
+				return new Error(`Phase ${phase}: sync cancelled`);
 		};
 		dispatch('logGeneral', 'Migration started.');
 		completed(0);
@@ -153,9 +153,9 @@ class MigrationModal extends Modal {
 					.map((key) => remoteFs.delete(key)),
 			]);
 		} catch (error) {
-			const message = getMessage(error);
-			new Notice(`${translate('migrationFailed')}: ${message}`);
-			return { reason: `Phase 2: ${message}`, success: false };
+			const parsedError = toError(error);
+			new Notice(`${translate('migrationFailed')}: ${parsedError.message}`);
+			return parsedError;
 		}
 		completed(2);
 		current(translate('migrationPhase3Description'));
@@ -164,7 +164,6 @@ class MigrationModal extends Modal {
 		if (phase3) return phase3;
 		completed(3);
 		current(translate('completed'));
-		return { success: true };
 	};
 
 	onClose() {

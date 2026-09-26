@@ -62,7 +62,6 @@ export type {
 	OptimizerEntry,
 	ConflictResolverEntry,
 	Request,
-	CheckConnectionResult,
 	RequestParam,
 	RequestResponse,
 } from '@/modules/Registrar';

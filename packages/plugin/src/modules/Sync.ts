@@ -1,6 +1,6 @@
 import type { Events, Translations } from '@';
 import type { Ref } from 'synthkernel';
-import { getMessage } from '@repo/shared/error';
+import { toError } from '@repo/shared/error';
 import { isSub } from '@repo/shared/path';
 import { ref } from 'synthkernel';
 import type { Fs, ListReporter } from '@/fs';
@@ -40,11 +40,11 @@ import type { Infras } from './Registrar';
 export type SyncTerminateReason =
 	| { result: 'cancelled' }
 	| { result: 'completed' }
-	| { result: 'failed'; error: string }
+	| { result: 'failed'; error: Error }
 	| { result: 'noop' };
 
 export type TaskInfo = { name: TaskNames; key: string; prettyName: string; isDir: boolean };
-export type FailedTaskInfo = TaskInfo & { error: string };
+export type FailedTaskInfo = TaskInfo & { error: Error };
 export type RemoteLister = (info: Infras & { reporter: ListReporter }) => MaybePromise<Array<Stat>>;
 export type SyncOptions = {
 	decider?: Decider;
@@ -257,6 +257,7 @@ export default class Sync {
 
 			if (isCancelled()) throw syncCancelledError;
 			dispatch('executionStarted', tasks);
+			const errors: Array<FailedTaskInfo> = [];
 			await Promise.all(
 				tasks.map(async (task) => {
 					try {
@@ -265,10 +266,9 @@ export default class Sync {
 					} catch (error) {
 						if (isCancelled()) return;
 						failedCount++;
-						dispatch('taskFailed', {
-							...toTaskInfo(task),
-							error: getMessage(error),
-						});
+						const info = { ...toTaskInfo(task), error: toError(error) };
+						errors.push(info);
+						dispatch('taskFailed', info);
 					}
 				}),
 			);
@@ -277,14 +277,16 @@ export default class Sync {
 				? { result: 'cancelled' }
 				: failedCount
 					? {
-							error: `Execution of ${failedCount} sync task(s) failed.`,
+							error: new Error(`Execution of ${failedCount} sync task(s) failed.`, {
+								cause: errors,
+							}),
 							result: 'failed',
 						}
 					: { result: 'completed' };
 		} catch (error) {
 			terminateReason = isCancelled()
 				? { result: 'cancelled' }
-				: ({ error: getMessage(error), result: 'failed' } as const);
+				: ({ error: toError(error), result: 'failed' } as const);
 		} finally {
 			cleanup();
 			dispatch('syncTerminated', terminateReason);
