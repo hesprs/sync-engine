@@ -118,7 +118,7 @@ export default class GdriveFs implements RootFs {
 				{ method: 'GET' },
 			);
 			const id = response.json<DriveFileList>().files?.[0]?.id;
-			if (!id) return undefined;
+			if (!id) return;
 			this.ids.set(childKey, id);
 			parentId = id;
 			prefix = childKey;

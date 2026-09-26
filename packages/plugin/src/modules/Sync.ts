@@ -3,19 +3,14 @@ import type { Ref } from 'synthkernel';
 import { toError } from '@repo/shared/error';
 import { isSub } from '@repo/shared/path';
 import { ref } from 'synthkernel';
-import type { Fs, ListReporter } from '@/fs';
+import type { Fs, ListOptions, ListReporter } from '@/fs';
+import type { BaseTask, ConflictResolver, TaskFactory, TaskNames, TaskOptionsMap } from '@/sync';
 import type {
-	BaseTask,
-	ConflictResolver,
-	Decider,
-	TaskFactory,
-	TaskNames,
-	TaskOptionsMap,
-} from '@/sync';
-import type {
-	GlobMatchRule,
+	GlobStrategy,
 	MaybePromise,
 	Progress,
+	RecordStat,
+	RecordStatsMap,
 	Stat,
 	StatsMap,
 	TogglableValue,
@@ -31,11 +26,11 @@ import {
 	syncCancelledError,
 	taskMap,
 } from '@/sync';
-import { prepareGlobMatch } from '@/utils/glob-match';
+import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import type { Dispatch, On } from './EventBus';
 import type { Translate } from './I18n';
 import type { DeleteConfirmReturn } from './ProgressModal';
-import type { Infras } from './Registrar';
+import type { DecideTasksInput, Infras } from './Registrar';
 
 export type SyncTerminateReason =
 	| { result: 'cancelled' }
@@ -47,14 +42,12 @@ export type TaskInfo = { name: TaskNames; key: string; prettyName: string; isDir
 export type FailedTaskInfo = TaskInfo & { error: Error };
 export type RemoteLister = (info: Infras & { reporter: ListReporter }) => MaybePromise<Array<Stat>>;
 export type SyncOptions = {
-	decider?: Decider;
 	remoteLister?: RemoteLister;
 	conflictResolver?: ConflictResolver;
 	detectMoves?: boolean;
 	needConfirmTasks?: boolean;
 	needConfirmDeletion?: boolean;
-	exclusionRules?: Array<GlobMatchRule>;
-	inclusionRules?: Array<GlobMatchRule>;
+	syncStrategy?: Array<GlobStrategy>;
 };
 
 export default class Sync {
@@ -62,10 +55,10 @@ export default class Sync {
 		private readonly ctx: {
 			dispatch: Dispatch<Events>;
 			initializeSync: () => Infras;
-			getDecider: () => Decider;
 			on: On<Events>;
 			translate: Translate<Translations>;
 			getConflictResolver: () => ConflictResolver;
+			decideTasks: (input: DecideTasksInput) => Array<BaseTask>;
 		},
 	) {}
 
@@ -81,27 +74,15 @@ export default class Sync {
 		taskFailed: FailedTaskInfo;
 		executionStarted: Array<BaseTask>;
 	};
-	declare readonly settings: {
-		maxFileSize: TogglableValue;
-		exclusionRules: Array<GlobMatchRule>;
-		inclusionRules: Array<GlobMatchRule>;
-	};
+	declare readonly settings: { maxFileSize: TogglableValue; syncStrategy: Array<GlobStrategy> };
 
 	private readonly postProcess = (
 		stats: Array<Stat>,
-		pruner: (stats: Array<Stat>) => Array<Stat>,
+		organizer: (stats: Array<Stat>) => Record<string, StatsMap>,
 	) => {
-		const statsMap = toMap(pruner(stats));
-		const maxSize = this.settings.maxFileSize.enabled
-			? this.settings.maxFileSize.value
-			: Infinity;
-		const includedStats: StatsMap = new Map();
-		if (statsMap.size === 0) return includedStats;
-		for (const [path, stat] of statsMap) {
-			if (!stat.isDir && stat.size > maxSize) continue;
-			includedStats.set(path, stat);
-		}
-		return includedStats;
+		const { enabled, value } = this.settings.maxFileSize;
+		const maxSize = enabled ? value : Infinity;
+		return organizer(stats.filter((stat) => stat.isDir || stat.size <= maxSize));
 	};
 
 	private readonly confirmTasks = (tasks: Array<BaseTask>) =>
@@ -146,9 +127,8 @@ export default class Sync {
 	): Promise<SyncTerminateReason> => {
 		const { settings, ctx, postProcess, confirmDeletion, confirmTasks, convertDeleteToUpload } =
 			this;
-		const { on, dispatch, initializeSync, getConflictResolver, translate, getDecider } = ctx;
+		const { on, dispatch, initializeSync, getConflictResolver, translate, decideTasks } = ctx;
 		const {
-			decider = getDecider(),
 			remoteLister = async ({ remoteFs, record, reporter }) => {
 				try {
 					return await remoteFs.list('/', reporter);
@@ -163,8 +143,7 @@ export default class Sync {
 			detectMoves = true,
 			needConfirmDeletion = false,
 			needConfirmTasks = false,
-			inclusionRules = settings.inclusionRules,
-			exclusionRules = settings.exclusionRules,
+			syncStrategy = settings.syncStrategy,
 		} = options;
 
 		const isCancelled = ref(false);
@@ -177,14 +156,12 @@ export default class Sync {
 			if (isCancelled()) throw syncCancelledError;
 
 			const infras = initializeSync();
-			const { record, localFs } = infras;
-
-			const match = prepareGlobMatch(inclusionRules, exclusionRules);
-			const { reporter: localReporter, pruner: localPruner } = prepareReporter(match);
-			const { reporter: remoteReporter, pruner: remotePruner } = prepareReporter(match);
+			const { record: recordStore, localFs } = infras;
+			const match = prepareGlobMatch(syncStrategy);
+			const { reporter: localReporter, organizer: localOrganizer } = prepareList(match);
+			const { reporter: remoteReporter, organizer: remoteOrganizer } = prepareList(match);
 			dispatch('syncInitialized', { ...infras, match });
-
-			const [localList, remoteList] = await Promise.all([
+			const [localList, remoteList, recordList] = await Promise.all([
 				localFs.list('/', localReporter),
 				remoteLister({
 					...infras,
@@ -193,29 +170,20 @@ export default class Sync {
 						return remoteReporter(prog);
 					},
 				}),
+				recordStore.entries(),
 			]);
 			if (isCancelled()) throw syncCancelledError;
-			const records = new Map(await record.entries());
-			const localStats = postProcess(localList, localPruner);
-			const remoteStats = postProcess(remoteList, remotePruner);
-			dispatch(
-				'logSync',
-				`Local ${localStats.size} item(s), remote ${remoteStats.size} item(s), record ${records.size} item(s).`,
-			);
-
+			const record = organizeRecord(recordList, match);
+			const local = postProcess(localList, localOrganizer);
+			const remote = postProcess(remoteList, remoteOrganizer);
 			if (isCancelled()) throw syncCancelledError;
+
 			const taskFactory = createTaskFactory({
 				baseOptions: infras,
 				resolver: conflictResolver,
 				translate,
 			});
-			tasks = decider({
-				localStats,
-				logger: (log: string) => dispatch('logSync', log),
-				records,
-				remoteStats,
-				taskFactory,
-			});
+			tasks = decideTasks({ local, record, remote, taskFactory });
 			if (tasks.length === 0) {
 				terminateReason = { result: 'noop' };
 				return terminateReason;
@@ -223,7 +191,7 @@ export default class Sync {
 
 			if (detectMoves) {
 				const initialTasks = tasks.length;
-				tasks = convertMoves(tasks, translate, records);
+				tasks = convertMoves(tasks, translate, new Map(recordList));
 				const convertedTasks = initialTasks - tasks.length;
 				if (convertedTasks)
 					dispatch('logSync', `Discovered and converted ${convertedTasks} move task(s).`);
@@ -317,12 +285,6 @@ export default class Sync {
 	root = { executeSync: this.executeSync };
 }
 
-function toMap(stats: Array<Stat>): StatsMap {
-	const res = new Map<string, Stat>();
-	for (const stat of stats) res.set(stat.key, stat);
-	return res;
-}
-
 function createTaskFactory({
 	baseOptions,
 	translate,
@@ -375,26 +337,51 @@ function sortTasks(tasks: Array<BaseTask>) {
 	});
 }
 
-function prepareReporter(match: (path: string) => GlobMatchResult) {
-	const probes: Array<string> = [];
+function prepareList(match: (path: string) => GlobMatchResult) {
+	const probes = new Set<string>();
+	const strategies = new Map<string, string>();
 	return {
-		// Prune probe folders that need to be excluded
-		pruner: (stats: Array<Stat>) => {
-			const probeSet = new Set(probes);
-			const content = stats.filter((p) => !probeSet.has(p.key));
-			if (content.length === 0) return [];
+		// Prune probe folders that need to be excluded and organize stats into strategies
+		organizer: (stats: Array<Stat>) => {
+			const content = stats.filter(({ key }) => !probes.has(key));
+			if (content.length === 0) return {};
 			const keptProbes = new Set<string>();
-			for (const probe of probeSet)
-				if (content.some((p) => isSub(probe, p.key, false))) keptProbes.add(probe);
-			return stats.filter((p) => !probeSet.has(p.key) || keptProbes.has(p.key));
-		},
-		reporter: (prog: Required<Progress>) => {
-			const result = match(prog.current);
-			if (result === 'probe') {
-				probes.push(prog.current);
-				return 'advance';
+			for (const probe of probes)
+				if (content.some(({ key }) => isSub(probe, key, false))) keptProbes.add(probe);
+			const pruned = stats.filter(({ key }) => !probes.has(key) || keptProbes.has(key));
+			const result: Record<string, StatsMap> = {};
+			for (const stat of pruned) {
+				const { key } = stat;
+				const strategy = strategies.get(key);
+				if (!strategy) continue;
+				result[strategy] ??= new Map<string, Stat>();
+				result[strategy].set(key, stat);
 			}
 			return result;
 		},
+		reporter: ({ current }: { current: string }): ListOptions => {
+			const { advance, strategy } = match(current);
+			if (strategy !== NONE_STRATEGY) strategies.set(current, strategy);
+			if (advance) {
+				if (strategy === NONE_STRATEGY) probes.add(current);
+				return 'advance';
+			}
+			if (strategy === NONE_STRATEGY) return 'exclude';
+			return 'include';
+		},
 	};
+}
+
+function organizeRecord(
+	records: Array<[string, RecordStat]>,
+	match: (path: string) => GlobMatchResult,
+) {
+	const result: Record<string, RecordStatsMap> = {};
+	for (const [key, stat] of records) {
+		const { strategy } = match(key);
+		if (strategy === NONE_STRATEGY) continue;
+		result[strategy] ??= new Map<string, RecordStat>();
+		result[strategy].set(strategy, stat);
+	}
+	return result;
 }

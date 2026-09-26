@@ -8,12 +8,11 @@ const pItem = (count: number) => p(count, 'item', 'items');
 const pcOperations = (count: number) => pc(count, 'operation', 'operations');
 
 const en: Translations = {
-	addExclusionRule: 'Add exclusion rule',
 	addHeader: 'Add header',
-	addInclusionRule: 'Add inclusion rule',
 	addRecord: 'Add record',
 	addSecretHeader: 'Add secret header',
 	addSource: 'Add source',
+	addStrategy: 'Add strategy',
 	asymmetricStorage: 'Asymmetric storage',
 	asymmetricStorageDescription: () =>
 		createFragment((frag) => {
@@ -69,7 +68,6 @@ const en: Translations = {
 	bidirectional: 'Bidirectional',
 	cancel: 'Cancel',
 	cancelled: 'Cancelled',
-	caseSensitive: 'Case sensitive',
 	checkConnection: 'Check connection',
 	checkConnectionFailed: 'Check connection failed',
 	checkConnectionSuccess: 'Check connection succeeded',
@@ -105,6 +103,8 @@ const en: Translations = {
 	conflictResolveStrategy: 'Conflict resolve strategy',
 	conflictResolveStrategyDescription:
 		'Select how to resolve the conflict when both remote and local have been modified since last sync. More strategies can be found in modules.',
+	conflictResolveStrategyNotInstalled: (strategy) =>
+		`Conflict resolve strategy "${strategy}" not installed!`,
 	controls: 'Controls',
 	createLocalDir: 'Create local folder',
 	createRemoteDir: 'Create remote folder',
@@ -120,6 +120,7 @@ const en: Translations = {
 	diffMatchPatch: 'Merge',
 	disableModule: 'Disable module',
 	done: 'Done',
+	dontSync: "Don't sync",
 	download: 'Download',
 	downloadModule: 'Download module',
 	edit: 'Edit',
@@ -127,22 +128,6 @@ const en: Translations = {
 	enable: 'Enable',
 	enableDescription: 'Set whether to load this module.',
 	enableModule: 'Enable module',
-	exclusionRules: 'Exclusion rules',
-	exclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'Files / folders matching these Glob patterns will not be synced. Please remember to add file extensions (E.g. ',
-			);
-			frag.createEl('code', { text: '.md' });
-			frag.appendText(') if you want to exclude files. Refer to ');
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: 'settings documentation',
-			});
-			frag.appendText(' for configuration guide.');
-		}),
 	executing: 'Executing',
 	export: 'Export',
 	exportLogsDescription:
@@ -156,8 +141,7 @@ const en: Translations = {
 	failedToFetchSource: (url) => `Failed to fetch source from "${url}"`,
 	failedToLoadModule: (name) => `Failed to load module "${name}"`,
 	features: 'Features',
-	filterPlaceholder: 'E.g. temp.md, .trash/**/*',
-	filterRules: 'Filter rules',
+	globPlaceholder: 'E.g. temp.md, .trash/**/*',
 	headerKeyPlaceholder: 'Header key',
 	headerValuePlaceholder: 'Header value',
 	hide: 'Hide',
@@ -175,20 +159,6 @@ const en: Translations = {
 		}),
 	iconPlaceholder: 'Enter icon code (e.g. puzzle)',
 	idle: 'Idle',
-	inclusionRules: 'Inclusion rules',
-	inclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'Files / folders matching exclusion rules but also matching these glob patterns will still be synced. Refer to ',
-			);
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: 'settings documentation',
-			});
-			frag.appendText(' for configuration guide.');
-		}),
 	installModuleFromFile: 'Install module from file',
 	installed: 'Installed',
 	integrityVerification: 'Integrity verification',
@@ -258,8 +228,8 @@ const en: Translations = {
 	noInstalledModulesFound: 'No installed modules found.',
 	noMatchingModulesFound: 'No matching modules found.',
 	noModulesAvailable: 'No modules available.',
-	noRuleConfigured: 'No rule configured.',
 	noSourceConfigured: 'No source configured.',
+	noStrategyConfigured: 'No strategy configured.',
 	none: 'None',
 	noticeStatusOnMobile: 'Notice sync status on mobile',
 	noticeStatusOnMobileDescription:
@@ -329,8 +299,18 @@ const en: Translations = {
 	stopSync: 'Stop sync',
 	syncProgress: 'Sync progress',
 	syncStrategy: 'Sync strategy',
-	syncStrategyDescription:
-		'Select the synchronization strategy to resolve file changes. More strategies can be found in modules.',
+	syncStrategyDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'Configure different synchronization strategies for different files based on Glob rules. See ',
+			);
+			frag.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
+				text: 'documentation page',
+			});
+			frag.append(' for configuration details.');
+		}),
+	syncStrategyNotInstalled: (strategy) => `Sync strategy "${strategy}" not installed!`,
 	toggleWithoutMigration: 'Toggle without migration',
 	untrustedModule: 'Untrusted module',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
@@ -338,7 +318,7 @@ const en: Translations = {
 			const p1 = frag.createEl('p');
 			p1.appendText('Sync Engine detected an installed module named ');
 			p1.createEl('code', { text: fileName });
-			p1.appendText(', which is never registered in Sync Engine in this vault. ');
+			p1.appendText(', which is never registered by Sync Engine in this vault. ');
 			p1.createEl('strong', {
 				text: 'Please review following information before proceeding:',
 			});
@@ -363,9 +343,11 @@ const en: Translations = {
 			li5.appendText('Modified at: ');
 			li5.createEl('code', { text: mtime });
 			const p2 = frag.createEl('p');
-			p2.createEl('strong', { text: 'Please avoid enabling modules from unknown sources.' });
+			p2.createEl('strong', {
+				text: 'To prevent malicious code execution, Sync Engine now requires your explicit consent. ',
+			});
 			p2.appendText(
-				'Directly deleting it if you don\'t know where does it come from; you can choose "Configure" and enable it if it is under your control. For an explanation of this warning, see ',
+				'You can choose "Configure" and enable it if it is under your control, or delete it if you don\'t know where is it from. For an explanation of this warning, see ',
 			);
 			p2.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },

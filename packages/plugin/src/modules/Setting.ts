@@ -4,7 +4,6 @@ import { PluginSettingTab } from 'obsidian';
 import controlsSettings from '@/settings/controls';
 import developmentSettings from '@/settings/development';
 import featuresSettings from '@/settings/features';
-import filterSettings from '@/settings/filter';
 import headSettings from '@/settings/head';
 import miscellaneousSettings from '@/settings/miscellaneous';
 import type { On } from './EventBus';
@@ -55,9 +54,8 @@ export default class Setting {
 		});
 		registerSetting({ apply: featuresSettings(this.ctx as Context), priority: 1000 });
 		registerSetting({ apply: controlsSettings(this.ctx as Context), priority: 2000 });
-		registerSetting({ apply: filterSettings(this.ctx as Context), priority: 3000 });
-		registerSetting({ apply: miscellaneousSettings(this.ctx as Context), priority: 4000 });
-		registerSetting({ apply: developmentSettings(this.ctx as Context), priority: 5000 });
+		registerSetting({ apply: miscellaneousSettings(this.ctx as Context), priority: 3000 });
+		registerSetting({ apply: developmentSettings(this.ctx as Context), priority: 4000 });
 	};
 
 	private readonly matchLabel = () => ({

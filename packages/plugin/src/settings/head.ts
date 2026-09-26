@@ -7,10 +7,11 @@ import type { Fragment, Snippet, Translate } from '@/modules/I18n';
 import type { ConflictResolverEntry, DeciderEntry, RemoteFsEntry } from '@/modules/Registrar';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { Dispatch } from '@/sdk';
-import type { General, MaybePromise } from '@/types';
+import type { General, GlobStrategy, MaybePromise } from '@/types';
+import { normalizeGlob } from '@/utils/glob-match';
 import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
 import ModuleManagement from './module-management';
-import { s } from './utils';
+import { generateEditableList, reactivelyValidate, s } from './utils';
 
 const CHECK_CONNECTION_INTERVAL = 10_000;
 
@@ -22,14 +23,19 @@ export type HeadSettingTranslations = {
 	backend: string;
 	backendDescription: string;
 	syncStrategy: string;
-	syncStrategyDescription: string;
+	syncStrategyDescription: Fragment;
+	globPlaceholder: string;
 	checkConnectionFailed: string;
 	checkConnectionSuccess: string;
 	checkConnection: string;
 	conflictResolveStrategy: string;
 	conflictResolveStrategyDescription: string;
 	xEnabled: Snippet<number>;
+	xConfigured: Snippet<number>;
 	settingTips: Fragment<{ labels: Array<LabelDefinition>; addLabel: typeof addLabel }>;
+	addStrategy: string;
+	noStrategyConfigured: string;
+	dontSync: string;
 };
 
 type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs: string }>;
@@ -48,6 +54,7 @@ export default function headSettings(
 		matchLabel: () => LabelDefinition;
 		speedLabel: () => LabelDefinition;
 		dispatch: Dispatch<Events>;
+		rerenderSettingTab: () => void;
 	},
 	getSettingTab: () => PluginSettingTab | undefined,
 ): CallableOrObjectTree {
@@ -58,6 +65,7 @@ export default function headSettings(
 		settings,
 		remoteFsRegistry,
 		deciderRegistry,
+		rerenderSettingTab,
 		getCheckConnection,
 		memoryDB,
 		conflictResolverRegistry,
@@ -135,17 +143,80 @@ export default function headSettings(
 			desc: translate('moduleAutoUpdateDescription'),
 			name: translate('moduleAutoUpdate'),
 		})),
-		50: s(() => ({
-			control: {
-				key: 'decider',
-				options: Object.fromEntries(
-					[...deciderRegistry].map(([key, { prettyName }]) => [key, prettyName()]),
+		50: s(
+			(self) => ({
+				desc: translate('syncStrategyDescription'),
+				displayValue: () => translate('xConfigured', settings.syncStrategy.length),
+				items: Object.values(self).map((node) => node(node)),
+				labels: [speedLabel()],
+				name: translate('syncStrategy'),
+				type: 'page',
+			}),
+			{
+				1000: s(() =>
+					generateEditableList<GlobStrategy>({
+						defaultValue: { expr: '', strategy: 'bidirectional' },
+						identifier: 'syncStrategy',
+						items: settings.syncStrategy,
+						memoryDB,
+						render: (setting, item, save) => {
+							setting
+								.addText((text) => {
+									text.setPlaceholder(translate('globPlaceholder')).setValue(
+										item.value.expr,
+									);
+									reactivelyValidate<string>({
+										immediate: true,
+										onSave: (value) => {
+											item.value.expr = value;
+											save();
+										},
+										parse: (value) => {
+											item.value.expr = value;
+											const normalized = normalizeGlob(value);
+											if (!normalized) {
+												item.valid = false;
+												save();
+												return;
+											}
+											item.valid = true;
+											return normalized;
+										},
+										text,
+									});
+									if (item.new) {
+										item.new = false;
+										text.inputEl.focus();
+									}
+								})
+								.addDropdown((dropdown) =>
+									dropdown
+										.addOptions({
+											...Object.fromEntries(
+												[...deciderRegistry].map(
+													([key, { prettyName }]) => [key, prettyName()],
+												),
+											),
+											none: translate('dontSync'),
+										})
+										.setValue(item.value.strategy)
+										.onChange((value) => {
+											item.value.strategy = value;
+											save();
+										}),
+								);
+						},
+						reorder: true,
+						rerenderSettingTab,
+						saveSettings,
+						translations: {
+							add: translate('addStrategy'),
+							empty: translate('noStrategyConfigured'),
+						},
+					}),
 				),
-				type: 'dropdown',
 			},
-			desc: translate('syncStrategyDescription'),
-			name: translate('syncStrategy'),
-		})),
+		),
 		60: s(() => ({
 			control: {
 				key: 'conflictResolver',

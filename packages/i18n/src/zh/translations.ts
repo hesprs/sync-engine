@@ -1,12 +1,11 @@
 import type { Translations } from '@hesprs/sync-engine-sdk';
 
 const zh: Translations = {
-	addExclusionRule: '添加排除规则',
 	addHeader: '添加请求头',
-	addInclusionRule: '添加包含规则',
 	addRecord: '添加记录',
 	addSecretHeader: '添加机密请求头',
 	addSource: '添加源',
+	addStrategy: '添加策略',
 	asymmetricStorage: '非对称存储',
 	asymmetricStorageDescription: () =>
 		createFragment((frag) => {
@@ -51,7 +50,6 @@ const zh: Translations = {
 	bidirectional: '双向同步',
 	cancel: '取消',
 	cancelled: '已取消',
-	caseSensitive: '区分大小写',
 	checkConnection: '测试连接',
 	checkConnectionFailed: '测试连接失败',
 	checkConnectionSuccess: '测试连接成功',
@@ -86,6 +84,7 @@ const zh: Translations = {
 	conflictResolveStrategy: '冲突解决策略',
 	conflictResolveStrategyDescription:
 		'选择当本地和远程自上次同步以来都被修改过时，如何解决冲突。更多策略可以在模块中找到。',
+	conflictResolveStrategyNotInstalled: (strategy) => `冲突解决策略 “${strategy}” 未安装！`,
 	controls: '控制',
 	createLocalDir: '创建本地文件夹',
 	createRemoteDir: '创建远程文件夹',
@@ -101,6 +100,7 @@ const zh: Translations = {
 	diffMatchPatch: '合并',
 	disableModule: '禁用模块',
 	done: '完成',
+	dontSync: '不同步',
 	download: '下载',
 	downloadModule: '下载模块',
 	edit: '编辑',
@@ -108,22 +108,6 @@ const zh: Translations = {
 	enable: '启用',
 	enableDescription: '设置是否加载此模块。',
 	enableModule: '启用模块',
-	exclusionRules: '排除规则',
-	exclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'匹配这些 Glob 模式的文件 / 文件夹将不会被同步。如果您想排除文件，请记得添加文件扩展名（例如 ',
-			);
-			frag.createEl('code', { text: '.md' });
-			frag.appendText('）。请参阅 ');
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: '设置文档',
-			});
-			frag.appendText('了解配置指南。');
-		}),
 	executing: '正在执行',
 	export: '导出',
 	exportLogsDescription: '将插件日志导出到仓库中的文件。请在输入框中设置日志导出目录。',
@@ -136,8 +120,7 @@ const zh: Translations = {
 	failedToFetchSource: (url) => `从 “${url}” 获取源失败`,
 	failedToLoadModule: (name) => `加载模块 “${name}” 失败`,
 	features: '功能',
-	filterPlaceholder: '例如 temp.md, .trash/**/*',
-	filterRules: '过滤规则',
+	globPlaceholder: '例如 temp.md, .trash/**/*',
 	headerKeyPlaceholder: '请求头键',
 	headerValuePlaceholder: '请求头值',
 	hide: '隐藏',
@@ -153,20 +136,6 @@ const zh: Translations = {
 		}),
 	iconPlaceholder: '输入图标代码（例如 puzzle）',
 	idle: '空闲',
-	inclusionRules: '包含规则',
-	inclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'匹配排除规则但同时也匹配这些 Glob 模式的文件 / 文件夹仍会被同步。请参阅 ',
-			);
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: '设置文档',
-			});
-			frag.appendText('了解配置指南。');
-		}),
 	installModuleFromFile: '从文件安装模块',
 	installed: '已安装',
 	integrityVerification: '完整性验证',
@@ -235,8 +204,8 @@ const zh: Translations = {
 	noInstalledModulesFound: '未找到已安装的模块。',
 	noMatchingModulesFound: '未找到匹配的模块。',
 	noModulesAvailable: '没有可用模块。',
-	noRuleConfigured: '未配置规则。',
 	noSourceConfigured: '未配置源。',
+	noStrategyConfigured: '未配置策略。',
 	none: '无',
 	noticeStatusOnMobile: '移动端同步状态提示',
 	noticeStatusOnMobileDescription:
@@ -299,7 +268,16 @@ const zh: Translations = {
 	stopSync: '停止同步',
 	syncProgress: '同步进度',
 	syncStrategy: '同步策略',
-	syncStrategyDescription: '选择用于解决文件更改的同步策略。更多策略可以在模块中找到。',
+	syncStrategyDescription: () =>
+		createFragment((frag) => {
+			frag.appendText('根据 Glob 规则为不同文件配置不同的同步策略。详见');
+			frag.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
+				text: '文档页面',
+			});
+			frag.appendText('。');
+		}),
+	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安装！`,
 	toggleWithoutMigration: '直接切换（不进行迁移）',
 	untrustedModule: '非信任模块',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
@@ -332,9 +310,11 @@ const zh: Translations = {
 			li5.appendText('修改时间：');
 			li5.createEl('code', { text: mtime });
 			const p2 = frag.createEl('p');
-			p2.createEl('strong', { text: '请避免启用来自未知来源的模块。' });
+			p2.createEl('strong', {
+				text: '为防止恶意代码执行，Sync Engine 现在需要获得您的明确同意。',
+			});
 			p2.appendText(
-				'如果您不知道它来自哪里，请直接将其删除；如果它在您的控制之下，您可以选择“配置”并启用它。有关此警告的说明，请参阅',
+				'如果您确认该模块在您的控制之下，可以选择“配置”并启用它；如果您不知道它来自哪里，可以选择将其删除。关于此警告的详细说明，请参阅 ',
 			);
 			p2.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },

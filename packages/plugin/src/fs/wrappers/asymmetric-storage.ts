@@ -24,7 +24,7 @@ function joinFileKey(parentKey: string, base: string) {
 }
 
 function parseFlattenedKey(key: string): ParsedFlatKey | undefined {
-	if (key === ROOT_KEY || key.includes('/')) return undefined;
+	if (key === ROOT_KEY || key.includes('/')) return;
 	if (key.length > 6 && key[5] === '~') {
 		const base = key.slice(6);
 		if (!base) return;
@@ -40,7 +40,6 @@ function parseFlattenedKey(key: string): ParsedFlatKey | undefined {
 			parentAnchor: key.slice(0, 5),
 		};
 	}
-	return undefined;
 }
 
 class AsymmetricStorageFs implements WrappedFs {

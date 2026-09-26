@@ -4,16 +4,26 @@ import type { DeciderInput } from './interface';
 
 type Source = 'local' | 'remote';
 
-export function mirrorLocalDecider(input: DeciderInput): Array<BaseTask> {
-	return mirrorDecider(input, 'local');
+export function mirrorLocalDecider(
+	input: DeciderInput,
+	logger: (log: string) => void,
+): Array<BaseTask> {
+	return mirrorDecider(input, logger, 'local');
 }
 
-export function mirrorRemoteDecider(input: DeciderInput): Array<BaseTask> {
-	return mirrorDecider(input, 'remote');
+export function mirrorRemoteDecider(
+	input: DeciderInput,
+	logger: (log: string) => void,
+): Array<BaseTask> {
+	return mirrorDecider(input, logger, 'remote');
 }
 
-function mirrorDecider(input: DeciderInput, source: Source): Array<BaseTask> {
-	const { localStats, logger, records, remoteStats, taskFactory } = input;
+function mirrorDecider(
+	input: DeciderInput,
+	logger: (log: string) => void,
+	source: Source,
+): Array<BaseTask> {
+	const { localStats, records, remoteStats, taskFactory } = input;
 	const sourceStats = source === 'local' ? localStats : remoteStats;
 	const targetStats = source === 'local' ? remoteStats : localStats;
 	const tasks: Array<BaseTask> = [];

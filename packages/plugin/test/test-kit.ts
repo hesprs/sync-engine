@@ -104,7 +104,7 @@ function runDecider(
 		return task;
 	}) as TaskFactory;
 
-	decider({ localStats, logger: () => {}, records, remoteStats, taskFactory });
+	decider({ localStats, records, remoteStats, taskFactory });
 	return tasks;
 }
 

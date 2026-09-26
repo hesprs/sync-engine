@@ -6,8 +6,8 @@ import { mirrorLocalDecider, mirrorRemoteDecider } from '@/sync';
 const { file, fileRecord, findTask, folder, folderRecord, runDecider, taskNames } = testKit;
 
 const strategies: Array<[string, Decider, 'local' | 'remote']> = [
-	['mirror local', mirrorLocalDecider, 'local'],
-	['mirror remote', mirrorRemoteDecider, 'remote'],
+	['mirror local', (input) => mirrorLocalDecider(input, () => {}), 'local'],
+	['mirror remote', (input) => mirrorRemoteDecider(input, () => {}), 'remote'],
 ];
 
 for (const [name, decider, source] of strategies) {

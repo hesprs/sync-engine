@@ -21,9 +21,8 @@ export type RootFs = {
 	list(key: string, reporter: ListReporter): MaybePromise<Array<Stat>>; // List recursive children under one folder
 };
 
-export type ListReporter = (
-	progress: Required<Progress>,
-) => MaybePromise<'include' | 'exclude' | 'advance'>;
+export type ListOptions = 'include' | 'exclude' | 'advance'; // Include: include this item, don't recurse; exclude: ignore and don't recurse; advance: include and recurse
+export type ListReporter = (progress: Required<Progress>) => MaybePromise<ListOptions>;
 export type WrappedFs = RootFs & { original: Fs };
 export type Fs = WrappedFs | RootFs;
 

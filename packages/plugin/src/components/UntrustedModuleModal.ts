@@ -59,23 +59,25 @@ export default class UnknownModuleModal extends Modal {
 
 		new Setting(this.contentEl)
 			.addButton((button) =>
-				button.setButtonText(translate('configure')).onClick(async () => {
-					new ModuleEditorModal(this.ctx, {
-						file: await app.vault.adapter.read(path),
-						initial: { id },
-						onCancel: () => this.open(),
-						onSave,
-					}).open();
-					this.close();
-				}),
-			)
-			.addButton((button) =>
 				button
 					.setButtonText(translate('delete'))
 					.setDestructive()
-					.setCta()
 					.onClick(async () => {
 						await app.vault.adapter.remove(path);
+						this.close();
+					}),
+			)
+			.addButton((button) =>
+				button
+					.setButtonText(translate('configure'))
+					.setCta()
+					.onClick(async () => {
+						new ModuleEditorModal(this.ctx, {
+							file: await app.vault.adapter.read(path),
+							initial: { id },
+							onCancel: () => this.open(),
+							onSave,
+						}).open();
 						this.close();
 					}),
 			);

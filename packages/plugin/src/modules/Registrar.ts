@@ -1,13 +1,14 @@
-import type { Translations } from '@';
+import type { Events, Translations } from '@';
 import type { App, RequestUrlParam } from 'obsidian';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import hash from '@repo/shared/crypto';
 import { toError } from '@repo/shared/error';
 import { requestUrl } from 'obsidian';
 import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
-import type { ConflictResolver, Decider } from '@/sync';
-import type { General, MaybePromise, Binary } from '@/types';
+import type { BaseTask, ConflictResolver, Decider, TaskFactory } from '@/sync';
+import type { General, MaybePromise, Binary, StatsMap, RecordStatsMap } from '@/types';
 import { createVaultRequest, VaultFs } from '@/fs';
+import type { Dispatch } from './EventBus';
 import type { Snippet, Translate } from './I18n';
 import type { RecordStore } from './Storage';
 import type { SyncOptions } from './Sync';
@@ -65,6 +66,13 @@ const request: Request = async (url: string, params?: RequestParam) => {
 	};
 };
 
+export type DecideTasksInput = {
+	local: Record<string, StatsMap>;
+	remote: Record<string, StatsMap>;
+	record: Record<string, RecordStatsMap>;
+	taskFactory: TaskFactory;
+};
+
 export default class Registrar {
 	private readonly cleanupCallbacks: Array<() => void> = [];
 	private readonly localFsWrapperRegistry = new Set<FsWrapperEntry>();
@@ -78,14 +86,20 @@ export default class Registrar {
 	private readonly triggerRegistry = new Map<string, TriggerEntry>();
 	private readonly conflictResolverRegistry = new Map<string, ConflictResolverEntry>();
 
-	declare readonly settings: { remoteFs: string; decider: string; conflictResolver: string };
-	declare readonly i18n: { pleaseSetBackend: string; backendNotInstalled: Snippet<string> };
+	declare readonly settings: { remoteFs: string; conflictResolver: string };
+	declare readonly i18n: {
+		pleaseSetBackend: string;
+		backendNotInstalled: Snippet<string>;
+		syncStrategyNotInstalled: Snippet<string>;
+		conflictResolveStrategyNotInstalled: Snippet<string>;
+	};
 
 	constructor(
 		private readonly ctx: {
 			app: App;
 			getRecordStore: (namespace: string) => RecordStore;
 			translate: Translate<Translations>;
+			dispatch: Dispatch<Events>;
 		},
 	) {}
 
@@ -120,16 +134,34 @@ export default class Registrar {
 	private readonly getCheckConnection = (remoteFs = this.settings.remoteFs) => {
 		const entry = this.remoteFsRegistry.get(remoteFs);
 		if (!entry) {
-			if (!remoteFs) throw new Error('Please install a backend!');
-			throw new Error(`Backend "${remoteFs}" is not installed!`);
+			const { translate } = this.ctx;
+			if (!remoteFs) throw new Error(translate('pleaseSetBackend'));
+			throw new Error(translate('backendNotInstalled', remoteFs));
 		}
 		return () => entry.checkConnection(this.getRequest());
 	};
 
-	private readonly getDecider = () => {
-		const decider = this.deciderRegistry.get(this.settings.decider);
-		if (!decider) throw new Error(`Decider "${this.settings.decider}" not installed!`);
-		return decider.decider;
+	private readonly decideTasks = ({ local, record, remote, taskFactory }: DecideTasksInput) => {
+		const keys = new Set([
+			...Object.keys(local),
+			...Object.keys(record),
+			...Object.keys(remote),
+		]);
+		const tasks: Array<BaseTask> = [];
+		for (const key of keys) {
+			const { translate, dispatch } = this.ctx;
+			const entry = this.deciderRegistry.get(key);
+			if (!entry) throw new Error(translate('syncStrategyNotInstalled', key));
+			const localStats = local[key] ?? new Map();
+			const remoteStats = remote[key] ?? new Map();
+			const records = record[key] ?? new Map();
+			dispatch(
+				'logSync',
+				`Strategy \`${key}\` in scope: local ${localStats.size} item(s), remote ${remoteStats.size} item(s), record ${records.size} item(s).`,
+			);
+			tasks.push(...entry.decider({ localStats, records, remoteStats, taskFactory }));
+		}
+		return tasks;
 	};
 
 	private readonly optimizeLocal: BatchOptimizer = (input) =>
@@ -153,7 +185,8 @@ export default class Registrar {
 	private readonly getConflictResolver = () => {
 		const id = this.settings.conflictResolver;
 		const resolver = this.conflictResolverRegistry.get(id);
-		if (!resolver) throw new Error(`Conflict resolution strategy "${id}" not installed!`);
+		if (!resolver)
+			throw new Error(this.ctx.translate('conflictResolveStrategyNotInstalled', id));
 		return resolver.resolver;
 	};
 
@@ -183,10 +216,10 @@ export default class Registrar {
 		conflictResolverRegistry: this.conflictResolverRegistry,
 		createLocalFs: this.createLocalFs,
 		createRemoteFs: this.createRemoteFs,
+		decideTasks: this.decideTasks,
 		deciderRegistry: this.deciderRegistry,
 		getCheckConnection: this.getCheckConnection,
 		getConflictResolver: this.getConflictResolver,
-		getDecider: this.getDecider,
 		getNamespace: this.getNamespace,
 		getRequest: this.getRequest,
 		getVaultRequest: this.getVaultRequest,

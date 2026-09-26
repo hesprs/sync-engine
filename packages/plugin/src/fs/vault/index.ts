@@ -18,7 +18,7 @@ async function getFileUid(
 ): Promise<string | undefined> {
 	const stat = await fs.stat(key);
 	if (stat.isDir) throw new Error(`File "${key}" not found!`);
-	if (expectedSize !== undefined && stat.size !== expectedSize) return undefined;
+	if (expectedSize !== undefined && stat.size !== expectedSize) return;
 	return stat.uid;
 }
 

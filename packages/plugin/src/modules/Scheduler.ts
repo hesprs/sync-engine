@@ -1,8 +1,8 @@
 import type { Events } from '@';
 import type { App, EventRef, TAbstractFile } from 'obsidian';
 import type { Ref } from 'synthkernel';
-import type { GlobMatchRule, TogglableValue } from '@/types';
-import { prepareGlobMatch } from '@/utils/glob-match';
+import type { GlobStrategy, TogglableValue } from '@/types';
+import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
 import type { SyncStage } from './Observability';
@@ -38,8 +38,7 @@ export default class Scheduler {
 		startupSync: TogglableValue;
 		scheduledSync: TogglableValue;
 		realtimeSync: TogglableValue;
-		exclusionRules: Array<GlobMatchRule>;
-		inclusionRules: Array<GlobMatchRule>;
+		syncStrategy: Array<GlobStrategy>;
 		avoidAutoSyncWhenOffline: boolean;
 	};
 
@@ -112,13 +111,17 @@ export default class Scheduler {
 		}
 	};
 
-	private readonly onChange = (file: TAbstractFile, old?: string) => {
+	private readonly onChange = ({ path }: TAbstractFile, old?: string) => {
 		if (this.ctx.syncStage() === 'executing') return;
-		const { realtimeSync, exclusionRules, inclusionRules } = this.settings;
+		const { realtimeSync, syncStrategy } = this.settings;
 		if (!realtimeSync.enabled) return;
 
-		const match = prepareGlobMatch(inclusionRules, exclusionRules);
-		if (match(file.path) === 'exclude' && !(old && match(old) !== 'exclude')) return;
+		const match = prepareGlobMatch(syncStrategy);
+		if (
+			match(path).strategy === NONE_STRATEGY &&
+			!(old && match(old).strategy !== NONE_STRATEGY)
+		)
+			return;
 
 		if (this.realtimeSyncTimer) window.clearTimeout(this.realtimeSyncTimer);
 		this.realtimeSyncTimer = window.setTimeout(

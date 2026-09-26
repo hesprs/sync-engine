@@ -59,7 +59,7 @@ function getCandidate(
 	records?: RecordStatsMap,
 ): Candidate | undefined {
 	const side = getSide(task);
-	if (!side) return undefined;
+	if (!side) return;
 	const expected = isFolder
 		? isCreate
 			? side === 'local'
@@ -75,11 +75,11 @@ function getCandidate(
 			: side === 'local'
 				? 'removeLocal'
 				: 'removeRemote';
-	if (task.name !== expected) return undefined;
+	if (task.name !== expected) return;
 	const stat = getTaskStat(task, side, isCreate);
-	if (!stat || stat.isDir !== isFolder) return undefined;
+	if (!stat || stat.isDir !== isFolder) return;
 	if (isFolder) return { key: task.key, side, task };
-	if (stat.isDir) return undefined;
+	if (stat.isDir) return;
 	const record = records?.get(task.key);
 	const uid = isCreate
 		? stat.uid
@@ -134,7 +134,6 @@ function getSide(task: BaseTask): MoveSide | undefined {
 		return 'local';
 	if (task.name === 'upload' || task.name === 'createRemoteDir' || task.name.endsWith('Remote'))
 		return 'remote';
-	return undefined;
 }
 
 function getTaskStat(task: BaseTask, side: MoveSide, isCreate: boolean): Stat | undefined {
@@ -173,8 +172,7 @@ function replacePair(
 
 function getMoveInfo(task: BaseTask): MoveInfo | undefined {
 	const oldKey = (task.options as { oldKey?: unknown }).oldKey;
-	if (typeof oldKey !== 'string') return undefined;
+	if (typeof oldKey !== 'string') return;
 	if (task.name === 'moveLocal') return { key: task.key, oldKey, side: 'local' };
 	if (task.name === 'moveRemote') return { key: task.key, oldKey, side: 'remote' };
-	return undefined;
 }

@@ -18,12 +18,11 @@ const pc = (count: number, one: string, few: string, many: string) =>
 	`${count} ${p(count, one, few, many)}`;
 
 const ru: Translations = {
-	addExclusionRule: 'Добавить правило исключения',
 	addHeader: 'Добавить заголовок',
-	addInclusionRule: 'Добавить правило включения',
 	addRecord: 'Добавить запись',
 	addSecretHeader: 'Добавить секретный заголовок',
 	addSource: 'Добавить источник',
+	addStrategy: 'Добавить стратегию',
 	asymmetricStorage: 'Асимметричное хранилище',
 	asymmetricStorageDescription: () =>
 		createFragment((frag) => {
@@ -81,7 +80,6 @@ const ru: Translations = {
 	bidirectional: 'Двунаправленная',
 	cancel: 'Отмена',
 	cancelled: 'Отменено',
-	caseSensitive: 'С учётом регистра',
 	checkConnection: 'Проверить соединение',
 	checkConnectionFailed: 'Ошибка проверки соединения',
 	checkConnectionSuccess: 'Соединение успешно проверено',
@@ -120,6 +118,8 @@ const ru: Translations = {
 	conflictResolveStrategy: 'Стратегия разрешения конфликтов',
 	conflictResolveStrategyDescription:
 		'Выберите способ разрешения конфликтов, когда и удалённый, и локальный файл были изменены с момента последней синхронизации. Дополнительные стратегии доступны в модулях.',
+	conflictResolveStrategyNotInstalled: (strategy) =>
+		`Стратегия разрешения конфликтов «${strategy}» не установлена!`,
 	controls: 'Управление',
 	createLocalDir: 'Создать локальную папку',
 	createRemoteDir: 'Создать удалённую папку',
@@ -135,6 +135,7 @@ const ru: Translations = {
 	diffMatchPatch: 'Объединить',
 	disableModule: 'Отключить модуль',
 	done: 'Готово',
+	dontSync: 'Не синхронизировать',
 	download: 'Скачать',
 	downloadModule: 'Скачать модуль',
 	edit: 'Редактировать',
@@ -142,22 +143,6 @@ const ru: Translations = {
 	enable: 'Включить',
 	enableDescription: 'Определяет, следует ли загружать этот модуль.',
 	enableModule: 'Включить модуль',
-	exclusionRules: 'Правила исключения',
-	exclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'Файлы и папки, соответствующие этим glob-шаблонам, не будут синхронизироваться. Не забудьте указать расширения файлов (например, ',
-			);
-			frag.createEl('code', { text: '.md' });
-			frag.appendText('), если хотите исключить файлы. См. ');
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: 'документацию по настройкам',
-			});
-			frag.appendText(' для руководства по настройке.');
-		}),
 	executing: 'Выполняется',
 	export: 'Экспорт',
 	exportLogsDescription:
@@ -172,8 +157,7 @@ const ru: Translations = {
 	failedToFetchSource: (url) => `Не удалось получить источник из «${url}»`,
 	failedToLoadModule: (name) => `Не удалось загрузить модуль «${name}»`,
 	features: 'Возможности',
-	filterPlaceholder: 'Например, temp.md, .trash/**/*',
-	filterRules: 'Правила фильтрации',
+	globPlaceholder: 'Например, temp.md, .trash/**/*',
 	headerKeyPlaceholder: 'Ключ заголовка',
 	headerValuePlaceholder: 'Значение заголовка',
 	hide: 'Скрыть',
@@ -191,20 +175,6 @@ const ru: Translations = {
 		}),
 	iconPlaceholder: 'Введите код иконки (например, puzzle)',
 	idle: 'В ожидании',
-	inclusionRules: 'Правила включения',
-	inclusionRulesDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'Файлы и папки, подпадающие под правила исключения, но соответствующие этим glob-шаблонам, всё равно будут синхронизированы. См. ',
-			);
-			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/usage/settings#inclusion-and-exclusion-rules',
-				},
-				text: 'документацию по настройкам',
-			});
-			frag.appendText(' для руководства по настройке.');
-		}),
 	installModuleFromFile: 'Установить модуль из файла',
 	installed: 'Установлено',
 	integrityVerification: 'Проверка целостности',
@@ -274,8 +244,8 @@ const ru: Translations = {
 	noInstalledModulesFound: 'Установленные модули не найдены.',
 	noMatchingModulesFound: 'Подходящие модули не найдены.',
 	noModulesAvailable: 'Нет доступных модулей.',
-	noRuleConfigured: 'Правило не настроено.',
 	noSourceConfigured: 'Источник не настроен.',
+	noStrategyConfigured: 'Стратегия не настроена.',
 	none: 'Нет',
 	noticeStatusOnMobile: 'Уведомления о статусе на мобильных устройствах',
 	noticeStatusOnMobileDescription:
@@ -344,8 +314,18 @@ const ru: Translations = {
 	stopSync: 'Остановить синхронизацию',
 	syncProgress: 'Прогресс синхронизации',
 	syncStrategy: 'Стратегия синхронизации',
-	syncStrategyDescription:
-		'Выберите стратегию синхронизации для обработки изменений в файлах. Дополнительные стратегии доступны в модулях.',
+	syncStrategyDescription: () =>
+		createFragment((frag) => {
+			frag.appendText(
+				'Настройте разные стратегии синхронизации для разных файлов на основе правил Glob. См. ',
+			);
+			frag.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
+				text: 'страницу документации',
+			});
+			frag.appendText('.');
+		}),
+	syncStrategyNotInstalled: (strategy) => `Стратегия синхронизации «${strategy}» не установлена!`,
 	toggleWithoutMigration: 'Переключить без миграции',
 	untrustedModule: 'Модуль из недоверенного источника',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
@@ -379,10 +359,10 @@ const ru: Translations = {
 			li5.createEl('code', { text: mtime });
 			const p2 = frag.createEl('p');
 			p2.createEl('strong', {
-				text: 'Пожалуйста, не включайте модули из неизвестных источников.',
+				text: 'Для предотвращения выполнения вредоносного кода Sync Engine теперь требуется ваше явное согласие. ',
 			});
 			p2.appendText(
-				'Если вы не знаете, откуда появился этот модуль, лучше всего сразу удалить его. Если модуль под вашим контролем, вы можете выбрать «Настроить» и включить его. Пояснение к этому предупреждению см. в ',
+				'Вы можете выбрать «Настроить» и включить его, если вы контролируете этот модуль, или удалить, если не знаете, откуда он. Пояснение к этому предупреждению см. в ',
 			);
 			p2.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },

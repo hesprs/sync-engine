@@ -21,9 +21,9 @@ export type RecordStat = { isDir: false; local: string; remote: string } | { isD
 export type StatsMap = Map<string, Stat>;
 export type RecordStatsMap = Map<string, RecordStat>;
 
-export type GlobMatchRule = {
+export type GlobStrategy = {
 	expr: string;
-	caseSensitive: boolean;
+	strategy: string;
 };
 
 export type Progress<T = string> = {

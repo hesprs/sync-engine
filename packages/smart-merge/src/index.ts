@@ -78,7 +78,7 @@ export default class SmartMerge {
 			}),
 			registerSetting({
 				apply: smartMergeSetting({ saveSettings, translate }, this.moduleSettings),
-				priority: 4048,
+				priority: 3048,
 			}),
 		);
 	};
