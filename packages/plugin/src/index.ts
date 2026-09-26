@@ -15,6 +15,7 @@ import Scheduler from '@/modules/Scheduler';
 import Setting from '@/modules/Setting';
 import Storage from '@/modules/Storage';
 import Sync from '@/modules/Sync';
+import { NONE_STRATEGY } from './utils/glob-match';
 
 const internalModules = [
 	EventBus,
@@ -61,29 +62,7 @@ export default class SyncEngine extends Plugin {
 			confirmTasksInSync: true,
 			conflictResolver: 'renameAndKeepBoth',
 			customHeaders: [],
-			decider: 'bidirectional',
-			exclusionRules: [
-				'.git',
-				'.github',
-				'.gitlab',
-				'.svn',
-				'node_modules',
-				'.DS_Store',
-				'__MACOSX',
-				'desktop.ini',
-				'Thumbs.db',
-				'~$*.doc',
-				'~$*.docx',
-				'~$*.ppt',
-				'~$*.pptx',
-				'~$*.xls',
-				'~$*.xlsx',
-				`${this.app.vault.configDir}/plugins/sync-engine/modules`,
-				'.trash',
-				this.app.vault.configDir,
-			].map((expr) => ({ caseSensitive: false, expr })),
 			exportLogsDirectory: 'Sync Engine Logs/',
-			inclusionRules: [],
 			maxFileSize: { enabled: false, value: 31_457_280 },
 			maxMemoryConsumption: { enabled: true, value: 100 * 1024 ** 2 },
 			maxRequestConcurrency: { enabled: true, value: 50 },
@@ -97,9 +76,32 @@ export default class SyncEngine extends Plugin {
 			remoteFs: '',
 			scheduledSync: { enabled: false, value: 15 * 60 * 1000 },
 			startupSync: { enabled: false, value: 5000 },
+			syncStrategy: [
+				{ expr: '*', strategy: 'bidirectional' },
+				...[
+					'node_modules',
+					'.DS_Store',
+					'__MACOSX',
+					'desktop.ini',
+					'Thumbs.db',
+					'~$*.doc',
+					'~$*.docx',
+					'~$*.ppt',
+					'~$*.pptx',
+					'~$*.xls',
+					'~$*.xlsx',
+					'.git',
+					'.github',
+					'.gitlab',
+					'.trash',
+					this.app.vault.configDir,
+					`${this.app.vault.configDir}/plugins/sync-engine/modules`,
+				].map((expr) => ({ expr, strategy: NONE_STRATEGY })),
+			],
 			...((await this.loadData()) as Record<string, unknown>),
 		};
-		void this.saveSettings();
+
+		migrateSettings(settings, this.saveSettings);
 
 		// https://github.com/microsoft/TypeScript/issues/62995
 		const preMerge = {
@@ -135,4 +137,25 @@ export default class SyncEngine extends Plugin {
 	}
 
 	readonly saveSettings = () => this.saveData(this.settings);
+}
+
+// TODO: remove after November 1, 2026
+type LegacySetting = {
+	inclusionRules?: Array<{ expr: string }>;
+	exclusionRules?: Array<{ expr: string }>;
+	decider?: string;
+};
+function migrateSettings(setting: Settings, save: () => Promise<void>) {
+	const legacy = setting as unknown as LegacySetting;
+	const { inclusionRules, exclusionRules, decider } = legacy;
+	if (!inclusionRules || !exclusionRules || !decider) return;
+	setting.syncStrategy = [
+		{ expr: '*', strategy: decider },
+		...exclusionRules.map(({ expr }) => ({ expr, strategy: NONE_STRATEGY })),
+		...inclusionRules.map(({ expr }) => ({ expr, strategy: decider })),
+	];
+	delete legacy.exclusionRules;
+	delete legacy.inclusionRules;
+	delete legacy.decider;
+	void save();
 }

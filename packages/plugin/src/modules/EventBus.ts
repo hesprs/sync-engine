@@ -1,4 +1,5 @@
 import type { Events } from '@';
+import { describeError } from '@repo/shared/error';
 import { apiVersion, Platform } from 'obsidian';
 import { ref } from 'synthkernel';
 import type { General } from '@/types';
@@ -40,8 +41,8 @@ export default class EventBus {
 	declare readonly events: {
 		logSync: string;
 		logGeneral: string;
-		errorSync: string;
-		errorGeneral: string;
+		errorSync: Error;
+		errorGeneral: Error;
 	};
 	private readonly cleanupCallbacks: Array<() => void> = [];
 	private readonly isIdle = ref(true);
@@ -49,8 +50,17 @@ export default class EventBus {
 	private readonly generalLogs: Array<string> = [];
 
 	constructor() {
-		const { cleanupCallbacks, on, syncLogs, putSyncLog, putGeneralLog, getThisSync, isIdle } =
-			this;
+		const {
+			cleanupCallbacks,
+			on,
+			syncLogs,
+			putSyncLog,
+			putGeneralLog,
+			getThisSync,
+			isIdle,
+			putGeneralError,
+			putSyncError,
+		} = this;
 		cleanupCallbacks.push(
 			on('syncStarted', ({ trigger }) => {
 				isIdle(false);
@@ -58,10 +68,10 @@ export default class EventBus {
 				if (syncLogs.length > MAX_SYNC_LOGS) syncLogs.shift();
 				putSyncLog(`Sync triggered by \`${trigger}\` started.`);
 			}),
-			on('logSync', (log) => putSyncLog(log)),
-			on('errorSync', (log) => putSyncLog(log, 'error')),
-			on('logGeneral', (log) => putGeneralLog(log)),
-			on('errorGeneral', (log) => putGeneralLog(log, 'error')),
+			on('logSync', putSyncLog),
+			on('errorSync', putSyncError),
+			on('logGeneral', putGeneralLog),
+			on('errorGeneral', putGeneralError),
 			on('executionStarted', (tasks) => {
 				getThisSync().totalTasks = tasks.length;
 				putSyncLog(`Execution of ${tasks.length} sync task(s) started.`);
@@ -76,10 +86,7 @@ export default class EventBus {
 				const thisSync = getThisSync();
 				if (thisSync.failedTasks) thisSync.failedTasks += 1;
 				else thisSync.failedTasks = 1;
-				putSyncLog(
-					`Task \`${name}\` of \`${key}\` failed with error: \`${error}\`.`,
-					'error',
-				);
+				putSyncError(describeError(error, `Task \`${name}\` of \`${key}\` failed`));
 			}),
 			on('tasksConfirmed', (tasks) => putSyncLog(`Confirmed ${tasks.length} task(s).`)),
 			on('syncCanceled', () => putSyncLog('Sync is forced to stop.')),
@@ -94,7 +101,7 @@ export default class EventBus {
 				thisSync.outcome = result;
 				thisSync.ended = Date.now();
 				if (result === 'failed')
-					putSyncLog(`Sync ended with error: \`${reason.error}\`.`, 'error');
+					putSyncLog(`Sync ended with error: \`${reason.error.message}\`.`);
 				else putSyncLog(`Sync ended with result: \`${result}\`.`);
 				isIdle(true);
 			}),
@@ -104,12 +111,20 @@ export default class EventBus {
 	}
 
 	private readonly getThisSync = () => this.syncLogs.at(-1) as SyncStats;
-	private readonly putSyncLog = (log: string, level: 'info' | 'error' = 'info') => {
-		const message = `- \`${level.toLocaleUpperCase()}\` - ${log}`;
+	private readonly putSyncLog = (log: string) => {
+		const message = `- \`INFO\` - ${log}`;
 		this.getThisSync().logs.push(message);
 	};
-	private readonly putGeneralLog = (log: string, level: 'info' | 'error' = 'info') => {
-		const message = `- \`${level.toLocaleUpperCase()}\` - ${log}`;
+	private readonly putGeneralLog = (log: string) => {
+		const message = `- \`INFO\` - ${log}`;
+		this.generalLogs.push(`- ${formatDateTime(Date.now(), true)} ${message}`);
+	};
+	private readonly putSyncError = (error: Error) => {
+		const message = `- \`ERROR\` - ${printError(error)}`;
+		this.getThisSync().logs.push(message);
+	};
+	private readonly putGeneralError = (error: Error) => {
+		const message = `- \`ERROR\` - ${printError(error)}`;
 		this.generalLogs.push(`- ${formatDateTime(Date.now(), true)} ${message}`);
 	};
 
@@ -171,7 +186,7 @@ export default class EventBus {
 			lines.push('');
 		}
 		if (this.generalLogs.length)
-			lines.push('---', '', 'General logs:', '', ...this.generalLogs, '');
+			lines.push('---', '', 'General logs:', '', ...this.generalLogs);
 		return lines.join('\n');
 	};
 
@@ -187,4 +202,23 @@ export default class EventBus {
 		isIdle: this.isIdle,
 		on: this.on as On<General>,
 	};
+}
+
+function printError({ cause, message, stack }: Error) {
+	let causeString: string | undefined;
+	if (cause)
+		try {
+			causeString = JSON.stringify(cause, undefined, 4);
+		} catch {
+			// oxlint-disable-next-line typescript/no-base-to-string
+			causeString = String(cause);
+		}
+	let result = message;
+	if (causeString || stack) {
+		result += ':\n\n```';
+		if (stack) result += `\n${stack}`;
+		if (causeString) result += `\nCause:\n    ${causeString}`;
+		result += '\n```\n';
+	} else result += '.';
+	return result;
 }

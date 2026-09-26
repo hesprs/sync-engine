@@ -152,6 +152,7 @@ export function generateEditableList<T>({
 	render,
 	translations: { add, empty, heading },
 	extraButtons,
+	reorder,
 }: {
 	memoryDB: DatabaseSync<EphemeralEditableListSchema>;
 	items: Array<T>;
@@ -172,6 +173,7 @@ export function generateEditableList<T>({
 			save: () => void,
 		) => void
 	>;
+	reorder?: boolean;
 }): SettingDefinitionList {
 	const ephemeralStore = memoryDB.getStore('ephemeralEditableLists');
 	const existingList = ephemeralStore.get(identifier);
@@ -215,6 +217,13 @@ export function generateEditableList<T>({
 			saveEdit();
 			rerenderSettingTab();
 		},
+		onReorder: reorder
+			? (oldIndex, newIndex) => {
+					const [moved] = list.splice(oldIndex, 1);
+					list.splice(newIndex, 0, moved);
+					saveEdit();
+				}
+			: undefined,
 		type: 'list',
 	};
 }

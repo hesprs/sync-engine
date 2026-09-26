@@ -203,44 +203,41 @@ If the optimizer removes atoms from the input array, it **must** call `resolve()
 ### Example: S3 Batch Delete Optimizer
 
 ```ts
-import type { OptimizerInput, OptimizerOutput } from '@hesprs/sync-engine-sdk';
+import type { DeleteAtom, OptimizerInput, OptimizerOutput } from '@hesprs/sync-engine-sdk';
 import { digOriginal } from '@hesprs/sync-engine-sdk';
-import S3Fs, { BATCH_DELETE_MAX_KEYS } from './s3/fs';
+import S3Fs from './s3/fs';
 
 export default function s3BatchDeleteOptimizer({
   atoms,
   fs,
 }: OptimizerInput): OptimizerOutput | undefined {
   const original = digOriginal(fs);
-  if (!(original instanceof S3Fs)) return undefined;
-  const s3Fs = original;
-  type DeleteAtom = Extract<(typeof atoms)[number], { type: 'delete' }>;
+  if (!(original instanceof S3Fs)) return;
   const deleteAtoms = atoms.filter((a): a is DeleteAtom => a.type === 'delete');
+  if (deleteAtoms.length <= 1) return atoms;
   const otherAtoms = atoms.filter((a) => a.type !== 'delete');
-  if (deleteAtoms.length === 0) return atoms;
-  const batchGroups: Array<Array<DeleteAtom>> = [];
-  for (let i = 0; i < deleteAtoms.length; i += BATCH_DELETE_MAX_KEYS)
-    batchGroups.push(deleteAtoms.slice(i, i + BATCH_DELETE_MAX_KEYS));
-  const batchAtoms = batchGroups.map((batch) => ({
+  const batchAtom = {
     execute: async () => {
-      const keys = batch.map((a) => a.key);
+      const keys = deleteAtoms.map((a) => a.key);
       try {
-        const result = await s3Fs.batchDelete(keys);
-        batch.forEach((atom) => {
+        const result = await original.batchDelete(keys);
+        deleteAtoms.forEach((atom) => {
           const status = result[atom.key];
-          if (status === true) atom.resolve();
-          else atom.reject(new Error(status ?? `S3 batch delete missing result for ${atom.key}.`));
+          if (status) atom.reject(status);
+          else atom.resolve();
         });
       } catch (error) {
         const reason = error instanceof Error ? error : new Error(String(error));
-        batch.forEach((atom) => atom.reject(reason));
+        deleteAtoms.forEach((atom) => atom.reject(reason));
       }
     },
     type: 'custom' as const,
-  }));
-  return [...otherAtoms, ...batchAtoms];
+  };
+  return [...otherAtoms, batchAtom];
 }
 ```
+
+`S3Fs.batchDelete()` itself splits the keys into `DeleteObjects` requests of at most 1000 keys and resolves to a record containing only the failed keys, each mapped to its `Error`.
 
 More complex example: [Hierarchical Optimizer](https://github.com/hesprs/sync-engine/tree/main/packages/plugin/src/fs/hierarchical-optimizer.ts).
 

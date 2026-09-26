@@ -42,7 +42,7 @@ export default class Webdav {
 			registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => void;
 			registerSetting: (entry: SettingEntry) => () => void;
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
-			getRecordStore: (namespace?: string) => RecordStore; // TODO: remove after October 13
+			getRecordStore: (namespace?: string) => RecordStore | Error; // TODO: remove after October 13
 		}>,
 	) {
 		if (!this.moduleSettings.baseDirectory)
@@ -107,7 +107,9 @@ export default class Webdav {
 			}),
 		);
 
-		if (this.settings.remoteFs === 'webdav') void migrateEtag(getRecordStore()).catch(() => {});
+		const store = getRecordStore();
+		if (this.settings.remoteFs === 'webdav' && !(store instanceof Error))
+			void migrateEtag(store).catch(() => {});
 	};
 
 	readonly dispose = () => {

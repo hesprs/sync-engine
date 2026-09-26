@@ -100,5 +100,4 @@ export type DeciderInput = {
 	remoteStats: StatsMap;
 	records: RecordStatsMap;
 	taskFactory: TaskFactory;
-	logger: (log: string) => void;
 };

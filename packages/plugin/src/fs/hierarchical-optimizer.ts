@@ -1,3 +1,4 @@
+import { toError } from '@repo/shared/error';
 import { dirname, isSub } from '@repo/shared/path';
 import type { DeleteAtom, InputAtom, MoveAtom, OptimizerInput } from './interface';
 
@@ -103,7 +104,7 @@ export default function hierarchicalOptimizer({ atoms, executeAtom }: OptimizerI
 				);
 				return await originalExecute();
 			} catch (error) {
-				atom.reject(error instanceof Error ? error : new Error(String(error)));
+				atom.reject(toError(error));
 				throw error;
 			}
 		}) as never;

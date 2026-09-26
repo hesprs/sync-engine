@@ -99,7 +99,7 @@ async function collectStream(source: ReadableStream<Binary>): Promise<Binary> {
 test('checkConnection returns success for a healthy endpoint', async () => {
 	const harness = request(() => defaultResponse);
 
-	expect(await checkConnection(defaultOptions, harness.request)).toStrictEqual({ success: true });
+	expect(await checkConnection(defaultOptions, harness.request)).toBeUndefined();
 	expect(harness.calls[0]).toMatchObject({
 		method: 'PROPFIND',
 		url: 'https://dav.example.com/dav/',
@@ -109,10 +109,9 @@ test('checkConnection returns success for a healthy endpoint', async () => {
 test('checkConnection returns failure reason for bad status', async () => {
 	const harness = request(() => ({ status: 503, text: () => '' }));
 
-	expect(await checkConnection(defaultOptions, harness.request)).toStrictEqual({
-		reason: '503',
-		success: false,
-	});
+	const failure = await checkConnection(defaultOptions, harness.request);
+	expect(failure).toBeInstanceOf(Error);
+	expect((failure as Error).message).toBe('HTTP 503');
 });
 
 test('stat parses dav fields and prefers etag for uid', async () => {

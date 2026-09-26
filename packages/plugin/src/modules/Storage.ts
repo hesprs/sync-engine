@@ -12,29 +12,27 @@ export default class Storage {
 	private readonly memoryDB = openMemoryDB<General, General>(STORAGE_NAME);
 	private readonly indexedDB = openIndexedDB<IndexedDBSchema>(STORAGE_NAME);
 
-	constructor(private readonly ctx: { getNamespace: () => string }) {}
+	constructor(private readonly ctx: { getNamespace: () => string | Error }) {}
 
-	private readonly getRecordStore = (namespace?: string): RecordStore =>
-		this.indexedDB.getStore(namespace || this.ctx.getNamespace());
+	private readonly getRecordStore = <N extends string | undefined>(
+		namespace?: N,
+	): N extends string ? RecordStore : RecordStore | undefined => {
+		const ns = namespace ?? this.ctx.getNamespace();
+		if (ns instanceof Error) return ns as never;
+		return this.indexedDB.getStore(ns);
+	};
 
 	private readonly deleteRecordStore = (namespace?: string): MaybePromise<void> => {
-		try {
-			namespace ??= this.ctx.getNamespace();
-		} catch {
-			return; // When the backend is not set, no need to delete
-		}
-		return this.indexedDB.deleteStore(namespace);
+		const ns = namespace ?? this.ctx.getNamespace();
+		if (!(ns instanceof Error)) return this.indexedDB.deleteStore(ns);
 	};
 
 	private readonly clearRecordStores = () => this.indexedDB.clearStores();
 
 	private readonly recordStoreExists = (namespace?: string): MaybePromise<boolean> => {
-		try {
-			namespace ??= this.ctx.getNamespace();
-		} catch {
-			return false; // When the backend is not set, assume no store
-		}
-		return this.indexedDB.getStoreNames().then((names) => names.includes(namespace));
+		const ns = namespace ?? this.ctx.getNamespace();
+		if (ns instanceof Error) return false;
+		return this.indexedDB.getStoreNames().then((names) => names.includes(ns));
 	};
 
 	readonly root = {

@@ -3,8 +3,11 @@ import type { BaseTask } from '../tasks/interface';
 import type { DeciderInput } from './interface';
 import isChanged from '../utils/is-changed';
 
-export default function bidirectionalDecider(input: DeciderInput): Array<BaseTask> {
-	const { localStats, remoteStats, records, taskFactory, logger } = input;
+export default function bidirectionalDecider(
+	input: DeciderInput,
+	logger: (log: string) => void,
+): Array<BaseTask> {
+	const { localStats, remoteStats, records, taskFactory } = input;
 
 	const tasks: Array<BaseTask> = [];
 	const files: Array<{

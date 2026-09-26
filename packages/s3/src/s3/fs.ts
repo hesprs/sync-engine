@@ -10,7 +10,7 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
-import { getMessage, getStatus } from '@repo/shared/error';
+import { getStatus, toError } from '@repo/shared/error';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import { dirname, encodeUrl, isFolder } from '@repo/shared/path';
@@ -30,7 +30,7 @@ export type S3FsOptions = {
 	request: Request;
 };
 
-export const BATCH_DELETE_MAX_KEYS = 1000;
+const BATCH_DELETE_MAX_KEYS = 1000;
 
 type S3ListBucketResult = {
 	ListBucketResult: {
@@ -80,15 +80,12 @@ function asArray<T>(value: T | Array<T> | undefined): Array<T> {
 	return value === undefined ? [] : Array.isArray(value) ? value : [value];
 }
 
-function parseBatchDeleteResponse(xml: string, keys: Array<string>): Record<string, true | string> {
-	const result = Object.fromEntries(keys.map((key) => [key, true])) as Record<
-		string,
-		true | string
-	>;
-	if (!xml.trim()) return result;
+function parseBatchDelete(xml: string): Record<string, Error> {
+	if (!xml.trim()) return {};
+	const result: Record<string, Error> = {};
 	const errors = asArray(parseXML<S3DeleteResponse>(xml).DeleteResult?.Error);
-	for (const error of errors)
-		if (error.Key && error.Code) result[error.Key] = formatS3Error(error.Code, error.Message);
+	for (const { Key, Code, Message } of errors)
+		if (Key && Code) result[Key] = new Error(formatS3Error(Code, Message));
 	return result;
 }
 
@@ -203,40 +200,46 @@ export default class S3Fs implements RootFs {
 	 * Batch delete — S3-specific extension method accessed by the optimizer.
 	 * Up to 1000 keys per DeleteObjects request.
 	 */
-	async batchDelete(keys: Array<string>): Promise<Record<string, true | string>> {
-		const result: Record<string, true | string> = {};
-		for (let i = 0; i < keys.length; i += BATCH_DELETE_MAX_KEYS) {
-			const batch = keys.slice(i, i + BATCH_DELETE_MAX_KEYS);
-			const body = buildDeleteObjectsXml(batch);
-			const url = buildUrlWithQuery(
-				{ bucket: this.bucket, endpoint: this.endpoint, key: '/', urlStyle: this.urlStyle },
-				{ delete: '' },
-			);
-			let response: RequestResponse;
-			try {
-				response = await this.requestOrThrow(url, {
-					body: textToUint8Array(body),
-					headers: {
-						'Content-MD5': await md5Base64(body),
-						'Content-Type': 'application/xml',
+	async batchDelete(keys: Array<string>): Promise<Record<string, Error>> {
+		const result: Record<string, Error> = {};
+		const batches: Array<Array<string>> = [];
+		for (let i = 0; i < keys.length; i += BATCH_DELETE_MAX_KEYS)
+			batches.push(keys.slice(i, i + BATCH_DELETE_MAX_KEYS));
+		await Promise.all(
+			batches.map(async (batch) => {
+				const body = buildDeleteObjectsXml(batch);
+				const url = buildUrlWithQuery(
+					{
+						bucket: this.bucket,
+						endpoint: this.endpoint,
+						key: '/',
+						urlStyle: this.urlStyle,
 					},
-					method: 'POST',
-				});
-			} catch {
-				await Promise.all(
-					batch.map(async (key) => {
-						try {
-							await this.delete(key);
-							result[key] = true;
-						} catch (error) {
-							result[key] = getMessage(error);
-						}
-					}),
+					{ delete: '' },
 				);
-				continue;
-			}
-			Object.assign(result, parseBatchDeleteResponse(response.text(), batch));
-		}
+				let response: RequestResponse;
+				try {
+					response = await this.requestOrThrow(url, {
+						body: textToUint8Array(body),
+						headers: {
+							'Content-MD5': await md5Base64(body),
+							'Content-Type': 'application/xml',
+						},
+						method: 'POST',
+					});
+				} catch {
+					await Promise.all(
+						batch.map(async (key) =>
+							this.delete(key).catch(
+								(error: unknown) => (result[key] = toError(error)),
+							),
+						),
+					);
+					return;
+				}
+				Object.assign(result, parseBatchDelete(response.text()));
+			}),
+		);
 		return result;
 	}
 

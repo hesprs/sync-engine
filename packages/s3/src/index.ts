@@ -63,7 +63,7 @@ export default class S3 {
 			registerRemoteOptimizer: (entry: OptimizerEntry) => () => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
 			memoryDB: S3DB;
-			getRecordStore: (namespace?: string) => RecordStore; // TODO: remove after October 13
+			getRecordStore: (namespace?: string) => RecordStore | Error; // TODO: remove after October 13
 		}>,
 	) {
 		ctx.registerI18n('en', en);
@@ -166,7 +166,9 @@ export default class S3 {
 			}),
 		);
 
-		if (this.settings.remoteFs === 's3') void migrateEtag(getRecordStore()).catch(() => {});
+		const store = getRecordStore();
+		if (this.settings.remoteFs === 's3' && !(store instanceof Error))
+			void migrateEtag(store).catch(() => {});
 	};
 
 	private readonly resolveConfig = () => {

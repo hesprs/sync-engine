@@ -38,14 +38,14 @@ Returning `undefined` from `apply` declines the entry.
 Register a remote backend implementation. See [file system: RootFs](./file-system#rootfs) for the contract.
 
 ```ts
-type CheckConnectionResult = { success: true } | { success: false; reason: string };
-
 type RemoteFsEntry = {
   prettyName: () => string;
   instantiate: (request: Request) => RootFs;
-  checkConnection: (request: Request) => MaybePromise<CheckConnectionResult>;
+  checkConnection: (request: Request) => MaybePromise<void | Error>;
 };
 ```
+
+`checkConnection` resolves `undefined` on success, or an `Error` carrying the failure reason.
 
 ```ts
 ctx.registerRemoteFs(id: string, entry: RemoteFsEntry): () => boolean;

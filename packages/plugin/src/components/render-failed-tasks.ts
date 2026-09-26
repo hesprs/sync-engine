@@ -14,7 +14,7 @@ function renderFailedTaskRow(
 
 	main.createSpan({ cls: 'text-[--text-muted] whitespace-nowrap', text: prettyName });
 	main.createSpan({ cls: 'font-semibold truncate', text: key });
-	row.createDiv({ cls: 'text-[--text-muted] break-words mt-1', text: error });
+	row.createDiv({ cls: 'text-[--text-muted] break-words mt-1', text: error.message });
 }
 
 export default function renderFailedTasks(

@@ -1,7 +1,7 @@
 import type { Events, Translations } from '@';
 import type { App, Command, DataAdapter, IconName } from 'obsidian';
 import type { Ref } from 'synthkernel';
-import { getMessage } from '@repo/shared/error';
+import { describeError, toError } from '@repo/shared/error';
 import { Notice, Platform, setIcon } from 'obsidian';
 import { computed, ref } from 'synthkernel';
 import type { Progress } from '@/types';
@@ -171,7 +171,7 @@ export default class Observability {
 					syncStage('completedNoop');
 					setUpdateInterval();
 				} else if (result === 'failed') {
-					this.lastFailure = reason.error;
+					this.lastFailure = reason.error.message;
 					syncStage('failed');
 				}
 				walkProgress({ completed: 0, total: 1 });
@@ -298,9 +298,9 @@ export default class Observability {
 			const file = await app.vault.create(filePath, log);
 			await app.workspace.getLeaf().openFile(file);
 		} catch (error) {
-			const message = getMessage(error);
-			new Notice(`${translate('exportLogsFailed')}: ${message}`);
-			dispatch('errorGeneral', `Export log failed: \`${message}\`.`);
+			const parsedError = toError(error);
+			new Notice(`${translate('exportLogsFailed')}: ${parsedError.message}`);
+			dispatch('errorGeneral', describeError(parsedError, 'Export log failed'));
 		}
 	};
 

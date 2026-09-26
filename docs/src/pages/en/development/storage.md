@@ -34,7 +34,7 @@ Stores expose `get`, `set`, `delete`, `clear`, `keys`, `values`, `entries`, and 
 type RecordStore = StoreAsync<RecordStat>;
 ```
 
-Persists synchronization record entries. `getRecordStore()` selects the current local/remote filesystem namespace.
+Persists synchronization record entries. `getRecordStore()` selects the current local/remote filesystem namespace. When no backend is set, it returns an `Error`.
 
 ```ts
 const records = ctx.getRecordStore();

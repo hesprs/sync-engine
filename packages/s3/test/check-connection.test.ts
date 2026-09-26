@@ -22,7 +22,7 @@ test('checkConnection uses the request pipeline for a signed empty list request'
 	const harness = testKit.request(() => response());
 
 	const request = sigv4Middleware(harness.request, defaultCredentials, memoryDB);
-	expect(await checkConnection(connectionOptions, request)).toStrictEqual({ success: true });
+	expect(await checkConnection(connectionOptions, request)).toBeUndefined();
 
 	const call = harness.calls[0];
 	if (!call) throw new Error('Expected checkConnection request');
@@ -41,25 +41,22 @@ test('checkConnection surfaces the S3 error body on failure', async () => {
 	const denied = testKit.request(() =>
 		response({ status: 403, text: '<Error>...</Error>' }),
 	).request;
-	expect(await checkConnection(connectionOptions, denied)).toStrictEqual({
-		reason: 'S3 AccessDenied: Access Denied',
-		success: false,
-	});
+	const deniedError = await checkConnection(connectionOptions, denied);
+	expect(deniedError).toBeInstanceOf(Error);
+	expect((deniedError as Error).message).toBe('S3 AccessDenied: Access Denied');
 });
 
 test('checkConnection returns HTTP and thrown request failures', async () => {
 	const failed = testKit.request(() => response({ status: 403 })).request;
-	expect(await checkConnection(connectionOptions, failed)).toStrictEqual({
-		reason: 'S3: HTTP 403',
-		success: false,
-	});
+	const httpError = await checkConnection(connectionOptions, failed);
+	expect(httpError).toBeInstanceOf(Error);
+	expect((httpError as Error).message).toBe('HTTP 403');
 
 	const requestError = new Error('network unavailable');
 	const thrown = testKit.request(() => {
 		throw requestError;
 	}).request;
-	expect(await checkConnection(connectionOptions, thrown)).toStrictEqual({
-		reason: 'network unavailable',
-		success: false,
-	});
+	const thrownError = await checkConnection(connectionOptions, thrown);
+	expect(thrownError).toBeInstanceOf(Error);
+	expect((thrownError as Error).message).toBe('network unavailable');
 });

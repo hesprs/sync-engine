@@ -94,6 +94,18 @@ test('middleware signs custom headers before proxy rewrites the URL', async () =
 	);
 });
 
+test("middleware overrides Electron's no-cors fetch mode as an unsigned header", async () => {
+	const { calls, transport } = createTransport();
+	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);
+
+	await request('https://s3.example.com/vault/file.bin', { method: 'POST' });
+
+	const call = calls[0];
+	if (!call) throw new Error('Expected transport request');
+	expect(call.headers?.['Sec-Fetch-Mode']).toBe('navigate');
+	expect(call.headers?.authorization).not.toContain('sec-fetch-mode');
+});
+
 test('middleware reuses signing key for matching credentials and date', async () => {
 	const { transport } = createTransport();
 	const request = sigv4Middleware(transport, defaultCredentials, memoryDB);

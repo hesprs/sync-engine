@@ -1,5 +1,5 @@
-import type { CheckConnectionResult, Request } from '@hesprs/sync-engine-sdk';
-import { getMessage } from '@repo/shared/error';
+import type { Request } from '@hesprs/sync-engine-sdk';
+import { toError } from '@repo/shared/error';
 import type { UrlStyle } from './sigv4';
 import { buildUrlWithQuery } from './url';
 import { parseS3Error } from './utils';
@@ -14,7 +14,7 @@ export type S3ConnectionOptions = {
 export async function checkConnection(
 	options: S3ConnectionOptions,
 	request: Request,
-): Promise<CheckConnectionResult> {
+): Promise<void | Error> {
 	try {
 		const url = buildUrlWithQuery(
 			{
@@ -26,12 +26,9 @@ export async function checkConnection(
 			{ 'list-type': '2', 'max-keys': '0' },
 		);
 		const response = await request(url, { method: 'GET', throw: false });
-		if (response.status >= 200 && response.status < 300) return { success: true } as const;
-		return {
-			reason: parseS3Error(response.text()) ?? `S3: HTTP ${response.status}`,
-			success: false,
-		} as const;
+		if (response.status >= 200 && response.status < 300) return;
+		return new Error(parseS3Error(response.text()) ?? `HTTP ${response.status}`);
 	} catch (error) {
-		return { reason: getMessage(error), success: false } as const;
+		return toError(error);
 	}
 }

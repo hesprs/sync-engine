@@ -1,21 +1,17 @@
 import type { Context, Events, Settings } from '@';
 import type { DatabaseSync } from 'uni-kv';
-import { getMessage } from '@repo/shared/error';
+import { describeError, toError } from '@repo/shared/error';
 import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
 import type { ModuleCtor } from '@/modules/Extensibility';
 import type { Fragment, Snippet, Translate } from '@/modules/I18n';
-import type {
-	CheckConnectionResult,
-	ConflictResolverEntry,
-	DeciderEntry,
-	RemoteFsEntry,
-} from '@/modules/Registrar';
+import type { ConflictResolverEntry, DeciderEntry, RemoteFsEntry } from '@/modules/Registrar';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { Dispatch } from '@/sdk';
-import type { General, MaybePromise } from '@/types';
+import type { General, GlobStrategy, MaybePromise } from '@/types';
+import { normalizeGlob } from '@/utils/glob-match';
 import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
 import ModuleManagement from './module-management';
-import { s } from './utils';
+import { generateEditableList, reactivelyValidate, s } from './utils';
 
 const CHECK_CONNECTION_INTERVAL = 10_000;
 
@@ -27,14 +23,19 @@ export type HeadSettingTranslations = {
 	backend: string;
 	backendDescription: string;
 	syncStrategy: string;
-	syncStrategyDescription: string;
+	syncStrategyDescription: Fragment;
+	globPlaceholder: string;
 	checkConnectionFailed: string;
 	checkConnectionSuccess: string;
 	checkConnection: string;
 	conflictResolveStrategy: string;
 	conflictResolveStrategyDescription: string;
 	xEnabled: Snippet<number>;
+	xConfigured: Snippet<number>;
 	settingTips: Fragment<{ labels: Array<LabelDefinition>; addLabel: typeof addLabel }>;
+	addStrategy: string;
+	noStrategyConfigured: string;
+	dontSync: string;
 };
 
 type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs: string }>;
@@ -47,12 +48,13 @@ export default function headSettings(
 		remoteFsRegistry: Map<string, RemoteFsEntry>;
 		deciderRegistry: Map<string, DeciderEntry>;
 		conflictResolverRegistry: Map<string, ConflictResolverEntry>;
-		getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
+		getCheckConnection: () => () => MaybePromise<void | Error>;
 		memoryDB: CheckConnectionDB;
 		loadedModules: Map<string, ModuleCtor>;
 		matchLabel: () => LabelDefinition;
 		speedLabel: () => LabelDefinition;
 		dispatch: Dispatch<Events>;
+		rerenderSettingTab: () => void;
 	},
 	getSettingTab: () => PluginSettingTab | undefined,
 ): CallableOrObjectTree {
@@ -63,6 +65,7 @@ export default function headSettings(
 		settings,
 		remoteFsRegistry,
 		deciderRegistry,
+		rerenderSettingTab,
 		getCheckConnection,
 		memoryDB,
 		conflictResolverRegistry,
@@ -109,7 +112,7 @@ export default function headSettings(
 								.setTooltip(translate('checkConnection'))
 								.onClick(() => void checks.check(true)),
 							getCheckConnection,
-							log: (str: string) => dispatch('errorGeneral', str),
+							logError: (error: Error) => dispatch('errorGeneral', error),
 							memoryDB,
 							settings,
 							translate,
@@ -140,17 +143,80 @@ export default function headSettings(
 			desc: translate('moduleAutoUpdateDescription'),
 			name: translate('moduleAutoUpdate'),
 		})),
-		50: s(() => ({
-			control: {
-				key: 'decider',
-				options: Object.fromEntries(
-					[...deciderRegistry].map(([key, { prettyName }]) => [key, prettyName()]),
+		50: s(
+			(self) => ({
+				desc: translate('syncStrategyDescription'),
+				displayValue: () => translate('xConfigured', settings.syncStrategy.length),
+				items: Object.values(self).map((node) => node(node)),
+				labels: [speedLabel()],
+				name: translate('syncStrategy'),
+				type: 'page',
+			}),
+			{
+				1000: s(() =>
+					generateEditableList<GlobStrategy>({
+						defaultValue: { expr: '', strategy: 'bidirectional' },
+						identifier: 'syncStrategy',
+						items: settings.syncStrategy,
+						memoryDB,
+						render: (setting, item, save) => {
+							setting
+								.addText((text) => {
+									text.setPlaceholder(translate('globPlaceholder')).setValue(
+										item.value.expr,
+									);
+									reactivelyValidate<string>({
+										immediate: true,
+										onSave: (value) => {
+											item.value.expr = value;
+											save();
+										},
+										parse: (value) => {
+											item.value.expr = value;
+											const normalized = normalizeGlob(value);
+											if (!normalized) {
+												item.valid = false;
+												save();
+												return;
+											}
+											item.valid = true;
+											return normalized;
+										},
+										text,
+									});
+									if (item.new) {
+										item.new = false;
+										text.inputEl.focus();
+									}
+								})
+								.addDropdown((dropdown) =>
+									dropdown
+										.addOptions({
+											...Object.fromEntries(
+												[...deciderRegistry].map(
+													([key, { prettyName }]) => [key, prettyName()],
+												),
+											),
+											none: translate('dontSync'),
+										})
+										.setValue(item.value.strategy)
+										.onChange((value) => {
+											item.value.strategy = value;
+											save();
+										}),
+								);
+						},
+						reorder: true,
+						rerenderSettingTab,
+						saveSettings,
+						translations: {
+							add: translate('addStrategy'),
+							empty: translate('noStrategyConfigured'),
+						},
+					}),
 				),
-				type: 'dropdown',
 			},
-			desc: translate('syncStrategyDescription'),
-			name: translate('syncStrategy'),
-		})),
+		),
 		60: s(() => ({
 			control: {
 				key: 'conflictResolver',
@@ -174,14 +240,14 @@ function setupCheckConnection({
 	settings,
 	translate,
 	button,
-	log,
+	logError,
 }: {
 	memoryDB: CheckConnectionDB;
-	getCheckConnection: () => () => MaybePromise<CheckConnectionResult>;
+	getCheckConnection: () => () => MaybePromise<void | Error>;
 	settings: Settings;
 	translate: Translate<HeadSettingTranslations>;
 	button: ExtraButtonComponent;
-	log: (str: string) => void;
+	logError: (error: Error) => void;
 }) {
 	let timeout: number | undefined;
 	const possibleClasses = [
@@ -224,24 +290,25 @@ function setupCheckConnection({
 			setError();
 			return;
 		}
-		const onFailure = (message: string) => {
+		const onFailure = (error: Error) => {
 			setError();
-			log(`Check connection to \`${settings.remoteFs}\` failed: \`${message}\`.`);
-			if (force) new Notice(`${translate('checkConnectionFailed')}: ${message}`, 5000);
+			if (force) new Notice(`${translate('checkConnectionFailed')}: ${error.message}`, 5000);
+			logError(describeError(error, `Check connection to \`${settings.remoteFs}\` failed`));
 			cleanup();
 			scheduleCheckConnection();
 		};
 
 		try {
 			setChecking();
-			const result = await getCheckConnection()();
-			if (result.success) {
+			const failure = await getCheckConnection()();
+			if (failure) onFailure(failure);
+			else {
 				memoryDB.setMeta('lastCheckedFs', settings.remoteFs);
 				setSuccess();
 				if (force) new Notice(translate('checkConnectionSuccess'));
-			} else onFailure(result.reason);
+			}
 		} catch (error) {
-			onFailure(getMessage(error));
+			onFailure(toError(error));
 		}
 	};
 

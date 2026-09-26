@@ -43,8 +43,8 @@ unsubscribe();
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `logSync`              | `string` sync log message                                                                                           |
 | `logGeneral`           | `string` general log message                                                                                        |
-| `errorSync`            | `string` sync error log message                                                                                     |
-| `errorGeneral`         | `string` general error log message                                                                                  |
+| `errorSync`            | `Error` sync error                                                                                                  |
+| `errorGeneral`         | `Error` general error                                                                                               |
 | `moduleLoaded`         | `string` module name                                                                                                |
 | `moduleUnloaded`       | `string` module name                                                                                                |
 | `syncStarted`          | `{ isCancelled: Ref<boolean>; trigger: string }`                                                                    |
@@ -55,7 +55,7 @@ unsubscribe();
 | `requestConfirmTasks`  | `Array<BaseTask>`                                                                                                   |
 | `syncCanceled`         | `undefined` (no payload)                                                                                            |
 | `taskCompleted`        | `TaskInfo` (`{ name: TaskNames; key: string; prettyName: string; isDir: boolean }`)                                 |
-| `taskFailed`           | `FailedTaskInfo` (`TaskInfo` & `{ error: string }`)                                                                 |
+| `taskFailed`           | `FailedTaskInfo` (`TaskInfo` & `{ error: Error }`)                                                                  |
 | `executionStarted`     | `Array<BaseTask>`                                                                                                   |
 | `tasksConfirmed`       | `Array<BaseTask>`                                                                                                   |
 | `deleteConfirmed`      | `{ delete: Array<RemoveLocal>; reupload: Array<RemoveLocal> }`                                                      |

@@ -32,9 +32,9 @@ type RecordStat = {
 };
 type StatsMap = Map<string, Stat$1>;
 type RecordStatsMap = Map<string, RecordStat>;
-type GlobMatchRule = {
+type GlobStrategy = {
   expr: string;
-  caseSensitive: boolean;
+  strategy: string;
 };
 type Progress<T = string> = {
   total: number;
@@ -62,7 +62,8 @@ type RootFs = {
   exists(key: string): MaybePromise<boolean>;
   list(key: string, reporter: ListReporter): MaybePromise<Array<Stat$1>>;
 };
-type ListReporter = (progress: Required<Progress>) => MaybePromise<'include' | 'exclude' | 'advance'>;
+type ListOptions = 'include' | 'exclude' | 'advance';
+type ListReporter = (progress: Required<Progress>) => MaybePromise<ListOptions>;
 type WrappedFs = RootFs & {
   original: Fs;
 };
@@ -203,7 +204,7 @@ declare class Storage {
   private readonly memoryDB;
   private readonly indexedDB;
   constructor(ctx: {
-    getNamespace: () => string;
+    getNamespace: () => string | Error;
   });
   private readonly getRecordStore;
   private readonly deleteRecordStore;
@@ -212,7 +213,7 @@ declare class Storage {
   readonly root: {
     clearRecordStores: () => Promise<void>;
     deleteRecordStore: (namespace?: string) => MaybePromise<void>;
-    getRecordStore: (namespace?: string) => RecordStore;
+    getRecordStore: <N extends string | undefined>(namespace?: N) => N extends string ? RecordStore : RecordStore | undefined;
     indexedDB: DatabaseAsync<General$1, General$1>;
     memoryDB: {
       getStore<K extends string | number | symbol>(name: K): {
@@ -392,7 +393,6 @@ type DeciderInput = {
   remoteStats: StatsMap;
   records: RecordStatsMap;
   taskFactory: TaskFactory;
-  logger: (log: string) => void;
 };
 //#endregion
 //#region src/sync/tasks/CreateLocalDir.d.ts
@@ -407,8 +407,8 @@ declare class EventBus {
   readonly events: {
     logSync: string;
     logGeneral: string;
-    errorSync: string;
-    errorGeneral: string;
+    errorSync: Error;
+    errorGeneral: Error;
   };
   private readonly cleanupCallbacks;
   private readonly isIdle;
@@ -418,6 +418,8 @@ declare class EventBus {
   private readonly getThisSync;
   private readonly putSyncLog;
   private readonly putGeneralLog;
+  private readonly putSyncError;
+  private readonly putGeneralError;
   private readonly subscribers;
   private readonly on;
   private readonly dispatch;
@@ -448,6 +450,84 @@ declare class I18n {
   root: {
     registerI18n: (code: ObsidianLanguageCode, resource: TranslationResource) => void;
     translate: Translate<TranslationResource>;
+  };
+}
+//#endregion
+//#region src/utils/glob-match.d.ts
+type GlobMatchResult = {
+  strategy: string;
+  advance?: boolean;
+};
+//#endregion
+//#region src/modules/Sync.d.ts
+type SyncTerminateReason = {
+  result: 'cancelled';
+} | {
+  result: 'completed';
+} | {
+  result: 'failed';
+  error: Error;
+} | {
+  result: 'noop';
+};
+type TaskInfo = {
+  name: TaskNames;
+  key: string;
+  prettyName: string;
+  isDir: boolean;
+};
+type FailedTaskInfo = TaskInfo & {
+  error: Error;
+};
+type RemoteLister = (info: Infras & {
+  reporter: ListReporter;
+}) => MaybePromise<Array<Stat$1>>;
+type SyncOptions = {
+  remoteLister?: RemoteLister;
+  conflictResolver?: ConflictResolver;
+  detectMoves?: boolean;
+  needConfirmTasks?: boolean;
+  needConfirmDeletion?: boolean;
+  syncStrategy?: Array<GlobStrategy>;
+};
+declare class Sync {
+  private readonly ctx;
+  constructor(ctx: {
+    dispatch: Dispatch<Events>;
+    initializeSync: () => Infras;
+    on: On<Events>;
+    translate: Translate<Translations>;
+    getConflictResolver: () => ConflictResolver;
+    decideTasks: (input: DecideTasksInput) => Array<BaseTask>;
+  });
+  readonly events: {
+    syncStarted: {
+      isCancelled: Ref<boolean>;
+      trigger: string;
+    };
+    syncInitialized: Infras & {
+      match: (path: string) => GlobMatchResult;
+    };
+    remoteWalkProgress: Progress;
+    syncTerminated: SyncTerminateReason;
+    requestConfirmDelete: Array<RemoveLocal>;
+    requestConfirmTasks: Array<BaseTask>;
+    syncCanceled: undefined;
+    taskCompleted: TaskInfo;
+    taskFailed: FailedTaskInfo;
+    executionStarted: Array<BaseTask>;
+  };
+  readonly settings: {
+    maxFileSize: TogglableValue;
+    syncStrategy: Array<GlobStrategy>;
+  };
+  private readonly postProcess;
+  private readonly confirmTasks;
+  private readonly confirmDeletion;
+  private readonly executeSync;
+  private readonly convertDeleteToUpload;
+  root: {
+    executeSync: (trigger: string, options?: SyncOptions) => Promise<SyncTerminateReason>;
   };
 }
 //#endregion
@@ -700,7 +780,7 @@ declare function reactivelyValidate<T>({ text, parse, onSave, format, immediate 
   onSave: (value: T) => void;
   immediate?: boolean;
 }): void;
-declare function generateEditableList<T>({ memoryDB, items, identifier, saveSettings, rerenderSettingTab, defaultValue, render, translations: { add, empty, heading }, extraButtons }: {
+declare function generateEditableList<T>({ memoryDB, items, identifier, saveSettings, rerenderSettingTab, defaultValue, render, translations: { add, empty, heading }, extraButtons, reorder }: {
   memoryDB: DatabaseSync<EphemeralEditableListSchema>;
   items: Array<T>;
   identifier: string;
@@ -714,6 +794,7 @@ declare function generateEditableList<T>({ memoryDB, items, identifier, saveSett
     heading?: string;
   };
   extraButtons?: Array<(button: ExtraButtonComponent, list: Array<EphemeralEditableItem<T>>, save: () => void) => void>;
+  reorder?: boolean;
 }): SettingDefinitionList;
 //#endregion
 //#region src/settings/controls.d.ts
@@ -803,21 +884,6 @@ type FeaturesSettingTranslations = {
   asymmetricStorageMigration: Fragment<boolean>;
 } & MigrationModalTranslations;
 //#endregion
-//#region src/settings/filter.d.ts
-type FilterSettingTranslations = {
-  filterRules: string;
-  inclusionRules: string;
-  inclusionRulesDescription: Fragment;
-  exclusionRules: string;
-  exclusionRulesDescription: Fragment;
-  xConfigured: Snippet<number>;
-  addInclusionRule: string;
-  addExclusionRule: string;
-  noRuleConfigured: string;
-  filterPlaceholder: string;
-  caseSensitive: string;
-};
-//#endregion
 //#region src/sdk/prefix.d.ts
 declare function prefixWrapper(original: Fs, prefix: string): WrappedFs;
 //#endregion
@@ -845,17 +911,22 @@ type HeadSettingTranslations = {
   backend: string;
   backendDescription: string;
   syncStrategy: string;
-  syncStrategyDescription: string;
+  syncStrategyDescription: Fragment;
+  globPlaceholder: string;
   checkConnectionFailed: string;
   checkConnectionSuccess: string;
   checkConnection: string;
   conflictResolveStrategy: string;
   conflictResolveStrategyDescription: string;
   xEnabled: Snippet<number>;
+  xConfigured: Snippet<number>;
   settingTips: Fragment<{
     labels: Array<LabelDefinition>;
     addLabel: typeof addLabel;
   }>;
+  addStrategy: string;
+  noStrategyConfigured: string;
+  dontSync: string;
 };
 declare function addLabel(element: Element, { text, tooltip, color, textColor }: LabelDefinition): HTMLSpanElement;
 //#endregion
@@ -972,7 +1043,7 @@ declare class Bootstrap {
     keepRemote: string;
     renameAndKeepBoth: string;
     skip: string;
-  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & FilterSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
+  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
     maxMemoryConsumption: TogglableValue;
     maxRequestConcurrency: TogglableValue;
@@ -1094,8 +1165,7 @@ declare class Scheduler {
     startupSync: TogglableValue;
     scheduledSync: TogglableValue;
     realtimeSync: TogglableValue;
-    exclusionRules: Array<GlobMatchRule>;
-    inclusionRules: Array<GlobMatchRule>;
+    syncStrategy: Array<GlobStrategy>;
     avoidAutoSyncWhenOffline: boolean;
   };
   private readonly requestSync;
@@ -1129,84 +1199,6 @@ type Events = MergeSingleKey<InternalModules, 'events'>;
 type Settings = MergeSingleKey<InternalModules, 'settings'>;
 type Translations = MergeSingleKey<InternalModules, 'i18n'>;
 //#endregion
-//#region src/utils/glob-match.d.ts
-type GlobMatchResult = 'include' | 'exclude' | 'advance' | 'probe';
-//#endregion
-//#region src/modules/Sync.d.ts
-type SyncTerminateReason = {
-  result: 'cancelled';
-} | {
-  result: 'completed';
-} | {
-  result: 'failed';
-  error: string;
-} | {
-  result: 'noop';
-};
-type TaskInfo = {
-  name: TaskNames;
-  key: string;
-  prettyName: string;
-  isDir: boolean;
-};
-type FailedTaskInfo = TaskInfo & {
-  error: string;
-};
-type RemoteLister = (info: Infras & {
-  reporter: ListReporter;
-}) => MaybePromise<Array<Stat$1>>;
-type SyncOptions = {
-  decider?: Decider;
-  remoteLister?: RemoteLister;
-  conflictResolver?: ConflictResolver;
-  detectMoves?: boolean;
-  needConfirmTasks?: boolean;
-  needConfirmDeletion?: boolean;
-  exclusionRules?: Array<GlobMatchRule>;
-  inclusionRules?: Array<GlobMatchRule>;
-};
-declare class Sync {
-  private readonly ctx;
-  constructor(ctx: {
-    dispatch: Dispatch<Events>;
-    initializeSync: () => Infras;
-    getDecider: () => Decider;
-    on: On<Events>;
-    translate: Translate<Translations>;
-    getConflictResolver: () => ConflictResolver;
-  });
-  readonly events: {
-    syncStarted: {
-      isCancelled: Ref<boolean>;
-      trigger: string;
-    };
-    syncInitialized: Infras & {
-      match: (path: string) => GlobMatchResult;
-    };
-    remoteWalkProgress: Progress;
-    syncTerminated: SyncTerminateReason;
-    requestConfirmDelete: Array<RemoveLocal>;
-    requestConfirmTasks: Array<BaseTask>;
-    syncCanceled: undefined;
-    taskCompleted: TaskInfo;
-    taskFailed: FailedTaskInfo;
-    executionStarted: Array<BaseTask>;
-  };
-  readonly settings: {
-    maxFileSize: TogglableValue;
-    exclusionRules: Array<GlobMatchRule>;
-    inclusionRules: Array<GlobMatchRule>;
-  };
-  private readonly postProcess;
-  private readonly confirmTasks;
-  private readonly confirmDeletion;
-  private readonly executeSync;
-  private readonly convertDeleteToUpload;
-  root: {
-    executeSync: (trigger: string, options?: SyncOptions) => Promise<SyncTerminateReason>;
-  };
-}
-//#endregion
 //#region src/modules/Registrar.d.ts
 type RejectableWrapper<T> = (value: T) => T | undefined;
 type OrderedWrapperEntry<T> = {
@@ -1216,16 +1208,10 @@ type OrderedWrapperEntry<T> = {
 type RemoteRequestMiddlewareEntry = OrderedWrapperEntry<Request>;
 type LocalRequestMiddlewareEntry = OrderedWrapperEntry<VaultRequest>;
 type FsWrapperEntry = OrderedWrapperEntry<Fs>;
-type CheckConnectionResult = {
-  success: true;
-} | {
-  success: false;
-  reason: string;
-};
 type RemoteFsEntry = {
   instantiate: (request: Request) => RootFs;
   prettyName: () => string;
-  checkConnection: (request: Request) => MaybePromise<CheckConnectionResult>;
+  checkConnection: (request: Request) => MaybePromise<void | Error>;
 };
 type DeciderEntry = {
   decider: Decider;
@@ -1263,6 +1249,12 @@ type RequestResponse = {
   status: number;
 };
 type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
+type DecideTasksInput = {
+  local: Record<string, StatsMap>;
+  remote: Record<string, StatsMap>;
+  record: Record<string, RecordStatsMap>;
+  taskFactory: TaskFactory;
+};
 declare class Registrar {
   private readonly ctx;
   private readonly cleanupCallbacks;
@@ -1278,19 +1270,26 @@ declare class Registrar {
   private readonly conflictResolverRegistry;
   readonly settings: {
     remoteFs: string;
-    decider: string;
     conflictResolver: string;
+  };
+  readonly i18n: {
+    pleaseSetBackend: string;
+    backendNotInstalled: Snippet<string>;
+    syncStrategyNotInstalled: Snippet<string>;
+    conflictResolveStrategyNotInstalled: Snippet<string>;
   };
   constructor(ctx: {
     app: App;
-    getRecordStore: (namespace?: string) => StoreAsync<RecordStat>;
+    getRecordStore: (namespace: string) => RecordStore;
+    translate: Translate<Translations>;
+    dispatch: Dispatch<Events>;
   });
   private readonly getVaultRequest;
   private readonly createLocalFs;
   private readonly createRemoteFs;
   private readonly getRequest;
   private readonly getCheckConnection;
-  private readonly getDecider;
+  private readonly decideTasks;
   private readonly optimizeLocal;
   private readonly optimizeRemote;
   private readonly reduceTriggers;
@@ -1300,12 +1299,12 @@ declare class Registrar {
   root: {
     conflictResolverRegistry: Map<string, ConflictResolverEntry>;
     createLocalFs: () => Fs;
-    createRemoteFs: (remoteFs?: string) => Fs;
+    createRemoteFs: (remoteFs?: string) => Fs | Error;
+    decideTasks: ({ local, record, remote, taskFactory }: DecideTasksInput) => BaseTask<TaskOptions>[];
     deciderRegistry: Map<string, DeciderEntry>;
-    getCheckConnection: (remoteFs?: string) => () => MaybePromise<CheckConnectionResult>;
+    getCheckConnection: (remoteFs?: string) => () => MaybePromise<void | Error>;
     getConflictResolver: () => ConflictResolver;
-    getDecider: () => Decider;
-    getNamespace: (localFs?: Fs, remoteFs?: Fs) => string;
+    getNamespace: <R extends Fs | undefined>(localFs?: Fs, remoteFs?: R) => R extends Fs ? string : string | Error;
     getRequest: () => Request;
     getVaultRequest: () => VaultRequest;
     initializeSync: () => Infras;
@@ -1383,4 +1382,4 @@ type VaultRequest = <T extends VaultRequestParam = {
 }>(key: string, params?: T) => Promise<VaultRequestResponseMap[T['method']]>;
 type TrashOption = 'local' | 'system' | 'permanent';
 //#endregion
-export { RemoveRecord as $, setNeedMigration as A, FileStat as At, ObsidianLanguageCode as B, digOriginal as C, MoveAtom as Ct, readWithSize as D, RootFs as Dt, pipe as E, OutputAtom as Et, CallableOrObjectTree as F, RecordStatsMap as Ft, On as G, Translate as H, SettingEntry as I, Stat$1 as It, DeciderInput as J, CreateLocalDir as K, AugmentedModuleMeta as L, StatsMap as Lt, generateEditableList as M, MaybePromise as Mt, reactivelyValidate as N, Progress as Nt, writeWithValue as O, WrappedFs as Ot, s as P, RecordStat as Pt, RemoveRemote as Q, ModuleMeta as R, Binary as Rt, SelectFromContext as S, MkdirAtom as St, concurrency as T, OptimizerOutput as Tt, TranslationResource as U, Snippet as V, Dispatch as W, Upload as X, TaskFactory as Y, ResolveConflict as Z, Context as _, CustomAtom as _t, FsWrapperEntry as a, AddRecord as at, Translations as b, InputAtom as bt, RemoteFsEntry as c, ConflictResolverPayload as ct, RequestParam as d, DatabaseAsync as dt, RemoveLocal as et, RequestResponse as f, DatabaseSync as ft, SyncTerminateReason as g, BatchOptimizer as gt, SyncOptions as h, StoreSync as ht, DeciderEntry as i, CreateRemoteDir as it, LabelDefinition as j, FolderStat as jt, prefixWrapper as k, WriteAtom as kt, RemoteRequestMiddlewareEntry as l, TaskNames as lt, RemoteLister as m, StoreOperations as mt, CheckConnectionResult as n, MoveLocal as nt, LocalRequestMiddlewareEntry as o, BaseTask as ot, TriggerEntry as p, StoreAsync as pt, Decider as q, ConflictResolverEntry as r, Download as rt, OptimizerEntry as s, ConflictResolver as st, VaultRequest as t, MoveRemote as tt, Request as u, RecordStore as ut, Events as v, DeleteAtom as vt, chunkSize as w, OptimizerInput as wt, ExistingMemoryDB as x, ListReporter as xt, Settings as y, Fs as yt, Fragment as z };
+export { RemoveLocal as $, s as A, FileStat as At, Snippet as B, readWithSize as C, MoveAtom as Ct, LabelDefinition as D, RootFs as Dt, setNeedMigration as E, OutputAtom as Et, RemoteLister as F, RecordStatsMap as Ft, CreateLocalDir as G, TranslationResource as H, SyncOptions as I, Stat$1 as It, TaskFactory as J, Decider as K, SyncTerminateReason as L, StatsMap as Lt, SettingEntry as M, MaybePromise as Mt, AugmentedModuleMeta as N, Progress as Nt, generateEditableList as O, WrappedFs as Ot, ModuleMeta as P, RecordStat as Pt, RemoveRecord as Q, Fragment as R, Binary as Rt, pipe as S, MkdirAtom as St, prefixWrapper as T, OptimizerOutput as Tt, Dispatch as U, Translate as V, On as W, ResolveConflict as X, Upload as Y, RemoveRemote as Z, ExistingMemoryDB as _, DeleteAtom as _t, LocalRequestMiddlewareEntry as a, BaseTask as at, chunkSize as b, ListOptions as bt, RemoteRequestMiddlewareEntry as c, TaskNames as ct, RequestResponse as d, DatabaseSync as dt, MoveRemote as et, TriggerEntry as f, StoreAsync as ft, Translations as g, CustomAtom as gt, Settings as h, BatchOptimizer as ht, FsWrapperEntry as i, AddRecord as it, CallableOrObjectTree as j, FolderStat as jt, reactivelyValidate as k, WriteAtom as kt, Request as l, RecordStore as lt, Events as m, StoreSync as mt, ConflictResolverEntry as n, Download as nt, OptimizerEntry as o, ConflictResolver as ot, Context as p, StoreOperations as pt, DeciderInput as q, DeciderEntry as r, CreateRemoteDir as rt, RemoteFsEntry as s, ConflictResolverPayload as st, VaultRequest as t, MoveLocal as tt, RequestParam as u, DatabaseAsync as ut, SelectFromContext as v, Fs as vt, writeWithValue as w, OptimizerInput as wt, concurrency as x, ListReporter as xt, digOriginal as y, InputAtom as yt, ObsidianLanguageCode as z };

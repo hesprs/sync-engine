@@ -150,6 +150,8 @@ export async function signRequest(
 
 	// Strips host from actually sent headers to prevent Electron throwing
 	delete headers.host;
+	// Electron stamps `Sec-Fetch-Mode: no-cors` on every request. Backblaze B2 rejects authenticated POSTs carrying it (multipart upload initiation) as an attempt to bypass CORS from a browser fetch. Overriding with `navigate` keeps Chromium from CORS-enforcing the response (unlike `cors`) and stops the request from looking like a browser fetch, while staying an unsigned header per SigV4.
+	headers['Sec-Fetch-Mode'] = 'navigate';
 	return headers;
 }
 

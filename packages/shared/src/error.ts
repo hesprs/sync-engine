@@ -19,6 +19,11 @@ export function getStatus(error: unknown): number | undefined {
 	for (const candidate of candidates) if (typeof candidate === 'number') return candidate;
 }
 
-export function getMessage(error: unknown): string {
-	return error instanceof Error ? error.message : String(error);
+export function toError(error: unknown): Error {
+	return error instanceof Error ? error : new Error(String(error), { cause: error });
+}
+
+export function describeError(error: Error, msg: string) {
+	error.message = `${msg}: \`${error.message}\``;
+	return error;
 }
