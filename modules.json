@@ -6,7 +6,7 @@
 		"description": "WebDAV backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/webdav.js",
-		"minPluginVersion": "3.1.9",
+		"minPluginVersion": "3.2.0",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/webdav"
 	},
 	{
