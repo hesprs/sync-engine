@@ -86,7 +86,7 @@ export default class EventBus {
 				const thisSync = getThisSync();
 				if (thisSync.failedTasks) thisSync.failedTasks += 1;
 				else thisSync.failedTasks = 1;
-				putSyncError(describeError(error, `Task \`${name}\` of \`${key}\` failed`));
+				putSyncError(describeError(error, `Task \`${name}\` of \`${key}\` failed`, true));
 			}),
 			on('tasksConfirmed', (tasks) => putSyncLog(`Confirmed ${tasks.length} task(s).`)),
 			on('syncCanceled', () => putSyncLog('Sync is forced to stop.')),
@@ -101,7 +101,7 @@ export default class EventBus {
 				thisSync.outcome = result;
 				thisSync.ended = Date.now();
 				if (result === 'failed')
-					putSyncLog(`Sync ended with error: \`${reason.error.message}\`.`);
+					putSyncError(describeError(reason.error, 'Sync ended with error', true));
 				else putSyncLog(`Sync ended with result: \`${result}\`.`);
 				isIdle(true);
 			}),
@@ -110,23 +110,15 @@ export default class EventBus {
 		);
 	}
 
-	private readonly getThisSync = () => this.syncLogs.at(-1) as SyncStats;
-	private readonly putSyncLog = (log: string) => {
-		const message = `- \`INFO\` - ${log}`;
-		this.getThisSync().logs.push(message);
-	};
-	private readonly putGeneralLog = (log: string) => {
-		const message = `- \`INFO\` - ${log}`;
-		this.generalLogs.push(`- ${formatDateTime(Date.now(), true)} ${message}`);
-	};
-	private readonly putSyncError = (error: Error) => {
-		const message = `- \`ERROR\` - ${printError(error)}`;
-		this.getThisSync().logs.push(message);
-	};
-	private readonly putGeneralError = (error: Error) => {
-		const message = `- \`ERROR\` - ${printError(error)}`;
-		this.generalLogs.push(`- ${formatDateTime(Date.now(), true)} ${message}`);
-	};
+	private readonly getThisSync = () => this.syncLogs.last() as SyncStats;
+	private readonly putSyncLog = (log: string) =>
+		this.getThisSync().logs.push(addLevel('INFO', log));
+	private readonly putGeneralLog = (log: string) =>
+		this.generalLogs.push(addTime(addLevel('INFO', log)));
+	private readonly putSyncError = (error: Error) =>
+		this.getThisSync().logs.push(...printError(error));
+	private readonly putGeneralError = (error: Error) =>
+		this.generalLogs.push(...printError(error, true));
 
 	private readonly subscribers: { [K in keyof Events]?: Set<(event: Events[K]) => void> } = {};
 
@@ -183,10 +175,11 @@ export default class EventBus {
 			if (outcome) lines.push(`Outcome: \`${outcome}\``);
 			lines.push('Logs:', '');
 			for (const log of logs) lines.push(log);
-			lines.push('');
+			if (lines.last() !== '') lines.push('');
 		}
 		if (this.generalLogs.length)
 			lines.push('---', '', 'General logs:', '', ...this.generalLogs);
+		if (lines.last() !== '') lines.push('');
 		return lines.join('\n');
 	};
 
@@ -204,7 +197,10 @@ export default class EventBus {
 	};
 }
 
-function printError({ cause, message, stack }: Error) {
+const addLevel = (level: string, msg: string) => `- \`${level}\` - ${msg}`;
+const addTime = (msg: string) => `- ${formatDateTime(Date.now(), true)} ${msg}`;
+
+function printError({ cause, message, stack }: Error, time?: boolean): Array<string> {
 	let causeString: string | undefined;
 	if (cause)
 		try {
@@ -213,12 +209,14 @@ function printError({ cause, message, stack }: Error) {
 			// oxlint-disable-next-line typescript/no-base-to-string
 			causeString = String(cause);
 		}
-	let result = message;
+	const result = [addLevel('ERROR', message)];
+	if (time) addTime(result[0]);
 	if (causeString || stack) {
-		result += ':\n\n```';
-		if (stack) result += `\n${stack}`;
-		if (causeString) result += `\nCause:\n    ${causeString}`;
-		result += '\n```\n';
-	} else result += '.';
+		result[0] += ':';
+		result.push('', '```');
+		if (stack) result.push(stack);
+		if (causeString) result.push('Cause:', `    ${causeString}`);
+		result.push('```', '');
+	} else result[0] += '.';
 	return result;
 }

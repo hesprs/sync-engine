@@ -227,9 +227,7 @@ export function diffMerge<T>(
 	o: ReadonlyArray<T>,
 	b: ReadonlyArray<T>,
 ): Array<MergeChunk<T>> {
-	// Applies the output of diff3MergeIndices to actually
-	// Construct the merged file; the returned result alternates
-	// Between "ok" and "conflict" blocks.
+	// Applies the output of diff3MergeIndices to actually construct the merged file; the returned result alternates between "ok" and "conflict" blocks.
 	const result: Array<MergeChunk<T>> = [];
 	const indices = diff3MergeIndices(a, o, b);
 

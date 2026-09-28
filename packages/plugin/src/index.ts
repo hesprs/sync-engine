@@ -84,12 +84,7 @@ export default class SyncEngine extends Plugin {
 					'__MACOSX',
 					'desktop.ini',
 					'Thumbs.db',
-					'~$*.doc',
-					'~$*.docx',
-					'~$*.ppt',
-					'~$*.pptx',
-					'~$*.xls',
-					'~$*.xlsx',
+					'~$*.{doc,docx,ppt,pptx,xls,xlsx}',
 					'.git',
 					'.github',
 					'.gitlab',
@@ -98,7 +93,7 @@ export default class SyncEngine extends Plugin {
 					`${this.app.vault.configDir}/plugins/sync-engine/modules`,
 				].map((expr) => ({ expr, strategy: NONE_STRATEGY })),
 			],
-			...((await this.loadData()) as Record<string, unknown>),
+			...((await this.loadData()) as object),
 		};
 
 		migrateSettings(settings, this.saveSettings);

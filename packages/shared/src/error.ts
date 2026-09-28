@@ -23,7 +23,8 @@ export function toError(error: unknown): Error {
 	return error instanceof Error ? error : new Error(String(error), { cause: error });
 }
 
-export function describeError(error: Error, msg: string) {
-	error.message = `${msg}: \`${error.message}\``;
-	return error;
+export function describeError(error: Error, msg: string, newObj?: boolean) {
+	const e = newObj ? structuredClone(error) : error;
+	e.message = `${msg}: \`${error.message}\``;
+	return e;
 }

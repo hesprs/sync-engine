@@ -77,7 +77,7 @@ Encryption implementation in this module welcomes volunteer auditing.
 
 ## Enabling and Disabling
 
-The function is toggled via the **Encryption** setting. The password is stored in Obsidian's keychain. When a record store exists, changing the toggle opens a migration confirmation, which is similar to [the migration of asymmetric storage](../../usage/settings#asymmetric-storage).
+The function is toggled via the **Encryption** setting. The password is stored in Obsidian's keychain. When a record store exists, changing the toggle opens a confirmation prompt, similar to [asymmetric storage](../../usage/settings#asymmetric-storage); confirm only after your remote data has been migrated as described in the [Remote Migration guide](../../usage/remote-migration).
 
 ## Sync Routine
 

@@ -36,7 +36,7 @@ export default function encryptionSetting(
 				name: translate('encryption'),
 				render: (setting) => {
 					setting
-						.setClass('sync-engine-togglable-value')
+						.setClass('sync-engine-column')
 						.addComponent((element) =>
 							new SecretComponent(app, element)
 								.setValue(settings.password)
@@ -46,7 +46,7 @@ export default function encryptionSetting(
 								}),
 						)
 						.addToggle((toggle) =>
-							setNeedMigration(ctx as Context, {
+							setNeedMigration(ctx, {
 								apply: (value) => {
 									settings.enabled = value;
 									void saveSettings();

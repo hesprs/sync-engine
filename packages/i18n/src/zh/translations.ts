@@ -29,7 +29,7 @@ const zh: Translations = {
 				ol.createEl('li', { text: '如果您需要远程端保持人类可读性，请不要启用此功能。' });
 				ol.createEl('li', { text: '启用后，请确保所有设备都已启用非对称存储。' });
 				ol.createEl('li', {
-					text: '如果该库此前在未启用非对称存储的情况下上传过，则必须进行迁移。',
+					text: '如果该库此前在未启用非对称存储的情况下同步过，则必须进行迁移。',
 				});
 			} else {
 				frag.createEl('p', { text: '在禁用非对称存储之前，您需要注意以下几点：' });
@@ -37,7 +37,7 @@ const zh: Translations = {
 				ol.createEl('li', { text: '后续的所有上传都将镜像本地的层级结构。' });
 				ol.createEl('li', { text: '请确保所有设备都已禁用非对称存储。' });
 				ol.createEl('li', {
-					text: '如果该库此前在启用非对称存储的情况下上传过，则必须进行迁移。',
+					text: '如果该库此前在启用非对称存储的情况下同步过，则必须进行迁移。',
 				});
 			}
 		}),
@@ -165,13 +165,18 @@ const zh: Translations = {
 	maxRequestConcurrencyDescription:
 		'限制同步过程中的同时请求数。此选项对于有请求频率限制的服务非常有用。在输入框中修改并发限制。',
 	maxRequestConcurrencyPlaceholder: '输入并发限制',
-	migrationDescription:
-		'迁移可能需要几秒钟到几分钟不等，具体取决于库的大小。如果您已在其他设备上迁移了远程端，可以跳过此迁移。\n\n现在开始迁移吗？',
-	migrationFailed: '迁移失败',
-	migrationPhase1Description: '确保本地状态是最新的',
-	migrationPhase2Description: '清理远程端和记录',
-	migrationPhase3Description: '使用新结构填充远程端',
-	migrationProcess: '迁移进程',
+	migrationInstruction: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', { text: '请参阅' });
+			p1.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
+				text: '文档页面',
+			});
+			p1.appendText(
+				'了解如何安全地手动执行迁移。出于数据安全考虑，Sync Engine 不会自动执行迁移。如果您已迁移过云端存储，可以忽略此警告。',
+			);
+			frag.createEl('p', { text: '确认切换？' });
+		}),
 	minRequestInterval: '最小请求间隔',
 	minRequestIntervalDescription:
 		'限制同步过程中连续请求之间的最小时间间隔。此选项对于有请求频率限制的服务非常有用。在输入框中修改间隔。',
@@ -259,7 +264,6 @@ const zh: Translations = {
 		'由于 Sync Engine 插件版本过旧，部分模块已隐藏。请更新插件以查看完整模块目录。',
 	speed: '速度',
 	speedLabelDescription: '正确配置此设置可能会提高同步速度。',
-	startMigration: '开始迁移',
 	startNonInteractiveSync: '开始静默同步',
 	startSync: '开始同步',
 	startupSync: '启动同步',
@@ -270,7 +274,9 @@ const zh: Translations = {
 	syncStrategy: '同步策略',
 	syncStrategyDescription: () =>
 		createFragment((frag) => {
-			frag.appendText('根据 Glob 规则为不同文件配置不同的同步策略。详见');
+			frag.appendText(
+				'根据 Glob 规则为不同的文件配置不同的同步策略。当多条规则匹配同一个文件时，以最后一条规则为准。详见',
+			);
 			frag.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
 				text: '文档页面',
@@ -278,7 +284,6 @@ const zh: Translations = {
 			frag.appendText('。');
 		}),
 	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安装！`,
-	toggleWithoutMigration: '直接切换（不进行迁移）',
 	untrustedModule: '非信任模块',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {

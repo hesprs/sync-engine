@@ -16,7 +16,7 @@ Sync Engine accesses and modifies vault files for basic syncing and module manag
 
 It obtains the last modified time and file size for each file to detect changes; reads files and uploads to configured syncing backend; and updates or deletes local files according to detected remote changes. Deleted files follow Obsidian's trash setting and can go to system trash, the vault trash folder, or be permanently deleted.
 
-Sync Engine only accesses and modifies vault files during sync runs, and it never tries to access files that are explicitly excluded by [inclusion and exclusion rules](./settings#inclusion-and-exclusion-rules).
+Sync Engine only accesses and modifies vault files during sync runs, and it never tries to access files that are explicitly excluded by [Don't-sync strategy rules](./settings#sync-strategy-rules).
 
 Sync Engine also persists its modules in `<vault folder>/.obsidian/plugins/sync-engine/modules/`.
 
@@ -42,6 +42,7 @@ Obsidian secret storage is shown as "Keychain" in Obsidian settings. Sync Engine
 - Plugin core: reads the configured [secret headers](./settings#custom-headers) at the start of a sync run
 - [WebDAV](../deep-dive/modules/webdav) module: reads the configured WebDAV token secret at the start of a sync run for service authentication
 - [S3](../deep-dive/modules/s3) module: reads the configured secret access key when resolving S3 credentials for connection checks or sync operations
+- [Google Drive](../deep-dive/modules/gdrive) module: manages a secret named `sync-engine-gdrive-refresh-token` automatically and uses that for authorization for connection checks and sync operations.
 - [Encryption](../deep-dive/modules/encryption) module: reads the configured encryption password secret at the start of a sync run for later encryption and decryption
 
 Sync Engine and official modules never read beyond what is provided by the user.

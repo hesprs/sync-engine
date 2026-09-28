@@ -35,7 +35,6 @@ export default function smartMergeSetting(
 					name: translate('conflictOursMarkers'),
 					render: (setting) => {
 						setting
-							.setClass('sync-engine-togglable-value')
 							.addText(marker('conflictAStart', translate('start')))
 							.addText(marker('conflictAEnd', translate('end')));
 					},
@@ -45,7 +44,6 @@ export default function smartMergeSetting(
 					name: translate('conflictTheirsMarkers'),
 					render: (setting) => {
 						setting
-							.setClass('sync-engine-togglable-value')
 							.addText(marker('conflictBStart', translate('start')))
 							.addText(marker('conflictBEnd', translate('end')));
 					},
@@ -55,7 +53,6 @@ export default function smartMergeSetting(
 					name: translate('deletionMarkers'),
 					render: (setting) => {
 						setting
-							.setClass('sync-engine-togglable-value')
 							.addText(marker('deletionStart', translate('start')))
 							.addText(marker('deletionEnd', translate('end')));
 					},

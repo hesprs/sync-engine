@@ -837,28 +837,14 @@ type DevelopmentSettingTranslations = {
 //#region src/components/MigrationModal.d.ts
 type MigrationModalTranslations = {
   cancel: string;
+  confirm: string;
   remoteMigration: string;
-  migrationProcess: string;
-  startMigration: string;
-  migrationDescription: string;
-  migrationPhase1Description: string;
-  migrationPhase2Description: string;
-  migrationPhase3Description: string;
-  toggleWithoutMigration: string;
-  migrationFailed: string;
-  completed: string;
-  hide: string;
-  done: string;
+  migrationInstruction: Fragment;
 };
-type MigrationContext = {
+declare function setNeedMigration({ app, translate }: {
   app: App;
-  dispatch: Dispatch<Events>;
   translate: Translate<MigrationModalTranslations>;
-  requestSync: (trigger: string) => Promise<SyncTerminateReason>;
-  initializeSync: () => Infras;
-  memoryDB: ExistingMemoryDB;
-};
-declare function setNeedMigration(ctx: MigrationContext, { toggle, needMigration, content, apply }: {
+}, { toggle, needMigration, content, apply }: {
   toggle: ToggleComponent;
   needMigration?: (value: boolean) => MaybePromise<boolean>;
   content: (value: boolean) => string | DocumentFragment;

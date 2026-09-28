@@ -135,14 +135,13 @@ Use a `group` for a heading and its children, a `page` for a separate settings p
 
 Core setting sections use these priorities:
 
-| Section           | Priority | Contents                                                                   |
-| ----------------- | -------: | -------------------------------------------------------------------------- |
-| Top configuration |      `0` | Backend, module management, decider, conflict resolver.                    |
-| Features          |   `1000` | Realtime, startup, scheduled sync; realtime fast mode; asymmetric storage. |
-| Controls          |   `2000` | File-size, request-concurrency, request-interval, memory limits.           |
-| Filter rules      |   `3000` | Inclusion and exclusion rule pages.                                        |
-| Miscellaneous     |   `4000` | Custom headers, mobile notices, task confirmation, deletion confirmation.  |
-| Development       |   `5000` | Record cleanup, log export, and module source pages.                       |
+| Section           | Priority | Contents                                                                           |
+| ----------------- | -------: | ---------------------------------------------------------------------------------- |
+| Top configuration |      `0` | Backend, module management, auto-update, sync strategy, conflict resolver.         |
+| Features          |   `1000` | Realtime, startup, scheduled sync; realtime fast mode; asymmetric storage.         |
+| Controls          |   `2000` | File-size, request-concurrency, request-interval, memory limits.                   |
+| Miscellaneous     |   `3000` | Custom headers, mobile notices, offline behavior, task and deletion confirmations. |
+| Development       |   `4000` | Record cleanup, log export, and module source pages.                               |
 
 Settings contributed by modules are included when the module loads and removed when it unloads. The settings tab refreshes after either event.
 
@@ -294,7 +293,7 @@ Register translations before settings or other UI that uses them. `registerI18n(
 
 ## Migration-Aware Toggles
 
-Use `setNeedMigration()` when changing a toggle can make existing records or remote files incompatible with the new setting. The helper opens Sync Engine's migration dialog when migration is required.
+Use `setNeedMigration()` when changing a toggle can make existing records or remote files incompatible with the new setting. The helper opens a confirmation dialog when the change requires a manual migration.
 
 ```ts
 import { setNeedMigration } from '@hesprs/sync-engine-sdk';
@@ -310,8 +309,8 @@ setNeedMigration(ctx, {
 });
 ```
 
-`needMigration` receives the proposed boolean value and may return a boolean or promise. When it returns `true`, the toggle is reverted and the user can cancel, apply the change without migration, or start migration. When it returns `false`, `apply` runs immediately. If `needMigration` is omitted, migration is required by default.
+`needMigration` receives the proposed boolean value and may return a boolean or promise. When it returns `true`, the toggle is reverted and a confirmation dialog opens; confirming runs `apply` to change the setting, and canceling keeps the old value. Sync Engine does not perform the migration itself — the dialog points to the documentation for how to migrate manually. When `needMigration` returns `false`, `apply` runs immediately. If `needMigration` is omitted, confirmation is required by default.
 
-`content` supplies the explanation shown in the migration dialog. `apply` runs after the user chooses either migration or toggle-without-migration. Both callbacks may be asynchronous.
+`content` supplies the explanation shown at the top of the dialog. Both callbacks may be asynchronous.
 
-The migration dialog is an internal UI component; `setNeedMigration()` is the public SDK helper.
+The dialog is an internal UI component; `setNeedMigration()` is the public SDK helper.

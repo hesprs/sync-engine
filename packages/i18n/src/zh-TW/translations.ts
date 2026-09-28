@@ -29,7 +29,7 @@ const zhTW: Translations = {
 				});
 				ol.createEl('li', { text: '啟用後，請確保所有裝置皆已開啟非對稱儲存。' });
 				ol.createEl('li', {
-					text: '若此儲存庫先前未啟用非對稱儲存即進行過上傳，則必須執行遷移。',
+					text: '若此儲存庫先前未啟用非對稱儲存即進行過同步，則必須執行遷移。',
 				});
 			} else {
 				frag.createEl('p', { text: '在停用非對稱儲存前，請務必留意以下幾點：' });
@@ -37,7 +37,7 @@ const zhTW: Translations = {
 				ol.createEl('li', { text: '後續的所有上傳將會還原為本地的層級結構。' });
 				ol.createEl('li', { text: '請確保所有裝置皆已停用非對稱儲存。' });
 				ol.createEl('li', {
-					text: '若此儲存庫先前是在啟用非對稱儲存的狀態下上傳，則必須執行遷移。',
+					text: '若此儲存庫先前是在啟用非對稱儲存的狀態下同步，則必須執行遷移。',
 				});
 			}
 		}),
@@ -163,13 +163,18 @@ const zhTW: Translations = {
 	maxRequestConcurrencyDescription:
 		'限制同步過程中的同時請求數量。此選項適用於有請求速率限制的服務。請在欄位中修改併發限制。',
 	maxRequestConcurrencyPlaceholder: '輸入併發限制',
-	migrationDescription:
-		'根據儲存庫的大小，遷移過程可能需要數秒至數分鐘。若您已在其他裝置上完成遠端遷移，可以跳過此步驟。\n\n是否立即開始遷移？',
-	migrationFailed: '遷移失敗',
-	migrationPhase1Description: '確保本地狀態為最新',
-	migrationPhase2Description: '清理遠端檔案與紀錄',
-	migrationPhase3Description: '以新結構建置遠端內容',
-	migrationProcess: '遷移進度',
+	migrationInstruction: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', { text: '請參閱' });
+			p1.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
+				text: '文件頁面',
+			});
+			p1.appendText(
+				'了解如何安全地手動執行遷移。基於資料安全考量，Sync Engine 不會自動執行遷移。若您已遷移過雲端儲存，可以忽略此警告。',
+			);
+			frag.createEl('p', { text: '確認切換？' });
+		}),
 	minRequestInterval: '最小請求間隔',
 	minRequestIntervalDescription:
 		'限制同步過程中連續請求之間的最小時間間隔。此選項適用於有請求速率限制的服務。請在欄位中修改間隔時間。',
@@ -256,7 +261,6 @@ const zhTW: Translations = {
 		'由於 Sync Engine 外掛程式版本過舊，部分模組已隱藏。請更新外掛程式以查看完整模組目錄。',
 	speed: '速度',
 	speedLabelDescription: '正確設定此選項可能會提升同步速度。',
-	startMigration: '開始遷移',
 	startNonInteractiveSync: '啟動非互動式同步',
 	startSync: '開始同步',
 	startupSync: '啟動時同步',
@@ -268,7 +272,9 @@ const zhTW: Translations = {
 	syncStrategy: '同步策略',
 	syncStrategyDescription: () =>
 		createFragment((frag) => {
-			frag.appendText('根據 Glob 規則為不同檔案設定不同的同步策略。詳見');
+			frag.appendText(
+				'根據 Glob 規則為不同的檔案設定不同的同步策略。當有多個規則配對至同一個檔案時，以最後一個規則為準。詳見',
+			);
 			frag.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
 				text: '文件頁面',
@@ -276,7 +282,6 @@ const zhTW: Translations = {
 			frag.appendText('。');
 		}),
 	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安裝！`,
-	toggleWithoutMigration: '直接切換（不執行遷移）',
 	untrustedModule: '非信任模組',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {

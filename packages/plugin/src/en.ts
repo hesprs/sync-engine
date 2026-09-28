@@ -40,7 +40,7 @@ const en: Translations = {
 					text: 'After enabling, please ensure all devices have asymmetric storage enabled.',
 				});
 				ol.createEl('li', {
-					text: 'Migration is necessary if this vault was previously uploaded without asymmetric storage.',
+					text: 'Migration is necessary if this vault was previously synchronized without asymmetric storage.',
 				});
 			} else {
 				frag.createEl('p', {
@@ -54,7 +54,7 @@ const en: Translations = {
 					text: 'Please ensure all devices have asymmetric storage disabled.',
 				});
 				ol.createEl('li', {
-					text: 'Migration is necessary if this vault was previously uploaded with asymmetric storage enabled.',
+					text: 'Migration is necessary if this vault was previously synchronized with asymmetric storage enabled.',
 				});
 			}
 		}),
@@ -188,13 +188,18 @@ const en: Translations = {
 	maxRequestConcurrencyDescription:
 		'Limit the number of simultaneous requests during synchronization. This option is useful for services with request rate limits. Alter the concurrency limit in the field.',
 	maxRequestConcurrencyPlaceholder: 'Enter concurrency limit',
-	migrationDescription:
-		'Migration may take seconds to minutes depending on the vault size. If you have migrated the remote on other devices, you can skip the migration.\n\nStart migration now?',
-	migrationFailed: 'Migration failed',
-	migrationPhase1Description: 'Ensure local state is up-to-date',
-	migrationPhase2Description: 'Clean up remote and records',
-	migrationPhase3Description: 'Populate remote with new structure',
-	migrationProcess: 'Migration process',
+	migrationInstruction: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', { text: 'See ' });
+			p1.createEl('a', {
+				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
+				text: 'documentation page',
+			});
+			p1.appendText(
+				' for how to safely perform a manual migration. For your data safety, Sync Engine does not perform the migration automatically. If you have migrated your cloud storage, you can ignore the warning.',
+			);
+			frag.createEl('p', { text: 'Confirm to toggle?' });
+		}),
 	minRequestInterval: 'Min request interval',
 	minRequestIntervalDescription:
 		'Limit the minimum time between consecutive requests during synchronization. This option is useful for services with request rate limits. Alter the interval in the field.',
@@ -289,7 +294,6 @@ const en: Translations = {
 		'Some modules are hidden since Sync Engine plugin is outdated, update to explore the full module catalog.',
 	speed: 'Speed',
 	speedLabelDescription: 'Properly configuring this setting could improve sync speed.',
-	startMigration: 'Start migration',
 	startNonInteractiveSync: 'Start non-interactive sync',
 	startSync: 'Start sync',
 	startupSync: 'Startup sync',
@@ -302,7 +306,7 @@ const en: Translations = {
 	syncStrategyDescription: () =>
 		createFragment((frag) => {
 			frag.appendText(
-				'Configure different synchronization strategies for different files based on Glob rules. See ',
+				'Configure different synchronization strategies for different files based on Glob rules. The last rule wins when multiple rules match the same file. See ',
 			);
 			frag.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
@@ -311,7 +315,6 @@ const en: Translations = {
 			frag.append(' for configuration details.');
 		}),
 	syncStrategyNotInstalled: (strategy) => `Sync strategy "${strategy}" not installed!`,
-	toggleWithoutMigration: 'Toggle without migration',
 	untrustedModule: 'Untrusted module',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {

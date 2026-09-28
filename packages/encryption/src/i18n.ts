@@ -14,7 +14,7 @@ export const en: EncryptionTranslations = {
 				ol.createEl('li', { text: 'All subsequent uploads will be encrypted.' });
 				ol.createEl('li', { text: 'Please ensure all devices have encryption enabled.' });
 				ol.createEl('li', {
-					text: 'Migration is necessary if you have previously synced without encryption.',
+					text: 'Migration is necessary if you have previously synchronized without encryption.',
 				});
 				const li = ol.createEl('li', {
 					text: 'You should ensure all the items are identical on all your devices:',
@@ -38,7 +38,7 @@ export const en: EncryptionTranslations = {
 				});
 				ol.createEl('li', { text: 'Please ensure all devices have encryption disabled.' });
 				ol.createEl('li', {
-					text: 'Migration is necessary if this vault was previously uploaded with encryption.',
+					text: 'Migration is necessary if this vault was previously synchronized with encryption.',
 				});
 			}
 		}),

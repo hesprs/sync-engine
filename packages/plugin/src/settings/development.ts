@@ -86,7 +86,10 @@ export default function developmentSettings({
 									}),
 							)
 							.addButton((button) => {
-								button.setButtonText(translate('export')).onClick(exportLogs);
+								button
+									.setButtonText(translate('export'))
+									.onClick(exportLogs)
+									.setClass('sync-engine-button-shrink');
 							});
 					},
 				})),
@@ -130,10 +133,7 @@ export default function developmentSettings({
 											},
 											text,
 										});
-										if (item.new) {
-											item.new = false;
-											text.inputEl.focus();
-										}
+										if (item.new) text.inputEl.focus();
 									});
 								},
 								rerenderSettingTab,

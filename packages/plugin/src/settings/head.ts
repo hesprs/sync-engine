@@ -184,10 +184,7 @@ export default function headSettings(
 										},
 										text,
 									});
-									if (item.new) {
-										item.new = false;
-										text.inputEl.focus();
-									}
+									if (item.new) text.inputEl.focus();
 								})
 								.addDropdown((dropdown) =>
 									dropdown

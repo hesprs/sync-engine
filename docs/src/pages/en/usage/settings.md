@@ -22,13 +22,16 @@ Automatically update installed modules from their configured sources. Enabled by
 
 ### Sync Strategy
 
-Choose how Sync Engine decides what to do when local and remote files differ:
+Strategy rules decide what Sync Engine does with each file and folder. Each rule pairs a glob expression with a strategy:
 
 - **Bidirectional** is the default. It can apply changes on both sides and asks the selected conflict resolver to handle simultaneous file changes.
 - **Mirror local** makes local vault authoritative. It copies local entries to remote and removes remote-only entries.
 - **Mirror remote** makes remote storage authoritative. It copies remote entries to local and removes local-only entries.
+- **Don't sync** leaves matching files and folders out of synchronization entirely.
 
-Mirror strategies overwrite changes on the non-authoritative side without conflict resolution. Other strategies may be supplied by modules.
+Rules form an ordered list where the last matching rule wins. See [Sync Strategy Rules](#sync-strategy-rules) for how rules are evaluated and written.
+
+Mirror strategies overwrite changes on the non-authoritative side without conflict resolution. Modules can supply additional strategies; they appear in the rule's strategy dropdown once installed.
 
 ### Conflict Resolve Strategy
 
@@ -76,9 +79,8 @@ This changes how the remote storage looks. Read the separate [Asymmetric Storage
 
 - Remote files will not be readable in their normal folder structure.
 - Every device using the vault must use the same setting.
-- Changing this setting for an existing vault opens a migration prompt. Cancel leaves the current setting unchanged.
-- **Toggle without migration** changes the setting without moving remote files or clearing records. Use it only when the remote storage already has the target layout, such as after migrating on another device.
-- **Start migration** updates local state, clears matching records, removes known remote entries, and repopulates the remote storage with the new layout. Do not start it concurrently on multiple devices.
+- Changing this setting for an existing vault opens a confirmation prompt. Cancel leaves the current setting unchanged.
+- Sync Engine does not migrate remote storage automatically. Confirming applies the setting to new syncs only; existing remote files keep the old layout. Read the [Remote Migration guide](./remote-migration) before confirming.
 - Enable it only when you do not need to browse the remote files as ordinary files.
 
 Enabled by default.
@@ -118,33 +120,28 @@ Enabled by default with a limit of `100MB`.
 - Numeric values such as request concurrency accept a number, for example `50`.
 - Values must be zero or greater. Settings that represent a limit or interval may reject zero. Invalid values remain marked with a warning and are not saved until corrected.
 
-## Inclusion and Exclusion Rules
+## Sync Strategy Rules
 
-Use glob rules to control which files and folders Sync Engine synchronizes.
+Rules are managed on the [Sync Strategy](#sync-strategy) page as an ordered list. Each rule pairs a glob expression with a strategy. When several rules match the same path, the **last matching rule wins**. Paths that match no rule are not synchronized.
 
-- **Exclusion rules** stop matching files and folders from syncing.
-- **Inclusion rules** make exceptions to exclusion rules.
-- Files and folders matching neither list sync normally.
+Sync Engine ships with default rules: bidirectional sync for everything (`*`), plus **Don't sync** rules for common noise such as `.git`, `.trash`, `.obsidian`, system metadata files, Office temporary files, and Sync Engine's own modules folder. You can edit, reorder, or extend these rules.
 
-Sync Engine evaluates each file and folder against both lists:
+- A rule that matches a folder applies its strategy to everything inside the folder.
+- A later rule can single out paths inside such a folder and give them a different strategy.
 
-1. A matching inclusion rule takes precedence, even when an exclusion rule also matches.
-2. An item inside an excluded folder remains excluded unless an inclusion rule matches that item or a descendant that should be kept.
-3. An item matching only an exclusion rule does not sync.
-4. An item matching neither list syncs.
+Example: synchronize everything, keep a private folder out of sync, but keep one shared subfolder syncing:
 
-Example:
+| Order | Rule                  | Strategy      |
+| ----- | --------------------- | ------------- |
+| 1     | `*`                   | Bidirectional |
+| 2     | `private/`            | Don't sync    |
+| 3     | `private/shared/**/*` | Bidirectional |
 
-```text
-Exclusion rule: private/
-Inclusion rule: private/keep.md
-```
-
-`private/keep.md` syncs; other files under `private/` remain excluded. Add inclusion rules for files or subtrees that should pass through excluded folders.
+Rule 2 excludes everything under `private/`. Rule 3 comes later, so files under `private/shared/` sync anyway.
 
 ::: warning
 
-If you sync Obsidian's plugin directory, you need to **exclude Sync Engine's modules folder in any situation (always ensure `.obsidian/plugins/sync-engine/modules` exists in your exclusion rules)**. [Due to security considerations](../deep-dive/extensibility), all untracked modifications in that folder (including sync runs) will trigger Sync Engine's security protection mechanism. And will cause the modules fail to load.
+Sync Engine's module files live in `.obsidian/plugins/sync-engine/modules`. If your rules make that folder sync, any modification Sync Engine does not know about (including changes made by sync runs) triggers [the security protection mechanism](../deep-dive/extensibility), and modules stop loading. The default rules exclude `.obsidian` entirely; keep that exclusion, or make sure your rules never sync the modules folder.
 
 :::
 
@@ -158,16 +155,24 @@ Rules use [`glob` expressions](<https://en.wikipedia.org/wiki/Glob_(programming)
 | `temp/`           | Folders named `temp` and their contents           |
 | `notes/**/*.md`   | Markdown files inside `notes` and its subfolders  |
 | `test-files/**/*` | Everything inside `test-files` and its subfolders |
-| `**/.trash/`      | Any folder named `.trash`                         |
+| `.trash/`         | Any folder named `.trash`                         |
+| `*.{png,jpg}`     | `png` or `jpg` files anywhere in your vault       |
 | `/.obsidian/`     | `.obsidian` at vault root                         |
 
-`*` matches within one path segment. `**` also crosses subfolders. `?` matches one character. Add `/` at the end to match folders. Rules are case-insensitive by default; use the case-sensitive button in the rule editor when needed. Start a rule with `/` to anchor it at the vault root.
+- `*` matches any characters within one path segment.
+- `**` matches any number of segments, including none.
+- `?` matches one character.
+- `[abc]` matches one character from the set.
+- `[!abc]` matches one outside thr set.
+- `{a,b,c}` matches any listed variants, and braces can nest.
+- End a rule with `/` to match folders only. A rule containing a slash (other than a trailing one) starts matching from the vault root; otherwise it matches at any depth.
+- Rules are case-sensitive: `Temp` does not match `temp`.
 
 ::: tip
 
-Sync Engine avoids walking excluded subtrees. When an excluded folder cannot contain anything matched by an inclusion rule, traversal stops at that folder. If an inclusion rule could match a descendant, Sync Engine probes that folder to find the included content.
+Sync Engine avoids walking subtrees that cannot contain synchronized content. When a **Don't sync** folder cannot contain anything matched by a later rule, traversal stops at that folder. If a later rule could match a descendant, Sync Engine probes that folder to find the included content.
 
-Anchor inclusion rules when their location is known. For example, use `/projects/current/**/*` instead of `projects/current/**/*` when `projects` is at the vault root. An anchored rule narrows the possible path immediately, reducing probes through unrelated excluded folders. Unanchored rules can match the same path shape at any depth, so they may require more traversal.
+Anchor rules when their location is known. For example, use `/projects/current/**/*` instead of `projects/current/**/*` when `projects` is at the vault root. An anchored rule narrows the possible path immediately, accelerating traversal by reducing probes through unrelated folders. Unanchored rules can match the same path shape at any depth, so they may require more traversal.
 
 :::
 

@@ -29,7 +29,38 @@ function escapeRegExpCharacter(character: string): string {
 	return /[\\()[\]{}|^$.*+?]/u.test(character) ? `\\${character}` : character;
 }
 
-function compileSegment(pattern: string): RegExp {
+function expandBraces(pattern: string): Array<string> {
+	const open = pattern.indexOf('{');
+	if (open === -1) return [pattern];
+	const alternatives: Array<string> = [];
+	let depth = 0;
+	let end = -1;
+	let start = open + 1;
+	for (let index = open; index < pattern.length; index++) {
+		const character = pattern[index];
+		if (character === '{') depth++;
+		else if (character === '}') {
+			depth--;
+			if (depth === 0) {
+				end = index;
+				break;
+			}
+		} else if (character === ',' && depth === 1) {
+			alternatives.push(pattern.slice(start, index));
+			start = index + 1;
+		}
+	}
+	if (end === -1 || alternatives.length === 0) {
+		const prefix = pattern.slice(0, open + 1);
+		return expandBraces(pattern.slice(open + 1)).map((rest) => prefix + rest);
+	}
+	const head = pattern.slice(0, open);
+	const tail = pattern.slice(end + 1);
+	alternatives.push(pattern.slice(start, end));
+	return alternatives.flatMap((alternative) => expandBraces(head + alternative + tail));
+}
+
+function compileSource(pattern: string): string {
 	let source = '';
 	for (let index = 0; index < pattern.length; index++) {
 		const character = pattern[index];
@@ -60,6 +91,14 @@ function compileSegment(pattern: string): RegExp {
 		source += `[${negated ? '^' : ''}${negated ? characterClass.slice(1) : characterClass}]`;
 		index = end;
 	}
+	return source;
+}
+
+// Each path segment compiles to exactly one regex, so brace alternatives merge into a single alternation; braces expand before compilation, nested groups and later braces expand recursively, while unmatched braces stay literal
+function compilePattern(pattern: string): RegExp {
+	const source = expandBraces(pattern)
+		.map((alternative) => `(?:${compileSource(alternative)})`)
+		.join('|');
 	return new RegExp(`^${source}$`, 'u');
 }
 
@@ -73,7 +112,7 @@ export function normalizeGlob(glob: string): string | undefined {
 	const parts = body.split('/').filter(Boolean);
 	for (const part of parts)
 		try {
-			compileSegment(part);
+			compilePattern(part);
 		} catch {
 			return;
 		}
@@ -88,7 +127,7 @@ function compileRule({ expr, strategy }: GlobStrategy): CompiledRule {
 		// Patterns containing a slash (besides a trailing one) only match from the vault root, while a lone segment matches at any depth
 		anchored: leadingSlash || parts.length > 1,
 		directoryOnly,
-		segments: parts.map((part) => (part === '**' ? '**' : compileSegment(part))),
+		segments: parts.map((part) => (part === '**' ? '**' : compilePattern(part))),
 		strategy,
 	};
 }
@@ -138,79 +177,58 @@ function matchesRule(rule: CompiledRule, path: Path): boolean {
 	return false;
 }
 
-// An inner globstar can always skip ahead because it also matches zero segments
-function closeInner(pattern: Array<RegExp | '**'>, states: Set<number>): Set<number> {
-	const closed = new Set(states);
-	for (let index = 0; index < pattern.length - 1; index++)
-		if (pattern[index] === '**') closed.add(index + 1);
-	return closed;
-}
+function prefixStates(pattern: Array<RegExp | '**'>, path: Array<string>): Set<number> {
+	let states = new Set([0]);
 
-// Pattern positions still reachable after consuming the folder's own segments: a pending rule never completes here, since completing would mean it already matched the folder
-function pendingStates(pattern: Array<RegExp | '**'>, path: Array<string>): Set<number> {
-	let states = new Set<number>([0]);
+	const close = (input: Set<number>) => {
+		const result = new Set(input);
+		let changed = true;
+		while (changed) {
+			changed = false;
+			for (const index of result) {
+				if (pattern[index] !== '**' || result.has(index + 1)) continue;
+				result.add(index + 1);
+				changed = true;
+			}
+		}
+		return result;
+	};
+
 	for (const segment of path) {
 		const next = new Set<number>();
-		for (const index of closeInner(pattern, states)) {
+		for (const index of close(states)) {
 			const matcher = pattern[index];
 			if (matcher === '**') next.add(index);
 			else if (matcher?.test(segment)) next.add(index + 1);
 		}
-		if (next.size === 0) return next;
 		states = next;
+		if (states.size === 0) return states;
 	}
-	return closeInner(pattern, states);
+
+	return close(states);
 }
 
-// Whether a compiled segment matches every possible segment, namely `*`
-function isUniversal(segment: RegExp | '**'): segment is RegExp {
-	return segment !== '**' && segment.source === '^.*$';
-}
-
-// A pending rule and the pattern positions it can still be live at; identical patterns share one entry so they complete in lockstep
-type PendingRule = {
-	readonly indices: Array<number>;
-	readonly rule: CompiledRule;
-	readonly states: Set<number>;
-};
-
-// The outcomes of one unknown segment below the folder: globstars and `*` advance unconditionally, while each other regex independently matches or misses
-type Stepped = { completed: boolean } & PendingRule;
-
-function stepOptions({ rule, states }: PendingRule): Array<Stepped> {
-	const { segments: pattern } = rule;
-	const len = pattern.length;
-	if (!rule.anchored) {
-		// A lone segment matches at any depth, so it stays pending until its first hit
-		if (isUniversal(pattern[0]) || pattern[0] === '**')
-			return [{ completed: true, indices: [], rule, states: new Set<number>() }];
-		return [
-			{ completed: false, indices: [], rule, states: new Set<number>([0]) },
-			{ completed: true, indices: [], rule, states: new Set<number>() },
-		];
-	}
-	const closed = closeInner(pattern, states);
-	const branching = [...closed].filter(
-		(index) => pattern[index] !== '**' && !isUniversal(pattern[index] as RegExp | '**'),
+function canMatchAnyDescendant(rule: CompiledRule, path: Path): boolean {
+	if (!rule.anchored) return true;
+	// Regex segments are always traversable by arbitrary descendant names and a globstar can always consume one segment, so any reachable state before the pattern end absorbs at least one strict descendant segment
+	return [...prefixStates(rule.segments, path.segments)].some(
+		(state) => state < rule.segments.length,
 	);
-	return Array.from({ length: 1 << branching.length }, (_, mask) => {
-		const next = new Set<number>();
-		for (const index of closed) {
-			const matcher = pattern[index];
-			if (matcher === '**') {
-				next.add(index);
-				// A trailing globstar absorbs the segment and may also finish here
-				if (index === len - 1) next.add(len);
-			} else if (isUniversal(matcher)) next.add(index + 1);
-		}
-		for (const i of branching.keys()) if (mask & (1 << i)) next.add(branching[i] + 1);
-		return { completed: next.has(len), indices: [], rule, states: closeInner(pattern, next) };
-	});
+}
+
+// Whether the rule matches every possible strict descendant of the folder: only a trailing run of globstars can absorb arbitrary segments below it, while a fully consumed pattern is a dead end rather than an absorber
+function matchesAllDescendants(rule: CompiledRule, path: Path): boolean {
+	if (rule.directoryOnly) return false; // Files always escape directory-only rules
+	const { segments: pattern } = rule;
+	const states = [...prefixStates(pattern, path.segments)];
+	return (
+		states.some((state) => state < pattern.length && pattern[state] === '**') &&
+		states.every((state) => state === pattern.length || pattern[state] === '**')
+	);
 }
 
 export function prepareGlobMatch(rules: Array<GlobStrategy>): (path: string) => GlobMatchResult {
 	const compiled = rules.map(compileRule);
-	const strategyAt = (index: number) => (index === -1 ? NONE_STRATEGY : compiled[index].strategy);
 
 	return (path) => {
 		const parsed = parsePath(path);
@@ -224,57 +242,28 @@ export function prepareGlobMatch(rules: Array<GlobStrategy>): (path: string) => 
 
 		if (!parsed.directory) return { strategy };
 
-		// Rules after the last match can still reclaim descendants, tracked as tiny automata while descending unknown segments below the folder
-		const groups = new Map<string, PendingRule>();
-		for (let index = lastMatch + 1; index < compiled.length; index++) {
-			const rule = compiled[index];
-			const states = rule.anchored
-				? pendingStates(rule.segments, parsed.segments)
-				: new Set<number>([0]);
-			if (states.size === 0) continue;
-			// Identical patterns always complete together, so they share one automaton to stay in lockstep
-			const key = `${rule.anchored}:${rule.segments.map((s) => (s === '**' ? '**' : s.source)).join('/')}`;
-			const group = groups.get(key);
-			if (group) group.indices.push(index);
-			else groups.set(key, { indices: [index], rule, states });
-		}
+		// A later `none` rule matching every possible descendant shadows everything before it, so descendants can only be reclaimed by rules after the highest such catch-all
+		let floor = lastMatch;
+		for (const [index, rule] of compiled.entries())
+			if (
+				index > floor &&
+				rule.strategy === NONE_STRATEGY &&
+				matchesAllDescendants(rule, parsed)
+			)
+				floor = index;
 
-		// A descendant resolves to the highest rule completed along its path, starting from the folder's own last match
-		const seen = new Set<string>();
-		const walk = (pending: Array<PendingRule>, resolved: number): boolean => {
-			const key = `${resolved};${pending
-				.map(
-					(p) =>
-						`${p.indices.join(',')}=${[...p.states].sort((a, b) => a - b).join(',')}`,
-				)
-				.join('|')}`;
-			if (seen.has(key)) return false;
-			seen.add(key);
-			// Enumerate the joint outcomes of one unknown segment
-			const step = (index: number, acc: Array<Stepped>): boolean => {
-				if (index === pending.length) {
-					const done = acc.filter((o) => o.completed).flatMap((o) => o.indices);
-					const folder = Math.max(resolved, ...done);
-					if (strategyAt(folder) !== NONE_STRATEGY) return true;
-					// Files escape directory-only rules, so one completing on the final segment cannot claim them
-					const file = Math.max(
-						resolved,
-						...done.filter((i) => !compiled[i].directoryOnly),
-					);
-					if (strategyAt(file) !== NONE_STRATEGY) return true;
-					return walk(
-						acc.filter((o) => !o.completed && o.states.size > 0),
-						folder,
-					);
-				}
-				for (const option of stepOptions(pending[index])) {
-					const outcome = { ...option, indices: pending[index].indices };
-					if (step(index + 1, [...acc, outcome])) return true;
-				}
-				return false;
-			};
-			return step(0, []);
+		// Descendants inherit the folder's own strategy unless a catch-all shadows it
+		const inherits = floor === lastMatch && strategy !== NONE_STRATEGY;
+		return {
+			advance:
+				inherits ||
+				compiled.some(
+					(rule, index) =>
+						index > floor &&
+						rule.strategy !== NONE_STRATEGY &&
+						canMatchAnyDescendant(rule, parsed),
+				),
+			strategy,
 		};
-		return { advance: walk([...groups.values()], lastMatch), strategy };
 	};
 }

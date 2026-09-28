@@ -27,7 +27,7 @@ If any of the 1-4 step fails, the migration will be rolled back immediately, no 
 
 Due to the revamped encryption schema, **WebDAV Sync encrypted files will be no longer accessible by Sync Engine's Encryption module**. So if you are using Encryption, you are required to delete remote base directory and **re-sync your vault in Sync Engine**. If you are not using encryption, you simply need to download Sync Engine from Obsidian module store and disable WebDAV Sync, then everything is done.
 
-For seamless migration, **Sync Engine's most ingenious feature _Anchored Asymmetric Storage_ is disabled by default** if you are not using encryption (when encryption is enabled, this is left enabled since you will need to re-sync the entire vault anyway). You can enable that and use Sync Engine's built-in migration feature to transform your vault, then your every sync will be accelerated by this technology.
+For seamless migration, **Sync Engine's most ingenious feature _Anchored Asymmetric Storage_ is disabled by default** if you are not using encryption (when encryption is enabled, this is left enabled since you will need to re-sync the entire vault anyway). You can enable that and follow the [Remote Migration guide](./remote-migration) to transform your vault manually, then your every sync will be accelerated by this technology.
 
 ### Version `2.5.14`
 

@@ -68,4 +68,4 @@ unsubscribe();
 
 ## Sync Lifecycle Events
 
-`syncStarted` fires before the file-system stacks exist; `syncInitialized` fires once per run after infrastructure initialization and before traversal, and is the only point where the sync's actual `localFs`, `remoteFs`, and `record` are published. Its `Infras` shape is `{ localFs: Fs; remoteFs: Fs; record: RecordStore }`, documented with the [remote lister](./sync#remote-lister); `match` is the compiled [inclusion/exclusion matcher](../usage/settings#inclusion-and-exclusion-rules).
+`syncStarted` fires before the file-system stacks exist; `syncInitialized` fires once per run after infrastructure initialization and before traversal, and is the only point where the sync's actual `localFs`, `remoteFs`, and `record` are published. Its `Infras` shape is `{ localFs: Fs; remoteFs: Fs; record: RecordStore }`, documented with the [remote lister](./sync#remote-lister); `match` is the compiled [sync strategy matcher](../usage/settings#sync-strategy-rules).

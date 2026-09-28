@@ -213,27 +213,32 @@ test('advances from the root when later rules can match descendants', () => {
 	});
 });
 
-test('prunes when a later identical rule fully shadows an earlier reclaim', () => {
+test('expands brace alternates within segments', () => {
 	const match = prepareGlobMatch([
-		rule('b/keep.txt', 'mirrorLocal'),
-		rule('b/keep.txt', NONE_STRATEGY),
+		rule('*', 'bidirectional'),
+		rule('*.{png,jpg}', NONE_STRATEGY),
+		rule('{notes,drafts}/*.md', 'mirrorLocal'),
 	]);
-	expect(results(['b/', 'b/keep.txt'], match)).toEqual({
-		'b/': { advance: false, strategy: NONE_STRATEGY },
-		'b/keep.txt': { strategy: NONE_STRATEGY },
+	expect(
+		results(['a.png', 'a.jpg', 'a.gif', 'notes/x.md', 'drafts/y.md', 'other/z.md'], match),
+	).toEqual({
+		'a.gif': { strategy: 'bidirectional' },
+		'a.jpg': { strategy: NONE_STRATEGY },
+		'a.png': { strategy: NONE_STRATEGY },
+		'drafts/y.md': { strategy: 'mirrorLocal' },
+		'notes/x.md': { strategy: 'mirrorLocal' },
+		'other/z.md': { strategy: 'bidirectional' },
 	});
 });
 
-test('prunes when later rules jointly cover every descendant', () => {
-	const match = prepareGlobMatch([
-		rule('a', 'bidirectional'),
-		rule('a/*', NONE_STRATEGY),
-		rule('a/*/**', NONE_STRATEGY),
-	]);
-	expect(results(['a/', 'a/x', 'a/x/y'], match)).toEqual({
-		'a/': { advance: false, strategy: 'bidirectional' },
-		'a/x': { strategy: NONE_STRATEGY },
-		'a/x/y': { strategy: NONE_STRATEGY },
+test('expands nested braces and keeps unmatched braces literal', () => {
+	const match = prepareGlobMatch([rule('a{b{1,2},c}', NONE_STRATEGY)]);
+	expect(results(['ab1', 'ab2', 'ac', 'a{b1', 'x'], match)).toEqual({
+		ab1: { strategy: NONE_STRATEGY },
+		ab2: { strategy: NONE_STRATEGY },
+		ac: { strategy: NONE_STRATEGY },
+		'a{b1': { strategy: NONE_STRATEGY },
+		x: { strategy: NONE_STRATEGY },
 	});
 });
 

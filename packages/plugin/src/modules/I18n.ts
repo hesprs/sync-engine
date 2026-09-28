@@ -109,7 +109,7 @@ export default class I18n {
 	private readonly translate = ((key: string, arg: unknown) => {
 		const value = (this.i18n as TranslationResource)[key];
 		if (typeof value === 'string') return value;
-		// TODO: 3.1.5 i18n refactor makes all users with any of the legacy i18n modules fail to load. Catch errors to allow the plugin to load. Remove after October 10
+		// Handle missing keys and argument mismatch due to stale i18n modules
 		try {
 			return value(arg);
 		} catch {

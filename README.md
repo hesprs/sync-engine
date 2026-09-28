@@ -54,7 +54,7 @@ Sync Engine is a vault syncing plugin to **synchronize vault files in multiple d
 **Features**:
 
 - [Client-side encryption](https://sync.consensia.cc/deep-dive/modules/encryption)
-- Bidirectional / mirror remote / mirror local syncing.
+- Granular sync strategy configuration (bidirectional / mirror remote / mirror local / don't sync) using Glob rules.
 - Startup / periodic / save-on-change syncing.
 - Conflict resolve strategies ([smart merge](https://sync.consensia.cc/deep-dive/modules/smart-merge) / keep both / latest survive / keep remote / keep local / skip).
 - Rate / memory control options.
@@ -115,7 +115,7 @@ Below is a list of planned features and improvements, the faster this plugin is 
 
 - [x] v3.0: Rewrite entirely, dynamic module loading, module store, asymmetric storage, and rebrand
 - [x] v3.1: Migrate settings to Obsidian v1.13 API
-- [ ] v3.2: Granular sync strategy selection / exclusion inclusion rule refactor based on ordered glob match rules.
+- [x] v3.2: Granular sync strategy selection / exclusion inclusion rule refactor based on ordered glob match rules.
 
 Sync Engine has a [wishlist of features](https://github.com/hesprs/sync-engine/issues/214), you can react with **thumbs up** 👍 on feature comments you would like to have. And the features with more votes will have higher priority.
 

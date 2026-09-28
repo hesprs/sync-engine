@@ -5,10 +5,6 @@
 	cursor: not-allowed;
 }
 
-.background-none {
-	background: none;
-}
-
 .border {
 	border-style: solid;
 }
@@ -51,19 +47,6 @@ input[type='checkbox']:indeterminate {
 	background-color: rgb(246, 5, 34);
 }
 
-@container (max-width: 500px) {
-	.sync-engine-togglable-value {
-		flex-direction: column;
-		.setting-item-control {
-			width: 100%;
-			justify-content: center;
-			input[type='text'] {
-				flex: 1;
-			}
-		}
-	}
-}
-
 input[type='text'].sync-engine-invalid-input {
 	border-color: var(--text-warning);
 	--background-modifier-border-focus: var(--text-warning);
@@ -74,26 +57,9 @@ input[type='text'].sync-engine-invalid-input {
 	padding-right: calc(0.9 * var(--input-height));
 }
 
-.sync-engine-setting input[type='text'] {
-	width: 175px;
-}
-.is-mobile .sync-engine-setting input[type='text'] {
-	width: 150px;
-	flex: 1;
-}
-
 .sync-engine-prominent {
 	--flair-background: var(--color-accent);
 	--flair-color: var(--text-on-accent);
-}
-
-.setting-item.sync-engine-editable-list {
-	.setting-item-info {
-		display: none;
-	}
-	.setting-item-control input[type='text'] {
-		flex: 1;
-	}
 }
 
 .sync-engine-cropped-icon {
@@ -111,6 +77,56 @@ input[type='text'].sync-engine-invalid-input {
 		}
 		> *:last-child {
 			margin-bottom: 0;
+		}
+	}
+}
+
+/* ======== Settings ======== */
+.sync-engine-setting input[type='text'] {
+	width: 175px;
+}
+.is-mobile .sync-engine-setting input[type='text'] {
+	width: 150px;
+}
+
+/* Artificial high specificity to override Obsidian styles */
+div.sync-engine-setting .setting-group .setting-items {
+	.setting-item {
+		flex-direction: row;
+	}
+	@container (max-width: 500px) {
+		.setting-item:not(:is(.mod-toggle, .mod-navigable)),
+		.sync-engine-column {
+			flex-direction: column;
+			.setting-item-control {
+				width: 100%;
+				> input[type='text'],
+				> button,
+				> .dropdown {
+					max-width: unset;
+					flex: 1;
+				}
+				> button.sync-engine-button-shrink {
+					flex: 0 1;
+				}
+			}
+		}
+	}
+}
+
+.setting-group.mod-list .setting-items .setting-item.sync-engine-editable-list {
+	.setting-item-info {
+		display: none;
+	}
+	.setting-item-control {
+		width: 100%;
+		> input[type='text'],
+		> .dropdown {
+			flex: 1;
+			min-width: 0;
+		}
+		> button {
+			width: unset;
 		}
 	}
 }

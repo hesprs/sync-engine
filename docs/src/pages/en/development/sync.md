@@ -17,22 +17,22 @@ type TriggerEntry = {
 ctx.registerTrigger(key: string, entry: TriggerEntry): () => boolean;
 ```
 
-`SyncOptions` customizes one run. Unset fields fall back to defaults: the selected decider and conflict resolver, the configured inclusion and exclusion rules, move detection on, and no confirmations.
+`SyncOptions` customizes one run. Unset fields fall back to defaults: the selected conflict resolver, the configured strategy rules, move detection on, and no confirmations.
 
 ```ts
 type SyncOptions = {
-  decider?: Decider;
   remoteLister?: RemoteLister;
   conflictResolver?: ConflictResolver;
   detectMoves?: boolean;
   needConfirmTasks?: boolean;
   needConfirmDeletion?: boolean;
-  inclusionRules?: Array<GlobMatchRule>;
-  exclusionRules?: Array<GlobMatchRule>;
+  syncStrategy?: Array<GlobStrategy>;
 };
 ```
 
-The plugin registers built-in entries: `realtime` (priority 1000), `interval` (2000), `startup` (3000), `migration` (3980), `nonInteractiveManual` (3990), and `manual` (4000). Registering under an existing name replaces the entry.
+`GlobStrategy` is `{ expr: string; strategy: string }`, where `strategy` is a registered decider ID or `none`. Supplying `syncStrategy` replaces the configured rules for that run; it does not merge with them.
+
+The plugin registers built-in entries: `realtime` (priority 1000), `interval` (2000), `startup` (3000), `nonInteractiveManual` (3990), and `manual` (4000). Registering under an existing name replaces the entry.
 
 ### Remote Lister
 
@@ -50,7 +50,7 @@ See [registration](./registration#sync-trigger).
 
 ## Decider
 
-A `Decider` compares local stats, remote stats, and prior records to produce sync tasks.
+A `Decider` compares local stats, remote stats, and prior records to produce sync tasks for one strategy.
 
 ```ts
 type DeciderInput = {
@@ -58,13 +58,12 @@ type DeciderInput = {
   remoteStats: StatsMap;
   records: RecordStatsMap;
   taskFactory: TaskFactory;
-  logger: (log: string) => void;
 };
 
 type Decider = (input: DeciderInput) => Array<BaseTask>;
 ```
 
-Use `taskFactory` instead of constructing task classes directly — their constructors require internal sync infrastructure. Built-in deciders include bidirectional, mirror-local, and mirror-remote; see [deep dive: sync](../deep-dive/sync#decider) for their behavior.
+Stats are bucketed by strategy name before planning; `decideTasks` invokes the registered decider once per bucket that has entries. Each registered decider ID becomes a selectable strategy in [Sync Strategy](../usage/settings#sync-strategy) rules. Use `taskFactory` instead of constructing task classes directly — their constructors require internal sync infrastructure. Built-in deciders include `bidirectional`, `mirrorLocal`, and `mirrorRemote`; see [deep dive: sync](../deep-dive/sync#decider) for their behavior.
 
 Examples: [bidirectional decider](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/sync/decision/bidirectional.ts) and [mirror deciders](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/sync/decision/mirror.ts).
 

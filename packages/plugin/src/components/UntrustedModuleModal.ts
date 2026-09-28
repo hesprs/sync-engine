@@ -28,8 +28,8 @@ export default class UnknownModuleModal extends Modal {
 		},
 	) {
 		super(ctx.app);
-		this.setTitle(ctx.translate('untrustedModule'));
-		this.contentEl.addClass('markdown-rendered');
+		this.setTitle(ctx.translate('untrustedModule')).contentEl.addClass('markdown-rendered');
+		if (document.querySelector('body > .mod-dim')) this.setDimBackground(false);
 	}
 
 	onOpen() {

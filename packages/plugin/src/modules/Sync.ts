@@ -225,7 +225,6 @@ export default class Sync {
 
 			if (isCancelled()) throw syncCancelledError;
 			dispatch('executionStarted', tasks);
-			const errors: Array<FailedTaskInfo> = [];
 			await Promise.all(
 				tasks.map(async (task) => {
 					try {
@@ -234,9 +233,7 @@ export default class Sync {
 					} catch (error) {
 						if (isCancelled()) return;
 						failedCount++;
-						const info = { ...toTaskInfo(task), error: toError(error) };
-						errors.push(info);
-						dispatch('taskFailed', info);
+						dispatch('taskFailed', { ...toTaskInfo(task), error: toError(error) });
 					}
 				}),
 			);
@@ -245,9 +242,7 @@ export default class Sync {
 				? { result: 'cancelled' }
 				: failedCount
 					? {
-							error: new Error(`Execution of ${failedCount} sync task(s) failed.`, {
-								cause: errors,
-							}),
+							error: new Error(`Execution of ${failedCount} sync task(s) failed.`),
 							result: 'failed',
 						}
 					: { result: 'completed' };
@@ -381,7 +376,7 @@ function organizeRecord(
 		const { strategy } = match(key);
 		if (strategy === NONE_STRATEGY) continue;
 		result[strategy] ??= new Map<string, RecordStat>();
-		result[strategy].set(strategy, stat);
+		result[strategy].set(key, stat);
 	}
 	return result;
 }

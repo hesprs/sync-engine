@@ -37,7 +37,7 @@
 | Context              | `Context`, `Settings`, `Events`, `Translations`, `SelectFromContext`                                                                                                                                                                                                                                                                        |
 | Events               | `Dispatch`, `On`                                                                                                                                                                                                                                                                                                                            |
 | Core data            | `Binary`, `MaybePromise`, `Progress`, `FileStat`, `FolderStat`, `Stat`, `StatsMap`, `RecordStat`, `RecordStatsMap`                                                                                                                                                                                                                          |
-| Filesystem           | `RootFs`, `WrappedFs`, `Fs`, `WriteAtom`, `DeleteAtom`, `MoveAtom`, `MkdirAtom`, `InputAtom`, `CustomAtom`, `OutputAtom`, `OptimizerInput`, `OptimizerOutput`, `BatchOptimizer`                                                                                                                                                             |
+| Filesystem           | `RootFs`, `WrappedFs`, `Fs`, `WriteAtom`, `DeleteAtom`, `MoveAtom`, `MkdirAtom`, `InputAtom`, `CustomAtom`, `OutputAtom`, `ListOptions`, `ListReporter`, `OptimizerInput`, `OptimizerOutput`, `BatchOptimizer`                                                                                                                              |
 | Registration         | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `TriggerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request`                                                                                           |
 | Sync                 | `TaskNames`, `BaseTask`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `SyncOptions`, `RemoteLister`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
 | Storage              | `RecordStore`, `StoreAsync`, `StoreSync`, `StoreOperations`, `DatabaseAsync`, `DatabaseSync`                                                                                                                                                                                                                                                |
@@ -46,7 +46,7 @@
 | Internationalization | `ObsidianLanguageCode`, `Fragment`, `Snippet`, `TranslationResource`, `Translate`                                                                                                                                                                                                                                                           |
 | Other                | `ExistingMemoryDB`                                                                                                                                                                                                                                                                                                                          |
 
-Internal supporting types can appear in exported signatures but are not standalone root exports. They include `TogglableValue`, `GlobMatchRule`, `Infras`, `BaseTaskOptions`, `TaskOptions`, `TaskOptionsMap`, `TaskInfo`, `FailedTaskInfo`, `DeleteConfirmReturn`, and `CustomHeaders`.
+Internal supporting types can appear in exported signatures but are not standalone root exports. They include `TogglableValue`, `GlobStrategy`, `GlobMatchResult`, `Infras`, `BaseTaskOptions`, `TaskOptions`, `TaskOptionsMap`, `TaskInfo`, `FailedTaskInfo`, `DeleteConfirmReturn`, and `CustomHeaders`.
 
 ## Settings
 
@@ -58,7 +58,7 @@ Internal supporting types can appear in exported signatures but are not standalo
 | `modules`                  | `Record<string, object>` of per-module settings                        |
 | `moduleAutoUpdate`         | `boolean`                                                              |
 | `remoteFs`                 | `string` selected backend ID                                           |
-| `decider`                  | `string` selected decider ID                                           |
+| `syncStrategy`             | `Array<GlobStrategy>` ordered strategy rules                           |
 | `conflictResolver`         | `string` selected conflict-resolver ID                                 |
 | `maxFileSize`              | `TogglableValue` max file size in bytes                                |
 | `confirmTasksInSync`       | `boolean`                                                              |
@@ -68,8 +68,6 @@ Internal supporting types can appear in exported signatures but are not standalo
 | `startupSync`              | `TogglableValue` delay in milliseconds                                 |
 | `scheduledSync`            | `TogglableValue` interval in milliseconds                              |
 | `realtimeSync`             | `TogglableValue` debounce delay in milliseconds                        |
-| `inclusionRules`           | `Array<GlobMatchRule>`                                                 |
-| `exclusionRules`           | `Array<GlobMatchRule>`                                                 |
 | `maxMemoryConsumption`     | `TogglableValue` in bytes                                              |
 | `maxRequestConcurrency`    | `TogglableValue`                                                       |
 | `minRequestInterval`       | `TogglableValue` in milliseconds                                       |
@@ -113,7 +111,7 @@ These Context members are not commonly used by modules. Explore source code to o
 | `getNamespace(local?, remote?)`  | Creates storage namespace for optional local/remote FS pair. Returns an `Error` when no backend is set. |
 | `initializeSync()`               | Creates local FS, remote FS, and record store for sync.                                                 |
 | `getCheckConnection()`           | Gets selected backend connection-check function.                                                        |
-| `getDecider()`                   | Gets selected `Decider`.                                                                                |
+| `decideTasks(input)`             | Buckets stats by strategy, invokes the registered decider per bucket, and returns the task plan.        |
 | `getConflictResolver()`          | Gets selected `ConflictResolver`.                                                                       |
 | `optimizeLocal(input)`           | Applies selected local `BatchOptimizer`.                                                                |
 | `optimizeRemote(input)`          | Applies selected remote `BatchOptimizer`.                                                               |

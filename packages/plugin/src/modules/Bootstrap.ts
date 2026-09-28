@@ -193,14 +193,6 @@ export default class Bootstrap {
 			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
 			priority: 3000,
 		});
-		registerTrigger('migration', {
-			options: () => ({
-				decider: mirrorLocalDecider,
-				detectMoves: false,
-				remoteLister: () => [], // Remote has already been cleared in phase 2
-			}),
-			priority: 3980,
-		});
 		registerTrigger('nonInteractiveManual', { priority: 3990 });
 		registerTrigger('manual', {
 			options: () => ({ needConfirmTasks: this.settings.confirmTasksInSync }),

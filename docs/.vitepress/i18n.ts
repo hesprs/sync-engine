@@ -34,6 +34,7 @@ const en = {
 	nativeName: 'English',
 	permissions: 'Permissions',
 	registration: 'Registration',
+	remoteMigration: 'Remote Migration',
 	request: 'Request',
 	requestMiddleware: 'RequestMiddleware',
 	s3: 'S3',

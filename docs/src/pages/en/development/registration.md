@@ -104,7 +104,7 @@ ctx.registerTrigger(key: string, entry: TriggerEntry): () => boolean;
 
 ## Decider
 
-Register a sync decision strategy. See [sync: decider](./sync#decider).
+Register a sync decision strategy. Stats are bucketed by the registered ID during planning, so each ID doubles as a selectable strategy in [Sync Strategy](../usage/settings#sync-strategy) rules. See [sync: decider](./sync#decider).
 
 ```ts
 type DeciderEntry = { decider: Decider; prettyName: () => string };

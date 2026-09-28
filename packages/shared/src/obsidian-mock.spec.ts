@@ -33,6 +33,7 @@ export class TextComponent {}
 export class ButtonComponent {}
 export class ProgressBarComponent {}
 export class SecretComponent {}
+export class ConfirmationModal {}
 
 export function setIcon() {}
 export function setTooltip() {}

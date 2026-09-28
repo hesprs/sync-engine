@@ -71,6 +71,7 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 							items: [
 								{ link: `${usage}/settings`, text: t('settings') },
 								{ link: `${usage}/modules`, text: t('modules') },
+								{ link: `${usage}/remote-migration`, text: t('remoteMigration') },
 							],
 							text: t('usage'),
 						},

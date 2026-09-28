@@ -109,10 +109,7 @@ export default function miscellaneousSettings({
 											},
 											text,
 										});
-										if (item.new) {
-											item.new = false;
-											text.inputEl.focus();
-										}
+										if (item.new) text.inputEl.focus();
 									});
 									if (item.value.type === 'plaintext')
 										setting.addText((text) =>

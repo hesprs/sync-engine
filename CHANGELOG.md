@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.2.0 - 2026-09-28
+
+### Core
+
+- Unified sync strategy, inclusion rules, and exclusion rules into an ordered lost of sync strategies, providing granular control of syncing decisions.
+- Supported brace expansion syntax in sync strategy Glob rules.
+- Replaced remote migration wizard with a confirmation pop-up reminding manual migration since the set of files to upload can no longer be reliably determined on a single device.
+- Fixed local operation failure caused by moving a file onto an existing file.
+- Improved internal error handling and logging.
+- Fixed minor UI issues on mobile.
+
+### S3 Module
+
+- Fixed Backblaze multipart upload initiation failure caused by server CORS filtering.
+
+### Google Drive Module
+
+- Fixed sync creates multiple same-name files under the same folder when moving a file onto an existing path.
+
 ## Sync Engine v3.1.9 - 2026-09-21
 
 ### Core

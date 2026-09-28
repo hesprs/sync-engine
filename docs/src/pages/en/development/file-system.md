@@ -55,10 +55,10 @@ type RootFs = {
 
 ### `ListReporter`
 
-The `list` method receives a reporter callback the backend must invoke during traversal. It receives a `Required<Progress>` (all fields present) and returns a `GlobMatchResult` controlling glob inclusion.
+The `list` method receives a reporter callback the backend must invoke during traversal. It receives a `Required<Progress>` (all fields present) and returns a `ListOptions` controlling how the path is handled.
 
 ```ts
-type ListReporter = (progress: Required<Progress>) => MaybePromise<GlobMatchResult>;
+type ListReporter = (progress: Required<Progress>) => MaybePromise<ListOptions>;
 ```
 
 ### Method Notes
@@ -70,10 +70,10 @@ type ListReporter = (progress: Required<Progress>) => MaybePromise<GlobMatchResu
 - **`move`** — Implement as copy + delete if the backend doesn't support native move.
 - **`mkdir`** — For backends with no real directories (like S3), create a zero-byte object. `recursive` creates parent directories first.
 - **`stat`** — Throws if the key doesn't exist.
-- **`list`** — Recursively lists all children. The `reporter` is required; call it during traversal with progress and trims return according to glob-match results:
-  - `include`： include this file in the `list()` return, don't need to inspect descendants when the target is a folder
+- **`list`** — Recursively lists all children. The `reporter` is required; call it during traversal with progress, and trim the return according to its result:
+  - `include`: include this item in the `list()` return; no need to inspect descendants when the target is a folder.
   - `exclude`: remove this item from your return.
-  - `advance`: only appears on folders, means you not only need to include it, it is also required to recursively traverse the direct descendants of this folder.
+  - `advance`: only appears on folders. Include the folder and recursively traverse its direct descendants.
 
 ### Class Implementation
 
