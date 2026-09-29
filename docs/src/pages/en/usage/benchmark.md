@@ -8,9 +8,9 @@ Startup speed measures the time by which the plugin delays the cold start of Obs
 
 |              | Sync Engine[^1] | Remotely Save | Nextcloud Sync |
 | ------------ | --------------- | ------------- | -------------- |
-| Version      | 3.0.0           | 0.5.25        | 0.7.38         |
-| Startup Time | 25.4 ms         | 251 ms        | **18.6 ms**    |
-| Plugin Size  | **145 KB**      | 4050 KB       | 515 KB         |
+| Version      | 3.2.0           | 0.5.25        | 0.7.38         |
+| Startup Time | 27.2 ms         | 251 ms        | **18.6 ms**    |
+| Plugin Size  | **155 KB**      | 4050 KB       | 515 KB         |
 
 [^1]: The startup speed of Sync Engine is measured with a module loaded.
 
@@ -21,10 +21,10 @@ Startup speed measures the time by which the plugin delays the cold start of Obs
 - **CPU single core score**: around 1700
 - **Backend**: Self-hosted Nextcloud WebDAV[^2]
 - **Average ping**: 400 ms
-- **Average upload speed**: 2.6 MiB/s
-- **Average download speed**: 4.8 MiB/s
+- **Average upload speed**: 3 MiB/s
+- **Average download speed**: 5 MiB/s
 
-[^2]: During local testing, Nextcloud connection is delayed and bandwidth is limited to simulate middle-to-low network quality.
+[^2]: During local testing, the connection is delayed and bandwidth is limited to simulate middle-to-low network quality.
 
 | Item                                      | Sync Engine                                               | Remotely Save                             | Nextcloud Sync                                                        |
 | ----------------------------------------- | --------------------------------------------------------- | ----------------------------------------- | --------------------------------------------------------------------- |
@@ -38,3 +38,22 @@ Startup speed measures the time by which the plugin delays the cold start of Obs
 In terms of syncing performance, Sync Engine is visibly faster than Remotely Save in terms of full upload and download. In the more realistic daily sync test, Remotely Save fails catastrophically and Sync Engine is around **100x faster** than Remotely Save.
 
 Although claimed to be optimized for Nextcloud, Nextcloud Sync still shows visible disadvantage in terms of performance compared with Sync Engine. More importantly, it **fails to sync 98 original files or changes to the replica**, and many errors appeared during the testing process.
+
+## S3 Performance
+
+- **Obsidian version**: 1.13.7
+- **Operating system**: NixOS 26.11
+- **CPU single core score**: around 1700
+- **Backend**: Self-hosted RustFs[^2]
+- **Average ping**: 400 ms
+- **Average upload speed**: 3 MiB/s
+- **Average download speed**: 5 MiB/s
+
+| Item                                      | Sync Engine                                             |
+| ----------------------------------------- | ------------------------------------------------------- |
+| Version                                   | 3.2.0 + `s3` module 0.1.10                              |
+| 2000 files upload                         | **3.74 min**                                            |
+| 2000 files download                       | **2.37 min**                                            |
+| Daily simulation<br>(Original, 10 rounds) | Min: **0.35 s**<br>Median: **0.6 s**<br>Max: **1.08 s** |
+| Daily simulation<br>(Replica, 10 rounds)  | Min: **1.3 s**<br>Median: **1.58 s**<br>Max: **6.24 s** |
+| Correctness validation                    | 0 errors                                                |

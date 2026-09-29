@@ -1,7 +1,6 @@
 import type { EncryptionSettings } from '@';
 import type {
 	CallableOrObjectTree,
-	Context,
 	Fragment,
 	LabelDefinition,
 	MaybePromise,

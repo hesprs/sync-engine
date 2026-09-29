@@ -51,7 +51,7 @@ Run [Correctness Validator](#correctness-validator) on both original and replica
 
 ## Benchmarking Utilities
 
-The benchmarking utilities are located in `scripts/benchmark/` in this repo. It is a CLI application majorly interacting with Obsidian CLI with five modules: Test Vault Bootstrapper, Operation Executor, Correctness Validator, Speed Tester, and Ping Tester.
+The benchmarking utilities are located in `scripts/benchmark/` in this repo. It is a CLI application majorly interacting with Obsidian CLI with five modules: Test Vault Bootstrapper, Operation Executor, Correctness Validator, and Ping Tester.
 
 ### Test Vault Bootstrapper
 
@@ -90,16 +90,6 @@ File: `scripts/benchmark/validator.ts`
 The validator is used to validate the sync correctness after the set of operations executed by [Operation Executor](#operation-executor) and following syncs. It scans a vault and validates the existence of each file and folder, missing or extra ones all marked as error. For files that are appended in the test cases, it additionally validates the size of the file.
 
 After validation, it outputs the total count of errors, and each error with its reason.
-
-### Speed Tester
-
-File: `scripts/benchmark/speed-test.ts`
-
-The speed tester tests both upload and download speeds. It needs the benchmarker to edit `scripts/benchmark/speed-test.ts` to include necessary request endpoint and authorization headers.
-
-When started, it launches sequential `PUT` and `GET` requests to testing uploading and downloading a generated 50 MiB test file. After tests, it launches `DELETE` request to the same URL to clean up the test file.
-
-It computes the average upload and download speeds via 50MiB / recorded time.
 
 ### Ping Tester
 

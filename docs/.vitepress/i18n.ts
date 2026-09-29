@@ -6,6 +6,7 @@ const en = {
 	architecture: 'Architecture',
 	asymmetricStorage: 'Asymmetric Storage',
 	benchmark: 'Benchmark',
+	benchmarking: 'Benchmarking',
 	claims: 'Claims',
 	code: 'en-US',
 	contributing: 'Contributing',

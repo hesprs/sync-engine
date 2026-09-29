@@ -123,6 +123,7 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 						{ link: `${deepDive}/architecture`, text: t('architecture') },
 						{ link: `${deepDive}/sync`, text: t('sync') },
 						{ link: `${deepDive}/extensibility`, text: t('extensibility') },
+						{ link: `${deepDive}/benchmarking`, text: t('benchmarking') },
 						{
 							items: [
 								{ link: `${deepDive}/file-system`, text: t('fileSystem') },

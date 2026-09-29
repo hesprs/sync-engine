@@ -6,7 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Core
 
-- Unified sync strategy, inclusion rules, and exclusion rules into an ordered lost of sync strategies, providing granular control of syncing decisions.
+- Unified sync strategy, inclusion rules, and exclusion rules into an ordered list of sync strategies, providing granular control of syncing decisions.
 - Supported brace expansion syntax in sync strategy Glob rules.
 - Replaced remote migration wizard with a confirmation pop-up reminding manual migration since the set of files to upload can no longer be reliably determined on a single device.
 - Fixed local operation failure caused by moving a file onto an existing file.
