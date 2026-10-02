@@ -24,4 +24,6 @@ A request middleware is a wrapper around [`Request` and `VaultRequest`](./reques
 
 - Target: `Request`
 - Priority: `3000`
-- Injects extra headers into headers argument.
+- Resolves configured header values against the request's optional `headerVariables` map, then merges them with existing headers using case-insensitive names. Custom values take precedence.
+- A missing variable or unsupported format omits that custom header. Static values remain independent of request variables. Syntax and units are described in [Header Placeholders](../usage/settings#header-placeholders).
+- Variable data is scoped to the request and removed before forwarding. Header substitution runs before backend signing; no global current-file state is used.

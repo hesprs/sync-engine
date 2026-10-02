@@ -162,22 +162,25 @@ export default class S3Fs implements RootFs {
 		});
 	}
 
-	async write(key: string, value: Binary): Promise<string> {
-		const response = await this.requestOrThrow(this.buildUrl(key), {
+	async write(key: string, value: Binary, stat?: FileStat): Promise<string> {
+		const params = {
 			body: value,
+			headerVariables: stat,
 			headers: { 'Content-Type': 'application/octet-stream' },
 			method: 'PUT',
-		});
+		};
+		const response = await this.requestOrThrow(this.buildUrl(key), params);
 		const etag = getHeader(response.headers, 'etag');
 		return etag ? normalizeEtag(etag) : getFileUid(await this.stat(key), key);
 	}
 
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
-		if (stat.size < PART_SIZE) return this.write(key, await collectStreamToBinary(value));
+		if (stat.size < PART_SIZE) return this.write(key, await collectStreamToBinary(value), stat);
 		return multipartUpload(
 			{
 				bucket: this.bucket,
 				endpoint: this.endpoint,
+				file: stat,
 				key,
 				request: this.requestOrThrow,
 				stat: (k) => this.stat(k),

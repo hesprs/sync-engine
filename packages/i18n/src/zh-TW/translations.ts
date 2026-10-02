@@ -90,7 +90,7 @@ const zhTW: Translations = {
 	createRemoteDir: '建立遠端資料夾',
 	customHeaders: '自訂標頭',
 	customHeadersDescription:
-		'新增每次請求時要包含的自訂標頭，可選擇以明文儲存或儲存於 Obsidian 金鑰圈中。',
+		'新增以明文或 Obsidian 金鑰圈儲存的標頭。支援的上傳請求可用 {{mtime}} 和 {{ctime}} 表示修改時間及建立時間，預設依 rclone 慣例傳送帶小數的 Unix 秒。使用 :ms 可指定毫秒。變數無法取得時會略過該標頭。',
 	delete: '刪除',
 	deleteModule: '刪除模組',
 	description: '說明',

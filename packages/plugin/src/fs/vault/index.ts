@@ -133,9 +133,10 @@ export default class VaultFs implements RootFs {
 	}
 
 	async stat(key: string): Promise<Stat> {
-		const { type, mtime, size } = await this.request(key, { method: 'STAT' });
-		return type === 'file'
-			? { isDir: false, key, mtime, size, uid: `${mtime}~${size}` }
-			: { isDir: true, key };
+		const { type, ctime, mtime, size } = await this.request(key, { method: 'STAT' });
+		if (type !== 'file') return { isDir: true, key };
+		const stat: FileStat = { isDir: false, key, mtime, size, uid: `${mtime}~${size}` };
+		if (ctime !== undefined) stat.ctime = ctime;
+		return stat;
 	}
 }

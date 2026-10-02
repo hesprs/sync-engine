@@ -5,6 +5,7 @@ export type MaybePromise<T> = Promise<T> | T;
 export type TogglableValue<T = number> = { enabled: boolean; value: T };
 
 export type FileStat = {
+	ctime?: number;
 	isDir: false;
 	key: string;
 	mtime: number;

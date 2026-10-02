@@ -111,10 +111,13 @@ test('writeStream buffers below-part-size input into one PUT', async () => {
 	s3.setRequest((_url, params) => {
 		expect(params.method).toBe('PUT');
 		expect(params.body).toStrictEqual(bytes('hello world'));
+		expect(params).toMatchObject({
+			headerVariables: { key: 'Notes/file.md', mtime: 1_700_000_000_123, size: 11 },
+		});
 		return response({ headers: { etag: 'buffered-etag' } });
 	});
 	const source = createStream([bytes('hello '), bytes('world')]);
-	const destination = file('Notes/file.md', { size: 11 });
+	const destination = file('Notes/file.md', { mtime: 1_700_000_000_123, size: 11 });
 	const uid = await s3.fs.writeStream('Notes/file.md', source, destination);
 	expect(uid).toBe('buffered-etag');
 	expect(s3.calls).toHaveLength(1);
@@ -127,18 +130,23 @@ test('writeStream uploads exact multipart parts and completes with ETag', async 
 		const address = new URL(url);
 		if (params.method === 'POST' && address.searchParams.has('uploads')) {
 			expect(params.headers?.['x-amz-content-sha256']).toBe('UNSIGNED-PAYLOAD');
+			expect(params).toMatchObject({
+				headerVariables: { ctime: 1_700_000_000_456, mtime: 1_700_000_000_123 },
+			});
 			parsedResponse = { InitiateMultipartUploadResult: { UploadId: 'upload-1' } };
 			return response({
 				text: '<InitiateMultipartUploadResult><UploadId>upload-1</UploadId></InitiateMultipartUploadResult>',
 			});
 		}
 		if (params.method === 'PUT') {
+			expect(params).not.toHaveProperty('headerVariables');
 			expect(address.searchParams.get('uploadId')).toBe('upload-1');
 			expect(params.headers?.['Content-Type']).toBe('application/octet-stream');
 			const partNumber = address.searchParams.get('partNumber');
 			return response({ headers: { etag: `part-${partNumber}` } });
 		}
 		expect(params.method).toBe('POST');
+		expect(params).not.toHaveProperty('headerVariables');
 		expect(address.searchParams.get('uploadId')).toBe('upload-1');
 		expect(params.headers?.['Content-Type']).toBe('application/xml');
 		expect(textBody(params)).toContain('<PartNumber>1</PartNumber><ETag>part-1</ETag>');
@@ -149,13 +157,45 @@ test('writeStream uploads exact multipart parts and completes with ETag', async 
 		});
 	});
 
+	const sourceStat = {
+		...file('Notes/big.bin', { mtime: 1_700_000_000_123, size: partSize + 2 }),
+		ctime: 1_700_000_000_456,
+	};
 	const uid = await s3.fs.writeStream(
 		'Notes/big.bin',
 		createStream([new Uint8Array(partSize), new Uint8Array(2)]),
-		file('Notes/big.bin', { size: partSize + 2 }),
+		sourceStat,
 	);
 	expect(uid).toBe('complete-etag');
 	expect(s3.calls.map(({ method }) => method)).toStrictEqual(['POST', 'PUT', 'PUT', 'POST']);
+});
+
+test('concurrent writes pass each source file to request middleware', async () => {
+	const s3 = createS3Fs();
+	s3.setRequest((url, params) => {
+		const first = url.endsWith('/renamed-a.md');
+		expect(params).toMatchObject({
+			headerVariables: {
+				key: first ? 'local-a.md' : 'local-b.md',
+				mtime: first ? 1_700_000_000_123 : 1_700_000_000_456,
+			},
+		});
+		return response({ headers: { ETag: '"uploaded"' } });
+	});
+	expect(
+		await Promise.all([
+			s3.fs.write(
+				'renamed-a.md',
+				bytes('a'),
+				file('local-a.md', { mtime: 1_700_000_000_123 }),
+			),
+			s3.fs.write(
+				'renamed-b.md',
+				bytes('b'),
+				file('local-b.md', { mtime: 1_700_000_000_456 }),
+			),
+		]),
+	).toStrictEqual(['uploaded', 'uploaded']);
 });
 
 test('writeStream aborts multipart upload after part failure', async () => {

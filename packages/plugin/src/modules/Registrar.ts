@@ -39,6 +39,7 @@ export type Infras = { localFs: Fs; remoteFs: Fs; record: RecordStore };
 
 export type RequestParam = Omit<RequestUrlParam, 'body' | 'url'> & {
 	body?: string | Binary;
+	headerVariables?: Readonly<Record<string, string | number | bigint | boolean | undefined>>;
 	ignoreCancellation?: boolean;
 };
 export type RequestResponse = {

@@ -1,4 +1,4 @@
-import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
+import type { Binary, FileStat, Request, Stat } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import normalizeEtag from '@repo/shared/normalize-etag';
@@ -18,6 +18,7 @@ export type MultipartUploadOptions = {
 	bucket: string;
 	urlStyle: UrlStyle;
 	key: string;
+	file: FileStat;
 	request: Request;
 	stat: (key: string) => Promise<Stat>;
 };
@@ -64,10 +65,12 @@ export async function multipartUpload(
 ): Promise<string> {
 	const { key, request, stat } = options;
 	const initiateUrl = buildUrlWithQuery(options, { uploads: '' });
-	const initiateResponse = await request(initiateUrl, {
+	const initiateParams = {
+		headerVariables: options.file,
 		headers: { 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' },
 		method: 'POST',
-	});
+	};
+	const initiateResponse = await request(initiateUrl, initiateParams);
 	const uploadId = parseUploadId(initiateResponse.text());
 
 	try {

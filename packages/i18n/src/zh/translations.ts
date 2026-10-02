@@ -90,7 +90,7 @@ const zh: Translations = {
 	createRemoteDir: '创建远程文件夹',
 	customHeaders: '自定义请求头',
 	customHeadersDescription:
-		'添加要随每次请求一起发送的自定义请求头，它们可以明文存储，也可以存储在 Obsidian keychain 中。',
+		'添加以明文或 Obsidian 密钥环存储的请求头。支持的上传请求可用 {{mtime}} 和 {{ctime}} 表示修改时间和创建时间，默认按 rclone 约定发送带小数的 Unix 秒。使用 :ms 可指定毫秒。变量不可用时会跳过该请求头。',
 	delete: '删除',
 	deleteModule: '删除模块',
 	description: '描述',

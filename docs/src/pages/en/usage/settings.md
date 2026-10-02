@@ -186,6 +186,30 @@ Use a plaintext header for a non-sensitive value. Use a secret header for a toke
 
 Do not add credentials as plaintext headers when a secret header is available. Incorrect headers can make connection checks and syncs fail. Backend modules may have their own credential settings; follow the module's documentation for those.
 
+#### Header Placeholders
+
+<div v-pre>
+
+Header values can include `{{variable}}` placeholders. The storage module supplies their values for each supported request. For file uploads, these variables describe the source file:
+
+| Placeholder | Value                                                                   |
+| ----------- | ----------------------------------------------------------------------- |
+| `{{mtime}}` | Modification time as Unix seconds with a decimal fraction.              |
+| `{{ctime}}` | Creation time reported by Obsidian as Unix seconds, when available.     |
+| `{{size}}`  | File size in bytes supplied to the upload.                              |
+| `{{key}}`   | File path relative to the vault root.                                   |
+| `{{uid}}`   | Sync Engine's change identifier; it is not necessarily a file checksum. |
+
+Time placeholders default to Unix seconds in fixed-point decimal format, following rclone's modification-time convention. For example, an Obsidian timestamp of `1700000000123` milliseconds becomes `1700000000.123` with `{{mtime}}`. Fractions are preserved, and conversion does not add precision or apply a timezone offset.
+
+Append `:s`, `:ms`, `:us`, or `:ns` to explicitly request seconds, milliseconds, microseconds, or nanoseconds. `{{mtime:s}}` matches the default; `{{mtime:ms}}` returns the original millisecond value. Other numeric variables retain their supplied value unless a format is specified. Use the unit and format required by your service.
+
+For example, set the header name to `X-File-Mtime` and its value to `{{mtime}}` if your service accepts that header. Sending a timestamp only changes the stored file's time when the service supports doing so.
+
+Modules can supply additional variables for other headers. Availability depends on the module and the request: if any variable is missing, or its format is unsupported, that custom header is omitted for that request. Plain values still apply to every request. To send a placeholder literally, escape it as `\{{mtime}}`. Custom headers override an existing header with the same name regardless of capitalization.
+
+</div>
+
 ### Notice Sync Status on Mobile
 
 Show a notice on mobile while a sync is running. On desktop, the status bar shows this information instead.

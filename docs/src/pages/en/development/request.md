@@ -9,6 +9,7 @@ Remote HTTP request function. Backends receive a composed `Request` instance in 
 ```ts
 type RequestParam = Omit<RequestUrlParam, 'body' | 'url'> & {
   body?: string | Binary;
+  headerVariables?: Readonly<Record<string, string | number | bigint | boolean | undefined>>;
   ignoreCancellation?: boolean;
 };
 
@@ -27,6 +28,27 @@ type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
 `RequestResponse` is an exported SDK type for the response returned by `Request`.
 
 Set `ignoreCancellation` to `true` to let a request through after the sync has been cancelled. Reserve it for cleanup calls that release remote resources the backend already created, such as aborting an incomplete multipart upload.
+
+### Custom Header Variables
+
+Supply `headerVariables` on requests that have values available for [header placeholders](../usage/settings#header-placeholders). Variable names are independent of HTTP header names and are not limited to file properties. Values may be strings, numbers, bigints, booleans, or `undefined`.
+
+Supply `mtime` and `ctime` as numeric Unix milliseconds; their placeholders default to fixed-point Unix seconds. Explicit time formats also interpret numeric inputs as milliseconds. Normalize timestamps from other source units before passing them in. Other variables retain their supplied value unless an explicit format is requested; use a separate string variable for a preformatted service-specific timestamp.
+
+```ts
+const params = {
+  method: 'PUT',
+  body: bytes,
+  headerVariables: {
+    ...stat,
+    'checksum.sha256': checksum,
+    'tenant-id': tenantId,
+  },
+};
+await request(url, params);
+```
+
+The middleware resolves the user's header templates before authentication and removes `headerVariables` before forwarding the request. Include variables only on the operations that should receive the resulting headers. Keep values local to each request so concurrent uploads cannot share the wrong file's metadata. Callers that omit this optional field retain ordinary request behavior; headers requiring unavailable variables are skipped.
 
 ## `VaultRequest`
 

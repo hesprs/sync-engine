@@ -110,7 +110,7 @@ const en: Translations = {
 	createRemoteDir: 'Create remote folder',
 	customHeaders: 'Custom headers',
 	customHeadersDescription:
-		'Add custom headers to be included with each request, they can either be stored in plaintext or in Obsidian keychain.',
+		'Add headers stored in plaintext or in Obsidian keychain. Supported uploads can use {{mtime}} and {{ctime}} for modification and creation times as Unix seconds with a decimal fraction, following rclone. Use :ms to request milliseconds. Headers with unavailable variables are skipped.',
 	delete: 'Delete',
 	deleteModule: 'Delete module',
 	description: 'Description',
