@@ -33,6 +33,7 @@ const en = {
 	moduleManagementPage: 'Module Management Page',
 	modules: 'Modules',
 	nativeName: 'English',
+	openlistFileMetadata: 'OpenList File Metadata',
 	permissions: 'Permissions',
 	registration: 'Registration',
 	remoteMigration: 'Remote Migration',
