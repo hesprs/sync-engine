@@ -1,9 +1,10 @@
 import type { Binary, FileStat, Fs, ListReporter, Request, Stat } from '@hesprs/sync-engine-sdk';
+import { digOriginal } from '@hesprs/sync-engine-sdk';
 import type { Target } from './target';
 import type { FileTimes } from './times';
 import { readDavTimes, requestCreationDate } from './dav';
-import S3DirectoryListing from './directories';
-import { s3ListResponse, s3MultipartResponse, s3ObjectResponse, s3Times } from './s3';
+import { s3MultipartResponse, s3ObjectResponse, s3Stat } from './s3';
+import S3Listing from './s3-listing';
 import { canonicalUrl, header, setHeaders } from './target';
 import { attachTimes, getTimes, withTimes } from './times';
 import PassthroughFs from './wrapper';
@@ -11,7 +12,8 @@ import PassthroughFs from './wrapper';
 export class RemoteSession {
 	readonly uploading = new Map<string, FileTimes>();
 	readonly received = new Map<string, FileTimes>();
-	readonly directories = new S3DirectoryListing();
+	readonly listing = new S3Listing();
+	readonly uploadedStats = new Map<string, FileStat>();
 	request?: Request;
 
 	constructor(
@@ -21,7 +23,8 @@ export class RemoteSession {
 	clear() {
 		this.uploading.clear();
 		this.received.clear();
-		this.directories.clear();
+		this.listing.clear();
+		this.uploadedStats.clear();
 	}
 }
 
@@ -65,22 +68,11 @@ export function remoteMiddleware(original: Request, session: RemoteSession): Req
 				method === 'GET' &&
 				parsed.searchParams.get('list-type') === '2' &&
 				parsed.searchParams.get('max-keys') !== '0'
-			) {
-				response = await s3ListResponse({
-					received: session.received,
-					request: original,
-					response,
-					target,
-				});
-				if (!parsed.searchParams.has('delimiter'))
-					response = await session.directories.restore(response, url, original, target);
-			} else if (method === 'POST' && parsed.searchParams.has('uploads'))
+			)
+				response = session.listing.normalize(response, url);
+			else if (method === 'POST' && parsed.searchParams.has('uploads'))
 				response = s3MultipartResponse(response);
-			else {
-				if (!parsed.search && (method === 'GET' || method === 'HEAD'))
-					session.received.set(address, s3Times(response.headers));
-				response = s3ObjectResponse(response);
-			}
+			else response = s3ObjectResponse(response);
 
 		if (propfind)
 			for (const [key, value] of readDavTimes(response.text(), url))
@@ -98,6 +90,22 @@ export default class MetadataRemoteFs extends PassthroughFs {
 		private readonly session: RemoteSession,
 	) {
 		super(original);
+		if (session.target.kind === 's3') {
+			// S3 writes can call their own stat() when PUT has no ETag. Intercept
+			// The root instance so those calls use the same identity as discovery.
+			const root = digOriginal(original);
+			const stat = root.stat.bind(root);
+			root.stat = (key) =>
+				session.enabled() && !key.endsWith('/') ? this.s3Stat(key) : stat(key);
+		}
+	}
+
+	private async s3Stat(key: string) {
+		if (!this.session.request) throw new Error('OpenList S3 request is unavailable.');
+		const stat = await s3Stat(this.session.request, this.session.target, key);
+		const address = this.session.target.url(key);
+		if (this.session.uploading.has(address)) this.session.uploadedStats.set(address, stat);
+		return stat;
 	}
 
 	private decorate(stat: Stat): Stat {
@@ -115,7 +123,7 @@ export default class MetadataRemoteFs extends PassthroughFs {
 	}
 	async list(key: string, reporter: ListReporter) {
 		this.session.received.clear();
-		this.session.directories.clear();
+		this.session.listing.clear();
 		return (await this.original.list(key, reporter)).map((stat) => this.decorate(stat));
 	}
 
@@ -128,7 +136,10 @@ export default class MetadataRemoteFs extends PassthroughFs {
 				this.session.target.kind === 'webdav'
 					? (received?.ctime ?? cached?.ctime)
 					: undefined,
-			mtime: received?.mtime ?? cached?.mtime ?? stat.mtime,
+			mtime:
+				this.session.target.kind === 's3'
+					? stat.mtime
+					: (received?.mtime ?? cached?.mtime ?? stat.mtime),
 		});
 	}
 
@@ -137,14 +148,8 @@ export default class MetadataRemoteFs extends PassthroughFs {
 		this.updateSource(key, stat);
 		return value;
 	}
-	async readStream(key: string, stat: FileStat) {
-		// Ranged GET responses arrive after the stream is returned.
-		// Resolve times before the local writer starts.
-		if (this.session.enabled() && this.session.target.kind === 's3')
-			await this.session.request?.(this.session.target.url(key), {
-				method: 'HEAD',
-				throw: false,
-			});
+	readStream(key: string, stat: FileStat) {
+		// The listing supplies the standard time before ranged GETs are consumed.
 		this.updateSource(key, stat);
 		return this.original.readStream(key, stat);
 	}
@@ -156,18 +161,22 @@ export default class MetadataRemoteFs extends PassthroughFs {
 		return this.save(key, stat, () => this.original.writeStream(key, value, stat));
 	}
 	private save(key: string, stat: FileStat, action: () => string | Promise<string>) {
+		const address = this.session.target.url(key);
 		return withTimes(
 			this.session.uploading,
-			this.session.target.url(key),
-			this.session.enabled() ? getTimes(stat) : undefined,
+			address,
+			this.session.enabled() ? (getTimes(stat) ?? {}) : undefined,
 			async () => {
-				const uid = await action();
-				if (!this.session.enabled() || this.session.target.kind !== 's3') return uid;
-				// OpenList PUT can return an ETag that its later HEAD/list omits.
-				// Record the durable identity so the next sync does not re-download.
-				const actual = await this.original.stat(key);
-				if (actual.isDir) throw new Error(`Expected uploaded file: ${key}`);
-				return actual.uid;
+				this.session.uploadedStats.delete(address);
+				try {
+					const uid = await action();
+					if (!this.session.enabled() || this.session.target.kind !== 's3') return uid;
+					const actual =
+						this.session.uploadedStats.get(address) ?? (await this.s3Stat(key));
+					return actual.uid;
+				} finally {
+					this.session.uploadedStats.delete(address);
+				}
 			},
 		);
 	}

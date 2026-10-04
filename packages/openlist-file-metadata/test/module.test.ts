@@ -10,6 +10,7 @@ import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
 import OpenListFileMetadata from '../src';
 import { attachTimes } from '../src/times';
+import { object, xml } from './s3-harness';
 
 const { bytes, file, fs, request } = testKit;
 
@@ -72,7 +73,10 @@ function harness() {
 test('module uses transformed keys, preserves backend UID, and unloads all registrations', async () => {
 	const setup = harness();
 	expect(setup.cached.size).toBe(0);
-	const http = request(() => ({ headers: { etag: 'transient' } }));
+	const http = request((url) => ({
+		headers: { etag: 'transient' },
+		text: () => xml(object(new URL(url).searchParams.get('prefix') ?? '', { etag: 'durable' })),
+	}));
 	const send = setup.wrapRequest(http.request);
 	const root = fs({
 		control: {
@@ -94,6 +98,7 @@ test('module uses transformed keys, preserves backend UID, and unloads all regis
 	setup.events.forEach((listener) => listener());
 	setup.module.dispose();
 	await wrapped.write('opaque.md', bytes('body'), source);
+	expect(await wrapped.stat('opaque.md')).toMatchObject({ uid: 'durable' });
 	expect(http.calls.at(-1)?.headers).not.toHaveProperty('X-Amz-Meta-Mtime');
 	expect(setup.registrations.every((entries) => entries.size === 0)).toBe(true);
 	expect(setup.events.size).toBe(0);
@@ -101,7 +106,7 @@ test('module uses transformed keys, preserves backend UID, and unloads all regis
 
 test('separate request instances do not share upload state and unsupported backends are untouched', async () => {
 	const setup = harness();
-	const first = request(() => ({}));
+	const first = request(() => ({ text: () => xml(object('a', { etag: 'uid' })) }));
 	const sendFirst = setup.wrapRequest(first.request);
 	const a = setup.wrapFs(
 		fs({

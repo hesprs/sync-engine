@@ -8,6 +8,7 @@ import type {
 	DeciderInput,
 	FileStat,
 	Fs,
+	RecordStat,
 	RecordStatsMap,
 	Request,
 	Stat,
@@ -53,7 +54,7 @@ const { sigv4Middleware } = (await import(
 )) as {
 	sigv4Middleware: (
 		request: Request,
-		config: Record<string, string>,
+		config: { accessKeyId: string; region: string; secretAccessKey: string; service: string },
 		db: {
 			getMeta: (key: string) => unknown;
 			setMeta: (key: string, value: unknown) => void;
@@ -182,19 +183,21 @@ for (const kind of ['s3', 'webdav'] as const) {
 	};
 	const createRemote = () => {
 		const metadata = new Map<string, unknown>();
-		const signed =
-			kind === 's3'
-				? sigv4Middleware(
-						transport,
-						{ ...config, service: 's3' } as Record<string, string>,
-						{
-							getMeta: (key) => metadata.get(key),
-							setMeta: (key, value) => {
-								metadata.set(key, value);
-							},
-						},
-					)
-				: transport;
+		let signed = transport;
+		if (kind === 's3') {
+			const { accessKeyId, region, secretAccessKey } = config;
+			assert.ok(accessKeyId && region && secretAccessKey);
+			signed = sigv4Middleware(
+				transport,
+				{ accessKeyId, region, secretAccessKey, service: 's3' },
+				{
+					getMeta: (key) => metadata.get(key),
+					setMeta: (key, value) => {
+						metadata.set(key, value);
+					},
+				},
+			);
+		}
 		const session = new RemoteSession(target, () => true);
 		const root = new Root({ ...config, request: remoteMiddleware(signed, session) });
 		return { fs: prefixWrapper(new MetadataRemoteFs(root, session), prefix), raw: root };
@@ -247,7 +250,7 @@ for (const kind of ['s3', 'webdav'] as const) {
 		const localStats = await Promise.all(
 			[...inputs.map(([key]) => key), ...folders].map((key) => source.fs.stat(key)),
 		);
-		const records: RecordStatsMap = new Map(
+		const records: RecordStatsMap = new Map<string, RecordStat>(
 			listed.map((item) => {
 				const local = localStats.find(({ key }) => key === item.key);
 				assert.ok(local);
@@ -278,7 +281,9 @@ for (const kind of ['s3', 'webdav'] as const) {
 				);
 				assert.ok(info);
 				assert.equal(info.uid, uploaded.get(key), `Stable remote identity for ${key}`);
-				assert.equal(Math.floor(info.mtime / 1000), Math.floor(mtime / 1000));
+				const standard = await fresh.raw.stat(prefix + key);
+				assert.ok(!standard.isDir);
+				assert.equal(info.mtime, standard.mtime);
 				await (key === 'large.bin'
 					? destination.fs.writeStream(key, await fresh.fs.readStream(key, info), info)
 					: destination.fs.write(key, await fresh.fs.read(key, info), info));
@@ -288,7 +293,7 @@ for (const kind of ['s3', 'webdav'] as const) {
 				);
 				const local = await destination.fs.stat(key);
 				assert.ok(!local.isDir);
-				assert.equal(Math.floor(local.mtime / 1000), Math.floor(mtime / 1000));
+				assert.equal(local.mtime, getTimes(info)?.mtime ?? info.mtime);
 				assert.equal(destination.requested.get(key)?.ctime, getTimes(info)?.ctime);
 				report.push({
 					backend: kind,
@@ -306,7 +311,7 @@ for (const kind of ['s3', 'webdav'] as const) {
 		await fresh.fs.move(key, 'renamed.md');
 		const moved = await fresh.fs.stat('renamed.md');
 		assert.ok(!moved.isDir);
-		assert.equal(Math.floor(moved.mtime / 1000), Math.floor(mtime / 1000));
+		assert.equal(getTimes(moved)?.mtime, moved.mtime);
 		const updated = new TextEncoder().encode('updated');
 		await fresh.fs.write(
 			'renamed.md',
@@ -315,9 +320,19 @@ for (const kind of ['s3', 'webdav'] as const) {
 		);
 		const updatedStat = await fresh.fs.stat('renamed.md');
 		assert.ok(!updatedStat.isDir);
-		assert.equal(Math.floor(updatedStat.mtime / 1000), Math.floor((mtime + 10_000) / 1000));
+		assert.equal(getTimes(updatedStat)?.mtime, updatedStat.mtime);
 		assert.deepEqual(await fresh.fs.read('renamed.md', updatedStat), updated);
-		assert.ok(requests.some((entry) => entry.mtime !== undefined));
+		assert.ok(
+			requests.some(
+				(entry) =>
+					entry.mtime ===
+					String(
+						kind === 's3'
+							? (mtime + 10_000) / 1000
+							: Math.floor((mtime + 10_000) / 1000),
+					),
+			),
+		);
 	} finally {
 		for (const key of [...inputs.map(([name]) => name), 'renamed.md'])
 			await remote.raw.delete(prefix + key);

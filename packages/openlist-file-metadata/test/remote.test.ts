@@ -4,6 +4,7 @@ import { expect, test } from 'bun:test';
 import MetadataRemoteFs, { RemoteSession, remoteMiddleware } from '../src/remote';
 import { getTarget } from '../src/target';
 import { attachTimes, getTimes } from '../src/times';
+import { object, xml } from './s3-harness';
 
 const { bytes, deferred, file, fs, request, stream } = testKit;
 const mtime = 1_700_000_123_456;
@@ -22,6 +23,11 @@ test('parallel writes bind times to the full object URL and leave ordinary reque
 	const session = new RemoteSession(target, () => true);
 	const pending = new Map<string, ReturnType<typeof deferred<void>>>();
 	const http = request(async (url) => {
+		const query = new URL(url).searchParams;
+		if (query.get('list-type') === '2')
+			return {
+				text: () => xml(object(query.get('prefix') ?? '', { etag: 'uploaded', size: 1 })),
+			};
 		const wait = deferred<void>();
 		pending.set(url, wait);
 		await wait.promise;
@@ -119,7 +125,7 @@ test('failed uploads clean state, retries keep headers, and generated content ha
 	expect(http.calls.at(-1)?.headers).not.toHaveProperty('X-Amz-Meta-Mtime');
 });
 
-test('S3 download prefers preserved metadata and falls back for invalid metadata', async () => {
+test('S3 downloads use the listed LastModified and ignore object time headers', async () => {
 	const session = new RemoteSession(target, () => true);
 	let custom = String(mtime / 1000);
 	const http = request(() => ({
@@ -136,16 +142,38 @@ test('S3 download prefers preserved metadata and falls back for invalid metadata
 		},
 	});
 	const wrapped = new MetadataRemoteFs(backend.fs, session);
-	const source = file('a', { mtime: Math.floor(mtime / 1000) * 1000 });
+	const source = file('a', { mtime });
 	await wrapped.read('a', source);
 	expect(getTimes(source)).toEqual({ ctime: undefined, mtime });
 	custom = 'invalid';
 	await wrapped.read('a', source);
-	expect(getTimes(source)?.mtime).toBe(Math.floor(mtime / 1000) * 1000);
-	custom = String(mtime / 1000);
-	const received = await wrapped.readStream('a', source);
-	expect(http.calls.at(-1)?.method).toBe('HEAD');
 	expect(getTimes(source)?.mtime).toBe(mtime);
+	custom = String(mtime / 1000);
+	const calls = http.calls.length;
+	const received = await wrapped.readStream('a', source);
+	expect(http.calls).toHaveLength(calls);
+	expect(getTimes(source)?.mtime).toBe(mtime);
+	await received.cancel();
+});
+
+test('S3 streaming uses the listed modification time without metadata requests', async () => {
+	const session = new RemoteSession(target, () => true);
+	const modified = Math.floor(mtime / 1000) * 1000 + 3_600_000;
+	const http = request(() => ({
+		headers: {
+			'Last-Modified': new Date(modified).toUTCString(),
+			'X-Amz-Meta-Mtime': String(mtime / 1000),
+		},
+	}));
+	remoteMiddleware(http.request, session);
+	const wrapped = new MetadataRemoteFs(
+		fs({ control: { readStream: () => stream(['body']) } }).fs,
+		session,
+	);
+	const source = file('a', { mtime: modified });
+	const received = await wrapped.readStream('a', source);
+	expect(http.calls).toHaveLength(0);
+	expect(getTimes(source)).toEqual({ ctime: undefined, mtime: modified });
 	await received.cancel();
 });
 
@@ -172,8 +200,8 @@ const davXml = (created = '2017-07-14T02:40:00Z') => `<?xml version="1.0"?>
 
 test('WebDAV requests creationdate and decorates stats without changing keys or UIDs', async () => {
 	const session = new RemoteSession(davTarget, () => true);
-	let xml = davXml();
-	const http = request(() => ({ status: 207, text: () => xml }));
+	let davResponse = davXml();
+	const http = request(() => ({ status: 207, text: () => davResponse }));
 	const send = remoteMiddleware(http.request, session);
 	const source = file('dir/note #.md', { mtime: 1_700_000_123_000 });
 	const backend = fs({
@@ -192,7 +220,7 @@ test('WebDAV requests creationdate and decorates stats without changing keys or 
 	expect(http.calls[0].body).toContain('<creationdate xmlns="DAV:"/>');
 	expect(stat).toMatchObject(source);
 	expect(getTimes(stat as FileStat)).toEqual({ ctime, mtime: 1_700_000_123_000 });
-	xml = davXml('invalid');
+	davResponse = davXml('invalid');
 	const [invalid] = await wrapped.list('/', () => 'advance');
 	expect(getTimes(invalid as FileStat)?.ctime).toBeUndefined();
 });

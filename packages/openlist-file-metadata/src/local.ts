@@ -72,6 +72,13 @@ export default class MetadataLocalFs extends PassthroughFs {
 	}
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
 		if (!this.session.enabled()) return this.original.writeStream(key, value, stat);
+		const times = getTimes(stat);
+		if (times && times.ctime === undefined) {
+			if (!this.session.observed.has(key) && (await this.original.exists(key)))
+				await this.original.stat(key);
+			const ctime = this.session.observed.get(key)?.ctime;
+			if (ctime !== undefined) stat = attachTimes({ ...stat }, { ...times, ctime });
+		}
 		// VaultFs only creates its temporary file when it receives a chunk.
 		const source = value.pipeThrough(
 			new TransformStream<Binary, Binary>({

@@ -15,5 +15,19 @@ class XMLParser {
 	}
 }
 
-Object.assign(globalThis, { DOMParser: XMLParser, Node, window: globalThis });
+class XMLSerializerMock {
+	constructor(
+		private readonly serialize = (node: { toString: () => string }) => node.toString(),
+	) {}
+	serializeToString(node: { toString: () => string }) {
+		return this.serialize(node);
+	}
+}
+
+Object.assign(globalThis, {
+	DOMParser: XMLParser,
+	Node,
+	XMLSerializer: XMLSerializerMock,
+	window: globalThis,
+});
 void mock.module('obsidian', () => ObsidianMock);

@@ -61,14 +61,21 @@ test('empty streamed files are created and failures remove temporary files and p
 	expect(vault.session.writing.size).toBe(0);
 });
 
-test('missing creation time does not overwrite existing ctime and generated content is not dated to epoch', async () => {
-	const vault = await createVault();
-	vault.files.set('old', { ctime, mtime: 123, value: bytes('old') });
-	await vault.fs.write('old', bytes('new'), attachTimes(file('old'), { mtime }));
-	expect(vault.files.get('old')).toMatchObject({ ctime, mtime });
-	await vault.fs.write('merged', bytes('merge'), file('merged', { mtime: 0 }));
-	expect(vault.files.get('merged')?.mtime).toBeGreaterThan(mtime);
-});
+test.each(['buffered', 'streamed'])(
+	'missing creation time preserves an existing ctime without prior discovery (%s)',
+	async (mode) => {
+		const vault = await createVault();
+		vault.files.set('old', { ctime, mtime: 123, value: bytes('old') });
+		const source = attachTimes(file('old'), { mtime });
+		await (mode === 'streamed'
+			? vault.fs.writeStream('old', stream(['new']), source)
+			: vault.fs.write('old', bytes('new'), source));
+		expect(vault.files.get('old')).toMatchObject({ ctime, mtime });
+		expect(getTimes(source)?.ctime).toBeUndefined();
+		await vault.fs.write('merged', bytes('merge'), file('merged', { mtime: 0 }));
+		expect(vault.files.get('merged')?.mtime).toBeGreaterThan(mtime);
+	},
+);
 
 test('concurrent downloads restore their own times and disabling bypasses old metadata', async () => {
 	let enabled = true;
