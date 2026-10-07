@@ -131,7 +131,15 @@ export default class VaultFs implements RootFs {
 					const report = await reporter({ completed, current: p, total });
 					if (report !== 'advance') completed++;
 					if (report === 'exclude') return;
-					result.push({ isDir: true, key: p });
+					result.push({
+						isDir: true,
+						key: p,
+						meta: () =>
+							this.request(key, { method: 'STAT' }).then(({ mtime, ctime }) => ({
+								ctime: String(ctime),
+								mtime: String(mtime),
+							})),
+					});
 					if (report === 'include') return;
 					await visit(p);
 				}),
@@ -143,15 +151,9 @@ export default class VaultFs implements RootFs {
 
 	async stat(key: string): Promise<Stat> {
 		const { type, mtime, size, ctime } = await this.request(key, { method: 'STAT' });
+		const meta = () => ({ ctime: String(ctime), mtime: String(mtime) });
 		return type === 'file'
-			? {
-					isDir: false,
-					key,
-					meta: () => ({ ctime: String(ctime), mtime: String(mtime) }),
-					mtime,
-					size,
-					uid: `${mtime}~${size}`,
-				}
-			: { isDir: true, key };
+			? { isDir: false, key, meta, mtime, size, uid: `${mtime}~${size}` }
+			: { isDir: true, key, meta };
 	}
 }

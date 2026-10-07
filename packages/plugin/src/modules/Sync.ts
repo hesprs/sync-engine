@@ -129,13 +129,27 @@ export default class Sync {
 			this;
 		const { on, dispatch, initializeSync, getConflictResolver, translate, decideTasks } = ctx;
 		const {
-			remoteLister = async ({ remoteFs, record, reporter }) => {
+			remoteLister = async ({ remoteFs, record, reporter, localFs }) => {
 				try {
 					return await remoteFs.list('/', reporter);
 				} catch (error) {
 					if (await remoteFs.exists('/')) throw error;
 					dispatch('logSync', 'Remote root deleted, recreating.');
-					await Promise.all([remoteFs.mkdir('/', true), record.clear()]);
+					await Promise.all([
+						remoteFs.mkdir(
+							'/',
+							{
+								isDir: true,
+								key: '/',
+								meta: async () => {
+									const { meta } = await localFs.stat('/');
+									return meta();
+								},
+							},
+							true,
+						),
+						record.clear(),
+					]);
 					return [];
 				}
 			},

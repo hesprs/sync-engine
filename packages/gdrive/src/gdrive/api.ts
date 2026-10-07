@@ -1,4 +1,4 @@
-import type { FileStat, RequestResponse } from '@hesprs/sync-engine-sdk';
+import type { RequestResponse, Stat } from '@hesprs/sync-engine-sdk';
 
 export const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 export const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
@@ -62,18 +62,13 @@ export function parseDriveError(response: RequestResponse): string | undefined {
 	}
 }
 
-export function toFileStat(
+export function toStat(
 	key: string,
-	{ size: fileSize, modifiedTime, appProperties, md5Checksum }: DriveFile,
-): FileStat {
+	{ size: fileSize, modifiedTime, appProperties, md5Checksum, mimeType }: DriveFile,
+): Stat {
+	const meta = () => appProperties ?? {};
+	if (mimeType === FOLDER_MIME) return { isDir: true, key, meta };
 	const size = fileSize === undefined ? 0 : Number(fileSize);
 	const mtime = new Date(modifiedTime).valueOf();
-	return {
-		isDir: false,
-		key,
-		meta: () => appProperties ?? {},
-		mtime,
-		size,
-		uid: md5Checksum ?? `${mtime}~${size}`,
-	};
+	return { isDir: false, key, meta, mtime, size, uid: md5Checksum ?? `${mtime}~${size}` };
 }

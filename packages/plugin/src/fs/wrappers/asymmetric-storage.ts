@@ -1,6 +1,6 @@
 import type { StoreSync } from 'uni-kv';
 import { basename, dirname, isFolder, isSub } from '@repo/shared/path';
-import type { Stat, Binary, FileStat } from '@/types';
+import type { Stat, Binary, FileStat, FolderStat } from '@/types';
 import type { Fs, ListReporter, WrappedFs } from '../interface';
 
 const ROOT_KEY = '/';
@@ -112,8 +112,8 @@ class AsymmetricStorageFs implements WrappedFs {
 		}
 	}
 
-	async mkdir(key: string, recursive?: boolean) {
-		if (isRootKey(key)) return this.original.mkdir(key, recursive);
+	async mkdir(key: string, stat: FolderStat, recursive?: boolean) {
+		if (isRootKey(key)) return this.original.mkdir(key, stat, recursive);
 		this.bootstrapMaps();
 		let anchor = this.keyToAnchor.get(key);
 		const created = !anchor;
@@ -133,7 +133,7 @@ class AsymmetricStorageFs implements WrappedFs {
 			await this.original.write(anchoredKey, EMPTY_BINARY, {
 				isDir: false,
 				key: anchoredKey,
-				meta: () => ({}),
+				meta: stat.meta,
 				mtime: 0,
 				size: 0,
 				uid: crypto.randomUUID(),
@@ -204,18 +204,19 @@ class AsymmetricStorageFs implements WrappedFs {
 	}
 
 	private inflateStat(stat: Stat): Stat | undefined {
-		if (stat.key === ROOT_KEY) return { isDir: true, key: ROOT_KEY };
+		const { key, isDir, meta } = stat;
+		if (key === ROOT_KEY) return { isDir: true, key: ROOT_KEY, meta };
 		this.bootstrapMaps();
-		const parsed = parseFlattenedKey(stat.key);
+		const parsed = parseFlattenedKey(key);
 		if (!parsed) return;
 		const parentKey = this.anchorToKey.get(parsed.parentAnchor);
 		if (!parentKey) return;
 		if (parsed.isDir) {
 			const folderKey = joinFolderKey(parentKey, parsed.basename);
 			if (!this.registerMapping(folderKey, parsed.anchor)) return;
-			return { isDir: true, key: folderKey };
+			return { isDir: true, key: folderKey, meta };
 		}
-		if (stat.isDir) return;
+		if (isDir) return;
 		return { ...stat, key: joinFileKey(parentKey, parsed.basename) };
 	}
 

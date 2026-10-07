@@ -1,8 +1,8 @@
 import type { CallableOrObjectTree, Translate } from '@hesprs/sync-engine-sdk';
 import type { SettingGroupItem, TextComponent } from 'obsidian';
 import { s } from '@hesprs/sync-engine-sdk';
-import type { SmartMergeTranslations } from './i18n';
-import type { MergeOptions } from './utils/merge';
+import type { SmartMergeTranslations } from '@/i18n';
+import type { MergeOptions } from '@/utils/merge';
 
 export type SmartMergeSettings = MergeOptions;
 

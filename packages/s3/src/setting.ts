@@ -10,7 +10,7 @@ import type { App, SettingGroupItem, TextComponent } from 'obsidian';
 import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
 import { SecretComponent } from 'obsidian';
-import type { UrlStyle } from './s3/sigv4';
+import type { UrlStyle } from '@/s3/sigv4';
 
 export type S3Translations = {
 	s3: string;

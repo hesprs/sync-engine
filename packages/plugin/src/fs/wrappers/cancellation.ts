@@ -1,5 +1,5 @@
 import type { Ref } from 'synthkernel';
-import type { MaybePromise, Binary, FileStat, General } from '@/types';
+import type { MaybePromise, Binary, FileStat, General, FolderStat } from '@/types';
 import { syncCancelledError } from '@/sync';
 import type { Fs, ListReporter, WrappedFs } from '../interface';
 
@@ -51,8 +51,8 @@ class CancellationFs implements WrappedFs {
 		return this.guardCancellation('both', () => this.original.move(oldKey, newKey));
 	}
 
-	mkdir(key: string, recursive?: boolean) {
-		return this.guardCancellation('both', () => this.original.mkdir(key, recursive));
+	mkdir(key: string, stat: FolderStat, recursive?: boolean) {
+		return this.guardCancellation('both', () => this.original.mkdir(key, stat, recursive));
 	}
 
 	stat(key: string) {

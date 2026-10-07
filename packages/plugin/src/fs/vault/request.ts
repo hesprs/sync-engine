@@ -154,13 +154,10 @@ export default function createVaultRequest(app: App): VaultRequest {
 			return adapter.exists(path, true) as never;
 		}
 		if (method === 'STAT') {
-			if (isFolder(key)) return { ctime: 0, mtime: 0, size: 0, type: 'folder' } as never;
-			if (canUseCache() && (params.cached ?? true)) {
+			if (canUseCache() && (params.cached ?? true) && !isFolder(key)) {
 				const file = vault.getAbstractFileByPath(path);
 				if (file instanceof TFile)
 					return Object.assign(file.stat, { type: 'file' as const }) as never;
-				if (file instanceof TFolder)
-					return { ctime: 0, mtime: 0, size: 0, type: 'folder' } as never;
 			}
 			const raw = await adapter.stat(path);
 			if (!raw) throw new Error(`Stat of "${path}" not found!`);

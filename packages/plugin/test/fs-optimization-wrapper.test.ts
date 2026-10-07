@@ -4,7 +4,7 @@ import type { OptimizerInput, OptimizerOutput } from '@/fs';
 import { optimizationCompanionWrapper, optimizationWrapper } from '@/fs';
 
 type BatchOptimizer = (input: OptimizerInput) => OptimizerOutput;
-const { bytes, deferred, file, flush, fs, stream } = testKit;
+const { bytes, deferred, file, flush, folder, fs, stream } = testKit;
 
 async function flushOptimization() {
 	await flush();
@@ -32,14 +32,17 @@ test('optimization wrapper forwards queued atoms to batch optimizer', async () =
 		thisPool: new Set(),
 	});
 
-	const pending = Promise.all([wrapper.delete('folder/'), wrapper.mkdir('notes/')]);
+	const pending = Promise.all([
+		wrapper.delete('folder/'),
+		wrapper.mkdir('notes/', folder('notes/')),
+	]);
 
 	await flush();
 	await pending;
 
 	expect(seen).toStrictEqual([['delete', 'mkdir']]);
 	expect(remote.calls.delete).toStrictEqual(['folder/']);
-	expect(remote.calls.mkdir).toStrictEqual(['notes/']);
+	expect(remote.calls.mkdir).toStrictEqual([['notes/', folder('notes/'), undefined]]);
 });
 
 test('optimization wrapper anticipates write using transformed operation key', async () => {
@@ -60,7 +63,10 @@ test('optimization wrapper anticipates write using transformed operation key', a
 	localPool.add(noteStat.key);
 	expect(() => wrapper.read('transformed/note.md', noteStat)).toThrow('Terminate key needle.');
 
-	const pendingBatch = Promise.all([wrapper.delete('folder/'), wrapper.mkdir('folder/sub/')]);
+	const pendingBatch = Promise.all([
+		wrapper.delete('folder/'),
+		wrapper.mkdir('folder/sub/', folder('folder/sub/')),
+	]);
 	await flushOptimization();
 
 	expect(seen).toStrictEqual([['delete', 'mkdir', 'write']]);
@@ -94,7 +100,10 @@ test('optimization wrapper anticipates writeStream using transformed operation k
 	localPool.add(stat.key);
 	expect(() => wrapper.read('transformed/stream.md', stat)).toThrow('Terminate key needle.');
 
-	const pendingBatch = Promise.all([wrapper.delete('folder/'), wrapper.mkdir('folder/sub/')]);
+	const pendingBatch = Promise.all([
+		wrapper.delete('folder/'),
+		wrapper.mkdir('folder/sub/', folder('folder/sub/')),
+	]);
 	await flushOptimization();
 
 	expect(seen).toStrictEqual([['delete', 'mkdir', 'write']]);
@@ -191,7 +200,7 @@ test('optimization wrapper holds write arriving before flush until batch registr
 
 	expect(() => wrapper.read('transformed/note.md', stat)).toThrow('Terminate key needle.');
 
-	const pendingMkdir = wrapper.mkdir('folder/');
+	const pendingMkdir = wrapper.mkdir('folder/', folder('folder/'));
 	const pendingWrite = wrapper.write('transformed/note.md', bytes('body'), stat);
 	await flush();
 
@@ -214,7 +223,7 @@ test('optimization wrapper holds writeStream arriving before flush until batch r
 
 	expect(() => wrapper.read('transformed/stream.md', stat)).toThrow('Terminate key needle.');
 
-	const pendingMkdir = wrapper.mkdir('folder/');
+	const pendingMkdir = wrapper.mkdir('folder/', folder('folder/'));
 	const pendingWriteStream = wrapper.writeStream('transformed/stream.md', stream(['body']), stat);
 	await flush();
 
@@ -261,13 +270,13 @@ test('optimization wrapper bypasses batch optimizer for single call', async () =
 		thisPool: new Set(),
 	});
 
-	remote.control.mkdir = (_key, recursive) => {
+	remote.control.mkdir = (_key, _stat, recursive) => {
 		recursiveValues.push(recursive);
 	};
 
-	await wrapper.mkdir('folder/nested/', true);
+	await wrapper.mkdir('folder/nested/', folder('folder/nested/'), true);
 
-	expect(remote.calls.mkdir).toStrictEqual(['folder/nested/']);
+	expect(remote.calls.mkdir).toStrictEqual([['folder/nested/', folder('folder/nested/'), true]]);
 	expect(recursiveValues).toStrictEqual([true]);
 });
 
@@ -307,7 +316,7 @@ test('optimization wrapper propagates anticipated write rejection', async () => 
 	const stat = file('note.md');
 
 	expect(() => wrapper.read('transformed/note.md', stat)).toThrow();
-	const pendingMkdir = wrapper.mkdir('folder/');
+	const pendingMkdir = wrapper.mkdir('folder/', folder('folder/'));
 	await flushOptimization();
 	const pendingWrite = wrapper.write('transformed/note.md', bytes('body'), stat);
 
@@ -335,7 +344,7 @@ test('optimization wrapper rejects anticipated write before write arrives', asyn
 	const stat = file('note.md');
 
 	expect(() => wrapper.read('transformed/note.md', stat)).toThrow();
-	const pendingMkdir = wrapper.mkdir('folder/');
+	const pendingMkdir = wrapper.mkdir('folder/', folder('folder/'));
 	await flushOptimization();
 	const pendingWrite = wrapper.write('transformed/note.md', bytes('body'), stat);
 

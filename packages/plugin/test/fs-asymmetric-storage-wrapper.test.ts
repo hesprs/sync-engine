@@ -77,7 +77,7 @@ test('mkdir should write empty folder marker file and reuse same generated ancho
 	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});
 	const noteStat = file('folder/note.md', { uid: 'note-uid' });
 
-	await wrapper.mkdir('folder/');
+	await wrapper.mkdir('folder/', folder('folder/'));
 	await wrapper.write('folder/note.md', bytes('1234'), noteStat);
 
 	const [[folderMarkerKey, folderMarkerValue], [childKey, childValue]] = remote.calls.write;
@@ -95,7 +95,7 @@ test('mkdir should reuse bootstrapped anchor instead of generating a colliding o
 	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});
 	const noteStat = file('folder/note.md', { uid: 'note-uid' });
 
-	await wrapper.mkdir('folder/');
+	await wrapper.mkdir('folder/', folder('folder/'));
 	await wrapper.write('folder/note.md', bytes('x'), noteStat);
 
 	expect(remote.calls.write).toStrictEqual([

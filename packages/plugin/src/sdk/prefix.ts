@@ -1,6 +1,6 @@
 import { normalizeBaseDir } from '@repo/shared/path';
 import type { Fs, ListReporter, WrappedFs } from '@/fs';
-import type { Binary, FileStat, MaybePromise, Stat } from '@/types';
+import type { Binary, FileStat, FolderStat, MaybePromise, Stat } from '@/types';
 
 function joinKey(prefix: string, key: string): string {
 	return key === '/' ? prefix : prefix === '/' ? key : `${prefix}${key}`;
@@ -55,8 +55,8 @@ class PrefixFs implements WrappedFs {
 		return this.original.move(joinKey(this.prefix, oldKey), joinKey(this.prefix, newKey));
 	}
 
-	mkdir(key: string, recursive?: boolean) {
-		return this.original.mkdir(joinKey(this.prefix, key), recursive);
+	mkdir(key: string, stat: FolderStat, recursive?: boolean) {
+		return this.original.mkdir(joinKey(this.prefix, key), stat, recursive);
 	}
 
 	async stat(key: string) {

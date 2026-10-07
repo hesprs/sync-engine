@@ -12,7 +12,7 @@ import type { WebdavFsOptions } from '@/webdav/fs';
 import { checkConnection } from '@/webdav/check-connection';
 import WebdavFs from '@/webdav/fs';
 
-const { bytes, deferred, file, flush, request, stream: createStream } = testKit;
+const { bytes, deferred, file, flush, folder, request, stream: createStream } = testKit;
 const sharedDate = new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf();
 
 type Control = (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>;
@@ -330,7 +330,7 @@ test('mkdir recursively creates parent folders in order', async () => {
 		throw new Error(`Unexpected URL: ${url}`);
 	});
 
-	await webdav.fs.mkdir('Notes/Folder A/Child/', true);
+	await webdav.fs.mkdir('Notes/Folder A/Child/', folder('Notes/Folder A/Child/'), true);
 
 	expect(
 		webdav.calls.map((params) => ({ method: params.method, url: params.url })),
@@ -450,7 +450,12 @@ test('list bfs updates progress when infinity is disabled', async () => {
 	});
 
 	expect(list).toStrictEqual([
-		{ isDir: true, key: 'Notes/Folder A/' },
+		{
+			isDir: true,
+			key: 'Notes/Folder A/',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+		},
 		{
 			isDir: false,
 			key: 'Notes/Folder A/file.md',
@@ -510,7 +515,14 @@ test('list reporter can exclude entries and stop descent', async () => {
 		current === 'Notes/Folder A/' ? 'include' : 'exclude',
 	);
 
-	expect(list).toStrictEqual([{ isDir: true, key: 'Notes/Folder A/' }]);
+	expect(list).toStrictEqual([
+		{
+			isDir: true,
+			key: 'Notes/Folder A/',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+		},
+	]);
 	expect(webdav.calls).toHaveLength(1);
 });
 

@@ -1,5 +1,5 @@
 import type { DatabaseSync, StoreSync } from 'uni-kv';
-import type { MaybePromise, Stat, Binary, FileStat } from '@/types';
+import type { MaybePromise, Stat, Binary, FileStat, FolderStat } from '@/types';
 import type { WrappedFs, Fs, ListReporter } from '../interface';
 
 type ContextOptions<S extends string, M extends string> = {
@@ -7,10 +7,6 @@ type ContextOptions<S extends string, M extends string> = {
 	store: NoInfer<S>;
 	marker: NoInfer<M>;
 };
-
-function upsertFolderStat(store: StoreSync<Stat>, key: string) {
-	store.set(key, { isDir: true, key });
-}
 
 function moveCachedStat(store: StoreSync<Stat>, oldKey: string, newKey: string) {
 	const stat = store.get(oldKey);
@@ -76,9 +72,9 @@ class ContextFs<S extends string, M extends string> implements WrappedFs {
 		this.store.delete(key);
 	}
 
-	async mkdir(key: string, recursive?: boolean) {
-		await this.original.mkdir(key, recursive);
-		if (key !== '/') upsertFolderStat(this.store, key);
+	async mkdir(key: string, stat: FolderStat, recursive?: boolean) {
+		await this.original.mkdir(key, stat, recursive);
+		if (key !== '/') this.store.set(key, stat);
 	}
 
 	async move(oldKey: string, newKey: string) {

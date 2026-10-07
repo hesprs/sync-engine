@@ -1,8 +1,8 @@
 import type { ConflictResolver, DatabaseAsync, FileStat, Fs } from '@hesprs/sync-engine-sdk';
 import { pipe } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array, uint8ArrayToText } from '@repo/shared/binary';
-import type { MergeOptions } from './utils/merge';
-import merge from './utils/merge';
+import type { MergeOptions } from '@/utils/merge';
+import merge from '@/utils/merge';
 
 type SmartMergeStoreSchema = Record<`base-text-${string}`, string>;
 type SmartMergeStoreMeta = Record<string, never>;

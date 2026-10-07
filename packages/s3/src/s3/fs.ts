@@ -1,6 +1,7 @@
 import type {
 	Binary,
 	FileStat,
+	FolderStat,
 	ListReporter,
 	Request,
 	RequestParam,
@@ -266,35 +267,32 @@ export default class S3Fs implements RootFs {
 		await this.delete(oldKey);
 	}
 
-	async mkdir(key: string, recursive = false): Promise<void> {
+	async mkdir(key: string, { meta }: FolderStat, recursive?: boolean): Promise<void> {
 		const dirKeys = recursive ? getRecursiveKeys(key) : [key];
-		for (const dirKey of dirKeys) {
-			// S3 has no real folders — create a 0-byte placeholder object
-			const url = this.buildUrl(dirKey);
-			try {
-				await this.requestOrThrow(url, {
+		await Promise.all(
+			dirKeys.map(async (dirKey) => {
+				const headers = { 'Content-Type': 'application/octet-stream' };
+				if (dirKey === key) Object.assign(headers, toMetaHeaders(await meta()));
+				return this.requestOrThrow(this.buildUrl(dirKey), {
 					body: new Uint8Array(0),
-					headers: { 'Content-Type': 'application/octet-stream' },
+					headers,
 					method: 'PUT',
 				});
-			} catch (error) {
-				if (getStatus(error) === 409) continue;
-				throw error;
-			}
-		}
+			}),
+		);
 	}
 
 	private async fetchMeta(key: string): Promise<Record<string, string>> {
-		const response = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
-		return extractMetaHeaders(response.headers);
+		const { headers } = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
+		return extractMetaHeaders(headers);
 	}
 
 	async stat(key: string): Promise<Stat> {
-		if (isFolder(key)) return { isDir: true, key };
-		const response = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
-		const etag = getHeader(response.headers, 'etag');
-		const contentLength = getHeader(response.headers, 'content-length');
-		const lastModified = getHeader(response.headers, 'last-modified');
+		if (isFolder(key)) return { isDir: true, key, meta: () => this.fetchMeta(key) };
+		const { headers } = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
+		const etag = getHeader(headers, 'etag');
+		const contentLength = getHeader(headers, 'content-length');
+		const lastModified = getHeader(headers, 'last-modified');
 		if (!lastModified) throw mtimeMissing;
 		if (!contentLength) throw sizeMissing;
 		const mtime = new Date(lastModified).valueOf();
@@ -302,7 +300,7 @@ export default class S3Fs implements RootFs {
 		return {
 			isDir: false,
 			key,
-			meta: () => extractMetaHeaders(response.headers),
+			meta: () => extractMetaHeaders(headers),
 			mtime,
 			size,
 			uid: etag ? normalizeEtag(etag) : `${mtime}~${size}`,
@@ -348,7 +346,10 @@ export default class S3Fs implements RootFs {
 						})) === 'exclude'
 					)
 						return;
-					if (isFolder(Key)) results.push({ isDir: true, key: Key });
+					const meta = this.options.fetchObjectMeta
+						? () => this.fetchMeta(Key)
+						: () => ({});
+					if (isFolder(Key)) results.push({ isDir: true, key: Key, meta });
 					else {
 						if (!LastModified) throw mtimeMissing;
 						if (!Size) throw sizeMissing;
@@ -357,9 +358,7 @@ export default class S3Fs implements RootFs {
 						results.push({
 							isDir: false,
 							key: Key,
-							meta: this.options.fetchObjectMeta
-								? () => this.fetchMeta(Key)
-								: () => ({}),
+							meta,
 							mtime,
 							size,
 							uid: ETag ? normalizeEtag(ETag) : `${mtime}~${size}`,

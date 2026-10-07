@@ -6,7 +6,7 @@ import type { GdriveDB } from '@/gdrive/fs';
 import { DRIVE_API, DRIVE_UPLOAD_API, FOLDER_MIME } from '@/gdrive/api';
 import GdriveFs from '@/gdrive/fs';
 
-const { bytes, file, request } = testKit;
+const { bytes, file, folder, request } = testKit;
 const db: GdriveDB = openMemoryDB<{ gdriveIds: string }, { gdriveIdsMarker?: string }>(
 	'gdrive-fs-test',
 );
@@ -87,11 +87,18 @@ test('creates folders, lists visible descendants, and honors excluded subtrees',
 		});
 	});
 
-	await fs.mkdir('notes/', true);
+	await fs.mkdir('notes/', folder('notes/'), true);
 	const result = await fs.list('/', ({ current }) =>
 		current === 'notes/' ? 'include' : 'advance',
 	);
-	expect(result).toStrictEqual([{ isDir: true, key: 'notes/' }]);
+	expect(result).toStrictEqual([
+		{
+			isDir: true,
+			key: 'notes/',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+		},
+	]);
 	expect(calls[0]?.method).toBe('POST');
 	expect(new TextDecoder().decode(calls[0]?.body as Binary)).toContain(FOLDER_MIME);
 });

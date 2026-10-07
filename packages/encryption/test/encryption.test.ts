@@ -6,7 +6,7 @@ import type { EncryptionDBMeta, EncryptionDBSchema } from '@/wrapper';
 import encryptionWrapper from '@/wrapper';
 import { DECRYPTION_ERROR_MESSAGE } from '@/wrapper/shared';
 
-const { bytes, file, fs: testFs, stream } = testKit;
+const { bytes, file, folder, fs: testFs, stream } = testKit;
 const PASSWORD = 'password';
 const WRONG_PASSWORD = 'wrong-password';
 
@@ -108,7 +108,8 @@ function createRemote(options: { uid?: string } = {}) {
 				return stream([files.get(key) ?? new Uint8Array(0)]);
 			},
 			stat(key) {
-				if (directories.has(key) || key.endsWith('/')) return { isDir: true, key };
+				if (directories.has(key) || key.endsWith('/'))
+					return { isDir: true, key, meta: () => ({}) };
 				const value = files.get(key) ?? new Uint8Array(0);
 				return {
 					isDir: false,
@@ -247,12 +248,12 @@ test('stat and list preserve metadata while decrypting keys', async () => {
 		size: 567,
 		uid: 'etag-1',
 	});
-	await shim.mkdir('Folder/folder/');
+	await shim.mkdir('Folder/folder/', folder('Folder/folder/'));
 	await shim.write('Folder/file.md', bytes('x'), file('Folder/file.md', { size: 1 }));
-	const folderKey = must(remote.base.calls.mkdir[0], 'missing encrypted folder key');
+	const folderKey = must(remote.base.calls.mkdir[0]?.[0], 'missing encrypted folder key');
 	const fileKey = must(remote.base.calls.write[0]?.[0], 'missing encrypted file key');
 	remote.base.control.list = () => [
-		{ isDir: true, key: folderKey },
+		{ isDir: true, key: folderKey, meta: () => ({}) },
 		{ isDir: false, key: fileKey, meta: () => ({}), mtime: 12, size: 7, uid: 'note-2' },
 	];
 
@@ -262,7 +263,12 @@ test('stat and list preserve metadata while decrypting keys', async () => {
 	expect(stat).toMatchObject({ isDir: false, mtime: 1234, size: 567, uid: 'etag-1' });
 	expect(stat.key).toBe('Folder/file.md');
 	expect(list).toStrictEqual([
-		{ isDir: true, key: 'Folder/folder/' },
+		{
+			isDir: true,
+			key: 'Folder/folder/',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+		},
 		{
 			isDir: false,
 			key: 'Folder/file.md',
@@ -295,7 +301,7 @@ test('exists delete mkdir and move rewrite keys', async () => {
 
 	await shim.exists('Folder/Sub/');
 	await shim.delete('Folder/Sub/');
-	await shim.mkdir('Folder/Sub/');
+	await shim.mkdir('Folder/Sub/', folder('Folder/Sub/'));
 	await shim.move('Folder/Sub/', 'Folder/Next/');
 
 	expect(calls[0]?.[0]).toBe(calls[1]?.[0]);

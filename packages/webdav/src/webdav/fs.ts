@@ -17,7 +17,6 @@ import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import {
 	dirname,
-	isFolder,
 	normalizeChar,
 	normalizeKey,
 	normalizeUrl,
@@ -200,11 +199,6 @@ export default class WebdavFs implements RootFs {
 		} = validPropstat.prop;
 		const isDir = isCollectionResource(resourcetype);
 		const key = toKey(href, this.endpoint, isDir);
-		if (isDir) return { isDir: true, key };
-		const mtime = new Date(getDavText(getlastmodified) ?? '0').valueOf();
-		const size = Number.parseInt(getDavText(getcontentlength) ?? '0', 10);
-		const etag = getDavText(getetag);
-		const uid = etag ? normalizeEtag(etag) : `${mtime}~${size}`;
 		const meta = () => {
 			if (this.options.fileMetadata) {
 				const metaJson = getDavText(seMeta);
@@ -212,6 +206,11 @@ export default class WebdavFs implements RootFs {
 			}
 			return {};
 		};
+		if (isDir) return { isDir: true, key, meta };
+		const mtime = new Date(getDavText(getlastmodified) ?? '0').valueOf();
+		const size = Number.parseInt(getDavText(getcontentlength) ?? '0', 10);
+		const etag = getDavText(getetag);
+		const uid = etag ? normalizeEtag(etag) : `${mtime}~${size}`;
 		return { isDir: false, key, meta, mtime, size, uid };
 	}
 
@@ -335,24 +334,25 @@ export default class WebdavFs implements RootFs {
 		});
 	}
 
-	async mkdir(key: string, recursive = false) {
+	async mkdir(key: string, stat: FolderStat, recursive?: boolean) {
 		const directoryKeys = recursive ? getRecursiveKeys(key) : [key];
-		for (const directoryKey of directoryKeys)
-			try {
-				await this.requestOrThrow(buildUrl(this.endpoint, directoryKey), {
-					method: 'MKCOL',
-				});
-			} catch (error) {
-				if (getStatus(error) === 405) continue;
-				throw error;
-			}
+		const mkcols = async () => {
+			for (const directoryKey of directoryKeys)
+				try {
+					await this.requestOrThrow(buildUrl(this.endpoint, directoryKey), {
+						method: 'MKCOL',
+					});
+				} catch (error) {
+					if (getStatus(error) !== 405) throw error;
+				}
+		};
+		const [meta] = await Promise.all([this.resolveMeta(stat.meta), mkcols()]);
+		if (meta) await this.proppatch(key, meta);
 	}
 
 	async stat(key: string): Promise<Stat> {
-		if (isFolder(key)) return { isDir: true, key } satisfies FolderStat;
-		const { endpoint } = this;
 		const items = await this.propfind({ key });
-		const item = items.find((candidate) => isTargetItem(key, endpoint, candidate));
+		const item = items.find((candidate) => isTargetItem(key, this.endpoint, candidate));
 		if (!item) throw new Error(`WebDAV stat not found for "${key}"`);
 		const stat = this.toStat(item);
 		if (!stat) throw new Error(`WebDAV stat not found for "${key}"`);

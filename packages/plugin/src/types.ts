@@ -17,6 +17,7 @@ export type FileStat = {
 export type FolderStat = {
 	isDir: true;
 	key: string;
+	meta: () => MaybePromise<Dict<string>>;
 };
 export type Stat = FileStat | FolderStat;
 export type RecordStat = { isDir: false; local: string; remote: string } | { isDir: true };

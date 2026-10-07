@@ -40,7 +40,7 @@ The module registers these settings:
 
 `delete()` sends `DELETE` and treats HTTP `404` as already deleted. `move()` sends `MOVE` with a `Destination` header. `mkdir()` sends `MKCOL`; recursive creation creates ancestor directories in order and ignores HTTP `405`, which indicates an existing directory.
 
-`stat()` sends a depth-zero `PROPFIND` for the target, except `/`, which is returned locally as a folder. The request asks for the resource type, modification time, content length, and `ETag`; when file metadata is enabled, it also requests `se:meta`. File UIDs use `ETag` when available, otherwise `<mtime>~<size>`; folders have no UID. `exists()` uses the same lookup and returns `false` for HTTP `404`.
+`stat()` sends a depth-zero `PROPFIND` for the target. The request asks for the resource type, modification time, content length, and `ETag`; when file metadata is enabled, it also requests `se:meta`. File UIDs use `ETag` when available, otherwise `<mtime>~<size>`; folders have no UID. `exists()` uses the same lookup and returns `false` for HTTP `404`.
 
 `PROPFIND` response pagination is supported through a `Link: <...>; rel="next"` response header.
 

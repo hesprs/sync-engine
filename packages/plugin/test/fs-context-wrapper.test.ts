@@ -237,8 +237,8 @@ test('mkdir upserts folder record', async () => {
 	const remoteWrapper = remoteContextWrapper(remote.fs);
 	const localWrapper = localContextWrapper(local.fs);
 
-	await remoteWrapper.mkdir('remote-folder/', true);
-	await localWrapper.mkdir('local-folder/');
+	await remoteWrapper.mkdir('remote-folder/', folder('remote-folder/'), true);
+	await localWrapper.mkdir('local-folder/', folder('local-folder/'));
 
 	expect(getRemoteStore().get('remote-folder/')).toStrictEqual(folder('remote-folder/'));
 	expect(getLocalStore().get('local-folder/')).toStrictEqual(folder('local-folder/'));

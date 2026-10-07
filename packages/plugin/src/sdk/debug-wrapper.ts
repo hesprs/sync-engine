@@ -1,5 +1,5 @@
 import type { WrappedFs, Fs, ListReporter } from '@/fs';
-import type { Binary, FileStat } from '@/types';
+import type { Binary, FileStat, FolderStat } from '@/types';
 
 class DebugFs implements WrappedFs {
 	constructor(
@@ -49,9 +49,9 @@ class DebugFs implements WrappedFs {
 		return this.original.move(oldKey, newKey);
 	}
 
-	mkdir(key: string, recursive?: boolean) {
+	mkdir(key: string, stat: FolderStat, recursive?: boolean) {
 		this.log(`mkdir: key ${key}, recursive ${recursive}`);
-		return this.original.mkdir(key, recursive);
+		return this.original.mkdir(key, stat, recursive);
 	}
 
 	async stat(key: string) {

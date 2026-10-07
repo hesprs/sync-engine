@@ -14,7 +14,7 @@ import S3Fs from '@/s3/fs';
 import { sigv4Middleware } from '@/s3/sigv4';
 import { defaultCredentials, defaultS3Options, memoryDB, response } from './helpers';
 
-const { bytes, deferred, file, stream: createStream } = testKit;
+const { bytes, deferred, file, folder, stream: createStream } = testKit;
 
 let parsedResponse: unknown = {};
 
@@ -333,16 +333,15 @@ test('move copies encoded source before deleting old key', async () => {
 	expect(s3.calls.map(({ method }) => method)).toStrictEqual(['PUT', 'DELETE']);
 });
 
-test('mkdir recursively creates placeholders in ancestor order and ignores conflicts', async () => {
+test('mkdir recursively creates placeholders in ancestor order', async () => {
 	const s3 = createS3Fs();
 	s3.setRequest((url, params) => {
 		expect(params.method).toBe('PUT');
 		expect(params.headers?.['Content-Type']).toBe('application/octet-stream');
 		expect(params.body).toStrictEqual(new Uint8Array(0));
-		if (url.endsWith('/Notes/A%20B/')) throw { res: { status: 409 } };
 		return response({ status: 201 });
 	});
-	await s3.fs.mkdir('Notes/A B/Child/', true);
+	await s3.fs.mkdir('Notes/A B/Child/', folder('Notes/A B/Child/'), true);
 	expect(s3.calls.map(({ url }) => url)).toStrictEqual([
 		'https://s3.example.com/vault/Notes/',
 		'https://s3.example.com/vault/Notes/A%20B/',
@@ -352,7 +351,12 @@ test('mkdir recursively creates placeholders in ancestor order and ignores confl
 
 test('stat returns root, folder placeholders, and file metadata with ETag fallback', async () => {
 	const s3 = createS3Fs();
-	expect(await s3.fs.stat('/')).toStrictEqual({ isDir: true, key: '/' });
+	expect(await s3.fs.stat('/')).toStrictEqual({
+		isDir: true,
+		key: '/',
+		// oxlint-disable-next-line typescript/no-unsafe-assignment
+		meta: expect.any(Function),
+	});
 	s3.setRequest((url, params) => {
 		expect(params.method).toBe('HEAD');
 		if (url.endsWith('/folder/')) return response({ headers: { 'content-length': '0' } });
@@ -364,7 +368,12 @@ test('stat returns root, folder placeholders, and file metadata with ETag fallba
 			},
 		});
 	});
-	expect(await s3.fs.stat('folder/')).toStrictEqual({ isDir: true, key: 'folder/' });
+	expect(await s3.fs.stat('folder/')).toStrictEqual({
+		isDir: true,
+		key: 'folder/',
+		// oxlint-disable-next-line typescript/no-unsafe-assignment
+		meta: expect.any(Function),
+	});
 	const noteStat = await s3.fs.stat('note.md');
 	expect(noteStat).toStrictEqual({
 		isDir: false,
@@ -431,7 +440,12 @@ test('list returns files and prefixes, excludes queried key, reports exclusions,
 		return current === 'Notes/first.md' ? 'exclude' : 'include';
 	});
 	expect(result).toStrictEqual([
-		{ isDir: true, key: 'Notes/folder/' },
+		{
+			isDir: true,
+			key: 'Notes/folder/',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+		},
 		{
 			isDir: false,
 			key: 'Notes/second.md',

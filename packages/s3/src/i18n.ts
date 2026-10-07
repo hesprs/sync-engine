@@ -1,4 +1,4 @@
-import type { S3Translations } from './setting';
+import type { S3Translations } from '@/setting';
 
 export const en: S3Translations = {
 	accessKeyId: 'Access key ID',

@@ -48,7 +48,7 @@ type RootFs = {
   writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
   delete(key: string): MaybePromise<void>;
   move(oldKey: string, newKey: string): MaybePromise<void>;
-  mkdir(key: string, recursive?: boolean): MaybePromise<void>;
+  mkdir(key: string, stat: FolderStat, recursive?: boolean): MaybePromise<void>;
   stat(key: string): MaybePromise<Stat>;
   exists(key: string): MaybePromise<boolean>;
   list(key: string, reporter: ListReporter): MaybePromise<Array<Stat>>;

@@ -2,6 +2,7 @@ import type {
 	Binary,
 	DatabaseSync,
 	FileStat,
+	FolderStat,
 	ListReporter,
 	Request,
 	RequestParam,
@@ -24,7 +25,7 @@ import {
 	buildUrl,
 	escapeQuery,
 	parseDriveError,
-	toFileStat,
+	toStat,
 } from './api';
 import { guessMimeType, resumableUpload, singleUpload } from './upload';
 
@@ -251,11 +252,11 @@ export default class GdriveFs implements RootFs {
 	}
 
 	/** Drive folders always need an existing parent id, so missing parents are created regardless of `recursive`. */
-	async mkdir(key: string, recursive: boolean): Promise<void> {
+	async mkdir(key: string, stat: FolderStat, recursive: boolean): Promise<void> {
 		const parent = dirname(key);
 		let parentId = this.resolveId(parent);
 		if (!parentId && recursive) {
-			await this.mkdir(parent, true);
+			await this.mkdir(parent, { isDir: true, key: parent, meta: () => ({}) }, true);
 			parentId = this.resolveId(parent);
 		}
 		if (!parentId) throw new Error(`Parent is not created when creating "${key}"!`);
@@ -264,6 +265,7 @@ export default class GdriveFs implements RootFs {
 			{
 				body: textToUint8Array(
 					JSON.stringify({
+						appProperties: await stat.meta(),
 						mimeType: FOLDER_MIME,
 						name: basename(key),
 						parents: [parentId],
@@ -290,7 +292,7 @@ export default class GdriveFs implements RootFs {
 		const response = await this.requestOrThrow(url, { method: 'GET' });
 		const entry = response.json<DriveFileList>().files?.[0];
 		if (!entry) throw notFoundError(key);
-		return toFileStat(key, entry);
+		return toStat(key, entry);
 	}
 
 	// When Sync Engine calls `exists()`, the only possibility is that something is unexpected, don't trust cache here
@@ -341,10 +343,8 @@ export default class GdriveFs implements RootFs {
 				const verdict = await reporter({ completed, current: childKey, total });
 				if (verdict === 'exclude') continue;
 				this.ids.set(childKey, entry.id);
-				if (folder) {
-					results.push({ isDir: true, key: childKey });
-					if (verdict === 'advance') await walk(entry.id, childKey);
-				} else results.push(toFileStat(childKey, entry));
+				results.push(toStat(childKey, entry));
+				if (verdict === 'advance') await walk(entry.id, childKey);
 			}
 		};
 		await walk(startId, key === '/' ? '' : key);
