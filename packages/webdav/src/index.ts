@@ -92,7 +92,7 @@ export default class Webdav {
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
-					if (this.settings.remoteFs === 'webdav') return;
+					if (this.settings.remoteFs !== 'webdav') return;
 					const { username, password: pwd } = this.moduleSettings;
 					const password = secretStorage.getSecret(pwd);
 					if (password === null) throw new Error(translate('pleaseConfigureAccount'));
