@@ -222,8 +222,7 @@ const zhTW: Translations = {
 	realtimeSyncDescription:
 		'當檔案經修改後立即自動觸發同步。請在欄位中修改檔案變更到觸發同步之間的延遲時間。',
 	realtimeSyncFastMode: '即時同步極速模式',
-	realtimeSyncFastModeDescription:
-		'在即時同步過程中重複使用快取資料並跳過不必要的遠端掃描，以加快同步速度。',
+	realtimeSyncFastModeDescription: '透過重複使用快取資料來加速即時同步，並跳過不必要的遠端掃描。',
 	realtimeSyncPlaceholder: '輸入同步延遲（例如 500ms, 5s）',
 	recordsCleared: '紀錄已清除',
 	remoteMigration: '遠端遷移',

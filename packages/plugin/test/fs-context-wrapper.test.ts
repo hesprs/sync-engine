@@ -185,14 +185,12 @@ test('write upserts synthesized file stat', async () => {
 test('writeStream upserts synthesized file stat', async () => {
 	const local = fs();
 	const localWrapper = localContextWrapper(local.fs);
-	const stat = file('local-stream.md', { size: 0, uid: 'local-stream' });
+	const stat = file('local-stream.md', { uid: 'local-stream' });
 
 	await localWrapper.writeStream('local-stream.md', stream(['ab', 'cd']), stat);
 
 	const write = getLocalStore().get('local-stream.md') as FileStat;
-	expect(write).toStrictEqual(
-		file('local-stream.md', { mtime: write.mtime, size: 0, uid: 'stream-uid' }),
-	);
+	expect(write).toStrictEqual(file('local-stream.md', { mtime: write.mtime, uid: 'stream-uid' }));
 });
 
 test('delete removes cached record', async () => {
@@ -239,8 +237,8 @@ test('mkdir upserts folder record', async () => {
 	const remoteWrapper = remoteContextWrapper(remote.fs);
 	const localWrapper = localContextWrapper(local.fs);
 
-	await remoteWrapper.mkdir('remote-folder/', true);
-	await localWrapper.mkdir('local-folder/');
+	await remoteWrapper.mkdir('remote-folder/', folder('remote-folder/'), true);
+	await localWrapper.mkdir('local-folder/', folder('local-folder/'));
 
 	expect(getRemoteStore().get('remote-folder/')).toStrictEqual(folder('remote-folder/'));
 	expect(getLocalStore().get('local-folder/')).toStrictEqual(folder('local-folder/'));

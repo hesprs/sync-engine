@@ -1,4 +1,4 @@
-import type { EncryptionTranslations } from './setting';
+import type { EncryptionTranslations } from '@/setting';
 
 export const en: EncryptionTranslations = {
 	encryption: 'Encryption',

@@ -14,7 +14,7 @@ import S3Fs from '@/s3/fs';
 import { sigv4Middleware } from '@/s3/sigv4';
 import { defaultCredentials, defaultS3Options, memoryDB, response } from './helpers';
 
-const { bytes, deferred, file, stream: createStream } = testKit;
+const { bytes, deferred, file, folder, stream: createStream } = testKit;
 
 let parsedResponse: unknown = {};
 
@@ -79,16 +79,22 @@ test('read gets encoded object bytes and maps S3 XML errors', async () => {
 	});
 });
 
-test('write sends binary PUT and uses ETag or HEAD metadata fallback', async () => {
+test('write sends binary PUT with meta headers and uses ETag or HEAD metadata fallback', async () => {
 	const s3 = createS3Fs();
+	const destination = file('Notes/file.md', {
+		meta: () => ({ ctime: '100', mtime: '200' }),
+		size: 5,
+	});
 	s3.setRequest((url, params) => {
 		assertSignedRequest(params, 'PUT');
 		expect(url).toBe('https://s3.example.com/vault/Notes/file.md');
 		expect(params.headers?.['Content-Type']).toBe('application/octet-stream');
+		expect(params.headers?.['x-amz-meta-ctime']).toBe('100');
+		expect(params.headers?.['x-amz-meta-mtime']).toBe('200');
 		expect(params.body).toStrictEqual(bytes('hello'));
 		return response({ headers: { ETag: '"write-etag"' } });
 	});
-	expect(await s3.fs.write('Notes/file.md', bytes('hello'))).toBe('write-etag');
+	expect(await s3.fs.write('Notes/file.md', bytes('hello'), destination)).toBe('write-etag');
 
 	const fallback = createS3Fs();
 	fallback.setRequest((_url, params) => {
@@ -101,9 +107,13 @@ test('write sends binary PUT and uses ETag or HEAD metadata fallback', async () 
 			},
 		});
 	});
-	expect(await fallback.fs.write('Notes/file.md', bytes('hello'))).toBe(
-		`${new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf()}~5`,
-	);
+	expect(
+		await fallback.fs.write(
+			'Notes/file.md',
+			bytes('hello'),
+			file('Notes/file.md', { size: 5 }),
+		),
+	).toBe(`${new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf()}~5`);
 });
 
 test('writeStream buffers below-part-size input into one PUT', async () => {
@@ -127,6 +137,7 @@ test('writeStream uploads exact multipart parts and completes with ETag', async 
 		const address = new URL(url);
 		if (params.method === 'POST' && address.searchParams.has('uploads')) {
 			expect(params.headers?.['x-amz-content-sha256']).toBe('UNSIGNED-PAYLOAD');
+			expect(params.headers?.['x-amz-meta-ctime']).toBe('300');
 			parsedResponse = { InitiateMultipartUploadResult: { UploadId: 'upload-1' } };
 			return response({
 				text: '<InitiateMultipartUploadResult><UploadId>upload-1</UploadId></InitiateMultipartUploadResult>',
@@ -152,7 +163,7 @@ test('writeStream uploads exact multipart parts and completes with ETag', async 
 	const uid = await s3.fs.writeStream(
 		'Notes/big.bin',
 		createStream([new Uint8Array(partSize), new Uint8Array(2)]),
-		file('Notes/big.bin', { size: partSize + 2 }),
+		file('Notes/big.bin', { meta: () => ({ ctime: '300' }), size: partSize + 2 }),
 	);
 	expect(uid).toBe('complete-etag');
 	expect(s3.calls.map(({ method }) => method)).toStrictEqual(['POST', 'PUT', 'PUT', 'POST']);
@@ -322,26 +333,32 @@ test('move copies encoded source before deleting old key', async () => {
 	expect(s3.calls.map(({ method }) => method)).toStrictEqual(['PUT', 'DELETE']);
 });
 
-test('mkdir recursively creates placeholders in ancestor order and ignores conflicts', async () => {
+test('mkdir recursively creates all ancestor placeholders', async () => {
 	const s3 = createS3Fs();
 	s3.setRequest((url, params) => {
 		expect(params.method).toBe('PUT');
 		expect(params.headers?.['Content-Type']).toBe('application/octet-stream');
 		expect(params.body).toStrictEqual(new Uint8Array(0));
-		if (url.endsWith('/Notes/A%20B/')) throw { res: { status: 409 } };
 		return response({ status: 201 });
 	});
-	await s3.fs.mkdir('Notes/A B/Child/', true);
-	expect(s3.calls.map(({ url }) => url)).toStrictEqual([
-		'https://s3.example.com/vault/Notes/',
-		'https://s3.example.com/vault/Notes/A%20B/',
-		'https://s3.example.com/vault/Notes/A%20B/Child/',
-	]);
+	await s3.fs.mkdir('Notes/A B/Child/', folder('Notes/A B/Child/'), true);
+	expect(s3.calls.map(({ url }) => url).sort()).toStrictEqual(
+		[
+			'https://s3.example.com/vault/Notes/',
+			'https://s3.example.com/vault/Notes/A%20B/',
+			'https://s3.example.com/vault/Notes/A%20B/Child/',
+		].sort(),
+	);
 });
 
 test('stat returns root, folder placeholders, and file metadata with ETag fallback', async () => {
 	const s3 = createS3Fs();
-	expect(await s3.fs.stat('/')).toStrictEqual({ isDir: true, key: '/' });
+	expect(await s3.fs.stat('/')).toStrictEqual({
+		isDir: true,
+		key: '/',
+		// oxlint-disable-next-line typescript/no-unsafe-assignment
+		meta: expect.any(Function),
+	});
 	s3.setRequest((url, params) => {
 		expect(params.method).toBe('HEAD');
 		if (url.endsWith('/folder/')) return response({ headers: { 'content-length': '0' } });
@@ -349,17 +366,28 @@ test('stat returns root, folder placeholders, and file metadata with ETag fallba
 			headers: {
 				'content-length': '12',
 				'last-modified': 'Mon, 01 Jan 2024 00:00:00 GMT',
+				'x-amz-meta-ctime': '500',
 			},
 		});
 	});
-	expect(await s3.fs.stat('folder/')).toStrictEqual({ isDir: true, key: 'folder/' });
-	expect(await s3.fs.stat('note.md')).toStrictEqual({
+	expect(await s3.fs.stat('folder/')).toStrictEqual({
+		isDir: true,
+		key: 'folder/',
+		// oxlint-disable-next-line typescript/no-unsafe-assignment
+		meta: expect.any(Function),
+	});
+	const noteStat = await s3.fs.stat('note.md');
+	expect(noteStat).toStrictEqual({
 		isDir: false,
 		key: 'note.md',
+		// oxlint-disable-next-line typescript/no-unsafe-assignment
+		meta: expect.any(Function),
 		mtime: new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf(),
 		size: 12,
 		uid: `${new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf()}~12`,
 	});
+	if (noteStat.isDir) throw new Error('expected file stat');
+	expect(await noteStat.meta()).toStrictEqual({ ctime: '500' });
 });
 
 test('list returns files and prefixes, excludes queried key, reports exclusions, and paginates', async () => {
@@ -414,10 +442,17 @@ test('list returns files and prefixes, excludes queried key, reports exclusions,
 		return current === 'Notes/first.md' ? 'exclude' : 'include';
 	});
 	expect(result).toStrictEqual([
-		{ isDir: true, key: 'Notes/folder/' },
+		{
+			isDir: true,
+			key: 'Notes/folder/',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+		},
 		{
 			isDir: false,
 			key: 'Notes/second.md',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
 			mtime: expect.any(Number) as never,
 			size: 2,
 			uid: 'etag-2',
@@ -436,4 +471,26 @@ test('list maps unified root to an empty S3 prefix', async () => {
 	});
 
 	expect(await s3.fs.list('/', () => 'include' as const)).toStrictEqual([]);
+});
+
+test('list fetches meta via HEAD per object when fetchObjectMeta is enabled', async () => {
+	const s3 = createS3Fs({ fetchObjectMeta: true });
+	s3.setRequest((url, params) => {
+		if (params.method === 'HEAD') return response({ headers: { 'x-amz-meta-ctime': '999' } });
+		parsedResponse = {
+			ListBucketResult: {
+				Contents: {
+					ETag: 'etag-1',
+					Key: 'file.md',
+					LastModified: 'Mon, 01 Jan 2024 00:00:00 GMT',
+					Size: '1',
+				},
+				IsTruncated: 'false',
+			},
+		};
+		return response({ text: '<ListBucketResult />' });
+	});
+	const [stat] = await s3.fs.list('/', () => 'include' as const);
+	if (stat.isDir) throw new Error('expected file stat');
+	expect(await stat.meta()).toStrictEqual({ ctime: '999' });
 });

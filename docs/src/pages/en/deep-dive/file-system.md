@@ -16,12 +16,12 @@ Vault file system consumes [`VaultRequest`](./request#vault-request), a typed op
 
 `readStream()`: delegates to `GET_STREAM` with the file size from the supplied stat. The `size` enables range-based streaming on platforms without local file stream support, see [request](./request#vault-request).
 
-`write()`: delegates to `PUT`, then calls `this.stat()` and returns the file UID.
+`write()`: delegates to `PUT`, passing `ctime` and `mtime` from the file's `meta` as Obsidian `DataWriteOptions`, then calls `this.stat()` and returns the file UID.
 
 `writeStream()`:
 
 - creates `.trash/<random-UUID>.part`, creating `.trash` when needed
-- reads the input stream and appends each chunk with `APPEND`
+- reads the input stream and appends each chunk with `APPEND`, passing `ctime` and `mtime` from the file's `meta` as `DataWriteOptions`
 - removes an existing destination, then moves the temporary file into place
 - calls `this.stat()` and returns the file UID
 - on failure, cancels the input stream and permanently removes the temporary file
@@ -36,7 +36,7 @@ Vault file system consumes [`VaultRequest`](./request#vault-request), a typed op
 
 - delegates to `STAT`
 - uses cached `TFile`/`TFolder` metadata when `workspace.layoutReady`; otherwise falls back to `vault.adapter.stat()`
-- converts file results to the project `Stat` format, with `uid` as `mtime` + `size` separated by `~`; folders have no UID
+- converts file results to the project `Stat` format, with `uid` as `mtime` + `size` separated by `~`, and `meta` returning `ctime` and `mtime` as strings; folders have no UID
 
 `list()`: recursively traverses descendants with concurrent requests. `LIST` uses cached folder children when the layout is ready, otherwise `vault.adapter.list()`. Each file is then passed through `stat()`, while folder entries are returned directly. The queried root is excluded from the result.
 

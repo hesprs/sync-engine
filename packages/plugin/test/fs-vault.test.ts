@@ -10,6 +10,7 @@ const { stream, bytes, file } = testKit;
 const textDecoder = new TextDecoder();
 
 type VaultFixtureStat = {
+	ctime?: number;
 	mtime: number;
 	size?: number;
 	type: 'file' | 'folder';
@@ -95,7 +96,10 @@ function createVaultControl(options: VaultHarnessOptions): VaultControl {
 		readBinary: () => new ArrayBuffer(0),
 		remove: () => {},
 		rename: () => {},
-		stat: (path: string) => options.stats?.[path],
+		stat: (path: string) => {
+			const stat = options.stats?.[path];
+			return stat ? { ...stat, ctime: stat.ctime ?? 0 } : undefined;
+		},
 		trashLocal: () => {},
 		trashSystem: (path: string) => options.trashSystem?.[path] ?? true,
 		writeBinary: () => {},
@@ -187,20 +191,33 @@ function createVaultStub(options: VaultHarnessOptions): VaultHarness {
 test('stat should normalize root, file, and folder keys', async () => {
 	const vault = createVaultStub({
 		stats: {
+			'/': { mtime: 0, size: 0, type: 'folder' },
 			folder: { mtime: 1, size: 0, type: 'folder' },
 			'note.md': { mtime: 123, size: 9, type: 'file' },
 		},
 	});
 
-	expect(await vault.fs.stat('/')).toEqual({ isDir: true, key: '/' });
-	expect(await vault.fs.stat('note.md')).toEqual({
-		isDir: false,
-		key: 'note.md',
-		mtime: 123,
-		size: 9,
-		uid: '123~9',
+	expect(await vault.fs.stat('/')).toEqual({
+		isDir: true,
+		key: '/',
+		// oxlint-disable-next-line typescript/no-unsafe-assignment
+		meta: expect.any(Function),
 	});
-	expect(await vault.fs.stat('folder/')).toEqual({ isDir: true, key: 'folder/' });
+	expect(await vault.fs.stat('note.md')).toEqual(
+		file('note.md', {
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+			mtime: 123,
+			size: 9,
+			uid: '123~9',
+		}),
+	);
+	expect(await vault.fs.stat('folder/')).toEqual({
+		isDir: true,
+		key: 'folder/',
+		// oxlint-disable-next-line typescript/no-unsafe-assignment
+		meta: expect.any(Function),
+	});
 });
 
 test('write should return refreshed file uid from stat', async () => {

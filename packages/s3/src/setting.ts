@@ -10,7 +10,7 @@ import type { App, SettingGroupItem, TextComponent } from 'obsidian';
 import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
 import { SecretComponent } from 'obsidian';
-import type { UrlStyle } from './s3/sigv4';
+import type { UrlStyle } from '@/s3/sigv4';
 
 export type S3Translations = {
 	s3: string;
@@ -40,6 +40,8 @@ export type S3Translations = {
 	proxyUrl: string;
 	proxyUrlDescription: string;
 	proxyUrlPlaceholder: string;
+	fetchObjectMeta: string;
+	fetchObjectMetaDescription: string;
 };
 
 export default function s3Setting(
@@ -99,6 +101,18 @@ export default function s3Setting(
 								text,
 							});
 						});
+					},
+				})),
+				10_000: s(() => ({
+					desc: translate('fetchObjectMetaDescription'),
+					name: translate('fetchObjectMeta'),
+					render: (setting) => {
+						setting.addToggle((toggle) =>
+							toggle.setValue(settings.fetchObjectMeta).onChange((value) => {
+								settings.fetchObjectMeta = value;
+								void saveSettings();
+							}),
+						);
 					},
 				})),
 				2000: s(() => ({

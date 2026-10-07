@@ -5,7 +5,7 @@ This document specifies how to test services locally and simulate real network c
 ## WebDAV
 
 ```sh
-rclone serve webdav /home/hesprs/Desktop/DAV --addr :5000
+rclone serve webdav /home/hesprs/Desktop/DAV --addr :5005
 ```
 
 - Server URL: `http://localhost:5005`
@@ -31,7 +31,7 @@ In a second terminal, create the bucket:
 export AWS_ACCESS_KEY_ID="syncengine2026"
 export AWS_SECRET_ACCESS_KEY="rustfs-test-secret"
 export AWS_DEFAULT_REGION="us-east-1"
-awscli2 s3api create-bucket --bucket obsidian-sync --endpoint-url http://127.0.0.1:5005
+aws s3api create-bucket --bucket obsidian-sync --endpoint-url http://127.0.0.1:5005
 ```
 
 - Endpoint: `http://127.0.0.1:5005`

@@ -8,9 +8,9 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import type { EncryptionDB } from '@/wrapper';
+import { en, zh, ru, zhTW } from '@/i18n';
+import encryptionSetting from '@/setting';
 import encryptionWrapper from '@/wrapper';
-import { en, zh, ru, zhTW } from './i18n';
-import encryptionSetting from './setting';
 
 export type EncryptionSettings = {
 	enabled: boolean;

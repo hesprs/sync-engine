@@ -35,6 +35,10 @@ This is a consequence of Google's `drive.file` scope, not a filtering option tha
 
 When enabled, files deleted remotely are moved to the Google Drive trash instead of being permanently removed. When disabled, deleted files are permanently erased immediately. Note that Google Drive typically clears items from the trash after 30 days.
 
+## File Metadata
+
+Google Drive stores file metadata as `appProperties` on the file resource. `write()` and `writeStream()` include `appProperties` when the file's `meta` is non-empty. `stat()` and `list()` return `appProperties` as the file's `meta` when present.
+
 ## Permissions And Scopes
 
 The module requests exactly these OAuth scopes:

@@ -2,13 +2,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.3.0 - 2026-10-07
+
+### Core
+
+- Allowed metadata of files and folders (e.g. creation and modification time) to be synchronized across devices. The effectiveness of preservation varies per-device and per-server.
+- Added hint at the bottom of module management page when the plugin is outdated.
+
+### WebDAV Module
+
+- Implemented metadata preservation via `PROPPATCH` requests.
+- Categorized server-dependent capability toggles into a dedicated sub-page with clearer description.
+- Fixed Etag not being normalized when uploading through chunked upload.
+
+### S3 Module
+
+- Implemented metadata preservation via `x-awz-meta-*` headers.
+
+### Google Drive Module
+
+- Implemented metadata preservation via `appProperties`.
+
+### Encryption Module
+
+- Implemented metadata encryption.
+
+### Smart Merge Module
+
+- Implemented file metadata merging during conflict resolution.
+
 ## Sync Engine v3.2.0 - 2026-09-28
 
 ### Core
 
 - Unified sync strategy, inclusion rules, and exclusion rules into an ordered list of sync strategies, providing granular control of syncing decisions.
 - Supported brace expansion syntax in sync strategy Glob rules.
-- Replaced remote migration wizard with a confirmation pop-up reminding manual migration since the set of files to upload can no longer be reliably determined on a single device.
+- Replaced remote migration wizard with a confirmation pop-up reminding manual migration, since the set of files to upload can no longer be reliably determined on a single device.
 - Fixed local operation failure caused by moving a file onto an existing file.
 - Improved internal error handling and logging.
 - Fixed minor UI issues on mobile.

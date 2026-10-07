@@ -79,14 +79,16 @@ export type ObsidianLanguageCode =
 const DEFAULT_LANGUAGE: ObsidianLanguageCode = 'en';
 
 type Factory<A = undefined> = (args: A) => DocumentFragment | string;
-export type Fragment<A = undefined> = (args: A) => DocumentFragment;
-export type Snippet<A = undefined> = (args: A) => string;
+export type Fragment<A = undefined> = (
+	...args: [undefined] extends [A] ? [] : [A]
+) => DocumentFragment;
+export type Snippet<A = undefined> = (...args: [undefined] extends [A] ? [] : [A]) => string;
 
 type TranslationTypes = string | Factory<General>;
 export type TranslationResource = Record<string, TranslationTypes>;
 
 type TranslateParams<R extends TranslationTypes> =
-	R extends Factory<infer A> ? ([A] extends [undefined] ? [] : [A]) : [];
+	R extends Factory<infer A> ? ([undefined] extends [A] ? [] : [A]) : [];
 export type Translate<O extends TranslationResource> = <K extends keyof O>(
 	key: K,
 	...arg: TranslateParams<O[K]>

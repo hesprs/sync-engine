@@ -21,7 +21,7 @@ All commands should be executed at project root.
 
 ## Workflow
 
-- Write probe `console.log()` code directly in source to investigate the bug (don't use `write-debug-module` skill, which is for remote debugging).
+- Write instrumentation code directly in source to investigate the bug (don't use `write-debug-module` skill, which is for remote debugging).
 - Attach the debugger.
 - Rebuild the plugin.
 - Reload Sync Engine plugin.
@@ -29,7 +29,7 @@ All commands should be executed at project root.
 - Print captured console logs to gather info.
 - Iterate above until diagnosis complete.
 - Detach the debugger.
-- Clean up probe code in source and temp files in test files.
+- Clean up instrumentation code in source and temp files in test files.
 - Report.
 
 ## Useful Strategies

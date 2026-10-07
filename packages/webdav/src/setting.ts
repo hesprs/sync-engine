@@ -1,6 +1,11 @@
 import type { WebdavSettings } from '@';
-import type { CallableOrObjectTree, LabelDefinition, Translate } from '@hesprs/sync-engine-sdk';
-import type { App, SettingGroupItem, TextComponent } from 'obsidian';
+import type {
+	CallableOrObjectTree,
+	Fragment,
+	LabelDefinition,
+	Translate,
+} from '@hesprs/sync-engine-sdk';
+import type { App, Setting, SettingGroupItem, TextComponent } from 'obsidian';
 import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
 import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
 import { SecretComponent } from 'obsidian';
@@ -18,10 +23,15 @@ export type WebdavTranslations = {
 	baseDirectory: string;
 	baseDirectoryDescription: string;
 	baseDirectoryPlaceholder: string;
+	capabilities: string;
+	capabilitiesDescription: string;
 	depthInfinity: string;
-	depthInfinityDescription: string;
+	depthInfinityDescription: Fragment;
 	chunkedUpload: string;
-	chunkedUploadDescription: string;
+	chunkedUploadDescription: Fragment;
+	fileMetadata: string;
+	fileMetadataDescription: Fragment;
+	pleaseConfigureAccount: string;
 };
 
 export default function webdavSetting(
@@ -52,6 +62,17 @@ export default function webdavSetting(
 			settings[field] = parsed;
 			void saveSettings();
 		});
+	const capabilityToggle =
+		(capability: 'depthInfinity' | 'chunkedUpload' | 'fileMetadata') => (setting: Setting) => {
+			setting
+				.addToggle((toggle) =>
+					toggle.setValue(settings[capability]).onChange((value) => {
+						settings[capability] = value;
+						void saveSettings();
+					}),
+				)
+				.settingEl.addClass('sync-engine-setting-rendered-desc');
+		};
 	return {
 		749: s(
 			(self) => ({
@@ -130,32 +151,34 @@ export default function webdavSetting(
 						);
 					},
 				})),
-				5000: s(() => ({
-					desc: translate('depthInfinityDescription'),
-					labels: [speedLabel()],
-					name: translate('depthInfinity'),
-					render: (setting) => {
-						setting.addToggle((toggle) =>
-							toggle.setValue(settings.depthInfinity).onChange((value) => {
-								settings.depthInfinity = value;
-								void saveSettings();
-							}),
-						);
+				5000: s(
+					(self) => ({
+						desc: translate('capabilitiesDescription'),
+						items: Object.values(self).map((node) => node(node)),
+						labels: [speedLabel()],
+						name: translate('capabilities'),
+						type: 'page',
+					}),
+					{
+						1000: s(() => ({
+							desc: translate('depthInfinityDescription'),
+							labels: [speedLabel()],
+							name: translate('depthInfinity'),
+							render: capabilityToggle('depthInfinity'),
+						})),
+						2000: s(() => ({
+							desc: translate('chunkedUploadDescription'),
+							labels: [speedLabel()],
+							name: translate('chunkedUpload'),
+							render: capabilityToggle('chunkedUpload'),
+						})),
+						3000: s(() => ({
+							desc: translate('fileMetadataDescription'),
+							name: translate('fileMetadata'),
+							render: capabilityToggle('fileMetadata'),
+						})),
 					},
-				})),
-				6000: s(() => ({
-					desc: translate('chunkedUploadDescription'),
-					labels: [speedLabel()],
-					name: translate('chunkedUpload'),
-					render: (setting) => {
-						setting.addToggle((toggle) =>
-							toggle.setValue(settings.chunkedUpload).onChange((value) => {
-								settings.chunkedUpload = value;
-								void saveSettings();
-							}),
-						);
-					},
-				})),
+				),
 			},
 		),
 	};

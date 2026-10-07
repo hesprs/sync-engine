@@ -10,12 +10,12 @@ import type {
 	TranslationResource,
 	Translate,
 } from '@hesprs/sync-engine-sdk';
-import type { SmartMergeTranslations } from './i18n';
-import type { SmartMergeSettings } from './setting';
-import { en, zh, zhTW, ru } from './i18n';
-import smartMergeResolver from './resolver';
-import smartMergeSetting from './setting';
-import smartMergeBaseTextWrapper from './wrapper';
+import type { SmartMergeTranslations } from '@/i18n';
+import type { SmartMergeSettings } from '@/setting';
+import { en, zh, zhTW, ru } from '@/i18n';
+import smartMergeResolver from '@/resolver';
+import smartMergeSetting from '@/setting';
+import smartMergeBaseTextWrapper from '@/wrapper';
 
 type SmartMergeStoreSchema = Record<`base-text-${string}`, string>;
 type SmartMergeStoreMeta = Record<string, never>;

@@ -89,8 +89,8 @@ export default class Gdrive {
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
-					if (this.settings.remoteFs !== 'gdrive') return;
-					return bearerMiddleware(request, this.tokenManager);
+					if (this.settings.remoteFs === 'gdrive')
+						return bearerMiddleware(request, this.tokenManager);
 				},
 				priority: 305,
 			}),

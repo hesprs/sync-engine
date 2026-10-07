@@ -17,7 +17,7 @@ type FsCalls = {
 	delete: Array<string>;
 	exists: Array<string>;
 	list: Array<string>;
-	mkdir: Array<string>;
+	mkdir: Array<[string, FolderStat, boolean | undefined]>;
 	move: Array<[string, string]>;
 	read: Array<[string, FileStat]>;
 	readStream: Array<[string, FileStat]>;
@@ -57,16 +57,23 @@ function bytes(value: string): Binary {
 	return textEncoder.encode(value);
 }
 
+const EMPTY_META: () => Record<string, string> = () => ({});
+
 function file(
 	key: string,
-	options: { mtime?: number; size?: number; uid?: string } = {},
+	options: {
+		mtime?: number;
+		size?: number;
+		uid?: string;
+		meta?: () => Dict<string>;
+	} = {},
 ): FileStat {
-	const { mtime = 1, size = 5, uid = `${key}-uid` } = options;
-	return { isDir: false, key, mtime, size, uid };
+	const { mtime = 0, size = 0, uid = `${key}-uid`, meta } = options;
+	return { isDir: false, key, meta: meta ?? EMPTY_META, mtime, size, uid };
 }
 
-function folder(key: string): FolderStat {
-	return { isDir: true, key };
+function folder(key: string, meta?: () => Dict<string>): FolderStat {
+	return { isDir: true, key, meta: meta ?? EMPTY_META };
 }
 
 function fileRecord(local: string, remote: string): RecordStat {
@@ -124,9 +131,7 @@ function findTask(tasks: Array<ExtractedTask>, key: string): ExtractedTask {
 }
 
 function defaultStat(key: string): Stat {
-	return key === '/' || key.endsWith('/')
-		? folder(key)
-		: file(key, { mtime: 10, size: 5, uid: 'uid' });
+	return key === '/' || key.endsWith('/') ? folder(key) : file(key, { mtime: 10, uid: 'uid' });
 }
 
 function stream(chunks: Array<string | Binary> = []): ReadableStream<Binary> {
@@ -241,9 +246,9 @@ function fs(options: FsOptions = {}): FsHarness {
 			calls.list.push(key);
 			return control.list(key, reporter);
 		},
-		mkdir: (key: string, recursive?: boolean) => {
-			calls.mkdir.push(key);
-			return control.mkdir(key, recursive);
+		mkdir: (key: string, stat: FolderStat, recursive?: boolean) => {
+			calls.mkdir.push([key, stat, recursive]);
+			return control.mkdir(key, stat, recursive);
 		},
 		move: (oldKey: string, newKey: string) => {
 			calls.move.push([oldKey, newKey]);

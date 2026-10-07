@@ -23,3 +23,19 @@ export function getFileUid(stat: Stat, key: string) {
 	if (stat.isDir) throw new Error(`WebDAV write returned a folder stat for ${key}.`);
 	return stat.uid;
 }
+
+export function toMetaHeaders(meta: Dict<string>): Record<string, string> {
+	const headers: Record<string, string> = {};
+	for (const [key, value] of Object.entries(meta))
+		if (value !== undefined) headers[`x-amz-meta-${key}`] = value;
+	return headers;
+}
+
+export function extractMetaHeaders(headers: Record<string, string>): Record<string, string> {
+	const meta: Record<string, string> = {};
+	for (const [name, value] of Object.entries(headers)) {
+		const lower = name.toLowerCase();
+		if (lower.startsWith('x-amz-meta-')) meta[lower.slice(11)] = value;
+	}
+	return meta;
+}

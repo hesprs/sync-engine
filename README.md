@@ -57,6 +57,7 @@ Sync Engine is a vault syncing plugin to **synchronize vault files in multiple d
 - Granular sync strategy configuration (bidirectional / mirror remote / mirror local / don't sync) using Glob rules.
 - Startup / periodic / save-on-change syncing.
 - Conflict resolve strategies ([smart merge](https://sync.consensia.cc/deep-dive/modules/smart-merge) / keep both / latest survive / keep remote / keep local / skip).
+- Syncing file creation / modification time.
 - Rate / memory control options.
 - Custom headers.
 
@@ -116,6 +117,7 @@ Below is a list of planned features and improvements, the faster this plugin is 
 - [x] v3.0: Rewrite entirely, dynamic module loading, module store, asymmetric storage, and rebrand
 - [x] v3.1: Migrate settings to Obsidian v1.13 API
 - [x] v3.2: Granular sync strategy selection / exclusion inclusion rule refactor based on ordered glob match rules.
+- [x] v3.3: Metadata syncing.
 
 Sync Engine has a [wishlist of features](https://github.com/hesprs/sync-engine/issues/214), you can react with **thumbs up** 👍 on feature comments you would like to have. And the features with more votes will have higher priority.
 
@@ -123,9 +125,12 @@ Sync Engine has a [wishlist of features](https://github.com/hesprs/sync-engine/i
 
 <details><summary>What should I do if I get an error during syncing?</summary>
 
-You can simply retry the sync. An error does not block later syncs nor corrupt your files.
+Please follow the steps below to resolve the bug:
 
-If the error persists after retrying, please [open an issue](https://github.com/hesprs/sync-engine/issues/new), describing the error, your setup, with the log attached.
+1. You can simply retry the sync. An error does not block later syncs nor corrupt your files.
+2. If retrying doesn't help, please check whether your Sync Engine has been updated to the latest version.
+3. Please vary your network condition and alternate your system proxy / reverse proxy to see whether they are the cause.
+4. If the error persists, please [open an issue](https://github.com/hesprs/sync-engine/issues/new), describing the error, your setup, with the log attached.
 
 </details>
 

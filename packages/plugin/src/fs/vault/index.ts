@@ -1,3 +1,4 @@
+import type { DataWriteOptions } from 'obsidian';
 import type { Stat, Binary, FileStat } from '@/types';
 import type { ListReporter, RootFs } from '../interface';
 import type { VaultRequest } from './request';
@@ -22,6 +23,10 @@ async function getFileUid(
 	return stat.uid;
 }
 
+function extractTimes({ mtime, ctime }: { ctime?: string; mtime?: string }): DataWriteOptions {
+	return { ctime: Number(ctime) || undefined, mtime: Number(mtime) || undefined };
+}
+
 export default class VaultFs implements RootFs {
 	constructor(
 		private readonly request: VaultRequest,
@@ -40,13 +45,13 @@ export default class VaultFs implements RootFs {
 		return this.request(key, { method: 'GET_STREAM', size });
 	}
 
-	async write(key: string, value: Binary): Promise<string> {
+	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
 		// https://github.com/hesprs/sync-engine/issues/178
 		// https://forum.obsidian.md/t/on-android-vault-create-intermittently-fails-to-write-file-content/102935
 		let uid: string | undefined;
 		let trial = 0;
 		do {
-			await this.request(key, { key, method: 'PUT', value });
+			await this.request(key, { method: 'PUT', value, ...extractTimes(await stat.meta()) });
 			uid = await getFileUid(this, key, value.byteLength);
 			trial++;
 		} while (!uid && trial < MAX_WRITE_TRIAL);
@@ -54,7 +59,7 @@ export default class VaultFs implements RootFs {
 		return uid;
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>): Promise<string> {
+	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
 		const tempPath = `${TEMP_FOLDER}/${crypto.randomUUID()}.part`;
 		const reader = value.getReader();
 		if (!(await this.exists(TEMP_FOLDER))) await this.mkdir(TEMP_FOLDER);
@@ -62,7 +67,11 @@ export default class VaultFs implements RootFs {
 			while (true) {
 				const result = await reader.read();
 				if (result.done) break;
-				await this.request(tempPath, { method: 'APPEND', value: result.value });
+				await this.request(tempPath, {
+					method: 'APPEND',
+					value: result.value,
+					...extractTimes(await stat.meta()),
+				});
 			}
 			if (await this.exists(key))
 				await this.request(key, { method: 'DELETE', trash: 'permanent' });
@@ -122,7 +131,15 @@ export default class VaultFs implements RootFs {
 					const report = await reporter({ completed, current: p, total });
 					if (report !== 'advance') completed++;
 					if (report === 'exclude') return;
-					result.push({ isDir: true, key: p });
+					result.push({
+						isDir: true,
+						key: p,
+						meta: () =>
+							this.request(key, { method: 'STAT' }).then(({ mtime, ctime }) => ({
+								ctime: String(ctime),
+								mtime: String(mtime),
+							})),
+					});
 					if (report === 'include') return;
 					await visit(p);
 				}),
@@ -133,9 +150,10 @@ export default class VaultFs implements RootFs {
 	}
 
 	async stat(key: string): Promise<Stat> {
-		const { type, mtime, size } = await this.request(key, { method: 'STAT' });
+		const { type, mtime, size, ctime } = await this.request(key, { method: 'STAT' });
+		const meta = () => ({ ctime: String(ctime), mtime: String(mtime) });
 		return type === 'file'
-			? { isDir: false, key, mtime, size, uid: `${mtime}~${size}` }
-			: { isDir: true, key };
+			? { isDir: false, key, meta, mtime, size, uid: `${mtime}~${size}` }
+			: { isDir: true, key, meta };
 	}
 }

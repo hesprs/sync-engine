@@ -22,12 +22,12 @@ import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import type { UrlStyle } from '@/s3/sigv4';
 import type { S3Translations } from '@/setting';
+import { en, zh, zhTW, ru } from '@/i18n';
+import s3BatchDeleteOptimizer from '@/optimizer';
+import { checkConnection } from '@/s3/check-connection';
+import S3Fs from '@/s3/fs';
 import { sigv4Middleware } from '@/s3/sigv4';
-import { en, zh, zhTW, ru } from './i18n';
-import s3BatchDeleteOptimizer from './optimizer';
-import { checkConnection } from './s3/check-connection';
-import S3Fs from './s3/fs';
-import s3Setting from './setting';
+import s3Setting from '@/setting';
 
 export type S3Settings = {
 	endpoint: string;
@@ -45,6 +45,7 @@ export type S3Settings = {
 		enabled: boolean;
 		value: string;
 	};
+	fetchObjectMeta: boolean;
 };
 
 export type S3DB = DatabaseSync<Record<string, unknown>, { s3Key?: Binary; s3KeyMarker?: string }>;
@@ -76,6 +77,7 @@ export default class S3 {
 		accessKeyId: '',
 		bucket: '',
 		endpoint: '',
+		fetchObjectMeta: false,
 		prefix: '/',
 		proxyUrl: {
 			enabled: false,
@@ -179,6 +181,7 @@ export default class S3 {
 			bucket,
 			urlStyle,
 			prefix,
+			fetchObjectMeta,
 			secretAccessKey: _secretAccessKey,
 			sessionToken: { value, enabled },
 		} = this.moduleSettings;
@@ -193,6 +196,7 @@ export default class S3 {
 			accessKeyId,
 			bucket,
 			endpoint,
+			fetchObjectMeta,
 			prefix,
 			region,
 			secretAccessKey,
