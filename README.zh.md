@@ -56,7 +56,8 @@ Sync Engine 是一款用于**多设备间同步 Vault 笔记文件**的插件，
 - [客户端端到端加密](https://sync.consensia.cc/deep-dive/modules/encryption)
 - 使用 Glob 规则进行精细化的同步策略配置（双向同步 / 镜像远程 / 镜像本地 / 不同步）。
 - 支持启动时同步、定时同步以及变更自动保存时同步。
-- 灵活的冲突解决方案（[智能合并](https://sync.consensia.cc/deep-dive/modules/smart-merge)、保留两者、保留最新版、覆盖为远端、覆盖为本地、直接跳过）。
+- 灵活的冲突解决方案（[智能合并](https://sync.consensia.cc/deep-dive/modules/smart-merge) / 保留两者 / 保留最新版 / 覆盖为远端 / 覆盖为本地 / 直接跳过）。
+- 同步文件创建 / 修改时间。
 - 速率与内存占用调优选项。
 - 自定义请求头设置。
 
@@ -118,7 +119,6 @@ Sync Engine 正好填补了这一空白：让您自由选择存储服务；插�
 - [x] v3.2：精细化同步策略选择，基于排序 Glob 匹配规则重构文件包含与排除机制。
 - [x] v3.3：元数据同步。
 
-
 Sync Engine 设立了[功能需求清单](https://github.com/hesprs/sync-engine/issues/214)，欢迎为您期待的特性点赞 👍 投票。得票越高的功能将获得更高的开发优先级。
 
 ## 常见问题
@@ -126,6 +126,7 @@ Sync Engine 设立了[功能需求清单](https://github.com/hesprs/sync-engine/
 <details><summary>同步过程遇到报错该如何处理？</summary>
 
 请按照以下步骤排查问题：
+
 1. 直接重试同步即可。单次报错不会阻断后续同步任务，也不会损坏你的文件。
 2. 如果重试无效，请检查 Sync Engine 是否已更新至最新版本。
 3. 更换网络环境，切换系统代理 / 反向代理，判断问题是否由此引发。

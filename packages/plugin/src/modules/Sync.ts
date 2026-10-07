@@ -141,10 +141,7 @@ export default class Sync {
 							{
 								isDir: true,
 								key: '/',
-								meta: async () => {
-									const { meta } = await localFs.stat('/');
-									return meta();
-								},
+								meta: async () => (await localFs.stat('/')).meta(),
 							},
 							true,
 						),

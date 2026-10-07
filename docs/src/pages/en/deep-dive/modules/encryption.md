@@ -3,7 +3,7 @@ import canvas from './encryption.canvas';
 import Canvas from '@/components/Canvas.vue';
 </script>
 
-# Client-Side Encryption v2
+# Client-Side Encryption v2.1
 
 The plugin uploads encrypted files to remote, download and decrypt back to local. This document specifies the encryption algorithm implementation in the `Encryption` module.
 
@@ -77,8 +77,8 @@ Encryption implementation in this module welcomes volunteer auditing.
 - _encrypted file / folder path_: _encrypted file / folder name_ of all ancestor hierarchies joint by `/`.
 - _file chunk_: 131,088B, 128KiB-chunked and `AES-GCM-256` encrypted piece of file (end chunk can be smaller)
 - _encrypted file content_: _file salt_ || all chunks sequentially
-- _meta IV_: 12B, pure random, generated per meta value encryption via `CSPRNG`
-- _encrypted meta value_: `Base64` of _meta IV_ || `AES-GCM-256` ciphertext (including 16B auth tag)
+- _meta nonce_: 12B, pure random, generated per meta value encryption via `CSPRNG`
+- _encrypted meta value_: `Base64` of _meta nonce_ || `AES-GCM-256` ciphertext (including 16B auth tag)
 
 ## Enabling and Disabling
 
@@ -122,14 +122,14 @@ Then come to the traversal and syncing logic:
   - each chunk = ciphertext (128KiB = 131,072B) + auth tag (16B) = 131,088B
 - Concatenate the file as: _file salt_ || all chunks sequentially
 
-## Meta Encryption
+## Metadata Encryption
 
 - Derive _meta key_ from _master key_ using `HKDF-SHA-256` (info: `meta-key-v1`, no salt)
 - For each non-empty meta value:
-  - Generate random 12B _meta IV_ via `CSPRNG`
-  - Encrypt the UTF-8 encoded value with _meta key_ and _meta IV_ using `AES-GCM-256`
-  - Encode as `Base64` of _meta IV_ || ciphertext (including 16B auth tag)
-- Decryption reverses the process: `Base64` decode, split _meta IV_ (first 12B) and ciphertext, decrypt with `AES-GCM-256`
+  - Generate random 12B _meta nonce_ via `CSPRNG`
+  - Encrypt the UTF-8 encoded value with _meta key_ and _meta nonce_ using `AES-GCM-256`
+  - Encode as `Base64` of _meta nonce_ || ciphertext (including 16B auth tag)
+- Decryption reverses the process: `Base64` decode, split _meta nonce_ (first 12B) and ciphertext, decrypt with `AES-GCM-256`
 
 ## One-pass Decryption
 

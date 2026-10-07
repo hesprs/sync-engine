@@ -109,7 +109,7 @@ export default class SyncEngine extends Plugin {
 			saveSettings: this.saveSettings,
 		};
 		this.context = createContext(internalModules, {
-			injectKeys: ['settings', 'i18n'],
+			injectKeys: ['settings', 'i18n', 'root'],
 			mergeKeys: ['settings', 'root', 'events', 'i18n'],
 			preMerge,
 		}).__assign__({ settings });
