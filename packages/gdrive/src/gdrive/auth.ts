@@ -173,11 +173,7 @@ export function revokeToken(token: string) {
 	}).catch(() => {});
 }
 
-/**
- * Caches the short-lived access token and refreshes it with the stored refresh
- * token when needed. One instance is shared by the request middleware and the
- * connection check so a token refresh happens at most once at a time.
- */
+/** Caches the short-lived access token and refreshes it with the stored refresh token when needed. One instance is shared by the request middleware and the connection check so a token refresh happens at most once at a time. */
 export class TokenManager {
 	private accessToken?: string;
 	private expiresAt = 0;

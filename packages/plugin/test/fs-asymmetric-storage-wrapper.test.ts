@@ -33,9 +33,9 @@ test('list should infer folder anchors from remoteStatContext and return hierarc
 			list: () => [
 				folder('/'),
 				file('00000~root.md', { size: 1, uid: 'root-file' }),
-				file('00000abcde~folder', { size: 0, uid: 'folder-marker' }),
+				file('00000abcde~folder', { uid: 'folder-marker' }),
 				file('abcde~child.md', { size: 2, uid: 'child-file' }),
-				file('abcdeuvwxy~nested', { size: 0, uid: 'nested-marker' }),
+				file('abcdeuvwxy~nested', { uid: 'nested-marker' }),
 				file('uvwxy~deep.md', { size: 3, uid: 'deep-file' }),
 			],
 		},
@@ -59,8 +59,8 @@ test('list should throw when encountering too many malformed or orphan flattened
 			list: () => [
 				file('bad-key', { size: 1, uid: 'bad' }),
 				file('zzzzz~lost.md', { size: 2, uid: 'orphan-file' }),
-				file('zzzzzqqqqq~ghost', { size: 0, uid: 'orphan-folder' }),
-				file('00000abcde~folder', { size: 0, uid: 'folder-marker' }),
+				file('zzzzzqqqqq~ghost', { uid: 'orphan-folder' }),
+				file('00000abcde~folder', { uid: 'folder-marker' }),
 				file('abcde~child.md', { size: 4, uid: 'child' }),
 			],
 		},
@@ -102,14 +102,8 @@ test('mkdir should reuse bootstrapped anchor instead of generating a colliding o
 		[
 			'00000abcde~folder',
 			bytes(''),
-			{
-				isDir: false,
-				key: '00000abcde~folder',
-				mtime: 0,
-				size: 0,
-				// oxlint-disable-next-line typescript/no-unsafe-assignment
-				uid: expect.any(String),
-			},
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			file('00000abcde~folder', { meta: expect.any(Function), uid: expect.any(String) }),
 		],
 		['abcde~note.md', bytes('x'), noteStat],
 	]);

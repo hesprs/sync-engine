@@ -18,6 +18,8 @@ All commands should be executed at project root.
 - `obsidian command id=sync-engine:start-non-interactive-sync`: start a Sync Engine sync run that doesn't need UI operations. This is the primary method to execute Sync Engine syncs via the CLI.
 - `obsidian eval code="<javascript>"`: execute code inside Obsidian instance.
 - `obsidian dev:screenshot path=<path>`: take a screenshot of current Obsidian.
+- `obsidian dev:css selector="<selector>" prop=<property>`: inspect CSS values.
+- `obsidian dev:mobile on`: toggle mobile emulation
 
 ## Workflow
 

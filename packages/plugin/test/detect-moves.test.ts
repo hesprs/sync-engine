@@ -1,15 +1,10 @@
+import testKit from '$/test-kit';
 import { expect, test } from 'bun:test';
 import type { BaseTask, TaskNames } from '@/sync';
 import type { RecordStatsMap, Stat } from '@/types';
 import { convertMoves } from '@/sync';
 
-function file(key: string, uid: string): Stat {
-	return { isDir: false, key, mtime: 0, size: 0, uid };
-}
-
-function folder(key: string): Stat {
-	return { isDir: true, key };
-}
+const { file, folder } = testKit;
 
 function makeTask(input: { name: TaskNames; key: string; local?: Stat; remote?: Stat }): BaseTask {
 	const options = {
@@ -41,8 +36,16 @@ function oldKey(task: BaseTask) {
 
 test('pairs file tasks using opposite-side record UIDs', () => {
 	const tasks = [
-		makeTask({ key: 'old.md', local: file('old.md', 'local-old'), name: 'removeLocal' }),
-		makeTask({ key: 'new.md', name: 'download', remote: file('new.md', 'remote-new') }),
+		makeTask({
+			key: 'old.md',
+			local: file('old.md', { uid: 'local-old' }),
+			name: 'removeLocal',
+		}),
+		makeTask({
+			key: 'new.md',
+			name: 'download',
+			remote: file('new.md', { uid: 'remote-new' }),
+		}),
 	];
 	const records: RecordStatsMap = new Map([
 		['old.md', { isDir: false, local: 'local-old', remote: 'remote-new' }],
@@ -62,13 +65,13 @@ test('keeps folder tasks when child basenames change', () => {
 		makeTask({ key: 'new/', name: 'createLocalDir', remote: folder('new/') }),
 		makeTask({
 			key: 'old/note.md',
-			local: file('old/note.md', 'note-local'),
+			local: file('old/note.md', { uid: 'note-local' }),
 			name: 'removeLocal',
 		}),
 		makeTask({
 			key: 'new/renamed.md',
 			name: 'download',
-			remote: file('new/renamed.md', 'note-remote'),
+			remote: file('new/renamed.md', { uid: 'note-remote' }),
 		}),
 	];
 	const records: RecordStatsMap = new Map([
@@ -95,13 +98,13 @@ test('collapses nested folders while retaining child moves', () => {
 		makeTask({ key: 'new/nested/', name: 'createLocalDir', remote: folder('new/nested/') }),
 		makeTask({
 			key: 'old/nested/note.md',
-			local: file('old/nested/note.md', 'note-local'),
+			local: file('old/nested/note.md', { uid: 'note-local' }),
 			name: 'removeLocal',
 		}),
 		makeTask({
 			key: 'new/nested/note.md',
 			name: 'download',
-			remote: file('new/nested/note.md', 'note-remote'),
+			remote: file('new/nested/note.md', { uid: 'note-remote' }),
 		}),
 	];
 	const records: RecordStatsMap = new Map([

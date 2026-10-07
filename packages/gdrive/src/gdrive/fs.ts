@@ -46,12 +46,9 @@ function notFoundError(key: string): Error {
 }
 
 /**
- * Google Drive stores files by immutable id inside real folders, while
- * Sync Engine speaks path keys. Fs translates keys to ids
- * and caches the mapping.
+ * Google Drive stores files by immutable id inside real folders, while Sync Engine speaks path keys. Fs translates keys to ids and caches the mapping.
  *
- * Limitation: cannot download a file with known key but not cached ID, this is
- * fine in current implementation (impossible to happen).
+ * Limitation: cannot download a file with known key but not cached ID, this is fine in current implementation (impossible to happen).
  */
 export default class GdriveFs implements RootFs {
 	/** Path key (`'/'`, `folder/`, `folder/note.md`) to Drive file id. */
@@ -96,10 +93,7 @@ export default class GdriveFs implements RootFs {
 			if (cachedKey.startsWith(key)) this.ids.delete(cachedKey);
 	}
 
-	/**
-	 * Walks the path chain of `key` from root with fresh queries, ignoring and
-	 * refreshing the cache along the way.
-	 */
+	/** Walks the path chain of `key` from root with fresh queries, ignoring and refreshing the cache along the way. */
 	private async resolveIdFresh(key: string): Promise<string | undefined> {
 		if (key === '/') return ROOT_ID;
 		const segments = key.split('/').filter((segment) => segment !== '');
@@ -127,16 +121,18 @@ export default class GdriveFs implements RootFs {
 	}
 
 	/** Upload target for `key`, updating the existing file when present. */
-	private uploadTarget(
+	private async uploadTarget(
 		key: string,
 		stat: FileStat,
 		uploadType: 'multipart' | 'resumable',
-	): { method: 'PATCH' | 'POST'; metadata: object; url: string } {
-		const modifiedTime = new Date(stat.mtime).toISOString();
+	): Promise<{ method: 'PATCH' | 'POST'; metadata: object; url: string }> {
+		const meta = await stat.meta();
+		const metadata: Record<string, unknown> = {};
+		if (Object.keys(meta).length > 0) metadata.appProperties = meta;
 		const existing = this.resolveId(key);
 		if (existing)
 			return {
-				metadata: { modifiedTime },
+				metadata,
 				method: 'PATCH',
 				url: buildUrl(DRIVE_UPLOAD_API, `/files/${existing}`, {
 					fields: WRITE_FIELDS,
@@ -144,13 +140,13 @@ export default class GdriveFs implements RootFs {
 				}),
 			};
 		const parentId = this.resolveId(dirname(key));
+		Object.assign(metadata, {
+			mimeType: guessMimeType(basename(key)),
+			name: basename(key),
+			parents: [parentId],
+		});
 		return {
-			metadata: {
-				mimeType: guessMimeType(basename(key)),
-				modifiedTime,
-				name: basename(key),
-				parents: [parentId],
-			},
+			metadata,
 			method: 'POST',
 			url: buildUrl(DRIVE_UPLOAD_API, '/files', { fields: WRITE_FIELDS, uploadType }),
 		};
@@ -187,7 +183,7 @@ export default class GdriveFs implements RootFs {
 	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
 		const file = await singleUpload(
 			{
-				...this.uploadTarget(key, stat, 'multipart'),
+				...(await this.uploadTarget(key, stat, 'multipart')),
 				mimeType: guessMimeType(basename(key)),
 				request: this.request,
 			},
@@ -200,7 +196,7 @@ export default class GdriveFs implements RootFs {
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
 		const file = await resumableUpload(
 			{
-				...this.uploadTarget(key, stat, 'resumable'),
+				...(await this.uploadTarget(key, stat, 'resumable')),
 				request: this.request,
 				size: stat.size,
 			},
@@ -302,10 +298,7 @@ export default class GdriveFs implements RootFs {
 		return (await this.resolveIdFresh(key)) !== undefined;
 	}
 
-	/**
-	 * Fetches every visible file in one paginated query, then walks the tree
-	 * under the requested key so the reporter can steer traversal.
-	 */
+	/** Fetches every visible file in one paginated query, then walks the tree under the requested key so the reporter can steer traversal. */
 	async list(key: string, reporter: ListReporter): Promise<Array<Stat>> {
 		const startId = this.resolveId(key) ?? (await this.resolveIdFresh(key));
 		if (startId === undefined) throw notFoundError(key);
@@ -330,7 +323,7 @@ export default class GdriveFs implements RootFs {
 		this.ids.set(key, startId);
 		const childrenByParent = new Map<string, Array<DriveFile>>();
 		for (const file of all) {
-			const parent = file.parents?.[0];
+			const parent = file.parents[0];
 			if (!parent) continue;
 			const siblings = childrenByParent.get(parent);
 			if (siblings) siblings.push(file);
@@ -360,8 +353,7 @@ export default class GdriveFs implements RootFs {
 }
 
 /**
- * Drive allows duplicate names inside one folder; syncing needs one entry per
- * key, so the most recently modified file (or the first folder) wins.
+ * Drive allows duplicate names inside one folder; syncing needs one entry per key, so the most recently modified file (or the first folder) wins.
  */
 function dedupeChildren(entries: Array<DriveFile>): Array<DriveFile> {
 	if (entries.length < 2) return entries;
@@ -375,7 +367,7 @@ function dedupeChildren(entries: Array<DriveFile>): Array<DriveFile> {
 		}
 		if (
 			entry.mimeType !== FOLDER_MIME &&
-			Date.parse(entry.modifiedTime ?? '') > Date.parse(existing.modifiedTime ?? '')
+			Date.parse(entry.modifiedTime) > Date.parse(existing.modifiedTime)
 		)
 			byName.set(nameKey, entry);
 	}

@@ -40,6 +40,8 @@ export type S3Translations = {
 	proxyUrl: string;
 	proxyUrlDescription: string;
 	proxyUrlPlaceholder: string;
+	fetchObjectMeta: string;
+	fetchObjectMetaDescription: string;
 };
 
 export default function s3Setting(
@@ -99,6 +101,18 @@ export default function s3Setting(
 								text,
 							});
 						});
+					},
+				})),
+				10_000: s(() => ({
+					desc: translate('fetchObjectMetaDescription'),
+					name: translate('fetchObjectMeta'),
+					render: (setting) => {
+						setting.addToggle((toggle) =>
+							toggle.setValue(settings.fetchObjectMeta).onChange((value) => {
+								settings.fetchObjectMeta = value;
+								void saveSettings();
+							}),
+						);
 					},
 				})),
 				2000: s(() => ({

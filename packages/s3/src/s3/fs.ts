@@ -19,7 +19,13 @@ import type { UrlStyle } from './sigv4';
 import { PART_SIZE, multipartUpload } from './multipart';
 import { md5Base64 } from './sigv4';
 import { buildUrl, buildUrlWithQuery, getHeader } from './url';
-import { formatS3Error, getFileUid, parseS3Error } from './utils';
+import {
+	formatS3Error,
+	getFileUid,
+	extractMetaHeaders,
+	parseS3Error,
+	toMetaHeaders,
+} from './utils';
 
 export type S3FsOptions = {
 	accessKeyId: string;
@@ -28,6 +34,7 @@ export type S3FsOptions = {
 	bucket: string;
 	urlStyle: UrlStyle;
 	request: Request;
+	fetchObjectMeta: boolean;
 };
 
 const BATCH_DELETE_MAX_KEYS = 1000;
@@ -99,14 +106,11 @@ function getRecursiveKeys(key: string): Array<string> {
 }
 
 export default class S3Fs implements RootFs {
-	private readonly request: Request;
 	private readonly endpoint: string;
 	private readonly bucket: string;
 	private readonly urlStyle: UrlStyle;
 
 	constructor(private readonly options: S3FsOptions) {
-		if (!options.request) throw new Error('S3 request is required.');
-		this.request = options.request;
 		this.endpoint = options.endpoint;
 		this.bucket = options.bucket;
 		this.urlStyle = options.urlStyle;
@@ -129,7 +133,7 @@ export default class S3Fs implements RootFs {
 		url: string,
 		params: RequestParam = {},
 	): Promise<RequestResponse> => {
-		const response = await this.request(url, { ...params, throw: false });
+		const response = await this.options.request(url, { ...params, throw: false });
 		if (response.status >= 200 && response.status < 300) return response;
 
 		const body = response.text();
@@ -162,10 +166,14 @@ export default class S3Fs implements RootFs {
 		});
 	}
 
-	async write(key: string, value: Binary): Promise<string> {
+	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
+		const headers = {
+			'Content-Type': 'application/octet-stream',
+			...toMetaHeaders(await stat.meta()),
+		};
 		const response = await this.requestOrThrow(this.buildUrl(key), {
 			body: value,
-			headers: { 'Content-Type': 'application/octet-stream' },
+			headers,
 			method: 'PUT',
 		});
 		const etag = getHeader(response.headers, 'etag');
@@ -173,12 +181,13 @@ export default class S3Fs implements RootFs {
 	}
 
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
-		if (stat.size < PART_SIZE) return this.write(key, await collectStreamToBinary(value));
+		if (stat.size < PART_SIZE) return this.write(key, await collectStreamToBinary(value), stat);
 		return multipartUpload(
 			{
 				bucket: this.bucket,
 				endpoint: this.endpoint,
 				key,
+				meta: await stat.meta(),
 				request: this.requestOrThrow,
 				stat: (k) => this.stat(k),
 				urlStyle: this.urlStyle,
@@ -275,6 +284,11 @@ export default class S3Fs implements RootFs {
 		}
 	}
 
+	private async fetchMeta(key: string): Promise<Record<string, string>> {
+		const response = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
+		return extractMetaHeaders(response.headers);
+	}
+
 	async stat(key: string): Promise<Stat> {
 		if (isFolder(key)) return { isDir: true, key };
 		const response = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
@@ -288,6 +302,7 @@ export default class S3Fs implements RootFs {
 		return {
 			isDir: false,
 			key,
+			meta: () => extractMetaHeaders(response.headers),
 			mtime,
 			size,
 			uid: etag ? normalizeEtag(etag) : `${mtime}~${size}`,
@@ -342,6 +357,9 @@ export default class S3Fs implements RootFs {
 						results.push({
 							isDir: false,
 							key: Key,
+							meta: this.options.fetchObjectMeta
+								? () => this.fetchMeta(Key)
+								: () => ({}),
 							mtime,
 							size,
 							uid: ETag ? normalizeEtag(ETag) : `${mtime}~${size}`,

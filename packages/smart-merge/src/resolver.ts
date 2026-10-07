@@ -29,10 +29,27 @@ export default function smartMergeResolver(
 			}
 			const mergedText = merge({ a: localText, b: remoteText, o: baseText }, mergeOptions);
 			const mergedBuffer = textToUint8Array(mergedText);
+			const mergeTime = Date.now();
 			const mergedStat: FileStat = {
 				isDir: false,
 				key,
-				mtime: 0,
+				meta: async () => {
+					const { mtime: _r, ctime: remoteCtime, ...remoteRest } = await remote.meta();
+					const { mtime: _l, ctime: localCtime, ...localRest } = await local.meta();
+					const mergeCtime = () => {
+						if (!remoteCtime && !localCtime) return;
+						if (remoteCtime && localCtime)
+							return String(Math.min(Number(remoteCtime), Number(localCtime)));
+						return remoteCtime || localCtime;
+					};
+					return {
+						ctime: mergeCtime(),
+						mtime: String(mergeTime),
+						...localRest,
+						...remoteRest,
+					};
+				},
+				mtime: Math.max(local.mtime, remote.mtime),
 				size: mergedBuffer.byteLength,
 				uid: crypto.randomUUID(),
 			};

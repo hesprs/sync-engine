@@ -3,6 +3,7 @@ import type {
 	FileStat,
 	FolderStat,
 	ListReporter,
+	MaybePromise,
 	Request,
 	RequestParam,
 	RequestResponse,
@@ -24,15 +25,15 @@ import {
 } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import writeNextcloudChunkedUpload from './chunked-upload';
-import { buildUrl, getAuthorization, getFileUid, getHeader, parseWebDAVError } from './utils';
+import { buildUrl, getFileUid, getHeader, parseWebDAVError } from './utils';
 
 export type WebdavFsOptions = {
 	endpoint: string;
 	username: string;
-	password: string;
-	chunkedUpload?: boolean;
-	depthInfinity?: boolean;
 	request: Request;
+	chunkedUpload: boolean;
+	depthInfinity: boolean;
+	fileMetadata: boolean;
 };
 
 type WebDAVPropValue = string | { '#text'?: string } | undefined;
@@ -43,6 +44,7 @@ type WebDAVProp = {
 	getetag?: WebDAVPropValue;
 	getlastmodified?: WebDAVPropValue;
 	resourcetype?: { collection?: unknown } | string;
+	'se:meta'?: WebDAVPropValue;
 };
 
 type WebDAVPropstat = {
@@ -56,27 +58,14 @@ type WebDAVResponseItem = {
 };
 
 type WebDAVMultistatus = {
-	multistatus: {
-		response: WebDAVResponseItem | Array<WebDAVResponseItem>;
-	};
+	multistatus: { response: WebDAVResponseItem | Array<WebDAVResponseItem> };
 };
-
-const PROPFIND_BODY = `<?xml version="1.0" encoding="utf-8"?>
-<propfind xmlns="DAV:">
-  <prop>
-    <displayname/>
-    <resourcetype/>
-    <getlastmodified/>
-    <getcontentlength/>
-    <getetag/>
-  </prop>
-</propfind>`;
 
 function getDavText(value: WebDAVPropValue) {
 	if (typeof value === 'string') return value;
 	if (!value || typeof value !== 'object') return;
 	const text = value['#text'];
-	return typeof text === 'string' ? text : undefined;
+	if (typeof text === 'string') return text;
 }
 
 function isCollectionResource(resourcetype: WebDAVProp['resourcetype']) {
@@ -121,67 +110,13 @@ function toKey(href: string, endpoint: string, isDir: boolean) {
 	return normalizeKey(normalizeChar(stripped), isDir);
 }
 
-function toStat(endpoint: string, { propstat, href }: WebDAVResponseItem): Stat | undefined {
-	const propstats = propstat ? asArray(propstat) : [];
-	const validPropstat = propstats.find(({ status, prop }) => isSuccessStatus(status) && prop);
-	if (!validPropstat?.prop) return;
-
-	const isDir = isCollectionResource(validPropstat.prop.resourcetype);
-	const key = toKey(href, endpoint, isDir);
-	if (isDir) return { isDir: true, key };
-
-	const mtime = new Date(getDavText(validPropstat.prop.getlastmodified) ?? '').valueOf();
-	const size = Number.parseInt(getDavText(validPropstat.prop.getcontentlength) ?? '0', 10);
-
-	// https://www.rfc-editor.org/rfc/rfc9110.html#section-8.8.3
-	// https://github.com/hesprs/sync-engine/issues/225
-	const etag = getDavText(validPropstat.prop.getetag);
-	const uid = etag ? normalizeEtag(etag) : `${mtime}~${size}`;
-
-	return { isDir: false, key, mtime, size, uid };
-}
-
 function extractNextLink(linkHeader: string): string | undefined {
 	const matches = /<(?<href>[^>]+)>;\s*rel="next"/u.exec(linkHeader);
 	return matches?.groups?.href;
 }
 
-type PropfindPayload = {
-	depth?: '0' | '1' | 'infinity';
-	request: Request;
-	auth: string;
-} & ({ key: string; endpoint: string } | { url: string });
-
-async function propfind(args: PropfindPayload) {
-	const { request, depth = '0', auth } = args;
-	const url = 'url' in args ? args.url : buildUrl(args.endpoint, args.key);
-	const response = await request(url, {
-		body: PROPFIND_BODY,
-		contentType: 'application/xml',
-		headers: { Authorization: auth, Depth: depth },
-		method: 'PROPFIND',
-	});
-	const parsed = parseXML<WebDAVMultistatus>(response.text());
-	const items = asArray(parsed.multistatus.response);
-
-	// Handle pagination
-	const linkHeader = response.headers.link || response.headers.Link;
-	if (!linkHeader) return items;
-	const nextLink = extractNextLink(linkHeader);
-	if (!nextLink) return items;
-	items.push(...(await propfind({ auth, depth, request, url: new URL(nextLink).toString() })));
-	return items;
-}
-
 function isTargetItem(key: string, endpoint: string, item: WebDAVResponseItem) {
 	return normalizeChar(stripEndSlash(stripEndpoint(endpoint, item.href))) === stripEndSlash(key);
-}
-
-function toDescendantStats(key: string, endpoint: string, items: Array<WebDAVResponseItem>) {
-	return items
-		.filter((item) => !isTargetItem(key, endpoint, item))
-		.map((item) => toStat(endpoint, item))
-		.filter((item): item is Stat => item !== undefined);
 }
 
 async function collectStreamToBinary(source: ReadableStream<Binary>): Promise<Binary> {
@@ -200,22 +135,93 @@ async function collectStreamToBinary(source: ReadableStream<Binary>): Promise<Bi
 }
 
 export default class WebdavFs implements RootFs {
-	private readonly auth: string;
 	private readonly endpoint: string;
-	private readonly request: Request;
+	private readonly propfindBody: string;
 
 	constructor(private readonly options: WebdavFsOptions) {
-		if (!options.request) throw new Error('WebDAV request is required.');
-		this.request = options.request;
-		this.auth = getAuthorization(options.username, options.password);
-		this.endpoint = normalizeUrl(options.endpoint);
+		const { endpoint, fileMetadata } = options;
+		this.endpoint = normalizeUrl(endpoint);
+		// WebDAV servers who support both headers all support creationdate in PROPFIND
+		this.propfindBody = `<?xml version="1.0" encoding="utf-8"?>
+<propfind xmlns="DAV:"${fileMetadata ? ' xmlns:se="https://sync.consensia.cc/deep-dive/modules/webdav"' : ''}>
+  <prop>
+    <displayname/>
+    <resourcetype/>
+    <getlastmodified/>
+    <getcontentlength/>
+    <getetag/>${fileMetadata ? '\n    <se:meta>' : ''}
+  </prop>
+</propfind>`;
 	}
 
-	private readonly requestOrThrow = async (
-		url: string,
-		params: RequestParam = {},
-	): Promise<RequestResponse> => {
-		const response = await this.request(url, { ...params, throw: false });
+	private async resolveMeta(
+		getMeta: () => MaybePromise<Dict<string>>,
+	): Promise<Dict<string> | undefined> {
+		if (!this.options.fileMetadata) return;
+		const meta = await getMeta();
+		if (Object.keys(meta).length) return meta;
+	}
+
+	private async propfind(
+		params: ({ key: string } | { url: string }) & { depth?: '0' | '1' | 'infinity' },
+	) {
+		const depth = params.depth ?? '0';
+		const url = 'url' in params ? params.url : buildUrl(this.endpoint, params.key);
+		const response = await this.requestOrThrow(url, {
+			body: this.propfindBody,
+			contentType: 'application/xml',
+			headers: { Depth: depth },
+			method: 'PROPFIND',
+		});
+		const parsed = parseXML<WebDAVMultistatus>(response.text());
+		const items = asArray(parsed.multistatus.response);
+
+		// Handle pagination
+		const linkHeader = response.headers.link || response.headers.Link;
+		if (!linkHeader) return items;
+		const nextLink = extractNextLink(linkHeader);
+		if (!nextLink) return items;
+		items.push(...(await this.propfind({ depth, url: new URL(nextLink).toString() })));
+		return items;
+	}
+
+	private toStat({ propstat, href }: WebDAVResponseItem): Stat | undefined {
+		const propstats = propstat ? asArray(propstat) : [];
+		const validPropstat = propstats.find(({ status, prop }) => isSuccessStatus(status) && prop);
+		if (!validPropstat?.prop) return;
+		const {
+			resourcetype,
+			getcontentlength,
+			getetag,
+			getlastmodified,
+			'se:meta': seMeta,
+		} = validPropstat.prop;
+		const isDir = isCollectionResource(resourcetype);
+		const key = toKey(href, this.endpoint, isDir);
+		if (isDir) return { isDir: true, key };
+		const mtime = new Date(getDavText(getlastmodified) ?? '0').valueOf();
+		const size = Number.parseInt(getDavText(getcontentlength) ?? '0', 10);
+		const etag = getDavText(getetag);
+		const uid = etag ? normalizeEtag(etag) : `${mtime}~${size}`;
+		const meta = () => {
+			if (this.options.fileMetadata) {
+				const metaJson = getDavText(seMeta);
+				if (metaJson) return JSON.parse(metaJson) as Dict<string>;
+			}
+			return {};
+		};
+		return { isDir: false, key, meta, mtime, size, uid };
+	}
+
+	private toDescendantStats(key: string, items: Array<WebDAVResponseItem>) {
+		return items
+			.filter((item) => !isTargetItem(key, this.endpoint, item))
+			.map((item) => this.toStat(item))
+			.filter((item): item is Stat => Boolean(item));
+	}
+
+	private async requestOrThrow(url: string, params: RequestParam = {}): Promise<RequestResponse> {
+		const response = await this.options.request(url, { ...params, throw: false });
 		if (response.status >= 200 && response.status < 300) return response;
 		const error = new Error(
 			parseWebDAVError(response.text()) ??
@@ -223,17 +229,14 @@ export default class WebdavFs implements RootFs {
 		);
 		(error as { status?: number }).status = response.status;
 		throw error;
-	};
+	}
 
 	getUid() {
 		return `webdav~${this.endpoint}~${this.options.username}`;
 	}
 
 	async read(key: string) {
-		const response = await this.requestOrThrow(buildUrl(this.endpoint, key), {
-			headers: { Authorization: this.auth },
-			method: 'GET',
-		});
+		const response = await this.requestOrThrow(buildUrl(this.endpoint, key));
 		return response.bytes();
 	}
 
@@ -246,7 +249,6 @@ export default class WebdavFs implements RootFs {
 					headers: {
 						// Prevents intermediaries and servers from content-encoding the body, which makes them ignore the Range header and return the whole file: https://github.com/hesprs/sync-engine/issues/263
 						'Accept-Encoding': 'identity',
-						Authorization: this.auth,
 						Range: `bytes=${start}-${endInclusive}`,
 					},
 					method: 'GET',
@@ -258,39 +260,63 @@ export default class WebdavFs implements RootFs {
 		});
 	}
 
-	async write(key: string, value: Binary) {
+	private async proppatch(key: string, meta: Dict<string>): Promise<void> {
+		const metaJson = JSON.stringify(meta)
+			.replaceAll('&', '&amp;')
+			.replaceAll('<', '&lt;')
+			.replaceAll('>', '&gt;');
+		const body = `<?xml version="1.0" encoding="utf-8"?>
+<propertyupdate xmlns="DAV:" xmlns:se="https://sync.consensia.cc/deep-dive/modules/webdav">
+  <set>
+    <prop>
+      <se:meta>${metaJson}</se:meta>
+    </prop>
+  </set>
+</propertyupdate>`;
+		await this.requestOrThrow(buildUrl(this.endpoint, key), {
+			body,
+			contentType: 'application/xml',
+			method: 'PROPPATCH',
+		});
+	}
+
+	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
+		const meta = await this.resolveMeta(stat.meta);
 		const response = await this.requestOrThrow(buildUrl(this.endpoint, key), {
 			body: value,
-			headers: { Authorization: this.auth },
 			method: 'PUT',
 		});
 		const etag = getHeader(response.headers, 'etag');
-		return etag ? normalizeEtag(etag) : getFileUid(await this.stat(key), key);
+		const [uid] = await Promise.all([
+			etag
+				? Promise.resolve(normalizeEtag(etag))
+				: this.stat(key).then((newStat) => getFileUid(newStat, key)),
+			meta ? this.proppatch(key, meta) : Promise.resolve(),
+		]);
+		return uid;
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, { size }: FileStat) {
-		if (this.options.chunkedUpload)
-			return writeNextcloudChunkedUpload(
-				{
-					auth: this.auth,
-					endpoint: this.endpoint,
-					request: this.requestOrThrow,
-					stat: (targetKey) => this.stat(targetKey),
-					username: this.options.username,
-				},
-				key,
-				value,
-				size,
-			);
-		return this.write(key, await collectStreamToBinary(value));
+	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+		const { chunkedUpload, username } = this.options;
+		if (!chunkedUpload) return this.write(key, await collectStreamToBinary(value), stat);
+		const meta = await this.resolveMeta(stat.meta);
+		return writeNextcloudChunkedUpload(
+			{
+				endpoint: this.endpoint,
+				patchMeta: () => (meta ? this.proppatch(key, meta) : Promise.resolve()),
+				request: this.requestOrThrow.bind(this),
+				stat: (targetKey) => this.stat(targetKey),
+				username,
+			},
+			key,
+			value,
+			stat.size,
+		);
 	}
 
 	async delete(key: string) {
 		try {
-			await this.requestOrThrow(buildUrl(this.endpoint, key), {
-				headers: { Authorization: this.auth },
-				method: 'DELETE',
-			});
+			await this.requestOrThrow(buildUrl(this.endpoint, key), { method: 'DELETE' });
 		} catch (error) {
 			if (getStatus(error) === 404) return;
 			throw error;
@@ -299,7 +325,7 @@ export default class WebdavFs implements RootFs {
 
 	async move(oldKey: string, newKey: string) {
 		await this.requestOrThrow(buildUrl(this.endpoint, oldKey), {
-			headers: { Authorization: this.auth, Destination: buildUrl(this.endpoint, newKey) },
+			headers: { Destination: buildUrl(this.endpoint, newKey) },
 			method: 'MOVE',
 		});
 	}
@@ -309,7 +335,6 @@ export default class WebdavFs implements RootFs {
 		for (const directoryKey of directoryKeys)
 			try {
 				await this.requestOrThrow(buildUrl(this.endpoint, directoryKey), {
-					headers: { Authorization: this.auth },
 					method: 'MKCOL',
 				});
 			} catch (error) {
@@ -320,19 +345,18 @@ export default class WebdavFs implements RootFs {
 
 	async stat(key: string): Promise<Stat> {
 		if (isFolder(key)) return { isDir: true, key } satisfies FolderStat;
-		const { auth, endpoint, requestOrThrow: request } = this;
-		const items = await propfind({ auth, endpoint, key, request });
+		const { endpoint } = this;
+		const items = await this.propfind({ key });
 		const item = items.find((candidate) => isTargetItem(key, endpoint, candidate));
-		if (!item) throw new Error(`WebDAV stat not found for ${key}`);
-		const stat = toStat(endpoint, item);
-		if (!stat) throw new Error(`WebDAV stat not found for ${key}`);
+		if (!item) throw new Error(`WebDAV stat not found for "${key}"`);
+		const stat = this.toStat(item);
+		if (!stat) throw new Error(`WebDAV stat not found for "${key}"`);
 		return stat;
 	}
 
 	async exists(key: string): Promise<boolean> {
-		const { auth, endpoint, requestOrThrow: request } = this;
 		try {
-			const items = await propfind({ auth, endpoint, key, request });
+			const items = await this.propfind({ key });
 			const item = items.find((candidate) => isTargetItem(key, this.endpoint, candidate));
 			return Boolean(item);
 		} catch (error: unknown) {
@@ -342,9 +366,8 @@ export default class WebdavFs implements RootFs {
 	}
 
 	private async listStats(key: string, depth: '1' | 'infinity' = '1') {
-		const { auth, endpoint, requestOrThrow: request } = this;
-		const items = await propfind({ auth, depth, endpoint, key, request });
-		return toDescendantStats(key, this.endpoint, items);
+		const items = await this.propfind({ depth, key });
+		return this.toDescendantStats(key, items);
 	}
 
 	async list(key: string, reporter: ListReporter) {

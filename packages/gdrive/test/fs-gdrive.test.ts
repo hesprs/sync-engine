@@ -50,7 +50,11 @@ test('writes and reads a file through Drive multipart upload', async () => {
 		throw new Error(`Unexpected request: ${params.method} ${url}`);
 	});
 
-	const stat = file('note.md', { mtime: 1_700_000_000_000, size: 5 });
+	const stat = file('note.md', {
+		meta: () => ({ ctime: '1700000000000', custom: 'value', mtime: '1700000000000' }),
+		mtime: 1_700_000_000_000,
+		size: 5,
+	});
 	expect(await fs.write('note.md', bytes('hello'), stat)).toBe('drive-uid');
 	expect(await fs.read('note.md')).toStrictEqual(bytes('hello'));
 	expect(calls.map(({ method }) => method)).toStrictEqual(['POST', 'GET']);
@@ -58,6 +62,8 @@ test('writes and reads a file through Drive multipart upload', async () => {
 	expect(calls[0]?.headers?.['Content-Type']).toContain('multipart/related');
 	const body = new TextDecoder().decode(calls[0]?.body as Binary);
 	expect(body).toContain('"name":"note.md"');
+	expect(body).toContain('"appProperties"');
+	expect(body).toContain('"custom":"value"');
 	expect(body).toMatch(/hello\r\n--sync-engine-[0-9a-f-]+--$/u);
 });
 
@@ -133,8 +139,19 @@ test('uploads streamed files in ascending contiguous chunks over one resumable s
 	});
 
 	expect(
-		await fs.writeStream('big.bin', stream, file('big.bin', { mtime: 1, size: total })),
+		await fs.writeStream(
+			'big.bin',
+			stream,
+			file('big.bin', {
+				meta: () => ({ ctime: '1', custom: 'value', mtime: '1' }),
+				mtime: 1,
+				size: total,
+			}),
+		),
 	).toBe('drive-uid');
+	const initBody = new TextDecoder().decode(calls[0]?.body as Binary);
+	expect(initBody).toContain('"appProperties"');
+	expect(initBody).toContain('"custom":"value"');
 	const ranges = calls
 		.filter((call) => call.method === 'PUT')
 		.map((call) => call.headers?.['Content-Range']);
@@ -143,4 +160,51 @@ test('uploads streamed files in ascending contiguous chunks over one resumable s
 		`bytes ${chunkSize}-${chunkSize * 2 - 1}/${total}`,
 		`bytes ${chunkSize * 2}-${total - 1}/${total}`,
 	]);
+});
+
+test('stat returns meta with ctime and mtime from Drive file', async () => {
+	const { fs } = createFs((_url, params) => {
+		if (params.method === 'GET')
+			return response({
+				files: [
+					{
+						appProperties: { custom: 'value' },
+						id: 'file-1',
+						md5Checksum: 'uid',
+						mimeType: 'text/markdown',
+						modifiedTime: new Date(1000).toISOString(),
+						name: 'note.md',
+						parents: ['root'],
+						size: '5',
+					},
+				],
+			});
+		throw new Error(`Unexpected request: ${params.method}`);
+	});
+	const stat = await fs.stat('note.md');
+	if (stat.isDir) throw new Error('expected file stat');
+	expect(await stat.meta()).toStrictEqual({ custom: 'value' });
+});
+
+test('list returns meta for included files without extra requests', async () => {
+	const { calls, fs } = createFs(() =>
+		response({
+			files: [
+				{
+					appProperties: { custom: 'value' },
+					id: 'file-1',
+					md5Checksum: 'uid',
+					mimeType: 'text/markdown',
+					modifiedTime: new Date(1000).toISOString(),
+					name: 'note.md',
+					parents: ['root'],
+					size: '5',
+				},
+			],
+		}),
+	);
+	const [stat] = await fs.list('/', () => 'include' as const);
+	if (stat.isDir) throw new Error('expected file stat');
+	expect(await stat.meta()).toStrictEqual({ custom: 'value' });
+	expect(calls.map(({ method }) => method)).toStrictEqual(['GET']);
 });

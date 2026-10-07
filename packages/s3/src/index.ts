@@ -45,6 +45,7 @@ export type S3Settings = {
 		enabled: boolean;
 		value: string;
 	};
+	fetchObjectMeta: boolean;
 };
 
 export type S3DB = DatabaseSync<Record<string, unknown>, { s3Key?: Binary; s3KeyMarker?: string }>;
@@ -76,6 +77,7 @@ export default class S3 {
 		accessKeyId: '',
 		bucket: '',
 		endpoint: '',
+		fetchObjectMeta: false,
 		prefix: '/',
 		proxyUrl: {
 			enabled: false,
@@ -179,6 +181,7 @@ export default class S3 {
 			bucket,
 			urlStyle,
 			prefix,
+			fetchObjectMeta,
 			secretAccessKey: _secretAccessKey,
 			sessionToken: { value, enabled },
 		} = this.moduleSettings;
@@ -193,6 +196,7 @@ export default class S3 {
 			accessKeyId,
 			bucket,
 			endpoint,
+			fetchObjectMeta,
 			prefix,
 			region,
 			secretAccessKey,

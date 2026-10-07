@@ -12,6 +12,7 @@ export const defaultS3Options = {
 	accessKeyId: 'access-key',
 	bucket: 'vault',
 	endpoint: 'https://s3.example.com',
+	fetchObjectMeta: false,
 	region: 'us-east-1',
 	secretAccessKey: 'secret-key',
 	sessionToken: 'session-token',

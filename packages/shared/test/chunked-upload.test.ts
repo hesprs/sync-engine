@@ -98,8 +98,7 @@ test('pauses reading so uploaded chunks stay within chunkSize plus one stream ch
 		value: source,
 	});
 
-	// Each read can add up to one stream chunk to the buffer before it is
-	// Sliced, so a chunk never exceeds chunkSize + one stream chunk.
+	// Each read can add up to one stream chunk to the buffer before it is Sliced, so a chunk never exceeds chunkSize + one stream chunk.
 	expect(maxChunk).toBeLessThanOrEqual(chunkSize + streamChunkSize);
 	expect(uploaded.reduce((sum, size) => sum + size, 0)).toBe(streamChunks * streamChunkSize);
 });

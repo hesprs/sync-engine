@@ -1,4 +1,4 @@
-import type { Vault, Stat, ListedFiles, App } from 'obsidian';
+import type { Vault, Stat, ListedFiles, App, DataWriteOptions } from 'obsidian';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import { requestNative } from '@repo/shared/e2e-utils.spec';
 import { basename, isFolder, stripEndSlash } from '@repo/shared/path';
@@ -13,8 +13,9 @@ export const TEMP_FOLDER = '.trash';
 type VaultRequestParam = (
 	| { method: 'GET' }
 	| { method: 'GET_STREAM'; size: number }
-	| { method: 'PUT'; value: Binary; mtime?: number; ctime?: number }
-	| { method: 'APPEND'; value: Binary; mtime?: number; ctime?: number }
+	// Creation time should be abbreviated as btime in the strictest sense, but Obsidian uses ctime
+	| ({ method: 'PUT'; value: Binary } & DataWriteOptions)
+	| ({ method: 'APPEND'; value: Binary } & DataWriteOptions)
 	| { method: 'DELETE'; trash?: TrashOption }
 	| { method: 'MOVE'; destination: string }
 	| { method: 'MKDIR' }
@@ -41,10 +42,7 @@ export type VaultRequest = <T extends VaultRequestParam = { method: 'GET' }>(
 	params?: T,
 ) => Promise<VaultRequestResponseMap[T['method']]>;
 
-// Capacitor ranged local file request only supports those extensions
-// Fixed in Capacitor 7: https://github.com/ionic-team/capacitor/pull/7868
-// But Obsidian is still using 5
-// TODO: remove once Obsidian adopts Capacitor 7
+// Capacitor ranged local file request only supports those extensions. Fixed in Capacitor 7: https://github.com/ionic-team/capacitor/pull/7868. But Obsidian is still using 5. TODO: remove once Obsidian adopts Capacitor 7
 const CAPACITOR_MEDIA_EXTENSIONS = [
 	'm4v',
 	'mov',
@@ -159,8 +157,9 @@ export default function createVaultRequest(app: App): VaultRequest {
 			if (isFolder(key)) return { ctime: 0, mtime: 0, size: 0, type: 'folder' } as never;
 			if (canUseCache() && (params.cached ?? true)) {
 				const file = vault.getAbstractFileByPath(path);
-				if (file instanceof TFile) return { ...file.stat, type: 'file' } as never;
-				else if (file instanceof TFolder)
+				if (file instanceof TFile)
+					return Object.assign(file.stat, { type: 'file' as const }) as never;
+				if (file instanceof TFolder)
 					return { ctime: 0, mtime: 0, size: 0, type: 'folder' } as never;
 			}
 			const raw = await adapter.stat(path);

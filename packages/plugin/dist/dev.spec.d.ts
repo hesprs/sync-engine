@@ -1,4 +1,4 @@
-import { At as FileStat, Dt as RootFs, Ft as RecordStatsMap, It as Stat, K as Decider, Lt as StatsMap, Mt as MaybePromise, Ot as WrappedFs, Pt as RecordStat, Rt as Binary, ct as TaskNames, d as RequestResponse, jt as FolderStat, l as Request, u as RequestParam, vt as Fs } from "./index-DbDrKV7S.spec.js";
+import { At as FileStat, Dt as RootFs, Ft as RecordStatsMap, It as Stat, K as Decider, Lt as StatsMap, Mt as MaybePromise, Ot as WrappedFs, Pt as RecordStat, Rt as Binary, ct as TaskNames, d as RequestResponse, jt as FolderStat, l as Request, u as RequestParam, vt as Fs } from "./index-1fAcDcq5.spec.js";
 //#region src/sdk/debug-wrapper.d.ts
 declare function debugWrapper(original: Fs, log: (content: string) => void): WrappedFs;
 //#endregion
@@ -42,6 +42,7 @@ declare function file(key: string, options?: {
   mtime?: number;
   size?: number;
   uid?: string;
+  meta?: () => Record<string, string>;
 }): FileStat;
 declare function folder(key: string): FolderStat;
 declare function fileRecord(local: string, remote: string): RecordStat;

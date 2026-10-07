@@ -38,7 +38,7 @@ Remote file-system modules receive `getRequest()` in context, not the base funct
 
 - Obsidian `requestUrl()` accepts only a complete string or `ArrayBuffer` body. `Request` cannot upload a `ReadableStream`.
 - `requestUrl()` does not expose a response body stream through this abstraction. `bytes()` materializes the complete response.
-- Streaming remote reads must be implemented above `Request`, normally with multiple ranged requests. Streaming writes must either buffer the input or use a backend-specific chunked-upload protocol.
+- Streaming remote reads must be implemented above `Request`, normally with multiple ranged requests. Streaming writes must use a backend-specific chunked-upload protocol.
 - Request errors are normally thrown by `requestUrl()` for HTTP status `400` and above. Retry behavior belongs to request middleware, not this base implementation.
 
 ## Vault Request

@@ -97,7 +97,7 @@ export default function headSettings(
 					recurseLabel(tab.settingItems);
 				});
 			},
-			search: false,
+			searchable: false,
 		})),
 		20: s(() => ({
 			desc: translate('backendDescription'),

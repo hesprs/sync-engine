@@ -10,6 +10,9 @@ export const en: S3Translations = {
 	endpoint: 'Endpoint URL',
 	endpointDescription: 'Enter the S3 endpoint URL',
 	endpointPlaceholder: 'E.g. https://s3.us-east-1.amazonaws.com',
+	fetchObjectMeta: 'Fetch object metadata',
+	fetchObjectMetaDescription:
+		'Retrieve object metadata upon download. Enabling this preserves metadata (e.g. file creation and modification time) across devices but doubles download costs.',
 	prefix: 'Prefix',
 	prefixDescription:
 		'Configure the key prefix that your vault will be synced to. "/" stands for the root of the bucket.',
@@ -48,6 +51,9 @@ export const zh: S3Translations = {
 	endpoint: '端点 URL',
 	endpointDescription: '请输入 S3 端点 URL',
 	endpointPlaceholder: '例如：https://s3.us-east-1.amazonaws.com',
+	fetchObjectMeta: '获取对象元数据',
+	fetchObjectMetaDescription:
+		'下载时获取对象元数据。启用后可跨设备保留元数据（如文件创建和修改时间），但会使下载成本翻倍。',
 	prefix: '前缀',
 	prefixDescription: '配置 Vault 将同步到的键前缀。"/" 代表存储桶根目录。',
 	prefixPlaceholder: '例如：my-vault/',
@@ -86,6 +92,9 @@ export const ru: S3Translations = {
 	endpoint: 'URL-адрес конечной точки',
 	endpointDescription: 'Введите URL-адрес конечной точки S3.',
 	endpointPlaceholder: 'Например, https://s3.us-east-1.amazonaws.com',
+	fetchObjectMeta: 'Получать метаданные объекта',
+	fetchObjectMetaDescription:
+		'Получать метаданные объекта при загрузке. Включение сохраняет метаданные (например, время создания и изменения файла) между устройствами, но удваивает затраты на загрузку.',
 	prefix: 'Префикс',
 	prefixDescription:
 		'Настройте префикс ключа, с которым будет синхронизироваться ваше хранилище. «/» обозначает корень бакета.',
@@ -130,6 +139,9 @@ export const zhTW: S3Translations = {
 	endpoint: '端點 URL',
 	endpointDescription: '輸入 S3 端點 URL',
 	endpointPlaceholder: '例如 https://s3.us-east-1.amazonaws.com',
+	fetchObjectMeta: '取得物件元資料',
+	fetchObjectMetaDescription:
+		'下載時取得物件元資料。啟用後可跨裝置保留元資料（如檔案建立與修改時間），但會使下載成本翻倍。',
 	prefix: '前綴路徑',
 	prefixDescription: '設定儲存庫同步目標的 Key 前綴路徑。「/」代表儲存桶的根目錄。',
 	prefixPlaceholder: '例如 my-vault/',

@@ -31,6 +31,8 @@ When a base snapshot exists:
 4. Write the merged text only to sides whose current text differs from it.
 5. Record the resulting local and remote UIDs.
 
+The merged file's `mtime` is set to `max(local.mtime, remote.mtime)`. The merged `meta` preserves `ctime` as the earliest creation time between both sides, sets `mtime` to the merge time, and merges remaining meta fields from both sides (local fields take precedence on conflict).
+
 When no base snapshot exists, Smart Merge cannot distinguish independent changes. It falls back to latest-survive behavior: copy the side with the newer modification time to the other side. Local wins only when `local.mtime > remote.mtime`; equal timestamps select the remote side. The fallback uses the SDK transfer helper, so large content can be transferred as a stream.
 
 ## Merge Model

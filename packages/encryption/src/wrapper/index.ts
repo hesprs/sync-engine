@@ -12,10 +12,12 @@ import {
 	decryptFileContent,
 	deriveMasterKey,
 	deriveMasterSalt,
+	deriveMetaKey,
 	deriveNameKey,
 	deriveRootFileKey,
 	encryptFileContent,
 } from './content';
+import { decryptMeta, encryptMeta } from './meta';
 import { decryptPathSegments, encryptPathSegments } from './path';
 import createDecryptedReadableStream from './read-stream';
 import { getEncryptedFileSize } from './shared';
@@ -24,6 +26,7 @@ import createEncryptedReadableStream from './write-stream';
 export type DerivedKeys = {
 	nameKey: Binary;
 	rootFileKey: Binary;
+	metaKey: Binary;
 };
 
 export type EncryptionDBSchema = {
@@ -85,15 +88,19 @@ class EncryptionFs implements WrappedFs {
 
 	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
 		const encryptedKey = await this.encryptKey(key);
-		const { rootFileKey } = await this.getKeys();
+		const { rootFileKey, metaKey } = await this.getKeys();
 		const encryptedContent = await encryptFileContent(rootFileKey, value);
+		const originalMeta = stat.meta;
+		stat.meta = async () => encryptMeta(metaKey, await originalMeta());
 		return this.original.write(encryptedKey, encryptedContent, stat);
 	}
 
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
 		const encryptedKey = await this.encryptKey(key);
-		const { rootFileKey } = await this.getKeys();
+		const { rootFileKey, metaKey } = await this.getKeys();
 		const stream = await createEncryptedReadableStream(rootFileKey, value, stat.size);
+		const originalMeta = stat.meta;
+		stat.meta = async () => encryptMeta(metaKey, await originalMeta());
 		return this.original.writeStream(encryptedKey, stream, {
 			...stat,
 			size: getEncryptedFileSize(stat.size),
@@ -115,7 +122,12 @@ class EncryptionFs implements WrappedFs {
 	async stat(key: string) {
 		const encryptedKey = await this.encryptKey(key);
 		const stat = await this.original.stat(encryptedKey);
-		return { ...stat, key: await this.decryptKey(stat.key) };
+		stat.key = await this.decryptKey(stat.key);
+		if (stat.isDir) return stat;
+		const { metaKey } = await this.getKeys();
+		const originalMeta = stat.meta;
+		stat.meta = async () => decryptMeta(metaKey, await originalMeta());
+		return stat;
 	}
 
 	async exists(key: string): Promise<boolean> {
@@ -141,11 +153,12 @@ class EncryptionFs implements WrappedFs {
 
 		const masterSalt = await deriveMasterSalt(this.original.getUid());
 		const masterKey = await deriveMasterKey(this.options.password, masterSalt);
-		const [rootFileKey, nameKey] = await Promise.all([
+		const [rootFileKey, nameKey, metaKey] = await Promise.all([
 			deriveRootFileKey(masterKey),
 			deriveNameKey(masterKey),
+			deriveMetaKey(masterKey),
 		]);
-		const derivedKeys = { nameKey, rootFileKey };
+		const derivedKeys = { metaKey, nameKey, rootFileKey };
 		this.options.memoryDB.setMeta('encryptionKeys', derivedKeys);
 		return derivedKeys;
 	}
@@ -160,9 +173,16 @@ class EncryptionFs implements WrappedFs {
 		return decryptPathSegments(nameKey, key, this.pathStores);
 	}
 
-	private decryptStats(stats: Array<Stat>) {
+	private async decryptStats(stats: Array<Stat>): Promise<Array<Stat>> {
+		const { metaKey } = await this.getKeys();
 		return Promise.all(
-			stats.map(async (stat) => ({ ...stat, key: await this.decryptKey(stat.key) })),
+			stats.map(async (stat) => {
+				stat.key = await this.decryptKey(stat.key);
+				if (stat.isDir) return stat;
+				const originalMeta = stat.meta;
+				stat.meta = async () => decryptMeta(metaKey, await originalMeta());
+				return stat;
+			}),
 		);
 	}
 }

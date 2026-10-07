@@ -12,10 +12,6 @@ export function parseWebDAVError(xml: string): string | undefined {
 	}
 }
 
-export function getAuthorization(username: string, password: string) {
-	return `Basic ${btoa(`${username}:${password}`)}`;
-}
-
 export function getHeader(headers: Record<string, string | undefined>, name: string) {
 	const entry = Object.entries(headers).find(
 		([headerName]) => headerName.toLowerCase() === name.toLowerCase(),

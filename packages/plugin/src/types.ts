@@ -11,6 +11,8 @@ export type FileStat = {
 	size: number;
 	// Etag or other kinds of string whose equality signifies the file is unchanged
 	uid: string;
+	// Meta fields, to some backends, getting meta fields may be expensive and slow
+	meta: () => MaybePromise<Dict<string>>;
 };
 export type FolderStat = {
 	isDir: true;

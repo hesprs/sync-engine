@@ -133,6 +133,7 @@ class AsymmetricStorageFs implements WrappedFs {
 			await this.original.write(anchoredKey, EMPTY_BINARY, {
 				isDir: false,
 				key: anchoredKey,
+				meta: () => ({}),
 				mtime: 0,
 				size: 0,
 				uid: crypto.randomUUID(),

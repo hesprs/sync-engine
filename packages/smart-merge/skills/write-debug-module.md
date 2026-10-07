@@ -5,7 +5,7 @@ description: Write a temporary Sync Engine module for remote debugging. Use when
 
 Sync Engine serves for various services, many bugs need deeper investigation that Sync Engine's built-in logs are not suffice. Temporary debug modules allow you to gather more info to facilitate the remote analysis.
 
-Don't write debug module unless you have exhausted all methods of local analysis (web search, GitHub issues, `debug-plugin`, read code, analyze Capacitor / Electron / Obsidian `asar`, ...).
+DO NOT write debug module until you have tried everything gathering debug information (read code, `debug-plugin`, search online, read upstream docs/code, analyze Obsidian `asar`, ...) but still cannot determine.
 
 When writing a debug module, you need to produce a plain, self-contained JS ESM file at repo root, containing a simple Sync Engine module. Read repo docs on how to develop a module before writing. Useful patterns:
 

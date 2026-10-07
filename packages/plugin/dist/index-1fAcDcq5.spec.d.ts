@@ -1,4 +1,4 @@
-import { App, Command, EventRef, ExtraButtonComponent, IconName, ListedFiles, Modal, Plugin, RequestUrlParam, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, Stat, TextComponent, ToggleComponent } from "obsidian";
+import { App, Command, DataWriteOptions, EventRef, ExtraButtonComponent, IconName, ListedFiles, Modal, Plugin, RequestUrlParam, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, Stat, TextComponent, ToggleComponent } from "obsidian";
 //#region ../shared/src/e2e-utils.spec.d.ts
 type General$1 = any;
 //#endregion
@@ -17,6 +17,7 @@ type FileStat = {
   mtime: number;
   size: number;
   uid: string;
+  meta: () => MaybePromise<Dict<string>>;
 };
 type FolderStat = {
   isDir: true;
@@ -436,11 +437,11 @@ declare class EventBus {
 //#region src/modules/I18n.d.ts
 type ObsidianLanguageCode = 'en' | 'af' | 'am' | 'ar' | 'az' | 'be' | 'bg' | 'bn' | 'ca' | 'cs' | 'da' | 'de' | 'dv' | 'el' | 'en-GB' | 'eo' | 'es' | 'eu' | 'fa' | 'fi' | 'fr' | 'ga' | 'gl' | 'he' | 'hi' | 'hr' | 'hu' | 'id' | 'it' | 'ja' | 'ka' | 'kh' | 'kn' | 'ko' | 'ky' | 'la' | 'lt' | 'lv' | 'ml' | 'ms' | 'nan-TW' | 'ne' | 'nl' | 'nn' | 'no' | 'oc' | 'or' | 'pl' | 'pt' | 'pt-BR' | 'ro' | 'ru' | 'sa' | 'si' | 'sk' | 'sl' | 'sq' | 'sr' | 'sv' | 'sw' | 'ta' | 'te' | 'th' | 'tl' | 'tr' | 'tt' | 'uk' | 'ur' | 'uz' | 'vi' | 'zh' | 'zh-TW';
 type Factory<A = undefined> = (args: A) => DocumentFragment | string;
-type Fragment<A = undefined> = (args: A) => DocumentFragment;
-type Snippet<A = undefined> = (args: A) => string;
+type Fragment<A = undefined> = (...args: [undefined] extends [A] ? [] : [A]) => DocumentFragment;
+type Snippet<A = undefined> = (...args: [undefined] extends [A] ? [] : [A]) => string;
 type TranslationTypes = string | Factory<General$1>;
 type TranslationResource = Record<string, TranslationTypes>;
-type TranslateParams<R extends TranslationTypes> = R extends Factory<infer A> ? ([A] extends [undefined] ? [] : [A]) : [];
+type TranslateParams<R extends TranslationTypes> = R extends Factory<infer A> ? ([undefined] extends [A] ? [] : [A]) : [];
 type Translate<O extends TranslationResource> = <K extends keyof O>(key: K, ...arg: TranslateParams<O[K]>) => O[K] extends string | Snippet<General$1> ? string : DocumentFragment;
 declare class I18n {
   private readonly targetLangs;
@@ -1322,17 +1323,13 @@ type VaultRequestParam = ({
 } | {
   method: 'GET_STREAM';
   size: number;
-} | {
+} | ({
   method: 'PUT';
   value: Binary;
-  mtime?: number;
-  ctime?: number;
-} | {
+} & DataWriteOptions) | ({
   method: 'APPEND';
   value: Binary;
-  mtime?: number;
-  ctime?: number;
-} | {
+} & DataWriteOptions) | {
   method: 'DELETE';
   trash?: TrashOption;
 } | {
