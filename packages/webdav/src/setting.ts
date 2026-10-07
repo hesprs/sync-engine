@@ -64,12 +64,14 @@ export default function webdavSetting(
 		});
 	const capabilityToggle =
 		(capability: 'depthInfinity' | 'chunkedUpload' | 'fileMetadata') => (setting: Setting) => {
-			setting.addToggle((toggle) =>
-				toggle.setValue(settings[capability]).onChange((value) => {
-					settings[capability] = value;
-					void saveSettings();
-				}),
-			);
+			setting
+				.addToggle((toggle) =>
+					toggle.setValue(settings[capability]).onChange((value) => {
+						settings[capability] = value;
+						void saveSettings();
+					}),
+				)
+				.settingEl.addClass('sync-engine-setting-rendered-desc');
 		};
 	return {
 		749: s(

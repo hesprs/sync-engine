@@ -36,6 +36,8 @@ export type WebdavFsOptions = {
 	fileMetadata: boolean;
 };
 
+const WEBDAV_PAGE = 'https://sync.consensia.cc/deep-dive/modules/webdav';
+
 type WebDAVPropValue = string | { '#text'?: string } | undefined;
 
 type WebDAVProp = {
@@ -143,13 +145,13 @@ export default class WebdavFs implements RootFs {
 		this.endpoint = normalizeUrl(endpoint);
 		// WebDAV servers who support both headers all support creationdate in PROPFIND
 		this.propfindBody = `<?xml version="1.0" encoding="utf-8"?>
-<propfind xmlns="DAV:"${fileMetadata ? ' xmlns:se="https://sync.consensia.cc/deep-dive/modules/webdav"' : ''}>
+<propfind xmlns="DAV:"${fileMetadata ? ` xmlns:se="${WEBDAV_PAGE}"` : ''}>
   <prop>
     <displayname/>
     <resourcetype/>
     <getlastmodified/>
     <getcontentlength/>
-    <getetag/>${fileMetadata ? '\n    <se:meta>' : ''}
+    <getetag/>${fileMetadata ? '\n    <se:meta/>' : ''}
   </prop>
 </propfind>`;
 	}
@@ -266,7 +268,7 @@ export default class WebdavFs implements RootFs {
 			.replaceAll('<', '&lt;')
 			.replaceAll('>', '&gt;');
 		const body = `<?xml version="1.0" encoding="utf-8"?>
-<propertyupdate xmlns="DAV:" xmlns:se="https://sync.consensia.cc/deep-dive/modules/webdav">
+<propertyupdate xmlns="DAV:" xmlns:se="${WEBDAV_PAGE}">
   <set>
     <prop>
       <se:meta>${metaJson}</se:meta>
@@ -281,29 +283,32 @@ export default class WebdavFs implements RootFs {
 	}
 
 	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
-		const meta = await this.resolveMeta(stat.meta);
-		const response = await this.requestOrThrow(buildUrl(this.endpoint, key), {
-			body: value,
-			method: 'PUT',
-		});
-		const etag = getHeader(response.headers, 'etag');
-		const [uid] = await Promise.all([
+		const [{ headers }, meta] = await Promise.all([
+			this.requestOrThrow(buildUrl(this.endpoint, key), {
+				body: value,
+				method: 'PUT',
+			}),
+			this.resolveMeta(stat.meta),
+		]);
+		const etag = getHeader(headers, 'etag');
+		return Promise.all([
 			etag
 				? Promise.resolve(normalizeEtag(etag))
 				: this.stat(key).then((newStat) => getFileUid(newStat, key)),
 			meta ? this.proppatch(key, meta) : Promise.resolve(),
-		]);
-		return uid;
+		]).then(([uid]) => uid);
 	}
 
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
 		const { chunkedUpload, username } = this.options;
 		if (!chunkedUpload) return this.write(key, await collectStreamToBinary(value), stat);
-		const meta = await this.resolveMeta(stat.meta);
 		return writeNextcloudChunkedUpload(
 			{
 				endpoint: this.endpoint,
-				patchMeta: () => (meta ? this.proppatch(key, meta) : Promise.resolve()),
+				patchMeta: async () => {
+					const meta = await this.resolveMeta(stat.meta);
+					if (meta) return this.proppatch(key, meta);
+				},
 				request: this.requestOrThrow.bind(this),
 				stat: (targetKey) => this.stat(targetKey),
 				username,

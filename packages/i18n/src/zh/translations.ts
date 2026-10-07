@@ -225,8 +225,7 @@ const zh: Translations = {
 	realtimeSyncDescription:
 		'文件一旦修改即刻自动触发同步。在输入框中修改文件修改到触发同步之间的延迟时间。',
 	realtimeSyncFastMode: '实时同步快速模式',
-	realtimeSyncFastModeDescription:
-		'在实时同步过程中复用缓存数据并避免不必要的远程探测，以加速同步。',
+	realtimeSyncFastModeDescription: '通过复用缓存数据来加速实时同步，并避免不必要的远程探测。',
 	realtimeSyncPlaceholder: '输入同步延迟（例如 500ms, 5s）',
 	recordsCleared: '记录已清除',
 	remoteMigration: '远程迁移',

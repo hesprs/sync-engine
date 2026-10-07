@@ -66,7 +66,7 @@ export const en: WebdavTranslations = {
 	chunkedUploadDescription: enCapabilityDesc({
 		defaulted: 'disabled',
 		description:
-			'Enable Nextcloud-style chunked upload instead of upload the entire file directly to reduce memory pressure.',
+			'Enable Nextcloud-style chunked upload to reduce memory pressure, instead of uploading the entire file directly.',
 		supported: 'Nextcloud and ownCloud',
 		unsupported: 'almost WebDAV servers',
 	}),
@@ -98,7 +98,7 @@ export const en: WebdavTranslations = {
 				);
 			}),
 		supported: 'almost WebDAV servers',
-		unsupported: 'Nutstore',
+		unsupported: 'Nutstore and Rclone WebDAV',
 	}),
 	password: 'Password',
 	passwordDescription:
@@ -152,7 +152,7 @@ export const zh: WebdavTranslations = {
 				);
 			}),
 		supported: '大多数 WebDAV 服务器',
-		unsupported: '坚果云',
+		unsupported: '坚果云和 Rclone WebDAV',
 	}),
 	password: '密码',
 	passwordDescription: '请输入您的账户密码。密码将存储在 Obsidian 钥匙串中。',
@@ -207,7 +207,7 @@ export const ru: WebdavTranslations = {
 				);
 			}),
 		supported: 'большинство серверов WebDAV',
-		unsupported: 'Nutstore',
+		unsupported: 'Nutstore и Rclone WebDAV',
 	}),
 	password: 'Пароль',
 	passwordDescription:
@@ -261,7 +261,7 @@ export const zhTW: WebdavTranslations = {
 				);
 			}),
 		supported: '大多數 WebDAV 伺服器',
-		unsupported: '堅果雲',
+		unsupported: '堅果雲和 Rclone WebDAV',
 	}),
 	password: '密碼',
 	passwordDescription: '輸入您的帳號密碼。密碼將儲存於 Obsidian 金鑰圈中。',

@@ -8,7 +8,7 @@ export default function constructTaskIcon(
 	name: TaskNames,
 	isDir: boolean,
 ): HTMLElement {
-	element.addClasses(['relative', 'aspect-square']);
+	element.addClass('relative', 'aspect-square');
 	const { icon: mainIcon, color: mainColor } = getMain(name, isDir);
 	setIcon(element, mainIcon);
 	const main = getIcon(element);
@@ -19,14 +19,7 @@ export default function constructTaskIcon(
 	const { icon: auxiliaryIcon, color: auxiliaryColor } = auxiliaryIconColor;
 	setIcon(element, auxiliaryIcon);
 	const auxiliary = getIcon(element);
-	auxiliary.addClasses([
-		'absolute',
-		'bottom-0',
-		'right-0',
-		'w-50%!',
-		'h-50%!',
-		'stroke-width-4!',
-	]);
+	auxiliary.addClass('absolute', 'bottom-0', 'right-0', 'w-50%!', 'h-50%!', 'stroke-width-4!');
 	auxiliary.setAttr('stroke', auxiliaryColor);
 	element.empty();
 	element.append(main, auxiliary);
