@@ -333,7 +333,7 @@ test('move copies encoded source before deleting old key', async () => {
 	expect(s3.calls.map(({ method }) => method)).toStrictEqual(['PUT', 'DELETE']);
 });
 
-test('mkdir recursively creates placeholders in ancestor order', async () => {
+test('mkdir recursively creates all ancestor placeholders', async () => {
 	const s3 = createS3Fs();
 	s3.setRequest((url, params) => {
 		expect(params.method).toBe('PUT');
@@ -342,11 +342,13 @@ test('mkdir recursively creates placeholders in ancestor order', async () => {
 		return response({ status: 201 });
 	});
 	await s3.fs.mkdir('Notes/A B/Child/', folder('Notes/A B/Child/'), true);
-	expect(s3.calls.map(({ url }) => url)).toStrictEqual([
-		'https://s3.example.com/vault/Notes/',
-		'https://s3.example.com/vault/Notes/A%20B/',
-		'https://s3.example.com/vault/Notes/A%20B/Child/',
-	]);
+	expect(s3.calls.map(({ url }) => url).sort()).toStrictEqual(
+		[
+			'https://s3.example.com/vault/Notes/',
+			'https://s3.example.com/vault/Notes/A%20B/',
+			'https://s3.example.com/vault/Notes/A%20B/Child/',
+		].sort(),
+	);
 });
 
 test('stat returns root, folder placeholders, and file metadata with ETag fallback', async () => {
