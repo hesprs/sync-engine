@@ -12,23 +12,27 @@ import type {
 	RecordStore,
 	RecordStat,
 	StoreOperations,
+	RemoteRequestMiddlewareEntry,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
 import normalizeEtag from '@repo/shared/normalize-etag';
-import type { WebdavTranslations } from './setting';
-import { en, zh, zhTW, ru } from './i18n';
+import type { WebdavTranslations } from '@/setting';
+import { en, zh, zhTW, ru } from '@/i18n';
+import authorizationMiddleware from '@/webdav/auth';
+import { checkConnection } from '@/webdav/check-connection';
+import WebdavFs from '@/webdav/fs';
 import webdavSetting from './setting';
-import { checkConnection } from './webdav/check-connection';
-import WebdavFs from './webdav/fs';
 
 export type WebdavSettings = {
 	baseDirectory: string;
-	chunkedUpload: boolean;
-	depthInfinity: boolean;
 	endpoint: string;
 	password: string;
 	username: string;
+	// Server-dependent capabilities
+	chunkedUpload: boolean;
+	depthInfinity: boolean;
+	fileMetadata: boolean;
 };
 
 export default class Webdav {
@@ -43,6 +47,7 @@ export default class Webdav {
 			registerSetting: (entry: SettingEntry) => () => void;
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
 			getRecordStore: (namespace?: string) => RecordStore | Error; // TODO: remove after October 13
+			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
 		}>,
 	) {
 		if (!this.moduleSettings.baseDirectory)
@@ -58,6 +63,7 @@ export default class Webdav {
 		chunkedUpload: false,
 		depthInfinity: false,
 		endpoint: '',
+		fileMetadata: true,
 		password: '',
 		username: '',
 	};
@@ -72,27 +78,27 @@ export default class Webdav {
 			registerRemoteFsWrapper,
 			registerSetting,
 			getRecordStore,
+			registerRemoteRequestMiddleware,
 		} = this.ctx;
-		const resolveConfig = () => {
-			const {
-				endpoint,
-				username,
-				password: pwd,
-				chunkedUpload,
-				depthInfinity,
-			} = this.moduleSettings;
-			const password = secretStorage.getSecret(pwd);
-			if (password === null || !endpoint) throw new Error('Please configure WebDAV account!');
-			return { chunkedUpload, depthInfinity, endpoint, password, username };
+		const guardEndpoint = () => {
+			if (!this.moduleSettings.endpoint) throw new Error(translate('pleaseConfigureAccount'));
+			return this.moduleSettings;
 		};
 		this.cleanup.push(
 			registerRemoteFs('webdav', {
-				checkConnection: (request) => {
-					const config = resolveConfig();
-					return checkConnection(config, request);
-				},
-				instantiate: (request) => new WebdavFs({ ...resolveConfig(), request }),
+				checkConnection: (request) => checkConnection(guardEndpoint(), request),
+				instantiate: (request) => new WebdavFs({ ...guardEndpoint(), request }),
 				prettyName: () => translate('webdav'),
+			}),
+			registerRemoteRequestMiddleware({
+				apply: (request) => {
+					if (this.settings.remoteFs !== 'webdav') return;
+					const { username, password: pwd } = this.moduleSettings;
+					const password = secretStorage.getSecret(pwd);
+					if (password === null) throw new Error(translate('pleaseConfigureAccount'));
+					return authorizationMiddleware(request, { password, username });
+				},
+				priority: 692,
 			}),
 			registerRemoteFsWrapper({
 				apply: (fs) => {

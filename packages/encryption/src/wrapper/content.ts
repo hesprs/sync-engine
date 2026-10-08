@@ -19,6 +19,7 @@ import {
 
 const ROOT_FILE_KEY_INFO = 'root-file-key-v1';
 const NAME_KEY_INFO = 'name-key-v1';
+const META_KEY_INFO = 'meta-key-v1';
 
 export async function deriveMasterSalt(remoteUid: string): Promise<Binary> {
 	const digest = await sha256Digest(textToUint8Array(remoteUid));
@@ -43,6 +44,10 @@ export function deriveRootFileKey(masterKey: Binary): Promise<Binary> {
 
 export function deriveNameKey(masterKey: Binary): Promise<Binary> {
 	return deriveHkdfKey(masterKey, NAME_KEY_INFO);
+}
+
+export function deriveMetaKey(masterKey: Binary): Promise<Binary> {
+	return deriveHkdfKey(masterKey, META_KEY_INFO);
 }
 
 export async function encryptFileContent(rootFileKey: Binary, plaintext: Binary): Promise<Binary> {

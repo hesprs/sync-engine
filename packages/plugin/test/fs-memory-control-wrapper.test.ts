@@ -107,7 +107,7 @@ test('memory wrapper releases budget only after writeStream fully drains', async
 	const pendingWriteStream = wrapper.writeStream(
 		'stream.md',
 		stream(['ab', 'cd']),
-		file('stream.md'),
+		file('stream.md', { size: 4 }),
 	);
 	await firstChunkRead.promise;
 
@@ -192,9 +192,9 @@ test('memory wrapper writeStream error releases consumed budget', async () => {
 		throw new Error('stream failed');
 	};
 
-	expect(wrapper.writeStream('failed.md', stream(['1234']), file('failed.md'))).rejects.toThrow(
-		'stream failed',
-	);
+	expect(
+		wrapper.writeStream('failed.md', stream(['1234']), file('failed.md', { size: 4 })),
+	).rejects.toThrow('stream failed');
 	expect(state.memoryConsumption).toBe(0);
 });
 
@@ -211,7 +211,7 @@ test('memory wrapper writeStream cancel releases consumed budget', async () => {
 		return 'stream-uid';
 	};
 
-	await wrapper.writeStream('cancelled.md', stream(['1234']), file('cancelled.md'));
+	await wrapper.writeStream('cancelled.md', stream(['1234']), file('cancelled.md', { size: 4 }));
 	expect(state.memoryConsumption).toBe(0);
 });
 

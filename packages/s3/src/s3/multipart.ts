@@ -5,7 +5,7 @@ import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import type { UrlStyle } from './sigv4';
 import { buildUrlWithQuery, getHeader } from './url';
-import { getFileUid } from './utils';
+import { getFileUid, toMetaHeaders } from './utils';
 
 export const PART_SIZE = 5 * 1024 * 1024; // 5 MiB — S3 minimum part size
 const MAX_CONCURRENT = 3;
@@ -20,6 +20,7 @@ export type MultipartUploadOptions = {
 	key: string;
 	request: Request;
 	stat: (key: string) => Promise<Stat>;
+	meta: Dict<string>;
 };
 
 function parseUploadId(xml: string): string {
@@ -65,7 +66,7 @@ export async function multipartUpload(
 	const { key, request, stat } = options;
 	const initiateUrl = buildUrlWithQuery(options, { uploads: '' });
 	const initiateResponse = await request(initiateUrl, {
-		headers: { 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' },
+		headers: { 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD', ...toMetaHeaders(options.meta) },
 		method: 'POST',
 	});
 	const uploadId = parseUploadId(initiateResponse.text());

@@ -6,7 +6,7 @@ import type { EncryptionDBMeta, EncryptionDBSchema } from '@/wrapper';
 import encryptionWrapper from '@/wrapper';
 import { DECRYPTION_ERROR_MESSAGE } from '@/wrapper/shared';
 
-const { bytes, file, fs: testFs, stream } = testKit;
+const { bytes, file, folder, fs: testFs, stream } = testKit;
 const PASSWORD = 'password';
 const WRONG_PASSWORD = 'wrong-password';
 
@@ -108,9 +108,17 @@ function createRemote(options: { uid?: string } = {}) {
 				return stream([files.get(key) ?? new Uint8Array(0)]);
 			},
 			stat(key) {
-				if (directories.has(key) || key.endsWith('/')) return { isDir: true, key };
+				if (directories.has(key) || key.endsWith('/'))
+					return { isDir: true, key, meta: () => ({}) };
 				const value = files.get(key) ?? new Uint8Array(0);
-				return { isDir: false, key, mtime: 1, size: value.byteLength, uid: `${key}-uid` };
+				return {
+					isDir: false,
+					key,
+					meta: () => ({}),
+					mtime: 1,
+					size: value.byteLength,
+					uid: `${key}-uid`,
+				};
 			},
 			write(key, value) {
 				files.set(key, value);
@@ -235,17 +243,18 @@ test('stat and list preserve metadata while decrypting keys', async () => {
 	remote.base.control.stat = (key) => ({
 		isDir: false,
 		key,
+		meta: () => ({}),
 		mtime: 1234,
 		size: 567,
 		uid: 'etag-1',
 	});
-	await shim.mkdir('Folder/folder/');
+	await shim.mkdir('Folder/folder/', folder('Folder/folder/'));
 	await shim.write('Folder/file.md', bytes('x'), file('Folder/file.md', { size: 1 }));
-	const folderKey = must(remote.base.calls.mkdir[0], 'missing encrypted folder key');
+	const folderKey = must(remote.base.calls.mkdir[0]?.[0], 'missing encrypted folder key');
 	const fileKey = must(remote.base.calls.write[0]?.[0], 'missing encrypted file key');
 	remote.base.control.list = () => [
-		{ isDir: true, key: folderKey },
-		{ isDir: false, key: fileKey, mtime: 12, size: 7, uid: 'note-2' },
+		{ isDir: true, key: folderKey, meta: () => ({}) },
+		{ isDir: false, key: fileKey, meta: () => ({}), mtime: 12, size: 7, uid: 'note-2' },
 	];
 
 	const stat = await shim.stat('Folder/file.md');
@@ -254,8 +263,21 @@ test('stat and list preserve metadata while decrypting keys', async () => {
 	expect(stat).toMatchObject({ isDir: false, mtime: 1234, size: 567, uid: 'etag-1' });
 	expect(stat.key).toBe('Folder/file.md');
 	expect(list).toStrictEqual([
-		{ isDir: true, key: 'Folder/folder/' },
-		{ isDir: false, key: 'Folder/file.md', mtime: 12, size: 7, uid: 'note-2' },
+		{
+			isDir: true,
+			key: 'Folder/folder/',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+		},
+		{
+			isDir: false,
+			key: 'Folder/file.md',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+			mtime: 12,
+			size: 7,
+			uid: 'note-2',
+		},
 	]);
 });
 
@@ -279,7 +301,7 @@ test('exists delete mkdir and move rewrite keys', async () => {
 
 	await shim.exists('Folder/Sub/');
 	await shim.delete('Folder/Sub/');
-	await shim.mkdir('Folder/Sub/');
+	await shim.mkdir('Folder/Sub/', folder('Folder/Sub/'));
 	await shim.move('Folder/Sub/', 'Folder/Next/');
 
 	expect(calls[0]?.[0]).toBe(calls[1]?.[0]);
@@ -349,6 +371,7 @@ test('wrong password and malformed content fail to decrypt', async () => {
 	wrong.base.control.stat = (key) => ({
 		isDir: false,
 		key,
+		meta: () => ({}),
 		mtime: 1,
 		size: encrypted.byteLength,
 		uid: 'uid',
@@ -373,4 +396,151 @@ test('zero byte content round trips', async () => {
 	expect(
 		await collectStream(await shim.readStream('Folder/empty-stream.md', streamStat)),
 	).toStrictEqual(empty);
+});
+
+test('meta values round-trip through write and stat', async () => {
+	const remote = createRemote();
+	let capturedMeta: Dict<string> = {};
+	const wrappedFs = {
+		...remote.fs,
+		async write(key: string, value: Binary, stat: FileStat) {
+			capturedMeta = await stat.meta();
+			return remote.fs.write(key, value, stat);
+		},
+	} as Fs;
+	const shim = encryptionWrapper(wrappedFs, { memoryDB, password: PASSWORD });
+	const plaintext = bytes('hello');
+	await shim.write(
+		'file.md',
+		plaintext,
+		file('file.md', {
+			meta: () => ({ ctime: '1000', custom: 'value' }),
+			size: plaintext.byteLength,
+		}),
+	);
+	expect(capturedMeta.ctime).not.toBe('1000');
+	expect(capturedMeta.custom).not.toBe('value');
+	remote.base.control.stat = (key) => ({
+		isDir: false,
+		key,
+		meta: () => ({ ...capturedMeta }),
+		mtime: 1,
+		size: plaintext.byteLength,
+		uid: 'uid',
+	});
+	const stat = await shim.stat('file.md');
+	if (stat.isDir) throw new Error('expected file');
+	expect(await stat.meta()).toStrictEqual({ ctime: '1000', custom: 'value' });
+});
+
+test('meta values round-trip through writeStream and stat', async () => {
+	const remote = createRemote();
+	let capturedMeta: Dict<string> = {};
+	const wrappedFs = {
+		...remote.fs,
+		async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+			capturedMeta = await stat.meta();
+			return remote.fs.writeStream(key, value, stat);
+		},
+	} as Fs;
+	const shim = encryptionWrapper(wrappedFs, { memoryDB, password: PASSWORD });
+	const plaintext = bytes('hello');
+	await shim.writeStream(
+		'file.md',
+		stream([plaintext]),
+		file('file.md', { meta: () => ({ ctime: '500', tag: 'abc' }), size: plaintext.byteLength }),
+	);
+	expect(capturedMeta.ctime).not.toBe('500');
+	remote.base.control.stat = (key) => ({
+		isDir: false,
+		key,
+		meta: () => ({ ...capturedMeta }),
+		mtime: 1,
+		size: plaintext.byteLength,
+		uid: 'uid',
+	});
+	const stat = await shim.stat('file.md');
+	if (stat.isDir) throw new Error('expected file');
+	expect(await stat.meta()).toStrictEqual({ ctime: '500', tag: 'abc' });
+});
+
+test('list decrypts meta values', async () => {
+	const remote = createRemote();
+	let capturedMeta: Dict<string> = {};
+	const wrappedFs = {
+		...remote.fs,
+		async write(key: string, value: Binary, stat: FileStat) {
+			capturedMeta = await stat.meta();
+			return remote.fs.write(key, value, stat);
+		},
+	} as Fs;
+	const shim = encryptionWrapper(wrappedFs, { memoryDB, password: PASSWORD });
+	await shim.write(
+		'file.md',
+		bytes('x'),
+		file('file.md', { meta: () => ({ custom: 'secret' }), size: 1 }),
+	);
+	const fileKey = must(remote.base.calls.write[0]?.[0], 'missing encrypted file key');
+	remote.base.control.list = () => [
+		{
+			isDir: false,
+			key: fileKey,
+			meta: () => ({ ...capturedMeta }),
+			mtime: 12,
+			size: 7,
+			uid: 'note-2',
+		},
+	];
+	const list = await shim.list('file/', () => 'include');
+	const [stat] = list;
+	if (stat?.isDir) throw new Error('expected file');
+	expect(await stat?.meta()).toStrictEqual({ custom: 'secret' });
+});
+
+test('empty meta round-trips', async () => {
+	const remote = createRemote();
+	const shim = encryptionWrapper(remote.fs, { memoryDB, password: PASSWORD });
+	await shim.write('file.md', bytes('x'), file('file.md', { size: 1 }));
+	remote.base.control.stat = (key) => ({
+		isDir: false,
+		key,
+		meta: () => ({}),
+		mtime: 1,
+		size: 1,
+		uid: 'uid',
+	});
+	const stat = await shim.stat('file.md');
+	if (stat.isDir) throw new Error('expected file');
+	expect(await stat.meta()).toStrictEqual({});
+});
+
+test('wrong password fails to decrypt meta', async () => {
+	const good = createRemote();
+	let capturedMeta: Dict<string> = {};
+	const goodFs = {
+		...good.fs,
+		async write(key: string, value: Binary, stat: FileStat) {
+			capturedMeta = await stat.meta();
+			return good.fs.write(key, value, stat);
+		},
+	} as Fs;
+	const goodShim = encryptionWrapper(goodFs, { memoryDB, password: PASSWORD });
+	await goodShim.write(
+		'file.md',
+		bytes('x'),
+		file('file.md', { meta: () => ({ secret: 'data' }), size: 1 }),
+	);
+	const wrong = createRemote();
+	const wrongShim = encryptionWrapper(wrong.fs, { memoryDB, password: WRONG_PASSWORD });
+	wrong.base.control.stat = (key) => ({
+		isDir: false,
+		key,
+		meta: () => ({ ...capturedMeta }),
+		mtime: 1,
+		size: 1,
+		uid: 'uid',
+	});
+	const stat = await wrongShim.stat('file.md');
+	if (stat.isDir) throw new Error('expected file');
+	expect(stat.meta()).rejects.toThrow(DECRYPTION_ERROR_MESSAGE);
 });

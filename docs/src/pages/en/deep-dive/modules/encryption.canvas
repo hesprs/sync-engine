@@ -1,118 +1,8 @@
 {
 	"nodes":[
+		{"id":"b49169aebac7e5df","type":"group","x":340,"y":-30,"width":520,"height":100,"label":"Sub-Keys"},
 		{"id":"1b5c9a513992802e","type":"group","x":-380,"y":140,"width":280,"height":180,"label":"File Info"},
-		{"id":"fe9b7a0bce528584","type":"group","x":-320,"y":-320,"width":220,"height":180,"label":"Server Info"},
-		{"id":"b49169aebac7e5df","type":"group","x":360,"y":-30,"width":340,"height":100,"label":"Sub-Keys"},
-		{
-			"id":"a5d52cd03f802a4a",
-			"type":"text",
-			"text":"File Content",
-			"styleAttributes":{},
-			"x":385,
-			"y":410,
-			"width":130,
-			"height":60,
-			"color":"1"
-		},
-		{
-			"id":"c5c4295e29846375",
-			"type":"text",
-			"text":"File Key",
-			"styleAttributes":{},
-			"x":400,
-			"y":210,
-			"width":100,
-			"height":60,
-			"color":"3"
-		},
-		{
-			"id":"4e11d8bcaaa494b4",
-			"type":"text",
-			"text":"File Name",
-			"styleAttributes":{},
-			"x":560,
-			"y":410,
-			"width":120,
-			"height":60,
-			"color":"1"
-		},
-		{
-			"id":"6845f2a8ca1be92a",
-			"type":"text",
-			"text":"Master Salt",
-			"styleAttributes":{},
-			"x":50,
-			"y":-260,
-			"width":140,
-			"height":60,
-			"color":"4"
-		},
-		{
-			"id":"9a92edcf086c3cfc",
-			"type":"text",
-			"text":"Root File Key",
-			"styleAttributes":{},
-			"x":380,
-			"y":-10,
-			"width":140,
-			"height":60,
-			"color":"3"
-		},
-		{
-			"id":"b920a936964d171b",
-			"type":"text",
-			"text":"Name Key",
-			"styleAttributes":{},
-			"x":560,
-			"y":-10,
-			"width":120,
-			"height":60,
-			"color":"3"
-		},
-		{
-			"id":"81209c25b6a24e46",
-			"type":"text",
-			"text":"User Password",
-			"styleAttributes":{},
-			"x":400,
-			"y":-400,
-			"width":260,
-			"height":60,
-			"color":"1"
-		},
-		{
-			"id":"29b02edaa8bceae2",
-			"type":"text",
-			"text":"Master Key",
-			"styleAttributes":{},
-			"x":400,
-			"y":-260,
-			"width":260,
-			"height":60,
-			"color":"3"
-		},
-		{
-			"id":"7a1349f6230992a8",
-			"type":"text",
-			"text":"File Key Salt",
-			"styleAttributes":{},
-			"x":50,
-			"y":200,
-			"width":140,
-			"height":60,
-			"color":"4"
-		},
-		{
-			"id":"c57b4ce06800705b",
-			"type":"text",
-			"text":"Chunk Count",
-			"styleAttributes":{},
-			"x":50,
-			"y":410,
-			"width":140,
-			"height":60,
-			"color":"4"
-		},
+		{"id":"fe9b7a0bce528584","type":"group","x":-210,"y":-280,"width":220,"height":180,"label":"Server Info"},
 		{
 			"id":"50e58d54fe68ca4f",
 			"type":"text",
@@ -134,12 +24,155 @@
 			"height":60
 		},
 		{
+			"id":"9a92edcf086c3cfc",
+			"type":"text",
+			"text":"Root File Key",
+			"styleAttributes":{},
+			"x":360,
+			"y":-10,
+			"width":155,
+			"height":60,
+			"color":"3"
+		},
+		{
+			"id":"7a1349f6230992a8",
+			"type":"text",
+			"text":"File Key Salt",
+			"styleAttributes":{},
+			"x":50,
+			"y":200,
+			"width":140,
+			"height":60,
+			"color":"4"
+		},
+		{
+			"id":"c57b4ce06800705b",
+			"type":"text",
+			"text":"Chunk Count",
+			"styleAttributes":{},
+			"x":40,
+			"y":410,
+			"width":150,
+			"height":60,
+			"color":"4"
+		},
+		{
+			"id":"b920a936964d171b",
+			"type":"text",
+			"text":"Name Key",
+			"styleAttributes":{},
+			"x":540,
+			"y":-10,
+			"width":140,
+			"height":60,
+			"color":"3"
+		},
+		{
+			"id":"2760f59d18fd9ac7",
+			"type":"text",
+			"text":"12 Byte Random Meta Nonce",
+			"styleAttributes":{},
+			"x":1020,
+			"y":410,
+			"width":260,
+			"height":60,
+			"color":"4"
+		},
+		{
+			"id":"d360919c9574e840",
+			"type":"text",
+			"text":"Meta Key",
+			"styleAttributes":{},
+			"x":700,
+			"y":-10,
+			"width":140,
+			"height":60,
+			"color":"3"
+		},
+		{
+			"id":"4e11d8bcaaa494b4",
+			"type":"text",
+			"text":"File Name",
+			"styleAttributes":{},
+			"x":550,
+			"y":410,
+			"width":120,
+			"height":60,
+			"color":"1"
+		},
+		{
+			"id":"2616d3e208d1bcb3",
+			"type":"text",
+			"text":"File Metadata",
+			"styleAttributes":{},
+			"x":693,
+			"y":410,
+			"width":155,
+			"height":60,
+			"color":"1"
+		},
+		{
+			"id":"c5c4295e29846375",
+			"type":"text",
+			"text":"File Key",
+			"styleAttributes":{},
+			"x":375,
+			"y":200,
+			"width":127,
+			"height":60,
+			"color":"3"
+		},
+		{
+			"id":"a5d52cd03f802a4a",
+			"type":"text",
+			"text":"File Content",
+			"styleAttributes":{},
+			"x":360,
+			"y":410,
+			"width":155,
+			"height":60,
+			"color":"1"
+		},
+		{
+			"id":"29b02edaa8bceae2",
+			"type":"text",
+			"text":"Master Key",
+			"styleAttributes":{},
+			"x":480,
+			"y":-220,
+			"width":240,
+			"height":60,
+			"color":"3"
+		},
+		{
+			"id":"81209c25b6a24e46",
+			"type":"text",
+			"text":"User Password",
+			"styleAttributes":{},
+			"x":480,
+			"y":-400,
+			"width":240,
+			"height":60,
+			"color":"1"
+		},
+		{
+			"id":"6845f2a8ca1be92a",
+			"type":"text",
+			"text":"Master Salt",
+			"styleAttributes":{},
+			"x":160,
+			"y":-220,
+			"width":140,
+			"height":60,
+			"color":"4"
+		},
+		{
 			"id":"7027ed14bd3c7157",
 			"type":"text",
 			"text":"Account Name",
 			"styleAttributes":{},
-			"x":-300,
-			"y":-300,
+			"x":-190,
+			"y":-260,
 			"width":180,
 			"height":60
 		},
@@ -148,8 +181,8 @@
 			"type":"text",
 			"text":"Server Endpoint",
 			"styleAttributes":{},
-			"x":-300,
-			"y":-220,
+			"x":-190,
+			"y":-180,
 			"width":180,
 			"height":60
 		}
@@ -262,7 +295,19 @@
 			"toNode":"a5d52cd03f802a4a",
 			"toSide":"left",
 			"label":"AES-GCM-256\n(nonce)"
-		}
+		},
+		{
+			"id":"4072de3d377cf074",
+			"styleAttributes":{},
+			"toFloating":false,
+			"fromFloating":false,
+			"fromNode":"2760f59d18fd9ac7",
+			"fromSide":"left",
+			"toNode":"2616d3e208d1bcb3",
+			"toSide":"right",
+			"label":"AES-GCM-256\n(nonce)"
+		},
+		{"id":"68eb104b40945646","fromNode":"d360919c9574e840","fromSide":"bottom","toNode":"2616d3e208d1bcb3","toSide":"top","label":"HKDF-SHA-256\n(credential)"}
 	],
 	"metadata":{
 		"version":"1.0-1.0",

@@ -97,4 +97,4 @@ File: `scripts/benchmark/ping-test.ts`
 
 The Ping Tester tests average HTTP ping delay when trying to connect to a URL. It launches 20 sequential HTTP `HEAD` requests toward the target and record the response delay.
 
-After all tests, it sorts the request delays and discard the longest two and shortest two delays. The calculate the average for the rest 16 samples.
+After all tests, it sorts the request delays and discard the longest two and shortest two delays. Then calculate the average for the rest 16 samples.

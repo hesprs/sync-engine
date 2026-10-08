@@ -24,10 +24,7 @@
  *  THE SOFTWARE.
  */
 
-/**
- * The algorithm implemented here is based on "An O(NP) Sequence Comparison Algorithm"
- * described by Sun Wu, Udi Manber and Gene Myers.
- */
+/** The algorithm implemented here is based on "An O(NP) Sequence Comparison Algorithm" described by Sun Wu, Udi Manber and Gene Myers. */
 
 export type DiffHunk = {
 	file1: [number, number];

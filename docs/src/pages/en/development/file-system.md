@@ -20,6 +20,8 @@ type FileStat = {
   mtime: number;
   size: number;
   uid: string;
+  // Meta fields; to some backends, getting meta fields may be expensive and slow
+  meta: () => MaybePromise<Dict<string>>;
 };
 type FolderStat = { isDir: true; key: string };
 type Stat = FileStat | FolderStat;
@@ -29,7 +31,7 @@ type RecordStat = { isDir: false; local: string; remote: string } | { isDir: tru
 type RecordStatsMap = Map<string, RecordStat>;
 ```
 
-In `FileStat`, `uid` is often Etag, MD5 hash or equivalent, whose equality means the file content is unchanged. `mtime` is Unix timestamp in milliseconds.
+In `FileStat`, `uid` is often Etag, MD5 hash or equivalent, whose equality means the file content is unchanged. `mtime` is Unix timestamp in milliseconds. `meta` returns a dictionary of string values for custom metadata (such as creation time); the function may be async because some backends need an extra request to fetch metadata.
 
 ## `RootFs`
 
@@ -46,7 +48,7 @@ type RootFs = {
   writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
   delete(key: string): MaybePromise<void>;
   move(oldKey: string, newKey: string): MaybePromise<void>;
-  mkdir(key: string, recursive?: boolean): MaybePromise<void>;
+  mkdir(key: string, stat: FolderStat, recursive?: boolean): MaybePromise<void>;
   stat(key: string): MaybePromise<Stat>;
   exists(key: string): MaybePromise<boolean>;
   list(key: string, reporter: ListReporter): MaybePromise<Array<Stat>>;

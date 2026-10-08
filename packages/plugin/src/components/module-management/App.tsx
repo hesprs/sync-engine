@@ -149,7 +149,7 @@ export default function App(props: {
 				</div>
 			</Show>
 			<Show when={isPluginOutdated()}>
-				<div class="text-center text-[--text-muted]">
+				<div class="text-center text-[--text-faint] mt-4">
 					{props.ctx.translate('someModulesHidden')}
 				</div>
 			</Show>

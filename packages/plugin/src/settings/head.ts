@@ -78,7 +78,10 @@ export default function headSettings(
 			desc: translate('settingTips', { addLabel, labels: [matchLabel(), speedLabel()] }),
 			name: 'dummy',
 			render: (setting) => {
-				setting.settingEl.addClass('sync-engine-setting-tip');
+				setting.settingEl.addClass(
+					'sync-engine-setting-hide-name',
+					'sync-engine-setting-rendered-desc',
+				);
 				queueMicrotask(() => {
 					const tab = getSettingTab();
 					if (!tab) return;
@@ -97,7 +100,7 @@ export default function headSettings(
 					recurseLabel(tab.settingItems);
 				});
 			},
-			search: false,
+			searchable: false,
 		})),
 		20: s(() => ({
 			desc: translate('backendDescription'),
@@ -258,21 +261,21 @@ function setupCheckConnection({
 		const ele = button.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClasses(['animate-spin', 'color-[-text-faint]']);
+		ele.addClass('animate-spin', 'color-[-text-faint]');
 	};
 	const setSuccess = () => {
 		button.setIcon('check');
 		const ele = button.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClasses(['color-[--color-green]']);
+		ele.addClass('color-[--color-green]');
 	};
 	const setError = () => {
 		button.setIcon('cloud-off');
 		const ele = button.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClasses(['color-[--color-red]']);
+		ele.addClass('color-[--color-red]');
 	};
 	const scheduleCheckConnection = () =>
 		(timeout = window.setTimeout(() => void check(), CHECK_CONNECTION_INTERVAL));

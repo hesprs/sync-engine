@@ -251,7 +251,7 @@ const en: Translations = {
 		'Trigger syncs automatically as soon as files are modified. Alter the delay between a file being modified and the sync being triggered in the field.',
 	realtimeSyncFastMode: 'Realtime sync fast mode',
 	realtimeSyncFastModeDescription:
-		'Reuse cached data and avoid unnecessary remote discovery during real-time sync to accelerate sync.',
+		'Speed up realtime sync by reusing cached data and avoid unnecessary remote discovery.',
 	realtimeSyncPlaceholder: 'Enter sync delay (e.g. 500ms, 5s)',
 	recordsCleared: 'Records cleared',
 	remoteMigration: 'Remote migration',

@@ -1,5 +1,5 @@
 // oxlint-disable typescript/method-signature-style
-import type { MaybePromise, Progress, Stat, Binary, FileStat } from '@/types';
+import type { MaybePromise, Progress, Stat, Binary, FileStat, FolderStat } from '@/types';
 
 /**
  * All keys use unified format:
@@ -15,7 +15,7 @@ export type RootFs = {
 	writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): MaybePromise<string>; // Returns uid, should only resolve when the stream is fully consumed
 	delete(key: string): MaybePromise<void>;
 	move(oldKey: string, newKey: string): MaybePromise<void>;
-	mkdir(key: string, recursive?: boolean): MaybePromise<void>;
+	mkdir(key: string, stat: FolderStat, recursive?: boolean): MaybePromise<void>;
 	stat(key: string): MaybePromise<Stat>;
 	exists(key: string): MaybePromise<boolean>;
 	list(key: string, reporter: ListReporter): MaybePromise<Array<Stat>>; // List recursive children under one folder

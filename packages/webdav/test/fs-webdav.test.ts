@@ -12,7 +12,7 @@ import type { WebdavFsOptions } from '@/webdav/fs';
 import { checkConnection } from '@/webdav/check-connection';
 import WebdavFs from '@/webdav/fs';
 
-const { bytes, deferred, file, flush, request, stream: createStream } = testKit;
+const { bytes, deferred, file, flush, folder, request, stream: createStream } = testKit;
 const sharedDate = new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf();
 
 type Control = (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>;
@@ -28,9 +28,10 @@ let response: Partial<RequestResponse>;
 let parsedResponse: ParsedResponse;
 
 const defaultOptions = {
+	chunkedUpload: false,
 	depthInfinity: false,
 	endpoint: 'https://dav.example.com/dav',
-	password: 'pass',
+	fileMetadata: false,
 	username: 'alice',
 } satisfies Omit<WebdavFsOptions, 'request'>;
 
@@ -142,6 +143,8 @@ test('stat parses dav fields and prefers etag for uid', async () => {
 	expect(stat).toStrictEqual({
 		isDir: false,
 		key: 'Notes/file.md',
+		// oxlint-disable-next-line typescript/no-unsafe-assignment
+		meta: expect.any(Function),
 		mtime: sharedDate,
 		size: 12,
 		uid: 'etag-123',
@@ -327,7 +330,7 @@ test('mkdir recursively creates parent folders in order', async () => {
 		throw new Error(`Unexpected URL: ${url}`);
 	});
 
-	await webdav.fs.mkdir('Notes/Folder A/Child/', true);
+	await webdav.fs.mkdir('Notes/Folder A/Child/', folder('Notes/Folder A/Child/'), true);
 
 	expect(
 		webdav.calls.map((params) => ({ method: params.method, url: params.url })),
@@ -375,6 +378,8 @@ test('list uses infinity when enabled', async () => {
 		{
 			isDir: false,
 			key: 'Notes/file.md',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
 			mtime: sharedDate,
 			size: 3,
 			uid: `${sharedDate}~3`,
@@ -445,10 +450,17 @@ test('list bfs updates progress when infinity is disabled', async () => {
 	});
 
 	expect(list).toStrictEqual([
-		{ isDir: true, key: 'Notes/Folder A/' },
+		{
+			isDir: true,
+			key: 'Notes/Folder A/',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+		},
 		{
 			isDir: false,
 			key: 'Notes/Folder A/file.md',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
 			mtime: sharedDate,
 			size: 7,
 			uid: `${sharedDate}~7`,
@@ -503,7 +515,14 @@ test('list reporter can exclude entries and stop descent', async () => {
 		current === 'Notes/Folder A/' ? 'include' : 'exclude',
 	);
 
-	expect(list).toStrictEqual([{ isDir: true, key: 'Notes/Folder A/' }]);
+	expect(list).toStrictEqual([
+		{
+			isDir: true,
+			key: 'Notes/Folder A/',
+			// oxlint-disable-next-line typescript/no-unsafe-assignment
+			meta: expect.any(Function),
+		},
+	]);
 	expect(webdav.calls).toHaveLength(1);
 });
 
@@ -568,4 +587,108 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 		offset += length;
 	}
 	expect(await collected).toStrictEqual(expected);
+});
+
+test('write sends PROPPATCH with se:meta when fileMetadata is enabled', async () => {
+	const webdav = createWebdavFs({ fileMetadata: true });
+	const calls: Array<{ method?: string; body?: unknown; headers?: Record<string, string> }> = [];
+	webdav.setRequest((_url, params) => {
+		calls.push({ body: params.body, headers: params.headers, method: params.method });
+		if (params.method === 'PUT') return { ...defaultResponse, headers: { etag: 'meta-uid' } };
+		return defaultResponse;
+	});
+	expect(
+		await webdav.fs.write(
+			'note.md',
+			bytes('hello'),
+			file('note.md', { meta: () => ({ ctime: '500', custom: 'value' }), size: 5 }),
+		),
+	).toBe('meta-uid');
+	const proppatch = calls.find((c) => c.method === 'PROPPATCH');
+	expect(proppatch).toBeDefined();
+	const body = String(proppatch?.body);
+	expect(body).toContain('se:meta');
+	expect(body).toContain('"ctime":"500"');
+	expect(body).toContain('"custom":"value"');
+});
+
+test('stat meta reads se:meta from PROPFIND when fileMetadata is enabled', async () => {
+	setXmlResponse([
+		{
+			href: '/dav/Notes/file.md',
+			propstat: {
+				prop: {
+					getcontentlength: '5',
+					getlastmodified: 'Mon, 01 Jan 2024 00:00:00 GMT',
+					resourcetype: {},
+					'se:meta': { '#text': '{"custom":"value","ctime":"500"}' },
+				},
+				status: 'HTTP/1.1 200 OK',
+			},
+		},
+	]);
+	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav', fileMetadata: true });
+	const stat = await webdav.fs.stat('Notes/file.md');
+	if (stat.isDir) throw new Error('expected file stat');
+	expect(await stat.meta()).toStrictEqual({ ctime: '500', custom: 'value' });
+});
+
+test('chunked writeStream sends PROPPATCH when fileMetadata is enabled', async () => {
+	const webdav = createWebdavFs({
+		chunkedUpload: true,
+		endpoint: 'https://dav.example.com/remote.php/dav/files/alice',
+		fileMetadata: true,
+	});
+	const methods: Array<string | undefined> = [];
+	webdav.setRequest((_url, params) => {
+		methods.push(params.method);
+		if (params.method === 'MKCOL') return { ...defaultResponse, status: 201 };
+		if (params.method === 'PUT') return { ...defaultResponse, status: 200 };
+		if (params.method === 'MOVE')
+			return { ...defaultResponse, headers: { 'oc-etag': 'oc-uid' } };
+		if (params.method === 'PROPPATCH') return defaultResponse;
+		throw new Error(`Unexpected method: ${params.method}`);
+	});
+	expect(
+		await webdav.fs.writeStream(
+			'Notes/file.md',
+			createStream([bytes('abc')]),
+			file('Notes/file.md', { meta: () => ({ ctime: '300', custom: 'val' }), size: 3 }),
+		),
+	).toBe('oc-uid');
+	expect(methods).toContain('PROPPATCH');
+});
+
+test('write skips PROPPATCH when meta is empty', async () => {
+	const webdav = createWebdavFs({ fileMetadata: true });
+	const methods: Array<string | undefined> = [];
+	webdav.setRequest((_url, params) => {
+		methods.push(params.method);
+		if (params.method === 'PUT')
+			return { ...defaultResponse, headers: { etag: 'no-meta-uid' } };
+		return defaultResponse;
+	});
+	expect(await webdav.fs.write('note.md', bytes('hello'), file('note.md', { size: 5 }))).toBe(
+		'no-meta-uid',
+	);
+	expect(methods).not.toContain('PROPPATCH');
+});
+
+test('PROPPATCH escapes XML special characters in se:meta', async () => {
+	const webdav = createWebdavFs({ fileMetadata: true });
+	let proppatchBody = '';
+	webdav.setRequest((_url, params) => {
+		if (params.method === 'PROPPATCH') {
+			proppatchBody = String(params.body);
+			return defaultResponse;
+		}
+		if (params.method === 'PUT') return { ...defaultResponse, headers: { etag: 'escape-uid' } };
+		return defaultResponse;
+	});
+	await webdav.fs.write(
+		'note.md',
+		bytes('hello'),
+		file('note.md', { meta: () => ({ path: '<a>&b' }), size: 5 }),
+	);
+	expect(proppatchBody).toContain('&lt;a&gt;&amp;b');
 });

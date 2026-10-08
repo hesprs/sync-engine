@@ -5,22 +5,15 @@ type ChunkedUploadOptions<Result> = {
 	chunkSize: number;
 	concurrency: number;
 	value: ReadableStream<Binary>;
-	/**
-	 * Upload one chunk. `index` counts from 1; `offset` is the chunk's byte
-	 * offset from the stream start; `isLast` marks the final chunk (which may
-	 * be smaller than `chunkSize`).
-	 */
+	/** Upload one chunk. `index` counts from 1; `offset` is the chunk's byte offset from the stream start; `isLast` marks the final chunk (which may be smaller than `chunkSize`). */
 	uploadChunk: (chunk: Binary, index: number, offset: number, isLast: boolean) => Promise<Result>;
 	onChunkResult?: (result: Result, index: number) => void;
 };
 
 /**
- * Streams `value` through fixed-size chunks uploaded with bounded concurrency.
- * Buffer stays bounded at `chunkSize` + one stream chunk: reads pause whenever
- * a concurrency slot is taken or the buffer holds a full chunk.
+ * Streams `value` through fixed-size chunks uploaded with bounded concurrency. Buffer stays bounded at `chunkSize` + one stream chunk: reads pause whenever a concurrency slot is taken or the buffer holds a full chunk.
  *
- * Resolves with results in chunk order once the stream is drained. Empty
- * streams resolve with no results.
+ * Resolves with results in chunk order once the stream is drained. Empty streams resolve with no results.
  */
 export default async function chunkedUpload<Result>({
 	chunkSize,

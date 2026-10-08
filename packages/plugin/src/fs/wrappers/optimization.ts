@@ -1,4 +1,4 @@
-import type { MaybePromise, Binary, FileStat } from '@/types';
+import type { MaybePromise, Binary, FileStat, FolderStat } from '@/types';
 import type {
 	BatchOptimizer,
 	DeleteAtom,
@@ -88,9 +88,9 @@ class OptimizationFs implements WrappedFs {
 		});
 	}
 
-	mkdir(key: string, recursive?: boolean) {
+	mkdir(key: string, stat: FolderStat, recursive?: boolean) {
 		return this.enqueueExecution({
-			execute: () => this.original.mkdir(key, recursive),
+			execute: () => this.original.mkdir(key, stat, recursive),
 			key,
 			type: 'mkdir',
 		});
@@ -251,8 +251,8 @@ class OptimizationCompanionFs implements WrappedFs {
 	delete(key: string) {
 		return this.original.delete(key);
 	}
-	mkdir(key: string, recursive?: boolean) {
-		return this.original.mkdir(key, recursive);
+	mkdir(key: string, stat: FolderStat, recursive?: boolean) {
+		return this.original.mkdir(key, stat, recursive);
 	}
 	stat(key: string) {
 		return this.original.stat(key);

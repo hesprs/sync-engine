@@ -1,4 +1,4 @@
-import type { Binary, FileStat, MaybePromise } from '@/types';
+import type { Binary, FileStat, FolderStat, MaybePromise } from '@/types';
 import type { Fs, ListReporter, WrappedFs } from '../interface';
 
 type HangingOperation = {
@@ -122,8 +122,8 @@ class MemoryControlRemoteFs implements WrappedFs {
 		return this.original.move(oldKey, newKey);
 	}
 
-	mkdir(key: string, recursive?: boolean) {
-		return this.original.mkdir(key, recursive);
+	mkdir(key: string, stat: FolderStat, recursive?: boolean) {
+		return this.original.mkdir(key, stat, recursive);
 	}
 
 	stat(key: string) {

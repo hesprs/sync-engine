@@ -27,6 +27,7 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 - Granular sync strategy configuration (bidirectional / mirror remote / mirror local / don't sync) using Glob rules.
 - Conflict resolve strategies (keep both / latest survive / keep remote / keep local / skip).
 - Rate / memory control options.
+- Syncing file creation / modification time.
 - Custom headers.
 - You can extend most above features by writing modules.
 
