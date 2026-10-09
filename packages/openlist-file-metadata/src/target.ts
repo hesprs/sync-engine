@@ -3,6 +3,7 @@ import { encodeUrl, encodeURIComponent3986, normalizeUrl } from '@repo/shared/pa
 export type BackendSettings = { remoteFs: string; modules: Record<string, object> };
 export type Target = {
 	kind: 's3' | 'webdav';
+	fetchObjectMeta: boolean;
 	url: (key: string) => string;
 	contains: (url: string) => boolean;
 };
@@ -17,6 +18,7 @@ export function getTarget(settings: BackendSettings): Target | undefined {
 				endpoint?: string;
 				bucket?: string;
 				urlStyle?: string;
+				fetchObjectMeta?: boolean;
 		  }
 		| undefined;
 	if (!config?.endpoint) return;
@@ -33,6 +35,7 @@ export function getTarget(settings: BackendSettings): Target | undefined {
 	root = canonicalUrl(root);
 	return {
 		contains: (url) => canonicalUrl(url).startsWith(root),
+		fetchObjectMeta: remoteFs === 's3' && (config.fetchObjectMeta ?? false),
 		kind: remoteFs,
 		url: (key) => canonicalUrl(root + (key === '/' ? '' : encodeUrl(key))),
 	};

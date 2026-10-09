@@ -1,5 +1,4 @@
 import type { RequestResponse } from '@hesprs/sync-engine-sdk';
-import normalizeEtag from '@repo/shared/normalize-etag';
 
 type PageState = { folders: Set<string>; tokens: Set<string> };
 
@@ -69,8 +68,6 @@ export default class S3Listing {
 				object.remove();
 				continue;
 			}
-			for (const etag of children(object, 'ETag'))
-				if (!normalizeEtag(etag.textContent ?? '')) etag.remove();
 		}
 		if (inferFolders)
 			for (const common of children(root, 'CommonPrefixes')) {

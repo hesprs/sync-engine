@@ -1,48 +1,56 @@
 # OpenList File Metadata
 
-OpenList File Metadata is an optional module that sends local file times on upload and restores server-reported times on download through OpenList's S3 or WebDAV interface. Enable it alongside your existing backend module. It has no additional settings and uses that backend's connection configuration.
+OpenList File Metadata is an optional module for OpenList's S3 or WebDAV interface on Sync Engine 3.3.0 or later. Enable it alongside the existing backend module. It uses that backend's connection configuration and supports encrypted and unencrypted vaults.
 
-Files keep their existing names, paths, and contents. The module creates no remote metadata files and does not change the storage format. It applies to future transfers; enabling it does not repair dates on files that are already synchronized.
+The OpenList server applies upload times through its storage driver. Sync Engine supplies ordinary S3/WebDAV operations, synchronization, metadata encoding, and the local writer. This module supplies OpenList's time headers and protocol compatibility. Files retain their names, paths, and contents; no metadata files are created.
+
+## Settings
+
+**Prefer metadata modification time on download**, in the **OpenList File Metadata** section, is off by default. Enable it to restore downloaded files with a valid metadata mtime when available, falling back to the standard server modification time when metadata is missing or invalid. Creation-time handling is unchanged. The setting applies to future downloads; it does not rewrite dates on already synchronized files.
+
+This preference only changes the time supplied to the local writer. Discovery, file UIDs, change detection, and conflict decisions continue to use standard stats. It does not add HEAD requests or change the backend's **Fetch object metadata** setting.
+
+Plaintext S3 mtime headers use Unix seconds, including fractional seconds. WebDAV and decrypted SDK metadata use Unix milliseconds. Zoned ISO timestamps are also accepted. Numeric units follow their source and are not inferred from the value's magnitude; metadata in another numeric unit is outside this contract.
 
 ## Supported Times
 
-| Interface | Upload                                                           | Download                                                       |
-| --------- | ---------------------------------------------------------------- | -------------------------------------------------------------- |
-| S3        | `X-Amz-Meta-Mtime`, Unix seconds with millisecond precision      | Standard listing `LastModified`; creation time is unavailable  |
-| WebDAV    | `X-OC-Mtime` and, when known, `X-OC-Ctime`, integer Unix seconds | Read `getlastmodified` and available `creationdate` properties |
+| Interface | Upload                                                                                                                  | Download                                                                     |
+| --------- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| S3        | `X-Amz-Meta-Mtime`, Unix seconds with millisecond precision; ctime follows native `x-amz-meta-ctime` metadata           | Standard listing `LastModified`; valid ctime from downloaded object metadata |
+| WebDAV    | `X-OC-Mtime` and, when available, `X-OC-Ctime`, integer Unix seconds; ctime also follows native metadata when supported | Standard `getlastmodified`; valid native ctime or available `creationdate`   |
 
-Creation time is best effort. OpenList's S3 implementation does not persist the original creation time. WebDAV accepts a creation-time header, but whether it affects the stored file depends on the underlying driver and operating system. A returned creation date may be the server's creation time, not the original file's. Missing or invalid dates are not invented; an existing local creation time is retained when no remote creation time is available, including streamed replacements. Local creation-time restoration also depends on Obsidian's adapter and the operating system.
+Upload times come from the source file's plaintext SDK `meta()` fields in milliseconds. Modification time travels through a private stat field across path and metadata transformations, then enters OpenList's time header. Creation time remains in native metadata and follows its normal encoding, including encryption. WebDAV's creation-time header also carries the plaintext time. Missing or invalid times are omitted; generated content without source-time metadata uses normal write behavior.
 
-Folder times are not preserved. OpenList's S3 directory `PUT` handler returns before processing time metadata, and its local driver creates directories without restoring their times. Sending `X-Amz-Meta-Mtime` therefore cannot change a real folder's modification time through this interface. Supporting that requires an OpenList server change; the module does not pretend that the operation succeeded.
+Download modification time defaults to the standard file stat. The preference above can instead restore metadata mtime. S3 file stats themselves always use listing values to retain their supplied precision, and custom metadata never participates in change detection. Other metadata follows the transferred file and the plugin's sync decisions; this module does not merge metadata or choose a conflict policy.
 
-The module targets OpenList. Other servers that accept the same headers may work, but are not guaranteed. S3 upload metadata is never used for download times or change detection. Both use the listing's standard `LastModified`, retaining its supplied precision.
+OpenList's [local driver](https://github.com/OpenListTeam/OpenList/blob/main/drivers/local/driver.go) sets the uploaded file's modification time. Preservation on other drivers depends on their capabilities. Its [S3 server implementation](https://github.com/OpenListTeam/OpenList/blob/main/server/s3/backend.go) caches uploaded metadata in server memory and returns it through HEAD and GET; that cache is not durable across server restarts. Creation time is therefore best effort, and a WebDAV `creationdate` may describe server-side creation rather than the original local file.
 
-## Transfer Behavior
+Folder times are not preserved. OpenList's S3 directory upload returns before applying file times, and real directory timestamps depend on the server and storage driver. Asymmetric storage's folder representations remain ordinary physical files in the wrapper pipeline.
 
-Local discovery carries source times with each file's stats. Uploads associate those times with the exact remote object URL, including the backend endpoint and bucket. Concurrent transfers use separate entries. S3 signing and authentication remain in the backend request pipeline.
+## Download Metadata and Local Writes
 
-- S3 ordinary uploads and multipart initiation carry modification time. Individual parts and cleanup requests do not receive file-time headers.
-- WebDAV ordinary uploads carry both available times. Nextcloud-style chunked uploads also carry them on the final `MOVE`; this does not add chunked-upload support to OpenList servers that lack it.
-- Ordinary downloads restore times through the vault write request. Streamed downloads restore times after the final append and before moving the temporary file into place. The returned local file UID therefore describes the restored modification time.
-- Generated content without source-time metadata, such as a new smart-merge result, uses normal write behavior.
-- Failure and cancellation release per-transfer state. Disabling or unloading the module removes its registrations and stops time processing.
+Discovery leaves metadata lazy. Ordinary and ranged S3 GET responses supply `x-amz-meta-*` values during download without additional requests. These values enter below metadata decryption. Plaintext mtime headers are parsed separately and removed from the decryption input; with the preference enabled, historical encrypted SDK mtime follows normal metadata decryption. Authentication or other metadata lookup failures still propagate. After decoding, the module selects the download mtime and exposes valid ctime to Sync Engine's local writer. Consuming metadata before download does not hide metadata received later.
 
-The remote filesystem wrapper runs at priority `500`, below memory control, optimization, prefix, encryption, and asymmetric-storage wrappers. It sees the actual backend keys without changing them. The local wrapper also runs at `500`; local request middleware runs at `3001`, and remote request middleware at `4001`. Existing cache wrappers retain the module's additional stat metadata for realtime fast mode.
+The backend's **Fetch object metadata** setting still permits a lazy HEAD when metadata is consumed before download or the download response supplies no metadata. Each stat caches that lookup, including failures, so streamed writes do not repeat HEAD per chunk. An empty ranged download makes no GET and cannot supply additional metadata. WebDAV requests `creationdate` within its existing PROPFIND and prefers valid native ctime when both are available.
+
+The common `VaultFs` consumes these times through write options for buffered and streamed downloads. Applying creation time depends on Obsidian's adapter and the operating system. The module does not intercept local requests or add local timestamp repair operations; temporary files, existing local ctime, write failures, and returned local UIDs belong to the common writer.
 
 ## OpenList S3 Compatibility
 
-Some OpenList versions return empty listing ETags, transient upload ETags, a multipart initiation root named `InitiateMultipartUpload`, or inconsistent dates between listings and object responses. The module handles these responses through its request and filesystem wrappers:
+Some OpenList responses contain transient upload ETags, empty listing ETags, or a multipart initiation root named `InitiateMultipartUpload`. Generic handling of unusable ETags remains in Sync Engine's S3 backend. This module normalizes OpenList's multipart root and obtains file stats from exact-key, prefixed listing queries.
 
-- Normalize the multipart initiation root to the standard result name.
-- Use a valid listing ETag when available; otherwise use the listing's modification time and size. No file content hashes are calculated.
-- After uploading, obtain the exact object's identity with a prefixed list request so it matches later discovery. A lookup already performed by the backend's write fallback is reused.
+After upload, one exact-object lookup supplies the UID used by subsequent discovery. A lookup already performed by the backend's upload fallback is reused. The backend instance's file `stat()` is scoped to this listing lookup so internal write fallbacks also use it; the original method is restored when the session ends. Valid listing ETags are retained, otherwise identity uses listing modification time and size. No content hashes are calculated.
 
-S3 file stats use the same list-based lookup, including backend write fallbacks that would otherwise issue `HEAD`. Streamed downloads use the listed time before starting the local writer. Sync detection requests only the listing pages: no per-file `HEAD`, metadata `GET`, or directory walk is added. All network requests use the existing authentication, cancellation, retry, and rate-limiting pipeline.
+Upload times bind to the complete object URL, including endpoint, bucket, and transformed path. S3 ordinary uploads and multipart initiation receive the time header; parts, completion, copy, and cleanup requests do not. WebDAV ordinary uploads and the final MOVE of a Nextcloud-style chunked upload receive time headers. This does not add Nextcloud upload support to OpenList servers that lack it.
 
 ## Directory Discovery
 
-The module constructs directories from the returned `Contents.Key` paths. OpenList represents an empty directory with a zero-byte object named `ThisIsAnEmptyFolderInTheS3Bucket` inside it. The module collects that object's parents before removing the virtual file. Explicit directory markers are retained; `CommonPrefixes` are also supported when present, including missing trailing slashes.
+The module infers parent directories from S3 `Contents.Key` paths without directory walks. OpenList's zero-byte `ThisIsAnEmptyFolderInTheS3Bucket` placeholder contributes its parent directories and is then hidden. A nonempty file with that name remains a file. Explicit directory markers and `CommonPrefixes` are retained, folders are deduplicated across pages, and the queried root is excluded.
 
-Directory processing adds no requests. It deduplicates folder entries across listing pages and rejects missing or repeated continuation tokens. A failed page aborts discovery instead of returning a partial list that could be interpreted as remote deletion. Folder entries still pass through the plugin's sync rules and reporters. Genuine remote deletions remain detectable; no historical folders are retained after their listed content and empty-directory markers disappear.
+Missing or repeated continuation tokens, invalid listing roots, out-of-scope keys, and failed pages abort discovery. A partial list must never become deletion input. Every full traversal resets pagination state, and enabling the module clears cached remote discovery. Genuine deleted folders remain detectable; historical folders are not retained.
 
-Each full traversal resets pagination state. Enabling the module clears the in-memory remote discovery cache so realtime fast mode cannot reuse an older file-only list. Persistent sync records remain available. Folder modification times do not participate in directory visibility or deletion decisions.
+## Responsibility Boundary
+
+The backend compatibility wrapper runs at priority `500`, below prefix and encryption. The plaintext metadata wrapper runs at `9000`, above encryption and below context caches. Remote request middleware runs at `4001`, before delegation into the existing authentication pipeline. Concurrent transfers use independent object state; failures, sync termination, and unloading release session state and scoped overrides.
+
+OpenList-specific directory and multipart handling, listing-based identities, and time-header conversion belong to this module. Generic ETag parsing, authentication, proxy routing, retries, cancellation, synchronization decisions, metadata encoding, and local writing belong to Sync Engine and its backend implementations. The module uses their existing request pipeline and propagates errors. Enabling it affects future transfers and discovery; it does not rewrite already synchronized file dates.

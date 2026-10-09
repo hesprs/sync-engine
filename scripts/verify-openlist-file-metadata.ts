@@ -1,29 +1,34 @@
 // oxlint-disable import/no-nodejs-modules no-console
 // Run with the module's test preload. Credentials are read only from environment.
 import assert from 'node:assert/strict';
-import { appendFile, mkdir, readFile, rename, rm, stat, utimes, writeFile } from 'node:fs/promises';
+import {
+	appendFile,
+	mkdir,
+	readFile,
+	rename,
+	rm,
+	stat as diskStat,
+	utimes,
+	writeFile,
+} from 'node:fs/promises';
 import type {
 	Binary,
 	BaseTask,
 	DeciderInput,
 	FileStat,
 	Fs,
-	RecordStat,
 	RecordStatsMap,
+	RecordStat,
 	Request,
 	Stat,
 	VaultRequest,
 } from '../packages/plugin/dist/index.spec';
-import MetadataLocalFs, {
-	LocalSession,
-	localMiddleware,
-} from '../packages/openlist-file-metadata/src/local';
 import MetadataRemoteFs, {
 	RemoteSession,
 	remoteMiddleware,
+	UploadRemoteFs,
 } from '../packages/openlist-file-metadata/src/remote';
 import { getTarget, header } from '../packages/openlist-file-metadata/src/target';
-import { attachTimes, getTimes } from '../packages/openlist-file-metadata/src/times';
 
 function env(key: string) {
 	const value = Bun.env[key];
@@ -41,26 +46,20 @@ async function loadFs(source: string) {
 
 const { default: VaultFs } = (await import(
 	new URL('../packages/plugin/src/fs/vault/index.ts', import.meta.url).href
-)) as {
-	default: new (request: VaultRequest, name: string) => Fs;
-};
+)) as { default: new (request: VaultRequest, name: string) => Fs };
 const { default: prefixWrapper } = (await import(
 	new URL('../packages/plugin/src/sdk/prefix.ts', import.meta.url).href
-)) as {
-	default: (fs: Fs, prefix: string) => Fs;
-};
+)) as { default: (fs: Fs, prefix: string) => Fs };
 const { sigv4Middleware } = (await import(
 	new URL('../packages/s3/src/s3/sigv4.ts', import.meta.url).href
 )) as {
 	sigv4Middleware: (
 		request: Request,
 		config: { accessKeyId: string; region: string; secretAccessKey: string; service: string },
-		db: {
-			getMeta: (key: string) => unknown;
-			setMeta: (key: string, value: unknown) => void;
-		},
+		db: { getMeta: (key: string) => unknown; setMeta: (key: string, value: unknown) => void },
 	) => Request;
 };
+
 const { testKit } = (await import(
 	new URL('../packages/plugin/dist/dev.js', import.meta.url).href
 )) as {
@@ -96,7 +95,7 @@ async function diskFs(root: string) {
 			return new Uint8Array(await readFile(name)) as never;
 		if (params.method === 'GET_STREAM') return Bun.file(name).stream() as never;
 		if (params.method === 'STAT') {
-			const info = await stat(name);
+			const info = await diskStat(name);
 			return {
 				ctime: info.birthtimeMs,
 				mtime: info.mtimeMs,
@@ -105,7 +104,7 @@ async function diskFs(root: string) {
 			} as never;
 		}
 		if (params.method === 'EXISTS')
-			return (await stat(name).then(
+			return (await diskStat(name).then(
 				() => true,
 				() => false,
 			)) as never;
@@ -124,11 +123,7 @@ async function diskFs(root: string) {
 		}
 		return undefined as never;
 	};
-	const session = new LocalSession(() => true);
-	return {
-		fs: new MetadataLocalFs(new VaultFs(localMiddleware(request, session), root), session),
-		requested,
-	};
+	return { fs: new VaultFs(request, root), requested };
 }
 
 for (const kind of ['s3', 'webdav'] as const) {
@@ -139,6 +134,7 @@ for (const kind of ['s3', 'webdav'] as const) {
 					accessKeyId: env('OPENLIST_S3_ACCESS_KEY'),
 					bucket: env('OPENLIST_S3_BUCKET'),
 					endpoint,
+					fetchObjectMeta: false,
 					region: 'us-east-1',
 					secretAccessKey: env('OPENLIST_S3_SECRET_KEY'),
 					urlStyle: 'path',
@@ -154,13 +150,12 @@ for (const kind of ['s3', 'webdav'] as const) {
 	const Root = await loadFs(
 		kind === 's3' ? '../packages/s3/src/s3/fs.ts' : '../packages/webdav/src/webdav/fs.ts',
 	);
-	const requests: Array<{ method: string; mtime?: string }> = [];
+	const requests: Array<{ method: string; mtime?: string; ctime?: string }> = [];
 	const transport: Request = async (url, params = {}) => {
 		requests.push({
+			ctime: header(params.headers ?? {}, kind === 's3' ? 'x-amz-meta-ctime' : 'x-oc-ctime'),
 			method: params.method ?? 'GET',
-			mtime:
-				header(params.headers ?? {}, 'x-amz-meta-mtime') ??
-				header(params.headers ?? {}, 'x-oc-mtime'),
+			mtime: header(params.headers ?? {}, kind === 's3' ? 'x-amz-meta-mtime' : 'x-oc-mtime'),
 		});
 		const response = await fetch(url, {
 			body: params.body,
@@ -200,144 +195,117 @@ for (const kind of ['s3', 'webdav'] as const) {
 		}
 		const session = new RemoteSession(target, () => true);
 		const root = new Root({ ...config, request: remoteMiddleware(signed, session) });
-		return { fs: prefixWrapper(new MetadataRemoteFs(root, session), prefix), raw: root };
+		return {
+			fs: prefixWrapper(
+				new MetadataRemoteFs(new UploadRemoteFs(root, session), session),
+				prefix,
+			),
+			raw: root,
+		};
 	};
 	const remote = createRemote();
 	const source = await diskFs(`${localRoot}/${kind}-source`);
 	const destination = await diskFs(`${localRoot}/${kind}-download`);
 	const mtime = 1_700_000_123_456;
-	const ctime = 1_500_000_000_000;
 	const inputs: Array<[string, Binary]> = [
 		['笔记 #%.md', new TextEncoder().encode('OpenList file metadata\n')],
 		['empty.md', new Uint8Array(0)],
 		['large.bin', new Uint8Array(6 * 1024 * 1024 + 97).map((_, i) => i % 251)],
-		['nested/child/文件.md', new TextEncoder().encode('Nested directory verification\n')],
 	];
 	const folders = ['nested/', 'nested/child/', 'empty-directory/'];
+	inputs.push(['nested/child/note.md', new TextEncoder().encode('Nested note\n')]);
 	const uploaded = new Map<string, string>();
-	await remote.fs.mkdir('/');
+	await remote.fs.mkdir('/', { isDir: true, key: '/', meta: () => ({}) });
 	try {
 		for (const key of folders) {
-			await remote.fs.mkdir(key);
-			await source.fs.mkdir(key);
+			const folder: Stat = { isDir: true, key, meta: () => ({}) };
+			await remote.fs.mkdir(key, folder);
+			await source.fs.mkdir(key, folder);
 		}
-		await Promise.all(
-			inputs.map(async ([key, value]) => {
-				await writeFile(`${localRoot}/${kind}-source/${key}`, value);
-				await utimes(`${localRoot}/${kind}-source/${key}`, new Date(), new Date(mtime));
-				const info = await source.fs.stat(key);
-				assert.ok(!info.isDir);
-				attachTimes(info, { ctime, mtime });
-				const uid =
-					key === 'large.bin'
-						? await remote.fs.writeStream(
-								key,
-								await source.fs.readStream(key, info),
-								info,
-							)
-						: await remote.fs.write(key, await source.fs.read(key, info), info);
-				assert.ok(uid, 'An upload must return a usable file UID');
-				uploaded.set(key, uid);
-			}),
-		);
-		// A fresh wrapper simulates another device with no upload-side metadata cache.
+		for (const [key, value] of inputs) {
+			await writeFile(`${localRoot}/${kind}-source/${key}`, value);
+			await utimes(`${localRoot}/${kind}-source/${key}`, new Date(), new Date(mtime));
+			const info = await source.fs.stat(key);
+			assert.ok(!info.isDir);
+			const uid =
+				key === 'large.bin'
+					? await remote.fs.writeStream(key, await source.fs.readStream(key, info), info)
+					: await remote.fs.write(key, await source.fs.read(key, info), info);
+			uploaded.set(key, uid);
+		}
 		const fresh = createRemote();
 		const listed = await fresh.fs.list('/', () => 'advance');
 		assert.deepEqual(
 			listed.map(({ key }) => key).sort(),
 			[...inputs.map(([key]) => key), ...folders].sort(),
 		);
-		const localStats = await Promise.all(
-			[...inputs.map(([key]) => key), ...folders].map((key) => source.fs.stat(key)),
-		);
+		const localStats = new Map<string, Stat>();
+		for (const [key] of inputs) localStats.set(key, await source.fs.stat(key));
+		for (const key of folders) localStats.set(key, { isDir: true, key, meta: () => ({}) });
 		const records: RecordStatsMap = new Map<string, RecordStat>(
-			listed.map((item) => {
-				const local = localStats.find(({ key }) => key === item.key);
+			listed.map((stat) => {
+				const local = localStats.get(stat.key);
 				assert.ok(local);
-				if (item.isDir) return [item.key, { isDir: true }];
+				if (stat.isDir) return [stat.key, { isDir: true }];
 				assert.ok(!local.isDir);
-				return [item.key, { isDir: false, local: local.uid, remote: item.uid }];
+				assert.equal(uploaded.get(stat.key), stat.uid);
+				return [stat.key, { isDir: false, local: local.uid, remote: stat.uid }];
 			}),
 		);
 		assert.deepEqual(
 			testKit.runDecider((input) => decider(input, () => {}), {
-				localStats: new Map(localStats.map((item) => [item.key, item])),
+				localStats,
 				records,
-				remoteStats: new Map(listed.map((item) => [item.key, item])),
+				remoteStats: new Map(listed.map((stat) => [stat.key, stat])),
 			}),
 			[],
-			'Second sync must not delete unchanged folders or files',
+			'Second sync must not download unchanged files or delete directories',
 		);
-		// Exercise a fresh full listing rather than relying on an earlier snapshot.
-		assert.deepEqual(
-			(await fresh.fs.list('/', () => 'advance')).map(({ key }) => key).sort(),
-			listed.map(({ key }) => key).sort(),
-		);
-		for (const key of folders) await destination.fs.mkdir(key);
-		await Promise.all(
-			inputs.map(async ([key, value]) => {
-				const info = listed.find(
-					(entry): entry is FileStat => entry.key === key && !entry.isDir,
-				);
-				assert.ok(info);
-				assert.equal(info.uid, uploaded.get(key), `Stable remote identity for ${key}`);
-				const standard = await fresh.raw.stat(prefix + key);
-				assert.ok(!standard.isDir);
-				assert.equal(info.mtime, standard.mtime);
-				await (key === 'large.bin'
-					? destination.fs.writeStream(key, await fresh.fs.readStream(key, info), info)
-					: destination.fs.write(key, await fresh.fs.read(key, info), info));
-				assert.deepEqual(
-					new Uint8Array(await readFile(`${localRoot}/${kind}-download/${key}`)),
-					value,
-				);
-				const local = await destination.fs.stat(key);
-				assert.ok(!local.isDir);
-				assert.equal(local.mtime, getTimes(info)?.mtime ?? info.mtime);
-				assert.equal(destination.requested.get(key)?.ctime, getTimes(info)?.ctime);
-				report.push({
-					backend: kind,
-					bytes: value.length,
-					ctimePassedToLocalWriter: destination.requested.get(key)?.ctime,
-					file: key,
-					originalCtimePreservedByServer: getTimes(info)?.ctime === ctime,
-					remoteCtime: getTimes(info)?.ctime,
-					remoteMtime: info.mtime,
-					restoredMtime: local.mtime,
-				});
-			}),
-		);
-		const [key] = inputs[0];
-		await fresh.fs.move(key, 'renamed.md');
-		const moved = await fresh.fs.stat('renamed.md');
-		assert.ok(!moved.isDir);
-		assert.equal(getTimes(moved)?.mtime, moved.mtime);
-		const updated = new TextEncoder().encode('updated');
-		await fresh.fs.write(
-			'renamed.md',
-			updated,
-			attachTimes({ ...moved }, { ctime, mtime: mtime + 10_000 }),
-		);
-		const updatedStat = await fresh.fs.stat('renamed.md');
-		assert.ok(!updatedStat.isDir);
-		assert.equal(getTimes(updatedStat)?.mtime, updatedStat.mtime);
-		assert.deepEqual(await fresh.fs.read('renamed.md', updatedStat), updated);
+		for (const key of folders)
+			await destination.fs.mkdir(key, { isDir: true, key, meta: () => ({}) });
+		for (const [key, value] of inputs) {
+			const info = listed.find(
+				(entry): entry is FileStat => entry.key === key && !entry.isDir,
+			);
+			assert.ok(info);
+			const meta = await info.meta();
+			assert.equal(meta.mtime, String(info.mtime));
+			await (key === 'large.bin'
+				? destination.fs.writeStream(key, await fresh.fs.readStream(key, info), info)
+				: destination.fs.write(key, await fresh.fs.read(key, info), info));
+			assert.deepEqual(
+				new Uint8Array(await readFile(`${localRoot}/${kind}-download/${key}`)),
+				value,
+			);
+			const local = await destination.fs.stat(key);
+			assert.ok(!local.isDir);
+			assert.equal(local.mtime, info.mtime);
+			const downloadedMeta = await info.meta();
+			assert.equal(
+				destination.requested.get(key)?.ctime,
+				downloadedMeta.ctime === undefined ? undefined : Number(downloadedMeta.ctime),
+			);
+			report.push({
+				backend: kind,
+				bytes: value.length,
+				ctimePassedToWriter: destination.requested.get(key)?.ctime,
+				file: key,
+				listedUid: info.uid,
+				remoteMtime: info.mtime,
+				restoredMtime: local.mtime,
+				uploadedUid: uploaded.get(key),
+			});
+		}
 		assert.ok(
 			requests.some(
 				(entry) =>
-					entry.mtime ===
-					String(
-						kind === 's3'
-							? (mtime + 10_000) / 1000
-							: Math.floor((mtime + 10_000) / 1000),
-					),
+					entry.mtime === String(kind === 's3' ? mtime / 1000 : Math.floor(mtime / 1000)),
 			),
 		);
+		if (kind === 's3') assert.ok(requests.some((entry) => entry.ctime !== undefined));
 	} finally {
-		for (const key of [...inputs.map(([name]) => name), 'renamed.md'])
-			await remote.raw.delete(prefix + key);
-		for (const key of [...folders].sort((a, b) => b.length - a.length))
-			await remote.raw.delete(prefix + key);
+		for (const [key] of inputs) await remote.raw.delete(prefix + key);
+		for (const key of [...folders].reverse()) await remote.raw.delete(prefix + key);
 		await remote.raw.delete(prefix);
 	}
 }

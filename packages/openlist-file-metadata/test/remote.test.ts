@@ -1,12 +1,10 @@
-import type { FileStat, RequestParam } from '@hesprs/sync-engine-sdk';
+import type { Fs, RequestParam } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
-import MetadataRemoteFs, { RemoteSession, remoteMiddleware } from '../src/remote';
+import MetadataRemoteFs, { RemoteSession, remoteMiddleware, UploadRemoteFs } from '../src/remote';
 import { getTarget } from '../src/target';
-import { attachTimes, getTimes } from '../src/times';
-import { object, xml } from './s3-harness';
 
-const { bytes, deferred, file, fs, request, stream } = testKit;
+const { bytes, deferred, file, flush, folder, fs, request, stream } = testKit;
 const mtime = 1_700_000_123_456;
 const ctime = 1_500_000_000_000;
 function requireTarget(settings: Parameters<typeof getTarget>[0]) {
@@ -18,20 +16,27 @@ const target = requireTarget({
 	modules: { s3: { bucket: 'vault', endpoint: 'https://s3.example', urlStyle: 'path' } },
 	remoteFs: 's3',
 });
+const davTarget = requireTarget({
+	modules: { webdav: { endpoint: 'https://dav.example/dav/ignis' } },
+	remoteFs: 'webdav',
+});
 
-test('parallel writes bind times to the full object URL and leave ordinary requests alone', async () => {
+function source(key: string, modified = mtime) {
+	return file(key, { meta: () => ({ ctime: String(ctime), mtime: String(modified) }) });
+}
+
+function wrapRemote(original: Fs, session: RemoteSession) {
+	return new MetadataRemoteFs(new UploadRemoteFs(original, session), session);
+}
+
+test('parallel uploads bind SDK metadata to the full object URL and return backend UIDs', async () => {
 	const session = new RemoteSession(target, () => true);
 	const pending = new Map<string, ReturnType<typeof deferred<void>>>();
 	const http = request(async (url) => {
-		const query = new URL(url).searchParams;
-		if (query.get('list-type') === '2')
-			return {
-				text: () => xml(object(query.get('prefix') ?? '', { etag: 'uploaded', size: 1 })),
-			};
 		const wait = deferred<void>();
 		pending.set(url, wait);
 		await wait.promise;
-		return { headers: { etag: 'uploaded' } };
+		return { headers: { etag: 'backend-uid' } };
 	});
 	const send = remoteMiddleware(http.request, session);
 	const backend = fs({
@@ -40,17 +45,10 @@ test('parallel writes bind times to the full object URL and leave ordinary reque
 				(await send(target.url(key), { body, method: 'PUT' })).headers.etag,
 		},
 	});
-	const wrapped = new MetadataRemoteFs(backend.fs, session);
-	const first = wrapped.write(
-		'a/相同 #%.md',
-		bytes('a'),
-		attachTimes(file('a/相同 #%.md'), { ctime, mtime }),
-	);
-	const second = wrapped.write(
-		'b/相同 #%.md',
-		bytes('b'),
-		attachTimes(file('b/相同 #%.md'), { mtime: mtime + 1234 }),
-	);
+	const wrapped = wrapRemote(backend.fs, session);
+	const first = wrapped.write('a/相同 #%.md', bytes('a'), source('source-a'));
+	const second = wrapped.write('b/相同 #%.md', bytes('b'), source('source-b', mtime + 1234));
+	await flush();
 	const unrelated = send('https://other.example/vault/a/相同.md', { method: 'PUT' });
 	expect(http.calls.map(({ headers }) => headers?.['X-Amz-Meta-Mtime'])).toEqual([
 		String(mtime / 1000),
@@ -58,12 +56,14 @@ test('parallel writes bind times to the full object URL and leave ordinary reque
 		undefined,
 	]);
 	for (const wait of pending.values()) wait.resolve();
-	await Promise.all([first, second, unrelated]);
+	expect(
+		await Promise.all([first, second, unrelated]).then((values) => values.slice(0, 2)),
+	).toEqual(['backend-uid', 'backend-uid']);
+	expect(http.calls).toHaveLength(3);
 	expect(session.uploading.size).toBe(0);
-	expect(backend.calls.write.map(([key]) => key)).toEqual(['a/相同 #%.md', 'b/相同 #%.md']);
 });
 
-test('S3 injects only PUT object and multipart initiation, replacing differently cased headers', async () => {
+test('S3 injects only object PUT and multipart initiation, before backend signing', async () => {
 	const session = new RemoteSession(target, () => true);
 	const address = target.url('big.bin');
 	session.uploading.set(address, { ctime, mtime });
@@ -91,141 +91,118 @@ test('S3 injects only PUT object and multipart initiation, replacing differently
 	expect(http.calls[4].ignoreCancellation).toBe(true);
 });
 
-test('failed uploads clean state, retries keep headers, and generated content has no invented time', async () => {
+test('upload failures propagate without retries or UID lookups and release state', async () => {
 	const session = new RemoteSession(target, () => true);
-	const http = request(() => ({ status: 500 }));
+	const failure = new Error('backend failed');
+	const http = request(() => ({}));
 	const send = remoteMiddleware(http.request, session);
 	const backend = fs({
 		control: {
 			write: async (key) => {
 				await send(target.url(key), { method: 'PUT' });
-				await send(target.url(key), { method: 'PUT' });
-				throw new Error('failed');
+				throw failure;
 			},
 		},
 	});
-	const wrapped = new MetadataRemoteFs(backend.fs, session);
-	expect(
-		await wrapped
-			.write('a', bytes('a'), attachTimes(file('a'), { mtime }))
-			.catch((error: unknown) => error),
-	).toMatchObject({ message: 'failed' });
+	const wrapped = wrapRemote(backend.fs, session);
+	expect(await wrapped.write('a', bytes('a'), source('a')).catch((error: unknown) => error)).toBe(
+		failure,
+	);
+	expect(http.calls).toHaveLength(1);
+	expect(http.calls[0].headers?.['X-Amz-Meta-Mtime']).toBe(String(mtime / 1000));
 	expect(session.uploading.size).toBe(0);
-	expect(http.calls.map(({ headers }) => headers?.['X-Amz-Meta-Mtime'])).toEqual([
-		String(mtime / 1000),
-		String(mtime / 1000),
-	]);
 	await send(target.url('a'), { method: 'PUT' });
 	expect(http.calls.at(-1)?.headers).not.toHaveProperty('X-Amz-Meta-Mtime');
-	expect(
-		await wrapped
-			.write('generated', bytes('merge'), file('generated', { mtime: 0 }))
-			.catch((error: unknown) => error),
-	).toMatchObject({ message: 'failed' });
-	expect(http.calls.at(-1)?.headers).not.toHaveProperty('X-Amz-Meta-Mtime');
 });
 
-test('S3 downloads use the listed LastModified and ignore object time headers', async () => {
-	const session = new RemoteSession(target, () => true);
-	let custom = String(mtime / 1000);
-	const http = request(() => ({
-		headers: {
-			'Last-Modified': new Date(mtime).toUTCString(),
-			'X-Amz-Meta-Mtime': custom,
-		},
-	}));
-	const send = remoteMiddleware(http.request, session);
-	const backend = fs({
-		control: {
-			read: async (key) => (await send(target.url(key))).bytes(),
-			readStream: () => stream(['body']),
-		},
-	});
-	const wrapped = new MetadataRemoteFs(backend.fs, session);
-	const source = file('a', { mtime });
-	await wrapped.read('a', source);
-	expect(getTimes(source)).toEqual({ ctime: undefined, mtime });
-	custom = 'invalid';
-	await wrapped.read('a', source);
-	expect(getTimes(source)?.mtime).toBe(mtime);
-	custom = String(mtime / 1000);
-	const calls = http.calls.length;
-	const received = await wrapped.readStream('a', source);
-	expect(http.calls).toHaveLength(calls);
-	expect(getTimes(source)?.mtime).toBe(mtime);
-	await received.cancel();
-});
+test.each(['', ' ', 'invalid', 'Infinity', '9000000000000000'])(
+	'missing or invalid SDK times are omitted without using stat.mtime (%s)',
+	async (time) => {
+		const session = new RemoteSession(target, () => true);
+		const http = request(() => ({}));
+		const send = remoteMiddleware(http.request, session);
+		const wrapped = wrapRemote(
+			fs({
+				control: {
+					write: async (key) => {
+						await send(target.url(key), { method: 'PUT' });
+						return 'uid';
+					},
+				},
+			}).fs,
+			session,
+		);
+		await wrapped.write(
+			'a',
+			bytes('a'),
+			file('a', {
+				meta: () => ({ ctime: time, mtime: time }),
+				mtime,
+			}),
+		);
+		await wrapped.write('generated', bytes('merge'), file('generated', { mtime }));
+		expect(http.calls.every(({ headers }) => headers?.['X-Amz-Meta-Mtime'] === undefined)).toBe(
+			true,
+		);
+	},
+);
 
-test('S3 streaming uses the listed modification time without metadata requests', async () => {
-	const session = new RemoteSession(target, () => true);
-	const modified = Math.floor(mtime / 1000) * 1000 + 3_600_000;
-	const http = request(() => ({
-		headers: {
-			'Last-Modified': new Date(modified).toUTCString(),
-			'X-Amz-Meta-Mtime': String(mtime / 1000),
-		},
-	}));
-	remoteMiddleware(http.request, session);
-	const wrapped = new MetadataRemoteFs(
-		fs({ control: { readStream: () => stream(['body']) } }).fs,
-		session,
+test('metadata failures propagate before starting an upload', async () => {
+	const failure = new Error('metadata unavailable');
+	const backend = fs();
+	const wrapped = new MetadataRemoteFs(backend.fs, new RemoteSession(target, () => true));
+	const stat = { ...source('a'), meta: () => Promise.reject(failure) };
+	expect(await wrapped.write('a', bytes('a'), stat).catch((error: unknown) => error)).toBe(
+		failure,
 	);
-	const source = file('a', { mtime: modified });
-	const received = await wrapped.readStream('a', source);
-	expect(http.calls).toHaveLength(0);
-	expect(getTimes(source)).toEqual({ ctime: undefined, mtime: modified });
-	await received.cancel();
+	expect(backend.calls.write).toHaveLength(0);
 });
 
-test('missing response dates keep discovered mtime without restoring cached local ctime on S3', async () => {
-	const session = new RemoteSession(target, () => true);
-	const http = request(() => ({}));
-	const send = remoteMiddleware(http.request, session);
-	const backend = fs({ control: { read: async (key) => (await send(target.url(key))).bytes() } });
-	const wrapped = new MetadataRemoteFs(backend.fs, session);
-	const cached = attachTimes(file('a', { mtime }), { ctime, mtime });
-	await wrapped.read('a', cached);
-	expect(getTimes(cached)).toEqual({ ctime: undefined, mtime });
-});
+test.each([target, davTarget])(
+	'$kind discovery preserves valid ctime and uses only standard mtime',
+	async (configured) => {
+		const original = file('a', {
+			meta: () => ({ ctime: String(ctime), custom: 'retained', mtime: '123' }),
+			mtime,
+			uid: 'backend-uid',
+		});
+		const dir = folder('dir/', () => ({ mtime: 'folder-time' }));
+		const backend = fs({ control: { list: () => [original, dir], stat: () => original } });
+		const wrapped = new MetadataRemoteFs(backend.fs, new RemoteSession(configured, () => true));
+		const listed = await wrapped.list('/', () => 'advance');
+		const stat = await wrapped.stat('a');
+		for (const item of [listed[0], stat]) {
+			expect(item).toMatchObject({ key: 'a', mtime, uid: 'backend-uid' });
+			expect(await item.meta()).toEqual({
+				ctime: String(ctime),
+				custom: 'retained',
+				mtime: String(mtime),
+			});
+		}
+		expect(listed[1]).toBe(dir);
+		expect(await original.meta()).toEqual({
+			ctime: String(ctime),
+			custom: 'retained',
+			mtime: '123',
+		});
+	},
+);
 
-const davTarget = requireTarget({
-	modules: { webdav: { endpoint: 'https://dav.example/dav/ignis' } },
-	remoteFs: 'webdav',
-});
-const davXml = (created = '2017-07-14T02:40:00Z') => `<?xml version="1.0"?>
-<D:multistatus xmlns:D="DAV:"><D:response><D:href>/dav/ignis/dir/note%20%23.md</D:href>
-<D:propstat><D:prop><D:creationdate>invalid</D:creationdate></D:prop><D:status>HTTP/1.1 404 Not Found</D:status></D:propstat>
-<D:propstat><D:prop><D:creationdate>${created}</D:creationdate><D:getlastmodified>Tue, 14 Nov 2023 22:15:23 GMT</D:getlastmodified></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>
-</D:response></D:multistatus>`;
-
-test('WebDAV requests creationdate and decorates stats without changing keys or UIDs', async () => {
-	const session = new RemoteSession(davTarget, () => true);
-	let davResponse = davXml();
-	const http = request(() => ({ status: 207, text: () => davResponse }));
-	const send = remoteMiddleware(http.request, session);
-	const source = file('dir/note #.md', { mtime: 1_700_000_123_000 });
+test('invalid standard time does not fall back to custom metadata', async () => {
 	const backend = fs({
 		control: {
-			list: async () => {
-				await send(davTarget.url('/'), {
-					body: '<D:propfind xmlns:D="DAV:"><D:prop><D:getlastmodified/></D:prop></D:propfind>',
-					method: 'PROPFIND',
-				});
-				return [{ ...source }];
-			},
+			stat: () =>
+				file('a', {
+					meta: () => ({ ctime: String(ctime), mtime: String(mtime) }),
+					mtime: Number.NaN,
+				}),
 		},
 	});
-	const wrapped = new MetadataRemoteFs(backend.fs, session);
-	const [stat] = await wrapped.list('/', () => 'advance');
-	expect(http.calls[0].body).toContain('<creationdate xmlns="DAV:"/>');
-	expect(stat).toMatchObject(source);
-	expect(getTimes(stat as FileStat)).toEqual({ ctime, mtime: 1_700_000_123_000 });
-	davResponse = davXml('invalid');
-	const [invalid] = await wrapped.list('/', () => 'advance');
-	expect(getTimes(invalid as FileStat)?.ctime).toBeUndefined();
+	const wrapped = new MetadataRemoteFs(backend.fs, new RemoteSession(target, () => true));
+	expect(await (await wrapped.stat('a')).meta()).toEqual({ ctime: String(ctime) });
 });
 
-test('WebDAV applies second precision to PUT and final chunk MOVE using Destination', async () => {
+test('WebDAV applies available times to PUT and final chunk MOVE using Destination', async () => {
 	const session = new RemoteSession(davTarget, () => true);
 	const destination = davTarget.url('note.md');
 	session.uploading.set(destination, { ctime, mtime });
@@ -241,13 +218,60 @@ test('WebDAV applies second precision to PUT and final chunk MOVE using Destinat
 		headers: { Destination: destination },
 		method: 'MOVE',
 	});
+	session.uploading.set(destination, { mtime: 0 });
+	await send(destination, { method: 'PUT' });
+	await send('https://dav.example/uploads/admin/session/00001', {
+		headers: { Destination: destination },
+		method: 'PUT',
+	});
 	expect(http.calls.map(({ headers }) => headers?.['X-OC-Mtime'])).toEqual([
 		'1700000123',
 		'1700000123',
 		undefined,
 		undefined,
+		'0',
+		undefined,
 	]);
 	expect(http.calls[1].headers?.['X-OC-Ctime']).toBe('1500000000');
+	expect(http.calls[4].headers).not.toHaveProperty('X-OC-Ctime');
+});
+
+test('disabling while reading source metadata delegates the original metadata', async () => {
+	let enabled = true;
+	const pending = deferred<Record<string, string>>();
+	const original = { ...source('a'), meta: () => pending.promise };
+	const backend = fs();
+	const wrapped = new MetadataRemoteFs(backend.fs, new RemoteSession(target, () => enabled));
+	const write = wrapped.write('a', bytes('a'), original);
+	enabled = false;
+	pending.resolve({ ctime: String(ctime), mtime: String(mtime) });
+	expect(await write).toBe('write-uid');
+	expect(backend.calls.write[0][2]).toBe(original);
+});
+
+test('streamed uploads delegate the original stream and preserve the backend result', async () => {
+	const session = new RemoteSession(davTarget, () => true);
+	const value = stream(['body']);
+	const http = request(() => ({}));
+	const send = remoteMiddleware(http.request, session);
+	const backend = fs({
+		control: {
+			writeStream: async (key, received) => {
+				expect(received).toBe(value);
+				await send(davTarget.url(key), { method: 'PUT' });
+				return 'backend-stream-uid';
+			},
+		},
+	});
+	const wrapped = wrapRemote(backend.fs, session);
+	const stat = source('a');
+	expect(await wrapped.writeStream('a', value, stat)).toBe('backend-stream-uid');
+	expect(backend.calls.writeStream[0][0]).toBe('a');
+	expect(await backend.calls.writeStream[0][1].meta()).toEqual({ ctime: String(ctime) });
+	expect(await stat.meta()).toEqual({ ctime: String(ctime), mtime: String(mtime) });
+	expect(http.calls[0].headers).toMatchObject({ 'X-OC-Ctime': '1500000000' });
+	expect(session.uploading.size).toBe(0);
+	await value.cancel();
 });
 
 test('target mapping respects path style, virtual hosts, encoded names and endpoint boundaries', () => {

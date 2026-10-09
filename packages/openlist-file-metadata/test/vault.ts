@@ -1,10 +1,9 @@
 import type { Binary, RootFs, VaultRequest } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
-import MetadataLocalFs, { LocalSession, localMiddleware } from '../src/local';
 
 type Entry = { value: Binary; ctime: number; mtime: number };
 
-export default async function createVault(enabled = () => true) {
+export default async function createVault() {
 	// Exercise the production VaultFs without importing its internal TS aliases
 	// Into this module's compilation unit.
 	const source = new URL('../../plugin/src/fs/vault/index.ts', import.meta.url).href;
@@ -54,11 +53,7 @@ export default async function createVault(enabled = () => true) {
 		if (params.method === 'LIST') return { files: [...files.keys()], folders: [] } as never;
 		return undefined as never;
 	};
-	const session = new LocalSession(enabled);
-	const fs = new MetadataLocalFs(
-		new VaultFs(localMiddleware(request, session), 'fixture'),
-		session,
-	);
+	const fs = new VaultFs(request, 'fixture');
 	return {
 		calls,
 		fail: () => {
@@ -66,6 +61,5 @@ export default async function createVault(enabled = () => true) {
 		},
 		files,
 		fs,
-		session,
 	};
 }

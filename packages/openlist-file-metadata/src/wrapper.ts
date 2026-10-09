@@ -1,4 +1,11 @@
-import type { Binary, FileStat, Fs, ListReporter, WrappedFs } from '@hesprs/sync-engine-sdk';
+import type {
+	Binary,
+	FileStat,
+	FolderStat,
+	Fs,
+	ListReporter,
+	WrappedFs,
+} from '@hesprs/sync-engine-sdk';
 
 export default class PassthroughFs implements WrappedFs {
 	constructor(readonly original: Fs) {}
@@ -23,8 +30,8 @@ export default class PassthroughFs implements WrappedFs {
 	move(oldKey: string, newKey: string) {
 		return this.original.move(oldKey, newKey);
 	}
-	mkdir(key: string, recursive?: boolean) {
-		return this.original.mkdir(key, recursive);
+	mkdir(key: string, stat: FolderStat, recursive?: boolean) {
+		return this.original.mkdir(key, stat, recursive);
 	}
 	stat(key: string) {
 		return this.original.stat(key);

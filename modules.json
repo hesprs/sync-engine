@@ -73,7 +73,7 @@
 		"description": "Preserve file times through OpenList S3 and WebDAV.",
 		"icon": "calendar-clock",
 		"main": "https://sync.consensia.cc/modules/openlist-file-metadata.js",
-		"minPluginVersion": "3.2.0",
+		"minPluginVersion": "3.3.0",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/openlist-file-metadata"
 	},
 	{

@@ -2,8 +2,7 @@ import type { FileStat, Request, RequestResponse } from '@hesprs/sync-engine-sdk
 import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import type { Target } from './target';
-import { header } from './target';
-import { timeValue } from './times';
+import { cacheMeta, timeValue } from './times';
 
 type ObjectEntry = { Key?: string; ETag?: unknown; Size?: string; LastModified?: string };
 type Listing = {
@@ -13,17 +12,6 @@ type Listing = {
 		NextContinuationToken?: string;
 	};
 };
-
-export function s3ObjectResponse(response: RequestResponse): RequestResponse {
-	const etag = header(response.headers, 'etag');
-	if (etag === undefined || normalizeEtag(etag)) return response;
-	return {
-		...response,
-		headers: Object.fromEntries(
-			Object.entries(response.headers).filter(([key]) => key.toLowerCase() !== 'etag'),
-		),
-	};
-}
 
 export async function s3Stat(request: Request, target: Target, key: string): Promise<FileStat> {
 	const url = new URL(target.url('/'));
@@ -55,7 +43,33 @@ export async function s3Stat(request: Request, target: Target, key: string): Pro
 			if (mtime === undefined || !Number.isSafeInteger(size) || size < 0 || !object.Size)
 				throw new Error(`Invalid OpenList S3 file metadata: ${key}`);
 			const etag = typeof object.ETag === 'string' ? normalizeEtag(object.ETag) : '';
-			return { isDir: false, key, mtime, size, uid: etag || `${mtime}~${size}` };
+			return {
+				isDir: false,
+				key,
+				meta: cacheMeta(async () => {
+					if (!target.fetchObjectMeta) return {};
+					const metadata = await request(target.url(key), {
+						method: 'HEAD',
+						throw: false,
+					});
+					if (metadata.status < 200 || metadata.status >= 300)
+						throw Object.assign(
+							new Error(
+								`OpenList S3 metadata lookup failed: HTTP ${metadata.status}`,
+							),
+							{ status: metadata.status },
+						);
+					const meta: Dict<string> = {};
+					for (const [name, value] of Object.entries(metadata.headers)) {
+						const lower = name.toLowerCase();
+						if (lower.startsWith('x-amz-meta-')) meta[lower.slice(11)] = value;
+					}
+					return meta;
+				}),
+				mtime,
+				size,
+				uid: etag.trim() ? etag : `${mtime}~${size}`,
+			};
 		}
 		if (listing.IsTruncated !== 'true')
 			throw Object.assign(new Error(`OpenList S3 file not found: ${key}`), { status: 404 });

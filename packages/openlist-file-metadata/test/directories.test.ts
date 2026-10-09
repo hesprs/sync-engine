@@ -3,7 +3,7 @@ import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
 import { createRemote, decide, escape, object, xml } from './s3-harness';
 
-const { request, folder } = testKit;
+const { request } = testKit;
 const scope = 'vault/';
 const placeholder = (key: string) =>
 	object(`${scope}${key}ThisIsAnEmptyFolderInTheS3Bucket`, { size: 0 });
@@ -22,8 +22,9 @@ test('222 OpenList objects recover 220 files and 31 directories with one list re
 	const stats = await remote.fs.list('/', () => 'advance');
 	expect(stats.filter((stat) => !stat.isDir)).toHaveLength(220);
 	expect(stats.filter((stat) => stat.isDir)).toHaveLength(31);
-	expect(stats).toContainEqual(folder('empty-a/'));
-	expect(stats).toContainEqual(folder('empty-b/'));
+	expect(stats.find(({ key }) => key === 'empty-a/')).toMatchObject({ isDir: true });
+	expect(stats.find(({ key }) => key === 'empty-b/')).toMatchObject({ isDir: true });
+	expect(await stats.find(({ key }) => key === 'empty-a/')?.meta()).toEqual({});
 	expect(stats.some(({ key }) => key.includes('ThisIsAnEmptyFolderInTheS3Bucket'))).toBe(false);
 	expect(http.calls).toHaveLength(1);
 	expect(http.calls[0].method).toBe('GET');
@@ -40,7 +41,9 @@ test('222 OpenList objects recover 220 files and 31 directories with one list re
 		]),
 	);
 	expect(await decide(local, stats, records)).toEqual([]);
-	expect(await remote.fs.list('/', () => 'advance')).toEqual(stats);
+	expect(
+		(await remote.fs.list('/', () => 'advance')).map((stat) => JSON.stringify(stat)),
+	).toEqual(stats.map((stat) => JSON.stringify(stat)));
 	expect(http.calls).toHaveLength(2);
 });
 
@@ -49,7 +52,7 @@ test('empty-directory placeholders survive filtering and real deletions remain d
 	const http = request(() => ({ text: () => xml(contents) }));
 	const remote = await createRemote(http.request, scope);
 	const before = await remote.fs.list('/', () => 'advance');
-	expect(before).toContainEqual(folder('empty/'));
+	expect(before.find(({ key }) => key === 'empty/')).toMatchObject({ isDir: true });
 	const local = before.map((stat) =>
 		stat.isDir ? { ...stat } : { ...stat, uid: `local-${stat.uid}` },
 	);
@@ -88,7 +91,7 @@ test('pagination deduplicates inferred and explicit folders across pages', async
 	const remote = await createRemote(http.request, scope);
 	const stats = await remote.fs.list('/', () => 'advance');
 	expect(stats.filter(({ key }) => key === 'shared/')).toHaveLength(1);
-	expect(stats).toContainEqual(folder('shared/empty/'));
+	expect(stats.find(({ key }) => key === 'shared/empty/')).toMatchObject({ isDir: true });
 	expect(stats).toHaveLength(4);
 	expect(http.calls).toHaveLength(2);
 	expect(
@@ -117,16 +120,17 @@ test('delimited responses normalize CommonPrefixes from the returned XML alone',
 });
 
 test('nested Unicode keys and empty folders are inferred without touching file dates', async () => {
-	const key = 'vault/中文 & space/deep/note #%.md';
+	const objectKey = 'vault/中文 & space/deep/note #%.md';
 	const modified = '2026-10-04T11:00:00.080Z';
 	const http = request(() => ({
-		text: () => xml(object(key, { mtime: modified }) + placeholder('中文 & space/empty/')),
+		text: () =>
+			xml(object(objectKey, { mtime: modified }) + placeholder('中文 & space/empty/')),
 	}));
 	const remote = await createRemote(http.request, scope);
 	const stats = await remote.fs.list('/', () => 'advance');
-	expect(stats).toContainEqual(folder('中文 & space/'));
-	expect(stats).toContainEqual(folder('中文 & space/deep/'));
-	expect(stats).toContainEqual(folder('中文 & space/empty/'));
+	expect(stats.find(({ key }) => key === '中文 & space/')).toMatchObject({ isDir: true });
+	expect(stats.find(({ key }) => key === '中文 & space/deep/')).toMatchObject({ isDir: true });
+	expect(stats.find(({ key }) => key === '中文 & space/empty/')).toMatchObject({ isDir: true });
 	expect(stats.find((stat) => stat.key.endsWith('.md'))).toMatchObject({
 		mtime: Date.parse(modified),
 		uid: `${Date.parse(modified)}~22`,
@@ -202,7 +206,7 @@ test('prefixed XML namespaces retain files and inferred folders', async () => {
 	}));
 	const remote = await createRemote(http.request, scope);
 	const stats = await remote.fs.list('/', () => 'advance');
-	expect(stats).toContainEqual(folder('nested/'));
+	expect(stats.find(({ key }) => key === 'nested/')).toMatchObject({ isDir: true });
 	expect(stats.find(({ key }) => key === 'nested/a.md')).toMatchObject({
 		isDir: false,
 		size: 22,

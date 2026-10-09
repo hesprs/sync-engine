@@ -1,7 +1,7 @@
+import type { Fs } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
 import { RemoteSession, remoteMiddleware } from '../src/remote';
-import { attachTimes, getTimes } from '../src/times';
 import { createRemote, decide, object, target, xml } from './s3-harness';
 import createVault from './vault';
 
@@ -36,68 +36,6 @@ test.each(['', '""', 'valid-etag'])(
 	},
 );
 
-test.each(['buffered', 'streamed'])(
-	'equal-size remote edits download the listed time and preserve local ctime (%s)',
-	async (mode) => {
-		const key = 'todo.md';
-		const oldMtime = Date.parse('2026-10-04T10:00:00Z');
-		const newMtime = Date.parse('2026-10-04T11:00:00.080Z');
-		const ctime = Date.parse('2026-10-01T09:00:00Z');
-		const body = testKit.bytes('- [x] 1400\n');
-		const http = testKit.request((url) =>
-			new URL(url).searchParams.has('list-type')
-				? {
-						text: () =>
-							xml(
-								object(key, {
-									mtime: new Date(newMtime).toISOString(),
-									size: body.length,
-								}),
-							),
-					}
-				: {
-						bytes: () => body,
-						headers: {
-							'Last-Modified': new Date(oldMtime).toUTCString(),
-							'X-Amz-Meta-Mtime': String(oldMtime / 1000),
-						},
-					},
-		);
-		const remote = await createRemote(http.request);
-		const vault = await createVault();
-		vault.files.set(key, { ctime, mtime: oldMtime, value: testKit.bytes('- [x] Todo\n') });
-		const local = await vault.fs.stat(key);
-		if (local.isDir) throw new Error('Expected file');
-		const [stat] = await remote.fs.list('/', () => 'advance');
-		if (stat.isDir) throw new Error('Expected file');
-		expect(
-			(
-				await decide(
-					[local],
-					[stat],
-					new Map([
-						[
-							key,
-							{
-								isDir: false,
-								local: local.uid,
-								remote: `${oldMtime}~${body.length}`,
-							},
-						],
-					]),
-				)
-			).map(({ key: taskKey, name }) => ({ key: taskKey, name })),
-		).toEqual([{ key, name: 'download' }]);
-		await (mode === 'streamed'
-			? vault.fs.writeStream(key, await remote.fs.readStream(key, stat), stat)
-			: vault.fs.write(key, await remote.fs.read(key, stat), stat));
-		expect(vault.files.get(key)).toEqual({ ctime, mtime: newMtime, value: body });
-		expect(getTimes(stat)).toEqual({ ctime: undefined, mtime: newMtime });
-		expect(http.calls).toHaveLength(2);
-		expect(http.calls.every(({ method }) => method === 'GET')).toBe(true);
-	},
-);
-
 test.each(['transient', '""', undefined])(
 	'uploads record the listed identity and need no HEAD even without a PUT ETag (%s)',
 	async (etag) => {
@@ -113,8 +51,10 @@ test.each(['transient', '""', undefined])(
 				: { text: () => xml(object(key, { mtime: modified, size: body.length })) },
 		);
 		const remote = await createRemote(http.request);
-		const local = attachTimes(testKit.file(key, { mtime: localMtime, size: body.length }), {
+		const local = testKit.file(key, {
+			meta: () => ({ mtime: String(localMtime) }),
 			mtime: localMtime,
+			size: body.length,
 		});
 		expect(await remote.fs.write(key, body, local)).toBe(uid);
 		expect(http.calls.map(({ method }) => method)).toEqual(['PUT', 'GET']);
@@ -171,7 +111,7 @@ test('multipart uploads keep their time header and record the listed identity wi
 		return { text: () => xml(object(key, { mtime: modified, size })) };
 	});
 	const remote = await createRemote(http.request);
-	const source = attachTimes(testKit.file(key, { mtime, size }), { mtime });
+	const source = testKit.file(key, { meta: () => ({ mtime: String(mtime) }), mtime, size });
 	expect(await remote.fs.writeStream(key, testKit.stream([new Uint8Array(size)]), source)).toBe(
 		`${Date.parse(modified)}~${size}`,
 	);
@@ -185,4 +125,203 @@ test('multipart uploads keep their time header and record the listed identity wi
 	]);
 	expect(remote.session.uploading.size).toBe(0);
 	expect(remote.session.uploadedStats.size).toBe(0);
+});
+
+test.each([false, true])(
+	'file metadata stays lazy and follows fetchObjectMeta=%s for list and stat',
+	async (fetchObjectMeta) => {
+		const modified = '2026-10-04T11:00:00.080Z';
+		const ctime = '1500000000000';
+		const http = testKit.request((_url, params) =>
+			params.method === 'HEAD'
+				? {
+						headers: {
+							'X-Amz-Meta-Ctime': ctime,
+							'x-amz-meta-custom': 'retained',
+							'x-amz-meta-mtime': '123',
+						},
+					}
+				: { text: () => xml(object('a.md', { mtime: modified })) },
+		);
+		const remote = await createRemote(http.request, '', fetchObjectMeta);
+		const [listed] = await remote.fs.list('/', () => 'advance');
+		const stat = await remote.fs.stat('a.md');
+		expect(http.calls.map(({ method }) => method)).toEqual(['GET', 'GET']);
+		for (const item of [listed, stat]) {
+			const results = await Promise.all([item.meta(), item.meta()]);
+			expect(results[0]).toEqual(
+				fetchObjectMeta
+					? { ctime, custom: 'retained', mtime: String(Date.parse(modified)) }
+					: { mtime: String(Date.parse(modified)) },
+			);
+			expect(results[1]).toEqual(results[0]);
+		}
+		expect(http.calls.filter(({ method }) => method === 'HEAD')).toHaveLength(
+			fetchObjectMeta ? 2 : 0,
+		);
+	},
+);
+
+test('an optional metadata lookup failure rejects consumption without breaking discovery', async () => {
+	const http = testKit.request((_url, params) =>
+		params.method === 'HEAD' ? { status: 403 } : { text: () => xml(object('a.md')) },
+	);
+	const remote = await createRemote(http.request, '', true);
+	const stat = await remote.fs.stat('a.md');
+	expect(http.calls).toHaveLength(1);
+	for (let i = 0; i < 2; i++)
+		expect(await Promise.resolve(stat.meta()).catch((error: unknown) => error)).toMatchObject({
+			status: 403,
+		});
+	expect(http.calls).toHaveLength(2);
+});
+
+test('streamed downloads restore native S3 creation metadata with one lazy HEAD', async () => {
+	const modified = '2026-10-04T11:00:00.080Z';
+	const ctime = 1_500_000_000_000;
+	const body = testKit.bytes('body');
+	const http = testKit.request((url, params) => {
+		if (new URL(url).searchParams.has('list-type'))
+			return { text: () => xml(object('a.md', { mtime: modified, size: body.length })) };
+		if (params.method === 'HEAD')
+			return { headers: { 'x-amz-meta-ctime': String(ctime), 'x-amz-meta-mtime': 'stale' } };
+		return { bytes: () => body };
+	});
+	const remote = await createRemote(http.request, '', true);
+	const [stat] = await remote.fs.list('/', () => 'advance');
+	if (stat.isDir) throw new Error('Expected file');
+	const vault = await createVault();
+	expect(await vault.fs.writeStream('a.md', await remote.fs.readStream('a.md', stat), stat)).toBe(
+		`${Date.parse(modified)}~4`,
+	);
+	expect(vault.files.get('a.md')).toEqual({ ctime, mtime: Date.parse(modified), value: body });
+	expect(http.calls.filter(({ method }) => method === 'HEAD')).toHaveLength(1);
+});
+
+test('S3 mkdir forwards folder metadata and recursive options through the wrapper', async () => {
+	const http = testKit.request(() => ({}));
+	const remote = await createRemote(http.request, 'prefix/');
+	const stat = {
+		...testKit.folder('nested/child/'),
+		meta: () =>
+			Promise.resolve({ ctime: '1500000000000', custom: 'folder', mtime: '1700000123456' }),
+	};
+	await remote.fs.mkdir('nested/child/', stat, true);
+	expect(http.calls.map(({ url }) => url).sort()).toEqual([
+		'https://s3.example/vault/prefix/',
+		'https://s3.example/vault/prefix/nested/',
+		'https://s3.example/vault/prefix/nested/child/',
+	]);
+	expect(http.calls.find(({ url }) => url.endsWith('/child/'))?.headers).toMatchObject({
+		'x-amz-meta-ctime': '1500000000000',
+		'x-amz-meta-custom': 'folder',
+		'x-amz-meta-mtime': '1700000123456',
+	});
+	expect(
+		http.calls.filter(({ headers }) => headers?.['X-Amz-Meta-Mtime'] !== undefined),
+	).toHaveLength(0);
+});
+
+test('same-object S3 writes reject concurrency and metadata failures release UID state', async () => {
+	const started = testKit.deferred<void>();
+	const release = testKit.deferred<void>();
+	const http = testKit.request(async (_url, params) => {
+		if (params.method === 'PUT') {
+			started.resolve();
+			await release.promise;
+			return { headers: { etag: 'uploaded' } };
+		}
+		return { text: () => xml(object('a.md')) };
+	});
+	const remote = await createRemote(http.request);
+	const stat = testKit.file('a.md');
+	const first = remote.fs.write('a.md', testKit.bytes('a'), stat);
+	await started.promise;
+	expect(
+		await Promise.resolve(remote.fs.write('a.md', testKit.bytes('b'), stat)).catch(
+			(error: unknown) => error,
+		),
+	).toMatchObject({ message: `Concurrent writes to the same file: ${target.url('a.md')}` });
+	release.resolve();
+	await first;
+	const failed = {
+		...stat,
+		meta: () => Promise.reject(new Error('metadata failed')),
+	};
+	expect(
+		await Promise.resolve(remote.fs.write('a.md', testKit.bytes('a'), failed)).catch(
+			(error: unknown) => error,
+		),
+	).toMatchObject({ message: 'metadata failed' });
+	expect(remote.session.activeS3Writes.size).toBe(0);
+	expect(remote.session.uploadedStats.size).toBe(0);
+	expect(remote.session.uploading.size).toBe(0);
+});
+
+test.each(['buffered', 'streamed'])(
+	'download GET supplies ctime and custom metadata without HEAD (%s)',
+	async (mode) => {
+		const ctime = 1_500_000_000_000;
+		const mtime = Date.parse('2026-10-04T11:00:00.080Z');
+		const body = testKit.bytes('body');
+		const http = testKit.request((url) =>
+			new URL(url).searchParams.has('list-type')
+				? { text: () => xml(object('a.md', { size: body.length })) }
+				: {
+						bytes: () => body,
+						headers: {
+							'Last-Modified': 'Sun, 04 Oct 2026 10:00:00 GMT',
+							'X-Amz-Meta-Ctime': String(ctime),
+							'X-Amz-Meta-Custom': 'retained',
+							'X-Amz-Meta-Mtime': '123.456',
+						},
+					},
+		);
+		const remote = await createRemote(http.request);
+		const [stat] = await remote.fs.list('/', () => 'advance');
+		if (stat.isDir) throw new Error('Expected file');
+		// Metadata consumed before download must not hide later GET metadata.
+		expect(await stat.meta()).toEqual({ mtime: String(mtime) });
+		const vault = await createVault();
+		await (mode === 'streamed'
+			? vault.fs.writeStream('a.md', await remote.fs.readStream('a.md', stat), stat)
+			: vault.fs.write('a.md', await remote.fs.read('a.md', stat), stat));
+		expect(vault.files.get('a.md')).toEqual({ ctime, mtime, value: body });
+		expect(await stat.meta()).toEqual({
+			ctime: String(ctime),
+			custom: 'retained',
+			mtime: String(mtime),
+		});
+		expect(http.calls.map(({ method }) => method)).toEqual(['GET', 'GET']);
+		remote.session.clear();
+		expect(remote.session.downloadedMeta.size).toBe(0);
+	},
+);
+
+test('ending a session restores the backend stat method', async () => {
+	const http = testKit.request(() => ({ text: () => xml(object('a.md')) }));
+	const remote = await createRemote(http.request);
+	const source = new URL('../../s3/src/s3/fs.ts', import.meta.url).href;
+	const { default: S3Fs } = (await import(source)) as { default: { prototype: Fs } };
+	expect(remote.raw.stat).not.toBe(S3Fs.prototype.stat);
+	remote.session.clear();
+	expect(remote.raw.stat).toBe(S3Fs.prototype.stat);
+});
+
+test('a cached stat receives metadata from the next sync session download', async () => {
+	const ctime = '1500000000000';
+	const http = testKit.request((url) =>
+		new URL(url).searchParams.has('list-type')
+			? { text: () => xml(object('a.md', { size: 4 })) }
+			: { bytes: () => testKit.bytes('body'), headers: { 'x-amz-meta-ctime': ctime } },
+	);
+	const first = await createRemote(http.request);
+	const [stat] = await first.fs.list('/', () => 'advance');
+	if (stat.isDir) throw new Error('Expected file');
+	first.session.clear();
+	const next = await createRemote(http.request);
+	await next.fs.read('a.md', stat);
+	expect((await stat.meta()).ctime).toBe(ctime);
+	expect(next.session.downloadedMeta.size).toBe(1);
+	expect(first.session.downloadedMeta.size).toBe(0);
 });

@@ -8,7 +8,7 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import { prefixWrapper } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
-import MetadataRemoteFs, { RemoteSession, remoteMiddleware } from '../src/remote';
+import MetadataRemoteFs, { RemoteSession, remoteMiddleware, UploadRemoteFs } from '../src/remote';
 import { getTarget } from '../src/target';
 
 const configuredTarget = getTarget({
@@ -32,21 +32,31 @@ export function object(
 	return `<Contents><Key>${escape(key)}</Key><LastModified>${mtime}</LastModified><ETag>${escape(etag)}</ETag><Size>${size}</Size></Contents>`;
 }
 
-export async function createRemote(request: Request, prefix = '') {
+export async function createRemote(
+	request: Request,
+	prefix = '',
+	fetchObjectMeta = false,
+	preferMetadataMtime = false,
+) {
 	const source = new URL('../../s3/src/s3/fs.ts', import.meta.url).href;
 	const { default: S3Fs } = (await import(source)) as {
 		default: new (options: Record<string, unknown>) => Fs;
 	};
-	const session = new RemoteSession(target, () => true);
+	const session = new RemoteSession(
+		{ ...target, fetchObjectMeta },
+		() => true,
+		() => preferMetadataMtime,
+	);
 	const raw = new S3Fs({
 		accessKeyId: 'key',
 		bucket: 'vault',
 		endpoint: 'https://s3.example',
+		fetchObjectMeta,
 		region: 'us-east-1',
 		request: remoteMiddleware(request, session),
 		urlStyle: 'path',
 	});
-	const wrapped = new MetadataRemoteFs(raw, session);
+	const wrapped = new MetadataRemoteFs(new UploadRemoteFs(raw, session), session);
 	return { fs: prefix ? prefixWrapper(wrapped, prefix) : wrapped, raw, session };
 }
 
