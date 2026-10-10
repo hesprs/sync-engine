@@ -4,7 +4,7 @@ Sync Engine welcomes any contribution to the plugin core, modules, and documenta
 
 ## Issue Policy
 
-The Sync Engine repository accepts two kinds of issues - bug report and feature request.
+The Sync Engine repository accepts two kinds of issues: bug report and feature request.
 
 ### Bug Report
 
@@ -18,9 +18,10 @@ The Sync Engine repository accepts two kinds of issues - bug report and feature 
 **It must not contain**:
 
 - Any sensitive information about yourself
-- More than one bug - please report in separate issues
+- More than one bug: please report in separate issues
+- Speculative "root cause" guesses or "fix options": if you have made to this step, you might want to make a pull request.
 
-Issues where maintainers have requested clarification / coordinated testing but the reporter hasn't provided any relevant information will be closed after 72 hours.
+Bug reports where maintainers have requested clarification / coordinated testing but the reporter hasn't provided any relevant information will be closed after 72 hours; the reporter claimed to coordinate but no further information are provided will also be closed after 72 hours.
 
 ### Feature Request
 
@@ -37,7 +38,7 @@ We **strongly recommend** you writing your own Sync Engine module to achieve you
 
 Sync Engine welcomes forks that contributes to the development of the Sync Engine monorepo.
 
-However, as stated in [Obsidian developer policies](https://docs.obsidian.md/Developer+policies#Forks), Sync Engine disallows any type if malicious forking that submits to Obsidian's official plugin directory as another standalone plugin, as long as Sync Engine repo remains active or maintainers haven't permitted. Maintainers will report as long as we find one.
+However, as stated in [Obsidian developer policies](https://docs.obsidian.md/Developer+policies#Forks), Sync Engine disallows any type if malicious forking that submits to Obsidian's official plugin directory as another standalone plugin, as long as Sync Engine repo remains active or maintainers haven't permitted. Maintainers will report upon discovery.
 
 Instead of creating another syncing plugin, we highly recommend you to create a Sync Engine module. Sync Engine core is highly optimized and battle-tested, it provides convenient SDK that allows you to customize freely without reinventing the wheel.
 
@@ -145,14 +146,16 @@ If your pull request contains substantial modification of an existing module, yo
 
 #### AI Contribution
 
-Sync Engine repo generally accepts AI contribution, especially for modules, as long as it:
+When making pull requests or issues, please communicate clearly with maintainers. If your words show clear AI signals (confident false claims, verbose & contextualized jargons), maintainers reserve the justification for replying with AI-generated text.
 
-- Passes CI
-- Passes review
-- Has code quality acceptable by maintainers
+Sync Engine repo generally accepts AI-assisted pull requests, especially for modules, as long as they:
+
+- Pass CI
+- Pass review
+- Have code quality acceptable by maintainers
 - Can keep responsible to future maintenance
 
-The code can be written by AI, but when making pull requests, Sync Engine requires the author must be the GitHub account of a real human. **Any names of AI agent entities are forbidden in co-author list, commit messages, and code.** This is because:
+The code can be written by AI; but when making pull requests, Sync Engine requires the author must be the GitHub account of a real human. **Any names of corporate AI agent entities are forbidden in co-author list, commit messages, and code.** This is because:
 
 - Commits made by AI often signify insufficient development skill of the human to be capable for future maintenance.
 - Copyright of code in this repo belong to the corresponding authors and contributors, AI co-authoring creates ambiguities around code ownership.
