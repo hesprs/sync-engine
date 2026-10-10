@@ -13,7 +13,6 @@ import type {
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
-import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import {
 	dirname,
@@ -24,7 +23,7 @@ import {
 } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import writeNextcloudChunkedUpload from './chunked-upload';
-import { buildUrl, getFileUid, getHeader, parseWebDAVError } from './utils';
+import { buildUrl, getFileUid, getHeader, getObjectEtag, parseWebDAVError } from './utils';
 
 export type WebdavFsOptions = {
 	endpoint: string;
@@ -46,6 +45,7 @@ type WebDAVProp = {
 	getlastmodified?: WebDAVPropValue;
 	resourcetype?: { collection?: unknown } | string;
 	'se:meta'?: WebDAVPropValue;
+	meta?: WebDAVPropValue;
 };
 
 type WebDAVPropstat = {
@@ -195,8 +195,11 @@ export default class WebdavFs implements RootFs {
 			getcontentlength,
 			getetag,
 			getlastmodified,
-			'se:meta': seMeta,
+			'se:meta': prefixedMeta,
+			meta: localMeta,
 		} = validPropstat.prop;
+		// The shared XML parser uses localName and removes namespace prefixes.
+		const seMeta = prefixedMeta ?? localMeta;
 		const isDir = isCollectionResource(resourcetype);
 		const key = toKey(href, this.endpoint, isDir);
 		const meta = () => {
@@ -209,8 +212,8 @@ export default class WebdavFs implements RootFs {
 		if (isDir) return { isDir: true, key, meta };
 		const mtime = new Date(getDavText(getlastmodified) ?? '0').valueOf();
 		const size = Number.parseInt(getDavText(getcontentlength) ?? '0', 10);
-		const etag = getDavText(getetag);
-		const uid = etag ? normalizeEtag(etag) : `${mtime}~${size}`;
+		const etag = getObjectEtag(getDavText(getetag));
+		const uid = etag ?? `${mtime}~${size}`;
 		return { isDir: false, key, meta, mtime, size, uid };
 	}
 
@@ -289,11 +292,9 @@ export default class WebdavFs implements RootFs {
 			}),
 			this.resolveMeta(stat.meta),
 		]);
-		const etag = getHeader(headers, 'etag');
+		const etag = getObjectEtag(getHeader(headers, 'etag'));
 		return Promise.all([
-			etag
-				? Promise.resolve(normalizeEtag(etag))
-				: this.stat(key).then((newStat) => getFileUid(newStat, key)),
+			etag ?? this.stat(key).then((newStat) => getFileUid(newStat, key)),
 			meta ? this.proppatch(key, meta) : Promise.resolve(),
 		]).then(([uid]) => uid);
 	}

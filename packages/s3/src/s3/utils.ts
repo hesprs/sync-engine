@@ -1,4 +1,5 @@
 import type { Stat } from '@hesprs/sync-engine-sdk';
+import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 
 type S3ErrorResponse = {
@@ -22,6 +23,12 @@ export function formatS3Error(code: string, message?: string): string {
 export function getFileUid(stat: Stat, key: string) {
 	if (stat.isDir) throw new Error(`WebDAV write returned a folder stat for ${key}.`);
 	return stat.uid;
+}
+
+export function getObjectEtag(value: unknown): string | undefined {
+	if (typeof value !== 'string') return;
+	const etag = normalizeEtag(value);
+	if (etag.trim()) return etag;
 }
 
 export function toMetaHeaders(meta: Dict<string>): Record<string, string> {

@@ -12,7 +12,6 @@ import type {
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
 import { getStatus, toError } from '@repo/shared/error';
-import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import { dirname, encodeUrl, isFolder } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
@@ -23,6 +22,7 @@ import { buildUrl, buildUrlWithQuery, getHeader } from './url';
 import {
 	formatS3Error,
 	getFileUid,
+	getObjectEtag,
 	extractMetaHeaders,
 	parseS3Error,
 	toMetaHeaders,
@@ -63,7 +63,7 @@ type S3DeleteResponse = {
 type S3Object = {
 	Key?: string;
 	Size?: string;
-	ETag?: string;
+	ETag?: unknown;
 	LastModified?: string;
 };
 
@@ -177,8 +177,8 @@ export default class S3Fs implements RootFs {
 			headers,
 			method: 'PUT',
 		});
-		const etag = getHeader(response.headers, 'etag');
-		return etag ? normalizeEtag(etag) : getFileUid(await this.stat(key), key);
+		const etag = getObjectEtag(getHeader(response.headers, 'etag'));
+		return etag ?? getFileUid(await this.stat(key), key);
 	}
 
 	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
@@ -290,7 +290,7 @@ export default class S3Fs implements RootFs {
 	async stat(key: string): Promise<Stat> {
 		if (isFolder(key)) return { isDir: true, key, meta: () => this.fetchMeta(key) };
 		const { headers } = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
-		const etag = getHeader(headers, 'etag');
+		const etag = getObjectEtag(getHeader(headers, 'etag'));
 		const contentLength = getHeader(headers, 'content-length');
 		const lastModified = getHeader(headers, 'last-modified');
 		if (!lastModified) throw mtimeMissing;
@@ -303,7 +303,7 @@ export default class S3Fs implements RootFs {
 			meta: () => extractMetaHeaders(headers),
 			mtime,
 			size,
-			uid: etag ? normalizeEtag(etag) : `${mtime}~${size}`,
+			uid: etag ?? `${mtime}~${size}`,
 		};
 	}
 
@@ -361,7 +361,7 @@ export default class S3Fs implements RootFs {
 							meta,
 							mtime,
 							size,
-							uid: ETag ? normalizeEtag(ETag) : `${mtime}~${size}`,
+							uid: getObjectEtag(ETag) ?? `${mtime}~${size}`,
 						});
 					}
 				}),

@@ -67,6 +67,16 @@
 		"minPluginVersion": "3.2.0"
 	},
 	{
+		"id": "openlist-file-metadata",
+		"name": "OpenList File Metadata",
+		"version": "0.0.3",
+		"description": "Preserve file times through OpenList S3 and WebDAV.",
+		"icon": "calendar-clock",
+		"main": "https://sync.consensia.cc/modules/openlist-file-metadata.js",
+		"minPluginVersion": "3.3.0",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/openlist-file-metadata"
+	},
+	{
 		"id": "smart-merge",
 		"name": "Smart Merge",
 		"version": "0.0.9",

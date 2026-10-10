@@ -36,11 +36,11 @@ The module registers these settings:
 
 ## File Operations
 
-`read()` sends `GET` and returns response bytes. `write()` sends `PUT`, returning its `ETag` header when present; otherwise it immediately calls `stat()` and returns the resulting file UID. When file metadata is enabled and the file's `meta` is non-empty, `write()` also sends a `PROPPATCH` request to store the meta as a JSON-encoded `se:meta` custom property. The `PUT` and `PROPPATCH` run concurrently.
+`read()` sends `GET` and returns response bytes. `write()` sends `PUT`, returning its normalized `ETag` header when usable; otherwise it immediately calls `stat()` and returns the resulting file UID. When file metadata is enabled and the file's `meta` is non-empty, `write()` also sends a `PROPPATCH` request to store the meta as a JSON-encoded `se:meta` custom property. The `PUT` and `PROPPATCH` run concurrently.
 
 `delete()` sends `DELETE` and treats HTTP `404` as already deleted. `move()` sends `MOVE` with a `Destination` header. `mkdir()` sends `MKCOL`; recursive creation creates ancestor directories in order and ignores HTTP `405`, which indicates an existing directory.
 
-`stat()` sends a depth-zero `PROPFIND` for the target. The request asks for the resource type, modification time, content length, and `ETag`; when file metadata is enabled, it also requests `se:meta`. File UIDs use `ETag` when available, otherwise `<mtime>~<size>`; folders have no UID. `exists()` uses the same lookup and returns `false` for HTTP `404`.
+`stat()` sends a depth-zero `PROPFIND` for the target. The request asks for the resource type, modification time, content length, and `ETag`; when file metadata is enabled, it also requests `se:meta`. File UIDs use a non-empty normalized `ETag`; missing, empty, whitespace-only, or non-text values fall back to `<mtime>~<size>`. Folders have no UID. `exists()` uses the same lookup and returns `false` for HTTP `404`.
 
 `PROPFIND` response pagination is supported through a `Link: <...>; rel="next"` response header.
 
@@ -55,7 +55,7 @@ With Nextcloud-style chunked upload enabled, it:
 1. Creates a UUID-named upload collection under Nextcloud's upload endpoint.
 2. Splits the input into 5 MiB numbered chunks and uploads at most three concurrently. Each upload includes `Destination` and `OC-Total-Length` headers.
 3. Moves the generated `.file` to the destination.
-4. Returns `ETag` or `OC-ETag`; when neither is present, it calls `stat()` for the file UID. When file metadata is enabled, a `PROPPATCH` is sent after the `MOVE` to store `se:meta`.
+4. Returns the first usable normalized header, preferring `ETag` over `OC-ETag`; when neither is usable, it calls `stat()` for the file UID. When file metadata is enabled, a `PROPPATCH` is sent after the `MOVE` to store `se:meta`.
 
 On failure, the module waits for active uploads and deletes the temporary upload collection.
 

@@ -612,26 +612,32 @@ test('write sends PROPPATCH with se:meta when fileMetadata is enabled', async ()
 	expect(body).toContain('"custom":"value"');
 });
 
-test('stat meta reads se:meta from PROPFIND when fileMetadata is enabled', async () => {
-	setXmlResponse([
-		{
-			href: '/dav/Notes/file.md',
-			propstat: {
-				prop: {
-					getcontentlength: '5',
-					getlastmodified: 'Mon, 01 Jan 2024 00:00:00 GMT',
-					resourcetype: {},
-					'se:meta': { '#text': '{"custom":"value","ctime":"500"}' },
+test.each(['se:meta', 'meta'])(
+	'stat meta reads PROPFIND metadata with property key %s',
+	async (propertyKey) => {
+		setXmlResponse([
+			{
+				href: '/dav/Notes/file.md',
+				propstat: {
+					prop: {
+						getcontentlength: '5',
+						getlastmodified: 'Mon, 01 Jan 2024 00:00:00 GMT',
+						resourcetype: {},
+						[propertyKey]: { '#text': '{"custom":"value","ctime":"500"}' },
+					},
+					status: 'HTTP/1.1 200 OK',
 				},
-				status: 'HTTP/1.1 200 OK',
 			},
-		},
-	]);
-	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav', fileMetadata: true });
-	const stat = await webdav.fs.stat('Notes/file.md');
-	if (stat.isDir) throw new Error('expected file stat');
-	expect(await stat.meta()).toStrictEqual({ ctime: '500', custom: 'value' });
-});
+		]);
+		const webdav = createWebdavFs({
+			endpoint: 'https://dav.example.com/dav',
+			fileMetadata: true,
+		});
+		const stat = await webdav.fs.stat('Notes/file.md');
+		if (stat.isDir) throw new Error('expected file stat');
+		expect(await stat.meta()).toStrictEqual({ ctime: '500', custom: 'value' });
+	},
+);
 
 test('chunked writeStream sends PROPPATCH when fileMetadata is enabled', async () => {
 	const webdav = createWebdavFs({

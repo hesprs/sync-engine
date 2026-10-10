@@ -1,0 +1,19 @@
+{
+	"name": "openlist-file-metadata",
+	"version": "0.0.1",
+	"private": true,
+	"license": "MIT",
+	"type": "module",
+	"scripts": {
+		"dev": "MODE=dev bun --bun tsdown",
+		"compile": "bun --bun tsdown",
+		"fix": "oxlint --silent --fix && oxfmt",
+		"check": "tsc && oxlint && oxfmt --check",
+		"tests": "bun --preload=./test/mocks.ts test"
+	},
+	"devDependencies": {
+		"@hesprs/sync-engine-sdk": "workspace:*",
+		"@repo/shared": "workspace:*",
+		"linkedom": "^0.18.13"
+	}
+}
