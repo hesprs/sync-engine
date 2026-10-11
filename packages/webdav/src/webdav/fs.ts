@@ -45,6 +45,7 @@ type WebDAVProp = {
 	getlastmodified?: WebDAVPropValue;
 	resourcetype?: { collection?: unknown } | string;
 	'se:meta'?: WebDAVPropValue;
+	meta?: WebDAVPropValue;
 };
 
 type WebDAVPropstat = {
@@ -194,8 +195,11 @@ export default class WebdavFs implements RootFs {
 			getcontentlength,
 			getetag,
 			getlastmodified,
-			'se:meta': seMeta,
+			'se:meta': prefixedMeta,
+			meta: localMeta,
 		} = validPropstat.prop;
+		// The shared XML parser uses localName and removes namespace prefixes.
+		const seMeta = prefixedMeta ?? localMeta;
 		const isDir = isCollectionResource(resourcetype);
 		const key = toKey(href, this.endpoint, isDir);
 		const meta = () => {

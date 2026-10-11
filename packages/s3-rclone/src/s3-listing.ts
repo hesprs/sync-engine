@@ -1,7 +1,7 @@
 import type { RequestResponse } from '@hesprs/sync-engine-sdk';
-import normalizeEtag from '@repo/shared/normalize-etag';
+import { objectInfo, objectUid } from './s3';
 
-type PageState = { folders: Set<string>; tokens: Set<string> };
+type PageState = { keys: Set<string>; tokens: Set<string> };
 
 function children(parent: Element, name: string) {
 	return [...parent.children].filter((element) => element.localName === name);
@@ -31,7 +31,12 @@ export default class S3Listing {
 		const document = new DOMParser().parseFromString(response.text(), 'application/xml');
 		const root = document.documentElement;
 		if (root?.localName !== 'ListBucketResult' || document.querySelector('parsererror'))
-			throw new Error('Invalid OpenList S3 listing.');
+			throw new Error('Invalid S3 rclone listing.');
+		const create = (name: string) =>
+			document.createElementNS(
+				root.namespaceURI ?? '',
+				root.prefix ? `${root.prefix}:${name}` : name,
+			);
 		const query = new URL(url);
 		const scope = query.searchParams.get('prefix') ?? '';
 		const continuation = query.searchParams.get('continuation-token');
@@ -40,37 +45,47 @@ export default class S3Listing {
 		const pageKey = query.href;
 		let state = this.pages.get(pageKey);
 		if (!continuation || !state) {
-			state = { folders: new Set(), tokens: new Set() };
+			state = { keys: new Set(), tokens: new Set() };
 			this.pages.set(pageKey, state);
 		}
-		const truncated = text(root, 'IsTruncated')?.trim() === 'true';
+		const flags = children(root, 'IsTruncated');
+		const flag = flags[0]?.textContent?.trim();
+		if (flags.length > 1 || (flags.length && !['true', 'false', '1', '0'].includes(flag ?? '')))
+			throw new Error('Invalid S3 rclone listing pagination.');
+		const truncated = flag === 'true' || flag === '1';
+		// The backend consumes these fields as strings; use the same values we validate.
+		if (flags[0]) flags[0].textContent = String(truncated);
 		if (truncated) {
-			const token = text(root, 'NextContinuationToken')?.trim();
-			if (!token || state.tokens.has(token) || token === continuation)
-				throw new Error('Incomplete OpenList S3 listing pagination.');
+			const tokens = children(root, 'NextContinuationToken');
+			const token = tokens[0]?.textContent?.trim();
+			if (tokens.length !== 1 || !token || state.tokens.has(token) || token === continuation)
+				throw new Error('Incomplete S3 rclone listing pagination.');
+			tokens[0].textContent = token;
 			state.tokens.add(token);
 		}
 		const folders = new Set<string>();
 		const inferFolders = !scope || scope.endsWith('/');
 		for (const object of children(root, 'Contents')) {
 			const key = text(object, 'Key');
-			if (!key) continue;
-			if (!key.startsWith(scope)) throw new Error(`Out-of-scope OpenList S3 object: ${key}`);
+			if (!key) throw new Error('Missing S3 rclone object key.');
+			if (!key.startsWith(scope)) throw new Error(`Out-of-scope S3 rclone object: ${key}`);
 			if (inferFolders) addParents(key, scope, folders);
-			if (key.endsWith('/'))
-				if (state.folders.has(key)) object.remove();
-				else state.folders.add(key);
-
-			// Collect parents before discarding OpenList's virtual empty-folder file.
-			if (
-				key.split('/').at(-1) === 'ThisIsAnEmptyFolderInTheS3Bucket' &&
-				text(object, 'Size') === '0'
-			) {
-				object.remove();
-				continue;
+			if (!key.endsWith('/')) {
+				const { mtime, size } = objectInfo(
+					key,
+					text(object, 'LastModified'),
+					text(object, 'Size'),
+				);
+				const uid = objectUid(text(object, 'ETag'), mtime, size);
+				let etag = children(object, 'ETag')[0];
+				if (!etag) {
+					etag = create('ETag');
+					object.append(etag);
+				}
+				etag.textContent = uid;
 			}
-			for (const etag of children(object, 'ETag'))
-				if (!normalizeEtag(etag.textContent ?? '')) etag.remove();
+			if (state.keys.has(key)) object.remove();
+			else state.keys.add(key);
 		}
 		if (inferFolders)
 			for (const common of children(root, 'CommonPrefixes')) {
@@ -78,15 +93,14 @@ export default class S3Listing {
 				if (!prefix) continue;
 				const folder = prefix.endsWith('/') ? prefix : `${prefix}/`;
 				if (!folder.startsWith(scope))
-					throw new Error(`Out-of-scope OpenList S3 directory: ${folder}`);
+					throw new Error(`Out-of-scope S3 rclone directory: ${folder}`);
 				addParents(folder, scope, folders);
 			}
 		for (const folder of folders) {
-			if (folder === scope || state.folders.has(folder)) continue;
-			state.folders.add(folder);
-			const prefix = root.prefix ? `${root.prefix}:` : '';
-			const object = document.createElementNS(root.namespaceURI ?? '', `${prefix}Contents`);
-			const key = document.createElementNS(root.namespaceURI ?? '', `${prefix}Key`);
+			if (folder === scope || state.keys.has(folder)) continue;
+			state.keys.add(folder);
+			const object = create('Contents');
+			const key = create('Key');
 			key.textContent = folder;
 			object.append(key);
 			root.append(object);

@@ -1,10 +1,9 @@
 import type { Binary, RootFs, VaultRequest } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
-import MetadataLocalFs, { LocalSession, localMiddleware } from '../src/local';
 
 type Entry = { value: Binary; ctime: number; mtime: number };
 
-export default async function createVault(enabled = () => true) {
+export default async function createVault() {
 	// Exercise the production VaultFs without importing its internal TS aliases
 	// Into this module's compilation unit.
 	const source = new URL('../../plugin/src/fs/vault/index.ts', import.meta.url).href;
@@ -13,11 +12,8 @@ export default async function createVault(enabled = () => true) {
 	};
 	const files = new Map<string, Entry>();
 	const folders = new Set<string>();
-	const calls: Array<{ key: string; params: Parameters<VaultRequest>[1] }> = [];
-	let failAppend = false;
 	const request: VaultRequest = async (key, params) => {
 		await testKit.flush(1);
-		calls.push({ key, params });
 		const current = files.get(key);
 		if (!params || params.method === 'GET') return current?.value as never;
 		if (params.method === 'GET_STREAM')
@@ -32,7 +28,6 @@ export default async function createVault(enabled = () => true) {
 			} as never;
 		}
 		if (params.method === 'PUT' || params.method === 'APPEND') {
-			if (params.method === 'APPEND' && failAppend) throw new Error('append failed');
 			const oldValue =
 				params.method === 'APPEND'
 					? (current?.value ?? new Uint8Array())
@@ -54,18 +49,9 @@ export default async function createVault(enabled = () => true) {
 		if (params.method === 'LIST') return { files: [...files.keys()], folders: [] } as never;
 		return undefined as never;
 	};
-	const session = new LocalSession(enabled);
-	const fs = new MetadataLocalFs(
-		new VaultFs(localMiddleware(request, session), 'fixture'),
-		session,
-	);
+	const fs = new VaultFs(request, 'fixture');
 	return {
-		calls,
-		fail: () => {
-			failAppend = true;
-		},
 		files,
 		fs,
-		session,
 	};
 }

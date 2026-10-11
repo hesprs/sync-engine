@@ -20,6 +20,16 @@
 		"readme": "https://sync.consensia.cc/deep-dive/modules/s3"
 	},
 	{
+		"id": "s3-rclone",
+		"name": "S3 rclone",
+		"version": "0.0.1",
+		"description": "Adapt the S3 backend to rclone serve s3 and preserve file times.",
+		"icon": "calendar-clock",
+		"main": "https://sync.consensia.cc/modules/s3-rclone.js",
+		"minPluginVersion": "3.3.0",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/s3-rclone"
+	},
+	{
 		"id": "gdrive",
 		"name": "Google Drive",
 		"version": "0.2.0",
@@ -65,16 +75,6 @@
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-ru.js",
 		"minPluginVersion": "3.2.0"
-	},
-	{
-		"id": "openlist-file-metadata",
-		"name": "OpenList File Metadata",
-		"version": "0.0.3",
-		"description": "Preserve file times through OpenList S3 and WebDAV.",
-		"icon": "calendar-clock",
-		"main": "https://sync.consensia.cc/modules/openlist-file-metadata.js",
-		"minPluginVersion": "3.2.0",
-		"readme": "https://sync.consensia.cc/deep-dive/modules/openlist-file-metadata"
 	},
 	{
 		"id": "smart-merge",

@@ -1,5 +1,5 @@
 {
-	"name": "openlist-file-metadata",
+	"name": "s3-rclone",
 	"version": "0.0.1",
 	"private": true,
 	"license": "MIT",
@@ -9,7 +9,8 @@
 		"compile": "bun --bun tsdown",
 		"fix": "oxlint --silent --fix && oxfmt",
 		"check": "tsc && oxlint && oxfmt --check",
-		"tests": "bun --preload=./test/mocks.ts test"
+		"tests": "bun --preload=./test/mocks.ts test",
+		"tests:live": "bun --preload=./test/mocks.ts ../../scripts/verify-s3-rclone.ts"
 	},
 	"devDependencies": {
 		"@hesprs/sync-engine-sdk": "workspace:*",

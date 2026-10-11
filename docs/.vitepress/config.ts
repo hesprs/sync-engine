@@ -158,13 +158,10 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 							items: [
 								{ link: `${deepDive}/modules/webdav`, text: t('webdav') },
 								{ link: `${deepDive}/modules/s3`, text: t('s3') },
+								{ link: `${deepDive}/modules/s3-rclone`, text: t('s3Rclone') },
 								{ link: `${deepDive}/modules/gdrive`, text: t('gdrive') },
 								{ link: `${deepDive}/modules/encryption`, text: t('encryption') },
 								{ link: `${deepDive}/modules/smart-merge`, text: t('smartMerge') },
-								{
-									link: `${deepDive}/modules/openlist-file-metadata`,
-									text: t('openlistFileMetadata'),
-								},
 							],
 							text: t('modules'),
 						},

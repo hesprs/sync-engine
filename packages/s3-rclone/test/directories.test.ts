@@ -3,53 +3,17 @@ import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
 import { createRemote, decide, escape, object, xml } from './s3-harness';
 
-const { request, folder } = testKit;
+const { request } = testKit;
 const scope = 'vault/';
 const placeholder = (key: string) =>
 	object(`${scope}${key}ThisIsAnEmptyFolderInTheS3Bucket`, { size: 0 });
 
-test('222 OpenList objects recover 220 files and 31 directories with one list request', async () => {
-	const files = Array.from({ length: 220 }, (_, i) => `${scope}dir-${i % 29}/note-${i}.md`);
-	const http = request(() => ({
-		text: () =>
-			xml(
-				files.map((key) => object(key)).join('') +
-					placeholder('empty-a/') +
-					placeholder('empty-b/'),
-			),
-	}));
-	const remote = await createRemote(http.request, scope);
-	const stats = await remote.fs.list('/', () => 'advance');
-	expect(stats.filter((stat) => !stat.isDir)).toHaveLength(220);
-	expect(stats.filter((stat) => stat.isDir)).toHaveLength(31);
-	expect(stats).toContainEqual(folder('empty-a/'));
-	expect(stats).toContainEqual(folder('empty-b/'));
-	expect(stats.some(({ key }) => key.includes('ThisIsAnEmptyFolderInTheS3Bucket'))).toBe(false);
-	expect(http.calls).toHaveLength(1);
-	expect(http.calls[0].method).toBe('GET');
-	expect(new URL(http.calls[0].url).searchParams.has('delimiter')).toBe(false);
-	const local = stats.map((stat) =>
-		stat.isDir ? { ...stat } : { ...stat, uid: `local-${stat.uid}` },
-	);
-	const records: RecordStatsMap = new Map(
-		stats.map((stat) => [
-			stat.key,
-			stat.isDir
-				? { isDir: true }
-				: { isDir: false, local: `local-${stat.uid}`, remote: stat.uid },
-		]),
-	);
-	expect(await decide(local, stats, records)).toEqual([]);
-	expect(await remote.fs.list('/', () => 'advance')).toEqual(stats);
-	expect(http.calls).toHaveLength(2);
-});
-
-test('empty-directory placeholders survive filtering and real deletions remain detectable', async () => {
-	let contents = object('vault/keep/note.md') + placeholder('empty/');
+test('explicit empty directories and real deletions remain detectable', async () => {
+	let contents = `${object('vault/keep/note.md')}<Contents><Key>vault/empty/</Key></Contents>`;
 	const http = request(() => ({ text: () => xml(contents) }));
 	const remote = await createRemote(http.request, scope);
 	const before = await remote.fs.list('/', () => 'advance');
-	expect(before).toContainEqual(folder('empty/'));
+	expect(before.find(({ key }) => key === 'empty/')).toMatchObject({ isDir: true });
 	const local = before.map((stat) =>
 		stat.isDir ? { ...stat } : { ...stat, uid: `local-${stat.uid}` },
 	);
@@ -88,8 +52,8 @@ test('pagination deduplicates inferred and explicit folders across pages', async
 	const remote = await createRemote(http.request, scope);
 	const stats = await remote.fs.list('/', () => 'advance');
 	expect(stats.filter(({ key }) => key === 'shared/')).toHaveLength(1);
-	expect(stats).toContainEqual(folder('shared/empty/'));
-	expect(stats).toHaveLength(4);
+	expect(stats.find(({ key }) => key === 'shared/empty/')).toMatchObject({ isDir: true });
+	expect(stats).toHaveLength(5);
 	expect(http.calls).toHaveLength(2);
 	expect(
 		http.calls.every(
@@ -117,19 +81,20 @@ test('delimited responses normalize CommonPrefixes from the returned XML alone',
 });
 
 test('nested Unicode keys and empty folders are inferred without touching file dates', async () => {
-	const key = 'vault/中文 & space/deep/note #%.md';
+	const objectKey = 'vault/中文 & space/deep/note #%.md';
 	const modified = '2026-10-04T11:00:00.080Z';
 	const http = request(() => ({
-		text: () => xml(object(key, { mtime: modified }) + placeholder('中文 & space/empty/')),
+		text: () =>
+			xml(object(objectKey, { mtime: modified }) + placeholder('中文 & space/empty/')),
 	}));
 	const remote = await createRemote(http.request, scope);
 	const stats = await remote.fs.list('/', () => 'advance');
-	expect(stats).toContainEqual(folder('中文 & space/'));
-	expect(stats).toContainEqual(folder('中文 & space/deep/'));
-	expect(stats).toContainEqual(folder('中文 & space/empty/'));
+	expect(stats.find(({ key }) => key === '中文 & space/')).toMatchObject({ isDir: true });
+	expect(stats.find(({ key }) => key === '中文 & space/deep/')).toMatchObject({ isDir: true });
+	expect(stats.find(({ key }) => key === '中文 & space/empty/')).toMatchObject({ isDir: true });
 	expect(stats.find((stat) => stat.key.endsWith('.md'))).toMatchObject({
 		mtime: Date.parse(modified),
-		uid: `${Date.parse(modified)}~22`,
+		uid: `${Math.floor(Date.parse(modified) / 1000) * 1000}~22`,
 	});
 	expect(http.calls).toHaveLength(1);
 });
@@ -147,7 +112,7 @@ test.each(['missing', 'repeated'])('incomplete %s pagination rejects discovery',
 		await Promise.resolve(remote.fs.list('/', () => 'advance')).catch(
 			(error: unknown) => error,
 		),
-	).toMatchObject({ message: 'Incomplete OpenList S3 listing pagination.' });
+	).toMatchObject({ message: 'Incomplete S3 rclone listing pagination.' });
 	expect(http.calls).toHaveLength(mode === 'missing' ? 1 : 2);
 });
 
@@ -185,13 +150,14 @@ test('out-of-scope objects and invalid listing roots reject discovery', async ()
 	}
 });
 
-test('a nonempty file named like the placeholder remains a normal file', async () => {
+test('a zero-byte file named like the placeholder remains a normal file', async () => {
+	const size = 0;
 	const http = request(() => ({
-		text: () => xml(object('vault/ThisIsAnEmptyFolderInTheS3Bucket', { size: 1 })),
+		text: () => xml(object('vault/ThisIsAnEmptyFolderInTheS3Bucket', { size })),
 	}));
 	const remote = await createRemote(http.request, scope);
 	expect(await remote.fs.list('/', () => 'advance')).toMatchObject([
-		{ isDir: false, key: 'ThisIsAnEmptyFolderInTheS3Bucket', size: 1 },
+		{ isDir: false, key: 'ThisIsAnEmptyFolderInTheS3Bucket', size },
 	]);
 });
 
@@ -202,10 +168,89 @@ test('prefixed XML namespaces retain files and inferred folders', async () => {
 	}));
 	const remote = await createRemote(http.request, scope);
 	const stats = await remote.fs.list('/', () => 'advance');
-	expect(stats).toContainEqual(folder('nested/'));
+	expect(stats.find(({ key }) => key === 'nested/')).toMatchObject({ isDir: true });
 	expect(stats.find(({ key }) => key === 'nested/a.md')).toMatchObject({
 		isDir: false,
 		size: 22,
 	});
 	expect(http.calls).toHaveLength(1);
 });
+
+test('repeated files are deduplicated across pages and invalid later stats reject the traversal', async () => {
+	const make = (last: string) =>
+		request((url) => ({
+			text: () =>
+				new URL(url).searchParams.has('continuation-token')
+					? xml(last)
+					: xml(
+							object('vault/a.md'),
+							'<IsTruncated>true</IsTruncated><NextContinuationToken>next</NextContinuationToken>',
+						),
+		}));
+	const valid = await createRemote(
+		make(object('vault/a.md') + object('vault/b.md')).request,
+		scope,
+	);
+	expect((await valid.fs.list('/', () => 'advance')).map(({ key }) => key)).toEqual([
+		'a.md',
+		'b.md',
+	]);
+	const invalid = await createRemote(
+		make(
+			'<Contents><Key>vault/b.md</Key><LastModified>invalid</LastModified><Size>1</Size></Contents>',
+		).request,
+		scope,
+	);
+	expect(invalid.fs.list('/', () => 'advance')).rejects.toThrow(
+		'Invalid S3 rclone file metadata',
+	);
+});
+
+test.each([' true ', '\ntrue\n', '1'])(
+	'pagination fields normalize before recursive and exact queries (%s)',
+	async (flag) => {
+		const http = request((url) => {
+			const query = new URL(url).searchParams;
+			const lookup = query.get('prefix') === `${scope}a.md`;
+			const token = query.get('continuation-token');
+			if (token && token !== 'next') throw new Error('Unnormalized continuation token');
+			return {
+				text: () =>
+					token
+						? xml(
+								object(`${scope}${lookup ? 'a' : 'b'}.md`),
+								'<IsTruncated> false </IsTruncated>',
+							)
+						: xml(
+								object(`${scope}a.md${lookup ? '.backup' : ''}`),
+								`<IsTruncated>${flag}</IsTruncated><NextContinuationToken> next \n</NextContinuationToken>`,
+							),
+			};
+		});
+		const remote = await createRemote(http.request, scope);
+		expect((await remote.fs.list('/', () => 'advance')).map(({ key }) => key)).toEqual([
+			'a.md',
+			'b.md',
+		]);
+		expect(await remote.fs.stat('a.md')).toMatchObject({ key: 'a.md', size: 22 });
+		expect(http.calls).toHaveLength(4);
+	},
+);
+
+test.each(['', 'TRUE', 'unexpected', 'true</IsTruncated><IsTruncated>false'])(
+	'invalid pagination flags abort discovery (%s)',
+	async (flag) => {
+		const http = request(() => ({
+			text: () =>
+				xml(
+					object('a.md'),
+					`<IsTruncated>${flag}</IsTruncated><NextContinuationToken>next</NextContinuationToken>`,
+				),
+		}));
+		const remote = await createRemote(http.request);
+		expect(remote.fs.list('/', () => 'advance')).rejects.toThrow(
+			'Invalid S3 rclone listing pagination.',
+		);
+		expect(http.calls).toHaveLength(1);
+	},
+);
