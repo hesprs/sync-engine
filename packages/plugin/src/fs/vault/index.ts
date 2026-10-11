@@ -23,8 +23,16 @@ async function getFileUid(
 	return stat.uid;
 }
 
-function extractTimes({ mtime, ctime }: { ctime?: string; mtime?: string }): DataWriteOptions {
-	return { ctime: Number(ctime) || undefined, mtime: Number(mtime) || undefined };
+function extractTimes({
+	mtime,
+	ctime,
+}: {
+	ctime?: string;
+	mtime?: string;
+}): DataWriteOptions | undefined {
+	const cNum = Number(ctime);
+	const mNum = Number(mtime);
+	if (cNum || mNum) return { ctime: cNum || undefined, mtime: mNum || undefined };
 }
 
 export default class VaultFs implements RootFs {
@@ -67,12 +75,15 @@ export default class VaultFs implements RootFs {
 			while (true) {
 				const result = await reader.read();
 				if (result.done) break;
+				await this.request(tempPath, { method: 'APPEND', value: result.value });
+			}
+			const times = extractTimes(await stat.meta());
+			if (times)
 				await this.request(tempPath, {
 					method: 'APPEND',
-					value: result.value,
-					...extractTimes(await stat.meta()),
+					value: new Uint8Array(0),
+					...times,
 				});
-			}
 			if (await this.exists(key))
 				await this.request(key, { method: 'DELETE', trash: 'permanent' });
 			await this.move(tempPath, key);

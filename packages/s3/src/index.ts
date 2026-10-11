@@ -45,7 +45,6 @@ export type S3Settings = {
 		enabled: boolean;
 		value: string;
 	};
-	fetchObjectMeta: boolean;
 };
 
 export type S3DB = DatabaseSync<Record<string, unknown>, { s3Key?: Binary; s3KeyMarker?: string }>;
@@ -77,7 +76,6 @@ export default class S3 {
 		accessKeyId: '',
 		bucket: '',
 		endpoint: '',
-		fetchObjectMeta: false,
 		prefix: '/',
 		proxyUrl: {
 			enabled: false,
@@ -171,6 +169,9 @@ export default class S3 {
 		const store = getRecordStore();
 		if (this.settings.remoteFs === 's3' && !(store instanceof Error))
 			void migrateEtag(store).catch(() => {});
+
+		// TODO: remove after October 31
+		if ('fetchObjectMeta' in this.moduleSettings) delete this.moduleSettings.fetchObjectMeta;
 	};
 
 	private readonly resolveConfig = () => {
@@ -181,7 +182,6 @@ export default class S3 {
 			bucket,
 			urlStyle,
 			prefix,
-			fetchObjectMeta,
 			secretAccessKey: _secretAccessKey,
 			sessionToken: { value, enabled },
 		} = this.moduleSettings;
@@ -196,7 +196,6 @@ export default class S3 {
 			accessKeyId,
 			bucket,
 			endpoint,
-			fetchObjectMeta,
 			prefix,
 			region,
 			secretAccessKey,

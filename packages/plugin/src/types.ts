@@ -4,6 +4,7 @@ export type { Binary } from '@repo/shared/binary';
 export type MaybePromise<T> = Promise<T> | T;
 export type TogglableValue<T = number> = { enabled: boolean; value: T };
 
+// Bun global `type Dict<T> = { [key: string]: T | undefined; }`
 export type FileStat = {
 	isDir: false;
 	key: string;

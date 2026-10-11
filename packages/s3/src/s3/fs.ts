@@ -13,7 +13,6 @@ import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
 import { getStatus, toError } from '@repo/shared/error';
 import normalizeEtag from '@repo/shared/normalize-etag';
-import parseXML from '@repo/shared/parse-xml';
 import { dirname, encodeUrl, isFolder } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import type { UrlStyle } from './sigv4';
@@ -25,6 +24,7 @@ import {
 	getFileUid,
 	extractMetaHeaders,
 	parseS3Error,
+	rootValue,
 	toMetaHeaders,
 } from './utils';
 
@@ -35,17 +35,14 @@ export type S3FsOptions = {
 	bucket: string;
 	urlStyle: UrlStyle;
 	request: Request;
-	fetchObjectMeta: boolean;
 };
 
 const BATCH_DELETE_MAX_KEYS = 1000;
 
 type S3ListBucketResult = {
-	ListBucketResult: {
-		Contents?: S3Object | Array<S3Object>;
-		IsTruncated?: string;
-		NextContinuationToken?: string;
-	};
+	Contents?: S3Object | Array<S3Object>;
+	IsTruncated?: string;
+	NextContinuationToken?: string;
 };
 
 type S3DeleteError = {
@@ -54,11 +51,7 @@ type S3DeleteError = {
 	Message?: string;
 };
 
-type S3DeleteResponse = {
-	DeleteResult?: {
-		Error?: S3DeleteError | Array<S3DeleteError>;
-	};
-};
+type S3DeleteResponse = { Error?: S3DeleteError | Array<S3DeleteError> };
 
 type S3Object = {
 	Key?: string;
@@ -91,7 +84,7 @@ function asArray<T>(value: T | Array<T> | undefined): Array<T> {
 function parseBatchDelete(xml: string): Record<string, Error> {
 	if (!xml.trim()) return {};
 	const result: Record<string, Error> = {};
-	const errors = asArray(parseXML<S3DeleteResponse>(xml).DeleteResult?.Error);
+	const errors = asArray(rootValue<S3DeleteResponse>(xml).Error);
 	for (const { Key, Code, Message } of errors)
 		if (Key && Code) result[Key] = new Error(formatS3Error(Code, Message));
 	return result;
@@ -110,6 +103,7 @@ export default class S3Fs implements RootFs {
 	private readonly endpoint: string;
 	private readonly bucket: string;
 	private readonly urlStyle: UrlStyle;
+	private readonly metaCache = new Map<string, Record<string, string>>();
 
 	constructor(private readonly options: S3FsOptions) {
 		this.endpoint = options.endpoint;
@@ -148,6 +142,7 @@ export default class S3Fs implements RootFs {
 
 	async read(key: string): Promise<Binary> {
 		const response = await this.requestOrThrow(this.buildUrl(key), { method: 'GET' });
+		this.metaCache.set(key, extractMetaHeaders(response.headers));
 		return response.bytes();
 	}
 
@@ -161,6 +156,7 @@ export default class S3Fs implements RootFs {
 					headers: { Range: `bytes=${start}-${endInclusive}` },
 					method: 'GET',
 				});
+				if (start === 0) this.metaCache.set(key, extractMetaHeaders(response.headers));
 				return response.bytes();
 			},
 			size,
@@ -283,6 +279,8 @@ export default class S3Fs implements RootFs {
 	}
 
 	private async fetchMeta(key: string): Promise<Record<string, string>> {
+		const cached = this.metaCache.get(key);
+		if (cached) return cached;
 		const { headers } = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
 		return extractMetaHeaders(headers);
 	}
@@ -332,7 +330,7 @@ export default class S3Fs implements RootFs {
 				query,
 			);
 			const response = await this.requestOrThrow(url, { method: 'GET' });
-			const { ListBucketResult: listing } = parseXML<S3ListBucketResult>(response.text());
+			const listing = rootValue<S3ListBucketResult>(response.text());
 			const contents = asArray(listing.Contents);
 			await Promise.all(
 				contents.map(async ({ Key, ETag, LastModified, Size }, index) => {
@@ -346,9 +344,7 @@ export default class S3Fs implements RootFs {
 						})) === 'exclude'
 					)
 						return;
-					const meta = this.options.fetchObjectMeta
-						? () => this.fetchMeta(Key)
-						: () => ({});
+					const meta = () => this.fetchMeta(Key);
 					if (isFolder(Key)) results.push({ isDir: true, key: Key, meta });
 					else {
 						if (!LastModified) throw mtimeMissing;
@@ -366,8 +362,9 @@ export default class S3Fs implements RootFs {
 					}
 				}),
 			);
-			continuationToken =
-				listing.IsTruncated === 'true' ? listing.NextContinuationToken : undefined;
+			if (listing.IsTruncated === 'true' && !listing.NextContinuationToken)
+				throw new Error('S3 listing truncated but no continuation token provided');
+			continuationToken = listing.NextContinuationToken;
 		} while (continuationToken);
 
 		return results;

@@ -2,16 +2,15 @@ import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import normalizeEtag from '@repo/shared/normalize-etag';
-import parseXML from '@repo/shared/parse-xml';
 import type { UrlStyle } from './sigv4';
 import { buildUrlWithQuery, getHeader } from './url';
-import { getFileUid, toMetaHeaders } from './utils';
+import { getFileUid, rootValue, toMetaHeaders } from './utils';
 
 export const PART_SIZE = 5 * 1024 * 1024; // 5 MiB — S3 minimum part size
 const MAX_CONCURRENT = 3;
 
-type InitiateMultipartUploadResponse = { InitiateMultipartUploadResult?: { UploadId?: string } };
-type CompleteMultipartUploadResponse = { CompleteMultipartUploadResult?: { ETag?: string } };
+type InitiateMultipartUploadResponse = { UploadId?: string };
+type CompleteMultipartUploadResponse = { ETag?: string };
 
 export type MultipartUploadOptions = {
 	endpoint: string;
@@ -24,8 +23,7 @@ export type MultipartUploadOptions = {
 };
 
 function parseUploadId(xml: string): string {
-	const uploadId =
-		parseXML<InitiateMultipartUploadResponse>(xml).InitiateMultipartUploadResult?.UploadId;
+	const uploadId = rootValue<InitiateMultipartUploadResponse>(xml).UploadId;
 	if (!uploadId) throw new Error('Failed to parse UploadId from S3 response');
 	return uploadId;
 }
@@ -87,8 +85,7 @@ export async function multipartUpload(
 			method: 'POST',
 		});
 
-		const etag = parseXML<CompleteMultipartUploadResponse>(completeResponse.text())
-			.CompleteMultipartUploadResult?.ETag;
+		const etag = rootValue<CompleteMultipartUploadResponse>(completeResponse.text()).ETag;
 		return etag ? normalizeEtag(etag) : getFileUid(await stat(key), key);
 	} catch (error) {
 		void abortMultipart(options, uploadId);

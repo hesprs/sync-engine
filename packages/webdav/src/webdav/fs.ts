@@ -45,7 +45,7 @@ type WebDAVProp = {
 	getetag?: WebDAVPropValue;
 	getlastmodified?: WebDAVPropValue;
 	resourcetype?: { collection?: unknown } | string;
-	'se:meta'?: WebDAVPropValue;
+	meta?: WebDAVPropValue;
 };
 
 type WebDAVPropstat = {
@@ -195,13 +195,13 @@ export default class WebdavFs implements RootFs {
 			getcontentlength,
 			getetag,
 			getlastmodified,
-			'se:meta': seMeta,
+			meta: metaText,
 		} = validPropstat.prop;
 		const isDir = isCollectionResource(resourcetype);
 		const key = toKey(href, this.endpoint, isDir);
 		const meta = () => {
 			if (this.options.fileMetadata) {
-				const metaJson = getDavText(seMeta);
+				const metaJson = getDavText(metaText);
 				if (metaJson) return JSON.parse(metaJson) as Dict<string>;
 			}
 			return {};

@@ -33,7 +33,8 @@ export default function parseXML<T extends object>(xml: string): T {
 
 		const hasAttributes = elem.attributes.length > 0;
 		const hasChildren = Object.keys(grouped).length > 0;
-		if (!hasAttributes && !hasChildren && textContent) return textContent;
+		if (!hasAttributes && !hasChildren) return textContent;
+		if (hasChildren) textContent = textContent.trim();
 		if (textContent) result['#text'] = textContent;
 		for (const [name, children] of Object.entries(grouped))
 			result[name] = children.length === 1 ? children[0] : children;
@@ -42,5 +43,6 @@ export default function parseXML<T extends object>(xml: string): T {
 	};
 
 	const root = doc.documentElement;
+	if (!root) throw new Error('XML Parse Error: no root element found');
 	return { [root.localName]: convertNode(root) } as T;
 }

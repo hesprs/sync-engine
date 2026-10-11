@@ -1,15 +1,18 @@
 import type { Stat } from '@hesprs/sync-engine-sdk';
 import parseXML from '@repo/shared/parse-xml';
 
+// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
+export function rootValue<T extends object>(xml: string): T {
+	return Object.values(parseXML<Record<string, T>>(xml))[0];
+}
+
 type S3ErrorResponse = {
-	Error?: {
-		Code?: string;
-		Message?: string;
-	};
+	Code?: string;
+	Message?: string;
 };
 export function parseS3Error(xml: string): string | undefined {
 	try {
-		const error = parseXML<S3ErrorResponse>(xml).Error;
+		const error = rootValue<S3ErrorResponse>(xml);
 		if (error?.Code) return formatS3Error(error.Code, error.Message);
 	} catch {
 		/* Ignore malformed S3 error XML and use the HTTP fallback. */

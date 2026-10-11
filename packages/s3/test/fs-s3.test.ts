@@ -233,7 +233,7 @@ test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async 
 							},
 						},
 					}
-				: {};
+				: { DeleteResult: {} };
 		bodies.push(textBody(params));
 		return response({
 			status: 200,
@@ -473,8 +473,8 @@ test('list maps unified root to an empty S3 prefix', async () => {
 	expect(await s3.fs.list('/', () => 'include' as const)).toStrictEqual([]);
 });
 
-test('list fetches meta via HEAD per object when fetchObjectMeta is enabled', async () => {
-	const s3 = createS3Fs({ fetchObjectMeta: true });
+test('list provides meta via lazy HEAD per object', async () => {
+	const s3 = createS3Fs();
 	s3.setRequest((url, params) => {
 		if (params.method === 'HEAD') return response({ headers: { 'x-amz-meta-ctime': '999' } });
 		parsedResponse = {
@@ -493,4 +493,40 @@ test('list fetches meta via HEAD per object when fetchObjectMeta is enabled', as
 	const [stat] = await s3.fs.list('/', () => 'include' as const);
 	if (stat.isDir) throw new Error('expected file stat');
 	expect(await stat.meta()).toStrictEqual({ ctime: '999' });
+});
+
+test('read populates meta cache so list stat meta() skips HEAD', async () => {
+	const s3 = createS3Fs();
+	let headCount = 0;
+	s3.setRequest((url, params) => {
+		if (params.method === 'GET') {
+			if (!url.includes('list-type'))
+				return response({
+					body: bytes('data'),
+					headers: { 'x-amz-meta-ctime': '42', 'x-amz-meta-mtime': '99' },
+				});
+			parsedResponse = {
+				ListBucketResult: {
+					Contents: {
+						ETag: 'etag-1',
+						Key: 'file.md',
+						LastModified: 'Mon, 01 Jan 2024 00:00:00 GMT',
+						Size: '1',
+					},
+					IsTruncated: 'false',
+				},
+			};
+			return response({ text: '<ListBucketResult />' });
+		}
+		if (params.method === 'HEAD') {
+			headCount++;
+			return response({ headers: { 'x-amz-meta-ctime': '999' } });
+		}
+		return response();
+	});
+	const [stat] = await s3.fs.list('/', () => 'include' as const);
+	if (stat.isDir) throw new Error('expected file stat');
+	await s3.fs.read('file.md');
+	expect(await stat.meta()).toStrictEqual({ ctime: '42', mtime: '99' });
+	expect(headCount).toBe(0);
 });
