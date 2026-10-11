@@ -55,17 +55,17 @@
 		"tests": "bun --preload=./test/mocks test"
 	},
 	"dependencies": {
-		"obsidian": "^1.13.1"
+		"obsidian": "catalog:"
 	},
 	"devDependencies": {
 		"@repo/shared": "workspace:*",
 		"@unocss/postcss": "^66.10.0",
-		"postcss-merge-rules": "^9.0.3",
-		"solid-js": "^1.9.15",
-		"synthkernel": "./synthkernel.tgz",
-		"uni-kv": "../../uni-kv.tgz",
+		"postcss-merge-rules": "^9.1.4",
+		"solid-js": "^1.9.17",
+		"synthkernel": "catalog:",
+		"uni-kv": "catalog:",
 		"unocss": "^66.10.0",
 		"unplugin-solid": "^2.0.0",
-		"verkit": "^0.4.0"
+		"verkit": "^0.4.1"
 	}
 }

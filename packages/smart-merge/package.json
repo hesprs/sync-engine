@@ -21,6 +21,6 @@
 	"devDependencies": {
 		"@hesprs/sync-engine-sdk": "workspace:*",
 		"@repo/shared": "workspace:*",
-		"uni-kv": "../../uni-kv.tgz"
+		"uni-kv": "catalog:"
 	}
 }

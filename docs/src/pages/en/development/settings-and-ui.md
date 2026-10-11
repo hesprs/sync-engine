@@ -21,7 +21,8 @@ The value passed to `apply` is a nested object. Each numeric key points to eithe
 
 ```ts
 type CallableOrObjectTree =
-  { [order: number]: CallableOrObjectTree } | ((self: SettingTree) => SettingDefinitionItem);
+  | { [order: number]: CallableOrObjectTree }
+  | ((self: SettingTree) => SettingDefinitionItem);
 ```
 
 Sync Engine walks this object from the smallest numeric key to the largest and renders the callbacks as Obsidian settings. Numeric keys are not setting names, persisted setting keys, or numeric control values. They only provide sibling order and identify the branch where an extension is inserted. They do not need to be consecutive:

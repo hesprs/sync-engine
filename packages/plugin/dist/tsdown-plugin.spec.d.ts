@@ -19,3 +19,4 @@ export default function syncEngineModule(meta?: ModuleMeta | Array<ModuleMetaWit
   tsdownConfig(config: SyncEngineConfig): void;
 };
 //#endregion
+export {};

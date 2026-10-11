@@ -18,6 +18,6 @@
 	},
 	"devDependencies": {
 		"vite-plugin-json-canvas": "^1.0.1",
-		"vue-tsc": "^3.3.11"
+		"vue-tsc": "^3.3.13"
 	}
 }
