@@ -222,19 +222,20 @@ test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async 
 		expect(address.searchParams.has('delete')).toBe(true);
 		expect(params.headers?.['Content-Type']).toBe('application/xml');
 		expect(params.headers?.['Content-MD5']).toMatch(/^[A-Za-z0-9+/]{22}==$/u);
-		parsedResponse =
-			bodies.length === 0
-				? {
-						DeleteResult: {
-							Error: {
-								Code: 'AccessDenied',
-								Key: 'a<&"\'',
-								Message: 'no permission',
-							},
+		const body = textBody(params);
+		bodies.push(body);
+		const hasSpecialKey = body.includes('<Key>a&lt;&amp;&quot;&apos;</Key>');
+		parsedResponse = hasSpecialKey
+			? {
+					DeleteResult: {
+						Error: {
+							Code: 'AccessDenied',
+							Key: 'a<&"\'',
+							Message: 'no permission',
 						},
-					}
-				: { DeleteResult: {} };
-		bodies.push(textBody(params));
+					},
+				}
+			: { DeleteResult: {} };
 		return response({
 			status: 200,
 			text: '<DeleteResult><Error><Key>a&lt;&amp;&quot;&apos;</Key><Code>AccessDenied</Code><Message>no permission</Message></Error></DeleteResult>',
@@ -244,9 +245,11 @@ test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async 
 	for (let index = 0; index < 1000; index += 1) keys.push(`key-${index}`);
 	const result = await s3.fs.batchDelete(keys);
 	expect(bodies).toHaveLength(2);
-	expect(bodies[0]).toContain('<Key>a&lt;&amp;&quot;&apos;</Key>');
-	expect((bodies[0]?.match(/<Object>/gu) ?? []).length).toBe(1000);
-	expect((bodies[1]?.match(/<Object>/gu) ?? []).length).toBe(1);
+	const objectCount = (body: string) => (body.match(/<Object>/gu) ?? []).length;
+	const largeBatch = bodies.find((b) => objectCount(b) === 1000);
+	const smallBatch = bodies.find((b) => objectCount(b) === 1);
+	expect(largeBatch).toContain('<Key>a&lt;&amp;&quot;&apos;</Key>');
+	expect(smallBatch).toBeDefined();
 	expect(result['a<&"\'']?.message).toBe('S3 AccessDenied: no permission');
 	expect(result['key-0']).toBeUndefined();
 });
