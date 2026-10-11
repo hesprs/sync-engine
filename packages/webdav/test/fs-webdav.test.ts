@@ -620,8 +620,8 @@ test('stat meta reads se:meta from PROPFIND when fileMetadata is enabled', async
 				prop: {
 					getcontentlength: '5',
 					getlastmodified: 'Mon, 01 Jan 2024 00:00:00 GMT',
+					meta: { '#text': '{"custom":"value","ctime":"500"}' },
 					resourcetype: {},
-					'se:meta': { '#text': '{"custom":"value","ctime":"500"}' },
 				},
 				status: 'HTTP/1.1 200 OK',
 			},
