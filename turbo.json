@@ -3,6 +3,7 @@
 	"ui": "stream",
 	"noUpdateNotifier": true,
 	"concurrency": "100%",
+	"agentGuidance": false,
 	"tasks": {
 		"compile": {
 			"dependsOn": ["^compile"],
