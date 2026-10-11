@@ -42,6 +42,7 @@ export const en: EncryptionTranslations = {
 				});
 			}
 		}),
+	pleaseSetPassword: 'Please set an encryption password!',
 };
 
 export const zh: EncryptionTranslations = {
@@ -78,6 +79,7 @@ export const zh: EncryptionTranslations = {
 				});
 			}
 		}),
+	pleaseSetPassword: '请设置加密密码！',
 };
 
 export const zhTW: EncryptionTranslations = {
@@ -122,6 +124,7 @@ export const zhTW: EncryptionTranslations = {
 				});
 			}
 		}),
+	pleaseSetPassword: '請設定加密密碼！',
 };
 
 export const ru: EncryptionTranslations = {
@@ -170,4 +173,5 @@ export const ru: EncryptionTranslations = {
 				});
 			}
 		}),
+	pleaseSetPassword: 'Пожалуйста, задайте пароль для шифрования!',
 };

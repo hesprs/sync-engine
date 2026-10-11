@@ -1,5 +1,5 @@
 import type { Context, Events, Translations } from '@';
-import type { App, DataAdapter } from 'obsidian';
+import type { App } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
 import hash from '@repo/shared/crypto';
@@ -63,6 +63,7 @@ export default class Extensibility {
 		failedToLoadModule: Snippet<string>;
 		failedToDownloadModule: Snippet<string>;
 		failedToFetchSource: Snippet<string>;
+		integrityCheckFailed: string;
 	};
 	declare readonly events: {
 		moduleLoaded: string;
@@ -162,11 +163,12 @@ export default class Extensibility {
 			this.ctx;
 		const { adapter } = app.vault;
 		try {
-			const ctor = await loadModule({
-				adapter,
-				integrity,
-				...(module ? { module } : { path: this.getModulePath(id) }),
-			});
+			const file = module ?? (await adapter.read(this.getModulePath(id)));
+			if (integrity && (await sha256(file)) !== integrity)
+				throw new Error(translate('integrityCheckFailed'));
+			const moduleJs = await importCode<{ default?: GeneralCtor }>(file);
+			const ctor = moduleJs.default;
+			if (typeof ctor !== 'function') throw new Error(`Invalid module!`);
 			__addModule__(ctor);
 			const instance: ModuleInstance = __getModule__(ctor as never);
 			const modules = this.settings.modules;
@@ -396,19 +398,4 @@ function isValidMeta(meta: unknown): meta is ModuleMeta {
 		meta.integrity.length === 64 &&
 		/^[0-9a-f]*$/u.test(meta.integrity)
 	);
-}
-
-export async function loadModule(
-	options:
-		| { path: string; integrity: string; adapter: DataAdapter }
-		| { module: string; integrity: string; adapter: DataAdapter },
-) {
-	const { adapter, integrity } = options;
-	const file = 'module' in options ? options.module : await adapter.read(options.path);
-	if (integrity && (await sha256(file)) !== integrity)
-		throw new Error('Module has been maliciously modified!');
-	const module = await importCode<{ default?: GeneralCtor }>(file);
-	const ctor = module.default;
-	if (typeof ctor !== 'function') throw new Error(`Invalid module!`);
-	return ctor;
 }

@@ -5,8 +5,10 @@ import type {
 	SelectFromContext,
 	SettingEntry,
 	TranslationResource,
+	Translate,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
+import type { EncryptionTranslations } from '@/setting';
 import type { EncryptionDB } from '@/wrapper';
 import { en, zh, ru, zhTW } from '@/i18n';
 import encryptionSetting from '@/setting';
@@ -27,6 +29,7 @@ export default class Encryption {
 			memoryDB: EncryptionDB;
 			registerSetting: (entry: SettingEntry) => () => void;
 			registerI18n: (locale: ObsidianLanguageCode, resource: TranslationResource) => void;
+			translate: Translate<EncryptionTranslations>;
 		}>,
 	) {
 		ctx.registerI18n('en', en);
@@ -41,14 +44,14 @@ export default class Encryption {
 	};
 
 	readonly start = () => {
-		const { app, memoryDB, registerRemoteFsWrapper, registerSetting } = this.ctx;
+		const { app, memoryDB, registerRemoteFsWrapper, registerSetting, translate } = this.ctx;
 		this.cleanup.push(
 			registerRemoteFsWrapper({
 				apply: (fs) => {
 					if (!this.moduleSettings.enabled) return;
 					const { password: pwd } = this.moduleSettings;
 					const password = app.secretStorage.getSecret(pwd);
-					if (!password) throw new Error('Please configure encryption password!');
+					if (!password) throw new Error(translate('pleaseSetPassword'));
 					return encryptionWrapper(fs, { memoryDB, password });
 				},
 				priority: 7919,

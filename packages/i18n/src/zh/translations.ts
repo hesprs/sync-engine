@@ -138,6 +138,8 @@ const zh: Translations = {
 	idle: '空闲',
 	installModuleFromFile: '从文件安装模块',
 	installed: '已安装',
+	integrityCheckFailed:
+		'完整性检查失败。此模块可能已被外部篡改。如果您不知道为何出现此情况，请重新安装该模块。',
 	integrityVerification: '完整性验证',
 	integrityVerificationDescription: () =>
 		createFragment((frag) => {

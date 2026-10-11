@@ -177,6 +177,8 @@ const ru: Translations = {
 	idle: 'В ожидании',
 	installModuleFromFile: 'Установить модуль из файла',
 	installed: 'Установлено',
+	integrityCheckFailed:
+		'Проверка целостности не пройдена. Этот модуль мог быть изменён внешним субъектом. Переустановите модуль, если не знаете, почему это произошло.',
 	integrityVerification: 'Проверка целостности',
 	integrityVerificationDescription: () =>
 		createFragment((frag) => {

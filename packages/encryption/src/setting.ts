@@ -14,6 +14,7 @@ export type EncryptionTranslations = {
 	encryption: string;
 	encryptionDescription: string;
 	encryptionMigration: Fragment<boolean>;
+	pleaseSetPassword: string;
 };
 
 export default function encryptionSetting(

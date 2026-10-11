@@ -60,14 +60,14 @@ function encryptBasename(nameKey: Binary, basename: string): string {
 }
 
 function decryptBasename(nameKey: Binary, encryptedBasename: string): string {
-	if (encryptedBasename === '') throw new Error('Encrypted basename cannot be empty');
+	if (encryptedBasename === '') throw new Error('Encrypted file name cannot be empty');
 	try {
 		const plaintext = gcmsiv(nameKey, FILE_NAME_NONCE).decrypt(
 			decodeBase64Url(encryptedBasename),
 		);
 		return normalizeBasename(uint8ArrayToText(plaintext));
 	} catch {
-		throw new Error('Encrypted basename is malformed');
+		throw new Error('Encrypted file name is malformed');
 	}
 }
 
@@ -88,9 +88,9 @@ function cacheLimitedSet(store: StoreSync<string>, key: string, value: string) {
 
 function normalizeBasename(basename: string) {
 	const normalizedBasename = basename.normalize('NFC');
-	if (normalizedBasename === '') throw new Error('Basename cannot be empty');
+	if (normalizedBasename === '') throw new Error('File name cannot be empty');
 	if (normalizedBasename.includes('/'))
-		throw new Error(`Basename must not contain '/': ${basename}`);
+		throw new Error(`File name must not contain '/': ${basename}`);
 	return normalizedBasename;
 }
 

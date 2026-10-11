@@ -138,6 +138,8 @@ const zhTW: Translations = {
 	idle: '待命',
 	installModuleFromFile: '從檔案安裝模組',
 	installed: '已安裝',
+	integrityCheckFailed:
+		'完整性檢查失敗。此模組可能已被外部篡改。如果您不知道為何出現此情況，請重新安裝該模組。',
 	integrityVerification: '完整性驗證',
 	integrityVerificationDescription: () =>
 		createFragment((frag) => {

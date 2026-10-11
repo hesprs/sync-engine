@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.3.1 - 2026-10-11
+
+### Core
+
+- Fixed streamed downloading fetches file metadata redundantly for each chunk.
+- Fixed "Clear records" loading forever when previous sync run created more than one IndexedDB stores.
+
+### WebDAV Module
+
+- Fixed file metadata not being retrieved by the correct name.
+
+### S3 Module
+
+- Optimized object metadata fetching by using the headers returned by object downloads instead of initiating a new request.
+- Fixed several minor issues and improved compatibility with different S3 servers.
+
 ## Sync Engine v3.3.0 - 2026-10-07
 
 ### Core

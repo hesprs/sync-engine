@@ -29,6 +29,8 @@ type EarlyWrite = {
 	resolve: (uid: string) => void;
 };
 
+const TERMINATE_NEEDLE = new Error('Terminate key needle.');
+
 const executeAtom = ({ execute }: OutputAtom) => {
 	const result = execute();
 	if (result instanceof Promise) return result;
@@ -71,7 +73,7 @@ class OptimizationFs implements WrappedFs {
 			this.writeKeys.add(key);
 			thisPool.delete(stat.key);
 			this.scheduleFlush();
-			throw new Error('Terminate key needle.');
+			throw TERMINATE_NEEDLE;
 		}
 		return this.original.read(key, stat);
 	}

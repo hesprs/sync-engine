@@ -632,6 +632,7 @@ declare class Extensibility {
     failedToLoadModule: Snippet<string>;
     failedToDownloadModule: Snippet<string>;
     failedToFetchSource: Snippet<string>;
+    integrityCheckFailed: string;
   };
   readonly events: {
     moduleLoaded: string;

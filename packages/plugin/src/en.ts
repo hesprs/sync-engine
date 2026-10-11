@@ -161,6 +161,8 @@ const en: Translations = {
 	idle: 'Idle',
 	installModuleFromFile: 'Install module from file',
 	installed: 'Installed',
+	integrityCheckFailed:
+		"Integrity check failed. This module might have been tampered by an external actor. Please reinstall the module if don't know why this happens.",
 	integrityVerification: 'Integrity verification',
 	integrityVerificationDescription: () =>
 		createFragment((frag) => {
