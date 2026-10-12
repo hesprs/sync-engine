@@ -15,7 +15,7 @@
 		"dev": "MODE=dev bun --bun tsdown",
 		"compile": "bun --bun tsdown",
 		"fix": "oxlint --silent --fix && oxfmt",
-		"check": "tsc && oxlint && oxfmt --check"
+		"check": "oxlint && oxfmt --check"
 	},
 	"devDependencies": {
 		"@hesprs/sync-engine-sdk": "workspace:*",

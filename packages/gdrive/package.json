@@ -19,7 +19,7 @@
 		"dev": "MODE=dev bun --bun --env-file=.env tsdown",
 		"compile": "bun --bun --env-file=.env tsdown",
 		"fix": "oxlint --silent --fix && oxfmt",
-		"check": "tsc && oxlint && oxfmt --check",
+		"check": "oxlint && oxfmt --check",
 		"tests": "bun --preload=./test/mocks test"
 	},
 	"devDependencies": {
