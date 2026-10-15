@@ -476,10 +476,11 @@ test('list maps unified root to an empty S3 prefix', async () => {
 	expect(await s3.fs.list('/', () => 'include' as const)).toStrictEqual([]);
 });
 
-test('list provides meta via lazy HEAD per object', async () => {
+test('list includes an exact file prefix match and provides meta via lazy HEAD', async () => {
 	const s3 = createS3Fs();
 	s3.setRequest((url, params) => {
 		if (params.method === 'HEAD') return response({ headers: { 'x-amz-meta-ctime': '999' } });
+		expect(new URL(url).searchParams.get('prefix')).toBe('file.md');
 		parsedResponse = {
 			ListBucketResult: {
 				Contents: {
@@ -493,7 +494,7 @@ test('list provides meta via lazy HEAD per object', async () => {
 		};
 		return response({ text: '<ListBucketResult />' });
 	});
-	const [stat] = await s3.fs.list('/', () => 'include' as const);
+	const [stat] = await s3.fs.list('file.md', () => 'include' as const);
 	if (stat.isDir) throw new Error('expected file stat');
 	expect(await stat.meta()).toStrictEqual({ ctime: '999' });
 });

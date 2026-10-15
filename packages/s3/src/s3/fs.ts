@@ -336,7 +336,7 @@ export default class S3Fs implements RootFs {
 				contents.map(async ({ Key, ETag, LastModified, Size }, index) => {
 					if (
 						!Key ||
-						Key === key ||
+						(Key === key && isFolder(key)) ||
 						(await reporter({
 							completed: index + 1,
 							current: Key,
