@@ -13,7 +13,7 @@ import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
 import { getStatus, toError } from '@repo/shared/error';
 import normalizeEtag from '@repo/shared/normalize-etag';
-import { dirname, encodeUrl, isFolder } from '@repo/shared/path';
+import { dirname, isFolder, parseUrl } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import type { UrlStyle } from './sigv4';
 import { PART_SIZE, multipartUpload } from './multipart';
@@ -251,7 +251,7 @@ export default class S3Fs implements RootFs {
 
 	async move(oldKey: string, newKey: string): Promise<void> {
 		// S3 has no native rename — copy then delete
-		const copySource = `${this.bucket}/${encodeUrl(oldKey)}`;
+		const copySource = `${this.bucket}/${parseUrl(oldKey, true)}`;
 		const destUrl = this.buildUrl(newKey);
 		await this.requestOrThrow(destUrl, {
 			headers: {
@@ -344,6 +344,7 @@ export default class S3Fs implements RootFs {
 						})) === 'exclude'
 					)
 						return;
+					Key = Key.normalize('NFC');
 					const meta = () => this.fetchMeta(Key);
 					if (isFolder(Key)) results.push({ isDir: true, key: Key, meta });
 					else {

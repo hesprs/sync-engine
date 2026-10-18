@@ -5,6 +5,7 @@ import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
 import hash from '@repo/shared/crypto';
 import { importCode } from '@repo/shared/e2e-utils.spec';
 import { describeError, toError } from '@repo/shared/error';
+import { parseUrl } from '@repo/shared/path';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
 import type { General } from '@/types';
@@ -285,7 +286,7 @@ export default class Extensibility {
 				const seenId = new Set<string>();
 				content.forEach((meta: unknown) => {
 					if (!isValidMeta(meta)) return;
-					const { id, minPluginVersion, icon } = meta;
+					const { id, minPluginVersion, icon, main } = meta;
 					if (minPluginVersion && compare(VERSION, minPluginVersion) === -1) {
 						this.root.pluginOutdated = true;
 						return;
@@ -297,6 +298,7 @@ export default class Extensibility {
 						enabled: this.discoveredModules.get(id)?.enabled ?? false,
 						icon: icon ?? 'puzzle',
 						id: id.normalize('NFC'),
+						main: parseUrl(main),
 						source: url,
 					});
 				});

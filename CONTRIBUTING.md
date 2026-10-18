@@ -38,7 +38,7 @@ We **strongly recommend** you writing your own Sync Engine module to achieve you
 
 Sync Engine welcomes forks that contributes to the development of the Sync Engine monorepo.
 
-However, as stated in [Obsidian developer policies](https://docs.obsidian.md/Developer+policies#Forks), Sync Engine disallows any type if malicious forking that submits to Obsidian's official plugin directory as another standalone plugin, as long as Sync Engine repo remains active or maintainers haven't permitted. Maintainers will report upon discovery.
+However, as stated in [Obsidian developer policies](https://docs.obsidian.md/Developer+policies#Forks), Sync Engine disallows any type of malicious forking that submits to Obsidian's official plugin directory as another standalone plugin, as long as Sync Engine repo remains active or maintainers haven't permitted. Maintainers will report upon discovery.
 
 Instead of creating another syncing plugin, we highly recommend you to create a Sync Engine module. Sync Engine core is highly optimized and battle-tested, it provides convenient SDK that allows you to customize freely without reinventing the wheel.
 
@@ -146,7 +146,7 @@ If your pull request contains substantial modification of an existing module, yo
 
 #### AI Contribution
 
-When making pull requests or issues, please communicate clearly with maintainers. If your words show clear AI signals (confident false claims, verbose & contextualized jargons), maintainers reserve the justification for replying with AI-generated text.
+When making pull requests or issues, please communicate clearly with maintainers. If your words show clear AI signals (confident false claims, verbose & contextualized jargon), maintainers reserve the justification for replying with AI-generated text.
 
 Sync Engine repo generally accepts AI-assisted pull requests, especially for modules, as long as they:
 

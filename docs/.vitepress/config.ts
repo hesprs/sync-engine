@@ -121,11 +121,12 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 				[`${deepDive}/`]: {
 					items: [
 						{ link: `${deepDive}/architecture`, text: t('architecture') },
-						{ link: `${deepDive}/sync`, text: t('sync') },
-						{ link: `${deepDive}/extensibility`, text: t('extensibility') },
+						{ link: `${deepDive}/discipline`, text: t('discipline') },
+						{ link: `${deepDive}/migration`, text: t('migration') },
 						{ link: `${deepDive}/benchmarking`, text: t('benchmarking') },
 						{
 							items: [
+								{ link: `${deepDive}/sync`, text: t('sync') },
 								{ link: `${deepDive}/file-system`, text: t('fileSystem') },
 								{
 									link: `${deepDive}/file-system-wrappers`,
@@ -140,6 +141,7 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 									link: `${deepDive}/request-middleware`,
 									text: t('requestMiddleware'),
 								},
+								{ link: `${deepDive}/extensibility`, text: t('extensibility') },
 							],
 							text: t('abstractions'),
 						},

@@ -1,6 +1,5 @@
 import type { Request } from '@hesprs/sync-engine-sdk';
 import { toError } from '@repo/shared/error';
-import { normalizeUrl } from '@repo/shared/path';
 import { buildUrl, parseWebDAVError } from './utils';
 
 export type WebdavConnectionOptions = { endpoint: string };
@@ -15,7 +14,7 @@ export async function checkConnection(
 	request: Request,
 ): Promise<void | Error> {
 	try {
-		const response = await request(buildUrl(normalizeUrl(endpoint), '/'), {
+		const response = await request(buildUrl(endpoint, '/'), {
 			body: CHECK_CONNECTION_BODY,
 			contentType: 'application/xml',
 			headers: { Depth: '0' },

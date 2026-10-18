@@ -1,6 +1,6 @@
 import type { Binary, Request, RequestParam } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
-import { encodeURIComponent3986 } from '@repo/shared/path';
+import { compileQuery } from '@repo/shared/path';
 import { md5 } from 'hash-wasm';
 import type { S3DB } from '..';
 
@@ -63,16 +63,9 @@ function canonicalizeUrl(url: string): { canonicalUri: string; canonicalQuery: s
 	const canonicalUri = parsed.pathname;
 	const params = parsed.searchParams;
 	const sortedKeys = [...params.keys()].sort();
-	const canonicalQuery = sortedKeys
-		.map((key) => {
-			const values = params.getAll(key);
-			values.sort();
-			return values
-				.map((value) => `${encodeURIComponent3986(key)}=${encodeURIComponent3986(value)}`)
-				.join('&');
-		})
-		.filter(Boolean)
-		.join('&');
+	const canonicalQuery = compileQuery(
+		Object.fromEntries(sortedKeys.map((key) => [key, params.get(key) as string])),
+	);
 
 	return { canonicalQuery, canonicalUri };
 }

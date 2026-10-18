@@ -1,7 +1,7 @@
 import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import normalizeEtag from '@repo/shared/normalize-etag';
-import { encodeURIComponent3986 } from '@repo/shared/path';
+import { encodeUrlPart } from '@repo/shared/path';
 import { buildUrl, getFileUid, getHeader } from './utils';
 
 // Nextcloud rejects non-final chunks below 5 MiB
@@ -17,9 +17,8 @@ type NextcloudChunkedUploadOptions = {
 };
 
 function getUploadEndpoint(endpoint: string, username: string) {
-	const encodedUsername = encodeURIComponent3986(username);
-	const filesMarker = '/files/';
-	const filesMarkerIndex = endpoint.lastIndexOf(filesMarker);
+	const encodedUsername = encodeUrlPart(username);
+	const filesMarkerIndex = endpoint.lastIndexOf('/files/');
 	return filesMarkerIndex === -1
 		? `${endpoint}/uploads/${encodedUsername}`
 		: `${endpoint.slice(0, filesMarkerIndex)}/uploads/${encodedUsername}`;

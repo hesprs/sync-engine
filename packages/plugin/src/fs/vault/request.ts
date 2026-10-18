@@ -64,6 +64,7 @@ function toVaultPath(key: string) {
 	return stripEndSlash(key);
 }
 
+// Obsidian already normalizes all file paths to NFC
 function toKey(vaultPath: string, isDir: boolean): string {
 	if (vaultPath === '/') return '/';
 	return isDir ? `${vaultPath}/` : vaultPath;

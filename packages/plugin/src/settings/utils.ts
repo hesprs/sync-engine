@@ -8,7 +8,6 @@ import type {
 	TextComponent,
 } from 'obsidian';
 import type { DatabaseSync } from 'uni-kv';
-import { encodeURIComponent3986 } from '@repo/shared/path';
 import { setIcon } from 'obsidian';
 import type { CallableOrObjectTree, SettingTree } from '@/modules/Setting';
 import type { General, TogglableValue } from '@/types';
@@ -53,7 +52,7 @@ function setWarningIfNotExist(): void {
 	);
 	activeDocument.body.style.setProperty(
 		name,
-		`url("data:image/svg+xml,${encodeURIComponent3986(dummy.innerHTML)}")`,
+		`url("data:image/svg+xml,${encodeURIComponent(dummy.innerHTML)}")`,
 	);
 }
 

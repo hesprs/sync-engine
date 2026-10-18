@@ -2,8 +2,6 @@
 
 The WebDAV module registers the `webdav` remote file system. It implements the [unified file-system key schema](../file-system#unified-key-schema) using only Sync Engine's injected [`Request`](../request) abstraction; it has no WebDAV client dependency.
 
-Every request uses HTTP Basic authentication. The module normalizes the endpoint and percent-encodes individual remote path segments before issuing a request.
-
 ## Supported Backends
 
 The standard mode can theoretically work with any WebDAV service that supports HTTP(S), Basic authentication, ranged `GET`, `PROPFIND`, `PUT`, `DELETE`, `MOVE`, and `MKCOL`. This includes WebDAV installations based on:

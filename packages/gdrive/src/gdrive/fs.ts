@@ -338,7 +338,7 @@ export default class GdriveFs implements RootFs {
 		const walk = async (folderId: string, prefix: string): Promise<void> => {
 			for (const entry of dedupeChildren(childrenByParent.get(folderId) ?? [])) {
 				const folder = entry.mimeType === FOLDER_MIME;
-				const childKey = `${prefix}${entry.name}${folder ? '/' : ''}`;
+				const childKey = `${prefix}${entry.name.normalize('NFC')}${folder ? '/' : ''}`;
 				completed++;
 				const verdict = await reporter({ completed, current: childKey, total });
 				if (verdict === 'exclude') continue;

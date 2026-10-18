@@ -1,4 +1,5 @@
 import type { RequestResponse, Stat } from '@hesprs/sync-engine-sdk';
+import { compileQuery } from '@repo/shared/path';
 
 export const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 export const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
@@ -36,9 +37,8 @@ export function escapeQuery(value: string): string {
 }
 
 export function buildUrl(base: string, path: string, query: Record<string, string> = {}): string {
-	const url = new URL(`${base}${path}`);
-	for (const [key, value] of Object.entries(query)) url.searchParams.set(key, value);
-	return url.toString();
+	const queryString = compileQuery(query);
+	return `${base}${path}${queryString ? `?${queryString}` : ''}`;
 }
 
 export function getHeader(

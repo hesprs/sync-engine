@@ -8,7 +8,7 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import type { App, SettingGroupItem, TextComponent } from 'obsidian';
 import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
-import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
+import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
 import { SecretComponent } from 'obsidian';
 import type { UrlStyle } from '@/s3/sigv4';
 
@@ -82,16 +82,17 @@ export default function s3Setting(
 					render: (setting) => {
 						setting.addText((text) => {
 							text.setPlaceholder(translate('endpointPlaceholder')).setValue(
-								settings.endpoint,
+								formatUrl(settings.endpoint),
 							);
 							reactivelyValidate<string>({
+								format: formatUrl,
 								onSave: (value) => {
 									settings.endpoint = value;
 									void saveSettings();
 								},
 								parse: (value) => {
 									try {
-										return normalizeUrl(value);
+										return parseUrl(value);
 									} catch {
 										// Return undefined
 									}
@@ -224,9 +225,10 @@ export default function s3Setting(
 							.setClass('sync-engine-column')
 							.addText((text) => {
 								text.setPlaceholder(translate('proxyUrlPlaceholder')).setValue(
-									settings.proxyUrl.value,
+									formatUrl(settings.proxyUrl.value),
 								);
 								reactivelyValidate<string>({
+									format: formatUrl,
 									onSave: (value) => {
 										settings.proxyUrl.value = value;
 										void saveSettings();
@@ -234,7 +236,7 @@ export default function s3Setting(
 									parse: (value) => {
 										if (!value.trim()) return '';
 										try {
-											return normalizeUrl(value);
+											return parseUrl(value);
 										} catch {
 											// Return undefined
 										}

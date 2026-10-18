@@ -16,6 +16,7 @@ const en = {
 	devOps: 'DevOps',
 	developAModule: 'Develop a Module',
 	development: 'Development',
+	discipline: 'Project discipline',
 	distribution: 'Distribution',
 	encryption: 'Encryption',
 	events: 'Events',
@@ -29,6 +30,7 @@ const en = {
 	licenseMessage:
 		'All content licensed under the <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> License.',
 	migrateFromV2: 'Migrate from V2',
+	migration: 'Migration',
 	miscellaneous: 'Miscellaneous',
 	moduleManagementPage: 'Module Management Page',
 	modules: 'Modules',

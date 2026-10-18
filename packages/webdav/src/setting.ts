@@ -7,7 +7,7 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import type { App, Setting, SettingGroupItem, TextComponent } from 'obsidian';
 import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
-import { normalizeBaseDir, normalizeUrl } from '@repo/shared/path';
+import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
 import { SecretComponent } from 'obsidian';
 
 export type WebdavTranslations = {
@@ -87,16 +87,17 @@ export default function webdavSetting(
 					render: (setting) => {
 						setting.addText((text) => {
 							text.setPlaceholder(translate('endpointPlaceholder')).setValue(
-								settings.endpoint,
+								formatUrl(settings.endpoint),
 							);
 							reactivelyValidate<string>({
+								format: formatUrl,
 								onSave: (value) => {
 									settings.endpoint = value;
 									void saveSettings();
 								},
 								parse: (value) => {
 									try {
-										return normalizeUrl(value);
+										return parseUrl(value);
 									} catch {
 										// Return undefined
 									}

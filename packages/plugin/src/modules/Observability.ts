@@ -160,7 +160,7 @@ export default class Observability {
 				const setUpdateInterval = () =>
 					(updateInterval = window.setInterval(() => {
 						const sinceNow = Date.now() - this.lastSyncTime;
-						const time = formatTime(sinceNow).replace(' ', '');
+						const time = formatTime(sinceNow);
 						sinceLastSyncText(` ${time} ago`);
 					}, 60_000));
 				if (result === 'cancelled') syncStage('cancelled');

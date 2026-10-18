@@ -5,29 +5,37 @@ import type {
 	LabelDefinition,
 	MaybePromise,
 	Translate,
+	Translations,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { s, setNeedMigration } from '@hesprs/sync-engine-sdk';
-import { SecretComponent } from 'obsidian';
+import { ConfirmationModal, SecretComponent } from 'obsidian';
 
 export type EncryptionTranslations = {
 	encryption: string;
 	encryptionDescription: string;
 	encryptionMigration: Fragment<boolean>;
 	pleaseSetPassword: string;
+	considerMigratingRemote: string;
+	considerMigratingRemoteDescription: string;
+	critical: string;
+	criticalLabelTooltip: string;
+	migrationExplanation: Fragment;
+	detail: string;
 };
 
 export default function encryptionSetting(
 	ctx: {
-		translate: Translate<EncryptionTranslations>;
+		translate: Translate<EncryptionTranslations & Translations>;
 		app: App;
 		saveSettings: () => Promise<void>;
 		recordStoreExists: () => MaybePromise<boolean>;
 		matchLabel: () => LabelDefinition;
+		refreshSettingTab: () => void;
 	},
 	settings: EncryptionSettings,
 ): CallableOrObjectTree {
-	const { translate, app, saveSettings, recordStoreExists, matchLabel } = ctx;
+	const { translate, app, saveSettings, recordStoreExists, matchLabel, refreshSettingTab } = ctx;
 	return {
 		1000: {
 			6037: s(() => ({
@@ -57,6 +65,40 @@ export default function encryptionSetting(
 							}),
 						);
 				},
+			})),
+			7037: s(() => ({
+				desc: translate('considerMigratingRemoteDescription'),
+				labels: [
+					{
+						color: 'var(--color-red)',
+						text: translate('critical'),
+						tooltip: translate('criticalLabelTooltip'),
+					},
+				],
+				name: translate('considerMigratingRemote'),
+				render: (setting) => {
+					setting.addButton((button) =>
+						button.setButtonText(translate('detail')).onClick(() => {
+							const modal = new ConfirmationModal(app)
+								.setTitle(translate('remoteMigration'))
+								.setContent(translate('migrationExplanation'))
+								.addCancelButton()
+								.addButton((but) =>
+									but
+										.setButtonText(translate('confirm'))
+										.onClick(() => {
+											delete settings.legacyEndpoint;
+											void saveSettings();
+											refreshSettingTab();
+										})
+										.setCta(),
+								);
+							modal.contentEl.addClass('markdown-rendered');
+							modal.open();
+						}),
+					);
+				},
+				visible: () => Boolean(settings.legacyEndpoint),
 			})),
 		},
 	};

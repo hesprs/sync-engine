@@ -109,7 +109,7 @@ export default class Registrar {
 	private readonly createLocalFs = () => {
 		const { vault } = this.ctx.app;
 		return wrapInOrder(
-			new VaultFs(this.getVaultRequest(), vault.getName()),
+			new VaultFs(this.getVaultRequest(), vault.getName().normalize('NFC')),
 			this.localFsWrapperRegistry,
 		);
 	};

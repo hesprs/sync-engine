@@ -13,12 +13,13 @@ import type {
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
+import { parseUrl } from '@repo/shared/path';
 import type { WebdavTranslations } from '@/setting';
 import { en, zh, zhTW, ru } from '@/i18n';
+import webdavSetting from '@/setting';
 import authorizationMiddleware from '@/webdav/auth';
 import { checkConnection } from '@/webdav/check-connection';
 import WebdavFs from '@/webdav/fs';
-import webdavSetting from './setting';
 
 export type WebdavSettings = {
 	baseDirectory: string;
@@ -43,10 +44,13 @@ export default class Webdav {
 			registerSetting: (entry: SettingEntry) => () => void;
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
+			settings: Settings;
+			getNamespace: Context['getNamespace'];
+			indexedDB: Context['indexedDB'];
+			saveSettings: () => Promise<void>;
 		}>,
 	) {
-		if (!this.moduleSettings.baseDirectory)
-			this.moduleSettings.baseDirectory = `${ctx.app.vault.getName()}/`;
+		this.moduleSettings.baseDirectory ||= `${ctx.app.vault.getName().normalize('NFC')}/`;
 		ctx.registerI18n('en', en);
 		ctx.registerI18n('zh', zh);
 		ctx.registerI18n('zh-TW', zhTW);
@@ -106,6 +110,41 @@ export default class Webdav {
 				priority: 749,
 			}),
 		);
+		void this.migrateEndpoint().catch(() => {});
+	};
+
+	// TODO: remove after November 17, 2026
+	private readonly migrateEndpoint = async () => {
+		const legacyEndpoint = this.moduleSettings.endpoint;
+		if (!legacyEndpoint) return;
+		let endpoint = legacyEndpoint;
+		try {
+			endpoint = parseUrl(legacyEndpoint);
+		} catch {
+			// Keep the legacy endpoint if it cannot be parsed
+		}
+		if (endpoint === legacyEndpoint) return;
+		const { settings, getNamespace, indexedDB, saveSettings } = this.ctx;
+		const active = settings.remoteFs === 'webdav';
+		const oldNamespace = active ? getNamespace() : undefined;
+		this.moduleSettings.endpoint = endpoint;
+		const encryption = settings.modules.encryption as
+			| { enabled?: boolean; legacyEndpoint?: string }
+			| undefined;
+		if (active && encryption?.enabled === true) encryption.legacyEndpoint = legacyEndpoint;
+		await saveSettings();
+		const newNamespace = active ? getNamespace() : undefined;
+		if (typeof oldNamespace !== 'string' || typeof newNamespace !== 'string') return;
+		const names = await indexedDB.getStoreNames();
+		for (const name of names) {
+			const target = name.replace(oldNamespace, newNamespace);
+			if (target === name || names.includes(target)) continue;
+			const entries: Array<[string, unknown]> = await indexedDB.getStore(name).entries();
+			await indexedDB
+				.getStore(target)
+				.batch(entries.map(([key, value]) => ({ key, type: 'set' as const, value })));
+			await indexedDB.deleteStore(name);
+		}
 	};
 
 	readonly dispose = () => {

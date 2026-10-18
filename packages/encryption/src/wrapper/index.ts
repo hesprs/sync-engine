@@ -8,6 +8,7 @@ import type {
 	ListReporter,
 	FolderStat,
 } from '@hesprs/sync-engine-sdk';
+import { parseUrl } from '@repo/shared/path';
 import type { EncryptionStores } from './path';
 import {
 	decryptFileContent,
@@ -45,6 +46,7 @@ export type EncryptionDB = DatabaseSync<EncryptionDBSchema, EncryptionDBMeta>;
 export type EncryptionWrapperOptions = {
 	memoryDB: EncryptionDB;
 	password: string;
+	legacyEndpoint?: string;
 };
 
 class EncryptionFs implements WrappedFs {
@@ -166,10 +168,24 @@ class EncryptionFs implements WrappedFs {
 		return this.keysPromise;
 	}
 
+	// TODO: remove after February 17, 2027
+	private getLegacyUid(): string {
+		const uid = this.original.getUid();
+		const { legacyEndpoint } = this.options;
+		if (!legacyEndpoint) return uid;
+		let endpoint: string;
+		try {
+			endpoint = parseUrl(legacyEndpoint);
+		} catch {
+			return uid;
+		}
+		return uid.replace(endpoint, legacyEndpoint);
+	}
+
 	private async createKeysPromise(): Promise<DerivedKeys> {
 		const encryptionKeys = this.options.memoryDB.getMeta('encryptionKeys');
 		if (encryptionKeys) return encryptionKeys;
-		const masterSalt = await deriveMasterSalt(this.original.getUid());
+		const masterSalt = await deriveMasterSalt(this.getLegacyUid());
 		const masterKey = await deriveMasterKey(this.options.password, masterSalt);
 		const [rootFileKey, nameKey, metaKey] = await Promise.all([
 			deriveRootFileKey(masterKey),

@@ -6,6 +6,5 @@ export default function hash(input: unknown): string {
 		hashHex ^= str.charCodeAt(i);
 		hashHex = Math.imul(hashHex, 0x01_00_01_93);
 	}
-	// oxlint-disable-next-line unicorn/prefer-math-trunc https://github.com/oxc-project/oxc/issues/25239
 	return (hashHex >>> 0).toString(16);
 }

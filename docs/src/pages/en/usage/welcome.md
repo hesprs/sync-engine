@@ -17,3 +17,5 @@ We are here in the _Usage_ section, you might feel interested in:
 - [Benchmark](./benchmark): see how Sync Engine flex on other plugins with real statistics.
 - [Security](./security), [Permissions](./permissions): the central claims made by Sync Engine, establish trust with verifiable proof.
 - [Develop a module](../development/develop-a-module): learn how to develop a Sync Engine module.
+
+If you find a bug of Sync Engine, please open an issue in [Sync Engine's GitHub repository](https://github.com/hesprs/sync-engine/issues). If you want to ask questions, please open a thread in [discussions](https://github.com/hesprs/sync-engine/discussions).

@@ -172,16 +172,21 @@ export default class Sync {
 			const { reporter: localReporter, organizer: localOrganizer } = prepareList(match);
 			const { reporter: remoteReporter, organizer: remoteOrganizer } = prepareList(match);
 			dispatch('syncInitialized', { ...infras, match });
-			const [localList, remoteList, recordList] = await Promise.all([
-				localFs.list('/', localReporter),
-				remoteLister({
+
+			// oxlint-disable-next-line sort-keys : getting records must be after remote listing, since remote listing may modify records
+			const listRemoteAndGetRecord = async () => ({
+				remoteList: await remoteLister({
 					...infras,
 					reporter: (prog) => {
 						dispatch('remoteWalkProgress', prog);
 						return remoteReporter(prog);
 					},
 				}),
-				recordStore.entries(),
+				recordList: await recordStore.entries(),
+			});
+			const [localList, { recordList, remoteList }] = await Promise.all([
+				localFs.list('/', localReporter),
+				listRemoteAndGetRecord(),
 			]);
 			if (isCancelled()) throw syncCancelledError;
 			const record = organizeRecord(recordList, match);

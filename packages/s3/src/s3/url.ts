@@ -1,4 +1,4 @@
-import { encodeUrl } from '@repo/shared/path';
+import { compileQuery, parseUrl } from '@repo/shared/path';
 import type { UrlStyle } from './sigv4';
 
 export type UrlOptions = {
@@ -9,7 +9,7 @@ export type UrlOptions = {
 };
 
 export function buildUrl({ endpoint, bucket, key, urlStyle }: UrlOptions): string {
-	const encodedPath = encodeUrl(key);
+	const encodedPath = parseUrl(key, true);
 	if (urlStyle === 'virtualHosted') {
 		const parsed = new URL(endpoint);
 		return `${parsed.protocol}//${bucket}.${parsed.host}${encodedPath.startsWith('/') ? encodedPath : `/${encodedPath}`}`;
@@ -18,10 +18,9 @@ export function buildUrl({ endpoint, bucket, key, urlStyle }: UrlOptions): strin
 }
 
 export function buildUrlWithQuery(options: UrlOptions, query: Record<string, string>): string {
+	const queryString = compileQuery(query);
 	const baseUrl = buildUrl(options);
-	const parsed = new URL(baseUrl);
-	for (const [k, v] of Object.entries(query)) parsed.searchParams.set(k, v);
-	return parsed.toString();
+	return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
 
 export function getHeader(

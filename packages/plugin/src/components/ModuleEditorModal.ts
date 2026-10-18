@@ -1,4 +1,4 @@
-import { normalizeUrl } from '@repo/shared/path';
+import { formatUrl, parseUrl } from '@repo/shared/path';
 import { App, Modal, Setting } from 'obsidian';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Fragment, Translate } from '@/modules/I18n';
@@ -139,7 +139,7 @@ export default class ModuleEditorModal extends Modal {
 					parse: (value) => {
 						if (!value.trim()) return '';
 						try {
-							return normalizeUrl(value);
+							return parseUrl(value);
 						} catch {
 							// Return undefined
 						}
@@ -152,15 +152,16 @@ export default class ModuleEditorModal extends Modal {
 			.setName(translate('readmePage'))
 			.setDesc(translate('readmePageDescription'))
 			.addText((text) => {
-				text.setValue(updated.readme ?? '').setPlaceholder(
+				text.setValue(formatUrl(updated.readme ?? '')).setPlaceholder(
 					translate('readmePagePlaceholder'),
 				);
 				reactivelyValidate<string>({
+					format: formatUrl,
 					onSave: (value) => (updated.source = value),
 					parse: (value) => {
 						if (!value.trim()) return '';
 						try {
-							return normalizeUrl(value);
+							return parseUrl(value);
 						} catch {
 							// Return undefined
 						}

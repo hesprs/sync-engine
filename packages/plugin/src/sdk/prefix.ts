@@ -1,4 +1,3 @@
-import { normalizeBaseDir } from '@repo/shared/path';
 import type { Fs, ListReporter, WrappedFs } from '@/fs';
 import type { Binary, FileStat, FolderStat, MaybePromise, Stat } from '@/types';
 
@@ -81,6 +80,5 @@ class PrefixFs implements WrappedFs {
 }
 
 export default function prefixWrapper(original: Fs, prefix: string): WrappedFs {
-	const normalizedPrefix = normalizeBaseDir(prefix);
-	return new PrefixFs(original, normalizedPrefix);
+	return new PrefixFs(original, prefix);
 }

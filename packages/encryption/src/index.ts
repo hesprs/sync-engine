@@ -17,6 +17,8 @@ import encryptionWrapper from '@/wrapper';
 export type EncryptionSettings = {
 	enabled: boolean;
 	password: string;
+	// TODO: remove after February 17, 2027
+	legacyEndpoint?: string;
 };
 
 export default class Encryption {
@@ -52,7 +54,11 @@ export default class Encryption {
 					const { password: pwd } = this.moduleSettings;
 					const password = app.secretStorage.getSecret(pwd);
 					if (!password) throw new Error(translate('pleaseSetPassword'));
-					return encryptionWrapper(fs, { memoryDB, password });
+					return encryptionWrapper(fs, {
+						legacyEndpoint: this.moduleSettings.legacyEndpoint,
+						memoryDB,
+						password,
+					});
 				},
 				priority: 7919,
 			}),

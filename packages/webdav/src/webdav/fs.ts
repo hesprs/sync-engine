@@ -15,13 +15,7 @@ import { concatBinary } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
-import {
-	dirname,
-	normalizeChar,
-	normalizeKey,
-	normalizeUrl,
-	stripEndSlash,
-} from '@repo/shared/path';
+import { dirname, formatUrl, normalizeKey, parseUrl, stripEndSlash } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import writeNextcloudChunkedUpload from './chunked-upload';
 import { buildUrl, getFileUid, getHeader, parseWebDAVError } from './utils';
@@ -96,19 +90,24 @@ function getRecursiveKeys(key: string) {
 	return keys.reverse();
 }
 
+// Different WebDAV servers can return 3 different kinds of href:
+// 1. full URL
+// 2. absolute path relative to server root
+// 3. path relative to root folder
 function stripEndpoint(endpoint: string, href: string) {
+	href = parseUrl(href, true);
 	if (href.startsWith(endpoint)) href = href.slice(endpoint.length);
 	else {
 		const pathname = new URL(endpoint).pathname;
 		if (pathname !== '/' && href.startsWith(pathname)) href = href.slice(pathname.length);
 	}
-	return href.slice(1);
+	return formatUrl(href.slice(1));
 }
 
 function toKey(href: string, endpoint: string, isDir: boolean) {
 	const stripped = stripEndpoint(endpoint, href);
 	if (!stripped) return '/';
-	return normalizeKey(normalizeChar(stripped), isDir);
+	return normalizeKey(stripped, isDir);
 }
 
 function extractNextLink(linkHeader: string): string | undefined {
@@ -116,8 +115,8 @@ function extractNextLink(linkHeader: string): string | undefined {
 	return matches?.groups?.href;
 }
 
-function isTargetItem(key: string, endpoint: string, item: WebDAVResponseItem) {
-	return normalizeChar(stripEndSlash(stripEndpoint(endpoint, item.href))) === stripEndSlash(key);
+function isTargetItem(key: string, endpoint: string, { href }: WebDAVResponseItem) {
+	return stripEndSlash(stripEndpoint(endpoint, href)).normalize('NFC') === stripEndSlash(key);
 }
 
 async function collectStreamToBinary(source: ReadableStream<Binary>): Promise<Binary> {
@@ -141,7 +140,7 @@ export default class WebdavFs implements RootFs {
 
 	constructor(private readonly options: WebdavFsOptions) {
 		const { endpoint, fileMetadata } = options;
-		this.endpoint = normalizeUrl(endpoint);
+		this.endpoint = endpoint;
 		// WebDAV servers who support both headers all support creationdate in PROPFIND
 		this.propfindBody = `<?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:"${fileMetadata ? ` xmlns:se="${WEBDAV_PAGE}"` : ''}>
@@ -182,7 +181,7 @@ export default class WebdavFs implements RootFs {
 		if (!linkHeader) return items;
 		const nextLink = extractNextLink(linkHeader);
 		if (!nextLink) return items;
-		items.push(...(await this.propfind({ depth, url: new URL(nextLink).toString() })));
+		items.push(...(await this.propfind({ depth, url: parseUrl(nextLink) })));
 		return items;
 	}
 
@@ -329,7 +328,7 @@ export default class WebdavFs implements RootFs {
 
 	async move(oldKey: string, newKey: string) {
 		await this.requestOrThrow(buildUrl(this.endpoint, oldKey), {
-			headers: { Destination: buildUrl(this.endpoint, newKey) },
+			headers: { Destination: buildUrl(this.endpoint, newKey), Overwrite: 'T' },
 			method: 'MOVE',
 		});
 	}

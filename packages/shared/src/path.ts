@@ -1,13 +1,7 @@
 // #region Normalize Path
-export function normalizeChar(path: string) {
-	return path
-		.split('/')
-		.map((segment) => decodeURIComponent(segment.normalize('NFC')))
-		.join('/');
-}
-
 export function normalizeKey(path: string, isDir: boolean) {
 	const noSlashes = path
+		.normalize('NFC')
 		.split('/')
 		.filter((segment) => segment !== '')
 		.join('/');
@@ -15,11 +9,11 @@ export function normalizeKey(path: string, isDir: boolean) {
 }
 
 export function normalizeBaseDir(path: string): string {
-	return normalizeKey(normalizeChar(path), true);
+	return normalizeKey(path, true);
 }
 // #endregion ======================================================================
 
-// #region Dirname / Basename
+// #region File key potations
 export function dirname(key: string) {
 	if (key === '/') return '/';
 	if (key.endsWith('/')) key = key.slice(0, -1);
@@ -32,29 +26,6 @@ export function basename(key: string): string {
 	if (key.endsWith('/')) key = key.slice(0, -1);
 	const lastSlashIndex = key.lastIndexOf('/');
 	return key.slice(lastSlashIndex + 1);
-}
-// #endregion ======================================================================
-
-export function normalizeUrl(value: string) {
-	const parsedUrl = new URL(value);
-	if (!['http:', 'https:'].includes(parsedUrl.protocol)) throw new Error(`Invalid URL ${value}`);
-	return parsedUrl.toString().replace(/\/+$/u, '');
-}
-
-export function encodeURIComponent3986(url: string) {
-	return encodeURIComponent(url)
-		.replaceAll('!', '%21')
-		.replaceAll("'", '%27')
-		.replaceAll('(', '%28')
-		.replaceAll(')', '%29')
-		.replaceAll('*', '%2A');
-}
-
-export function encodeUrl(url: string) {
-	return url
-		.split('/')
-		.map((segment) => (segment === '' ? '' : encodeURIComponent3986(segment)))
-		.join('/');
 }
 
 export function stripEndSlash(key: string) {
@@ -70,3 +41,61 @@ export function isSub(parent: string, sub: string, include = false) {
 export function isFolder(key: string) {
 	return key.endsWith('/');
 }
+// #endregion ======================================================================
+
+// #region URL
+// Encodes every character outside RFC 3986 unreserved set, keeping existing %XX escapes intact.
+export function encodeUrlPart(part: string) {
+	return part.replaceAll(/%[\dA-Fa-f]{2}|[^\w\-.~]/gu, (match) =>
+		match.length === 3
+			? match
+			: encodeURIComponent(match)
+					.replaceAll('!', '%21')
+					.replaceAll("'", '%27')
+					.replaceAll('(', '%28')
+					.replaceAll(')', '%29')
+					.replaceAll('*', '%2A'),
+	);
+}
+
+function encodePath(value: string, delimiter = '/') {
+	return value.split(delimiter).map(encodeUrlPart).join(delimiter);
+}
+export function parseUrl(value: string, tolerateNonUrl = false): string {
+	let url: URL;
+	try {
+		url = new URL(value);
+	} catch {
+		if (!tolerateNonUrl) throw new Error(`Invalid URL ${value}`);
+		return encodePath(value);
+	}
+	const { pathname, search, hash, protocol } = url;
+	const encodedRest = `${encodePath(pathname).replace(/\/+$/u, '')}${
+		search
+			? `?${search
+					.slice(1)
+					.split('&')
+					.map((param) => encodePath(param, '='))
+					.join('&')}`
+			: ''
+	}${hash ? `#${encodeUrlPart(hash.slice(1))}` : ''}`;
+	try {
+		decodeURIComponent(encodedRest);
+	} catch {
+		throw new Error(`Invalid URL ${value}`);
+	}
+	// URL makes the hostname punycode, so take it raw.
+	const hostname = /^[^:]+:\/\/(?<hostname>[^/?#]*)/u.exec(value)?.groups?.hostname ?? '';
+	return `${protocol}//${hostname.toLowerCase()}${encodedRest}`;
+}
+
+export function formatUrl(value: string): string {
+	return decodeURIComponent(value);
+}
+
+export function compileQuery(dict: Record<string, string>) {
+	return Object.entries(dict)
+		.map(([key, value]) => `${encodeUrlPart(key)}=${encodeUrlPart(value)}`)
+		.join('&');
+}
+// #endregion ======================================================================

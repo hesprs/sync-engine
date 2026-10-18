@@ -46,8 +46,7 @@ export default class Gdrive {
 			registerCss: (css: string) => () => void;
 		}>,
 	) {
-		if (!this.moduleSettings.baseDirectory)
-			this.moduleSettings.baseDirectory = `${ctx.app.vault.getName()}/`;
+		this.moduleSettings.baseDirectory ||= `${ctx.app.vault.getName().normalize('NFC')}/`;
 		ctx.registerI18n('en', en);
 		ctx.registerI18n('zh', zh);
 		ctx.registerI18n('zh-TW', zhTW);

@@ -1,6 +1,6 @@
 import type { Stat } from '@hesprs/sync-engine-sdk';
 import parseXML from '@repo/shared/parse-xml';
-import { encodeUrl } from '@repo/shared/path';
+import { parseUrl } from '@repo/shared/path';
 
 type WebdavError = { error?: { message?: string } };
 
@@ -25,7 +25,6 @@ export function getFileUid(stat: Stat, key: string) {
 }
 
 export function buildUrl(endpoint: string, key: string) {
-	const encodedPath = encodeUrl(key);
 	if (key === '/') return `${endpoint}/`;
-	return `${endpoint}${encodedPath.startsWith('/') ? encodedPath : `/${encodedPath}`}`;
+	return `${endpoint}/${parseUrl(key, true)}`;
 }
