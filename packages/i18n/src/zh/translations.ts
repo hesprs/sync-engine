@@ -338,6 +338,7 @@ const zh: Translations = {
 	walkingRemote: '正在探测远程文件',
 	xConfigured: (count) => `已配置 ${count} 项`,
 	xEnabled: (count) => `已启用 ${count} 个模块`,
+	xOperationsFailed: (count) => `${count} 个操作失败`,
 	xSelected: (count) => `（已选择 ${count} 项）`,
 };
 

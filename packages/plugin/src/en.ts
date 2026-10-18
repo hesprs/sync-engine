@@ -370,6 +370,7 @@ const en: Translations = {
 	walkingRemote: 'Discovering remote files',
 	xConfigured: (count) => `${count} configured`,
 	xEnabled: (count) => `${count} enabled`,
+	xOperationsFailed: (count) => `${pcOperations(count)} failed`,
 	xSelected: (count) => `(${count} selected)`,
 };
 

@@ -28,7 +28,7 @@ import {
 } from '@/sync';
 import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import type { Dispatch, On } from './EventBus';
-import type { Translate } from './I18n';
+import type { Snippet, Translate } from './I18n';
 import type { DeleteConfirmReturn } from './ProgressModal';
 import type { DecideTasksInput, Infras } from './Registrar';
 
@@ -75,6 +75,7 @@ export default class Sync {
 		executionStarted: Array<BaseTask>;
 	};
 	declare readonly settings: { maxFileSize: TogglableValue; syncStrategy: Array<GlobStrategy> };
+	declare readonly i18n: { xOperationsFailed: Snippet<number> };
 
 	private readonly postProcess = (
 		stats: Array<Stat>,
@@ -258,7 +259,7 @@ export default class Sync {
 				? { result: 'cancelled' }
 				: failedCount
 					? {
-							error: new Error(`Execution of ${failedCount} sync task(s) failed.`),
+							error: new Error(translate('xOperationsFailed', failedCount)),
 							result: 'failed',
 						}
 					: { result: 'completed' };

@@ -335,6 +335,7 @@ const zhTW: Translations = {
 	walkingRemote: '正在掃描遠端檔案',
 	xConfigured: (count) => `已設定 ${count} 項`,
 	xEnabled: (count) => `已啟用 ${count} 個模組`,
+	xOperationsFailed: (count) => `${count} 個操作失敗`,
 	xSelected: (count) => `（已選擇 ${count} 項）`,
 };
 

@@ -523,6 +523,9 @@ declare class Sync {
     maxFileSize: TogglableValue;
     syncStrategy: Array<GlobStrategy>;
   };
+  readonly i18n: {
+    xOperationsFailed: Snippet<number>;
+  };
   private readonly postProcess;
   private readonly confirmTasks;
   private readonly confirmDeletion;

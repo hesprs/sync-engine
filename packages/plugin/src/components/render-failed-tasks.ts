@@ -11,10 +11,10 @@ function renderFailedTaskRow(
 	const icon = main.createSpan('w-[--icon-size] h-[--icon-size] color-[--color-red]');
 	constructTaskIcon(icon, name, isDir);
 	setTooltip(icon, prettyName);
-
-	main.createSpan({ cls: 'text-[--text-muted] whitespace-nowrap', text: prettyName });
-	main.createSpan({ cls: 'font-semibold truncate', text: key });
-	row.createDiv({ cls: 'text-[--text-muted] break-words mt-1', text: error.message });
+	const path = main.createSpan({ cls: 'font-semibold truncate select-text', text: key });
+	path.onClickEvent(() => path.classList.toggle('truncate'));
+	setTooltip(path, key);
+	row.createDiv({ cls: 'text-[--text-muted] break-words mt-1 select-text', text: error.message });
 }
 
 export default function renderFailedTasks(

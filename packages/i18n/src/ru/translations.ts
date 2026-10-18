@@ -16,6 +16,7 @@ const p = (count: number, one: string, few: string, many: string) => {
 };
 const pc = (count: number, one: string, few: string, many: string) =>
 	`${count} ${p(count, one, few, many)}`;
+const pcOperationAccusative = (count: number) => pc(count, 'операцию', 'операции', 'операций');
 
 const ru: Translations = {
 	addHeader: 'Добавить заголовок',
@@ -152,7 +153,7 @@ const ru: Translations = {
 	exportLogsToFile: 'Экспортировать логи в файл',
 	failed: 'Ошибка',
 	failedTasksDescription: (count) =>
-		`Во время синхронизации не удалось выполнить ${pc(count, 'операцию', 'операции', 'операций')}:`,
+		`Во время синхронизации не удалось выполнить ${pcOperationAccusative(count)}:`,
 	failedToDownloadModule: (name) => `Не удалось скачать модуль «${name}»`,
 	failedToFetchSource: (url) => `Не удалось получить источник из «${url}»`,
 	failedToLoadModule: (name) => `Не удалось загрузить модуль «${name}»`,
@@ -385,6 +386,7 @@ const ru: Translations = {
 	walkingRemote: 'Сканирование удалённых файлов',
 	xConfigured: (count) => `Настроено: ${count}`,
 	xEnabled: (count) => `Включено модулей: ${count}`,
+	xOperationsFailed: (count) => `Не удалось выполнить ${pcOperationAccusative(count)}`,
 	xSelected: (count) => `(выбрано: ${count})`,
 };
 
