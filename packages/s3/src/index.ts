@@ -13,6 +13,8 @@ import type {
 	Context,
 	DatabaseSync,
 	Binary,
+	RecordStat,
+	DatabaseAsync,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
@@ -61,8 +63,9 @@ export default class S3 {
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
 			memoryDB: S3DB;
 			settings: Settings;
-			getNamespace: Context['getNamespace'];
-			indexedDB: Context['indexedDB'];
+			// TODO: remove after November 17, 2026
+			getNamespace: () => string | Error;
+			indexedDB: DatabaseAsync<Record<string, RecordStat>>;
 			saveSettings: () => Promise<void>;
 		}>,
 	) {
@@ -173,43 +176,40 @@ export default class S3 {
 	// TODO: remove after November 17, 2026
 	private readonly migrateEndpoint = async () => {
 		const legacyEndpoint = this.moduleSettings.endpoint;
-		let endpoint = legacyEndpoint;
+		let newEndpoint: string | undefined;
 		try {
-			endpoint = parseUrl(legacyEndpoint);
+			newEndpoint = parseUrl(legacyEndpoint);
+			this.moduleSettings.proxyUrl.value = parseUrl(this.moduleSettings.proxyUrl.value);
 		} catch {
-			// Keep the legacy endpoint if it cannot be parsed
+			// Keep the legacy if it cannot be parsed
 		}
-		const legacyProxyUrl = this.moduleSettings.proxyUrl.value;
-		let proxyUrl = legacyProxyUrl;
-		try {
-			proxyUrl = parseUrl(legacyProxyUrl);
-		} catch {
-			// Keep the legacy proxy URL if it cannot be parsed
-		}
-		if (endpoint === legacyEndpoint && proxyUrl === legacyProxyUrl) return;
+		if (!newEndpoint || newEndpoint === legacyEndpoint) return;
 		const { settings, getNamespace, indexedDB, saveSettings } = this.ctx;
-		const active = settings.remoteFs === 's3';
-		const oldNamespace = active ? getNamespace() : undefined;
-		this.moduleSettings.endpoint = endpoint;
-		this.moduleSettings.proxyUrl.value = proxyUrl;
+		if (settings.remoteFs !== 's3') return;
+		const oldNamespace = getNamespace();
+		if (oldNamespace instanceof Error) return;
 		const encryption = settings.modules.encryption as
 			| { enabled?: boolean; legacyEndpoint?: string }
 			| undefined;
-		if (active && endpoint !== legacyEndpoint && encryption?.enabled === true)
-			encryption.legacyEndpoint = legacyEndpoint;
-		await saveSettings();
-		const newNamespace = active ? getNamespace() : undefined;
-		if (typeof oldNamespace !== 'string' || typeof newNamespace !== 'string') return;
+		if (encryption?.enabled === true) encryption.legacyEndpoint = legacyEndpoint;
+		this.moduleSettings.endpoint = newEndpoint;
+		void saveSettings();
+		const newNamespace = getNamespace();
+		if (newNamespace instanceof Error) return;
 		const names = await indexedDB.getStoreNames();
-		for (const name of names) {
-			const target = name.replace(oldNamespace, newNamespace);
-			if (target === name || names.includes(target)) continue;
-			const entries: Array<[string, unknown]> = await indexedDB.getStore(name).entries();
-			await indexedDB
-				.getStore(target)
-				.batch(entries.map(([key, value]) => ({ key, type: 'set' as const, value })));
-			await indexedDB.deleteStore(name);
-		}
+		await Promise.all(
+			names.map(async (name) => {
+				if (!name.includes(oldNamespace)) return;
+				const target = name.replace(oldNamespace, newNamespace);
+				const entries = await indexedDB.getStore(name).entries();
+				await Promise.all([
+					indexedDB
+						.getStore(target)
+						.batch(entries.map(([key, value]) => ({ key, type: 'set', value }))),
+					indexedDB.deleteStore(name),
+				]);
+			}),
+		);
 	};
 
 	private readonly resolveConfig = () => {
