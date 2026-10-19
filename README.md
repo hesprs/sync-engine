@@ -112,17 +112,6 @@ Sync Engine fits the gap: you want to choose your own storage, you want the plug
 8. If it goes correctly, every sync run will discover local and remote changes automatically and sync files between.
 9. Access [documentation](https://sync.consensia.cc) for advanced usages.
 
-## Roadmap
-
-Below is a list of planned features and improvements, the faster this plugin is adopted and the **star** ⭐ grows, the faster the development will be. Also, we welcome contributors that would like to help us with the development of either modules or core.
-
-- [x] v3.0: Rewrite entirely, dynamic module loading, module store, asymmetric storage, and rebrand
-- [x] v3.1: Migrate settings to Obsidian v1.13 API
-- [x] v3.2: Granular sync strategy selection / exclusion inclusion rule refactor based on ordered glob match rules.
-- [x] v3.3: Metadata syncing.
-
-Sync Engine has a [wishlist of features](https://github.com/hesprs/sync-engine/issues/214), you can react with **thumbs up** 👍 on feature comments you would like to have. And the features with more votes will have higher priority.
-
 ## Common Questions
 
 <details><summary>What should I do if I get an error during syncing?</summary>
@@ -142,9 +131,9 @@ According to this plugin's [file handling strategy](https://hesprs.github.io/pro
 
 </details>
 
-<details><summary>Why is Module management empty / loading forever?</summary>
+<details><summary>Why is "Module management" page empty / loading forever?</summary>
 
-If you installed Sync Engine but its "Module management" option shows no available modules / is always loading. Please check the following:
+If you installed Sync Engine but its "Module management" page shows no available modules / is always loading. Please check the following:
 
 1. Are Obsidian and Sync Engine updated to the latest available versions? You can find the latest version of obsidian [here](https://github.com/obsidianmd/obsidian-releases/releases) and Sync Engine's version in the GitHub repository.
 2. If you can ensure Obsidian and Sync Engine have been updated to the latest version. Please try to access `https://sync.consensia.cc` in your browser; if you cannot, please go to Sync Engine's settings in Obsidian, find Development → Module sources, clear existing sources and add source `https://raw.githubusercontent.com/hesprs/sync-engine/refs/heads/gh-pages/modules-alternative.json`; then see whether the modules can load now.
@@ -153,7 +142,18 @@ If you installed Sync Engine but its "Module management" option shows no availab
 
 </details>
 
-Access Sync Engine documentation at [`sync.consensia.cc`](https://sync.consensia.cc) for more detail.
+Access Sync Engine documentation at [`sync.consensia.cc`](https://sync.consensia.cc) for more detail. You can also ask questions in [GitHub discussions](https://github.com/hesprs/sync-engine/discussions), or report bugs / give suggestions in [GitHub issues](https://github.com/hesprs/sync-engine/issues).
+
+## Roadmap
+
+Below is a list of planned features and improvements, the faster this plugin is adopted and the **star** ⭐ grows, the faster the development will be. Also, we welcome contributors that would like to help us with the development of either modules or core.
+
+- [x] v3.0: Rewrite entirely, dynamic module loading, module store, asymmetric storage, and rebrand
+- [x] v3.1: Migrate settings to Obsidian v1.13 API
+- [x] v3.2: Granular sync strategy selection / exclusion inclusion rule refactor based on ordered glob match rules.
+- [x] v3.3: Metadata syncing.
+
+Sync Engine has a [wishlist of features](https://github.com/hesprs/sync-engine/issues/214), you can react with **thumbs up** 👍 on feature comments you would like to have. And the features with more votes will have higher priority.
 
 ## License
 
