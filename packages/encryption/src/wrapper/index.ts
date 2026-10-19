@@ -168,7 +168,7 @@ class EncryptionFs implements WrappedFs {
 		return this.keysPromise;
 	}
 
-	// TODO: remove after February 17, 2027
+	// TODO: remove after April 17, 2027
 	private getLegacyUid(): string {
 		const uid = this.original.getUid();
 		const { legacyEndpoint } = this.options;

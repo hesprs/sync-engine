@@ -17,7 +17,7 @@ import encryptionWrapper from '@/wrapper';
 export type EncryptionSettings = {
 	enabled: boolean;
 	password: string;
-	// TODO: remove after February 17, 2027
+	// TODO: remove after April 17, 2027
 	legacyEndpoint?: string;
 };
 

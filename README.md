@@ -108,6 +108,8 @@ Sync Engine fits the gap: you want to choose your own storage, you want the plug
 4. Start your first sync from command palette or ribbon button.
 5. Review the sync tasks that will be performed.
 6. Click "Confirm", and your files will arrive the configured backend at the speed of light.
+7. Install Sync Engine on your other devices and configure them the same as the first device.
+8. If it goes correctly, every sync run will discover local and remote changes automatically and sync files between.
 7. Access [documentation](https://sync.consensia.cc) for advanced usages.
 
 ## Roadmap

@@ -6,21 +6,21 @@ All notable changes to this project will be documented in this file.
 
 ### Core
 
-- Encored new URL canonicalization discipline.
+- Enforced new URL canonicalization discipline.
 - Clicking a collapsed file path in the failed operations pop-up now expands the path.
 
 ### WebDAV Module
 
-- Encored new URL canonicalization discipline.
-- Fixed moving a file onto an existing file causes 412 error.
+- Enforced new URL canonicalization discipline.
+- Fixed moving a file onto an existing file causes a 412 error.
 
 ### S3 Module
 
-- Encored new URL canonicalization discipline.
+- Enforced new URL canonicalization discipline.
 
 ### Encryption Module
 
-- Due to the URL canonicalization, WebDAV and S3 endpoints containing some rare characters will change. Since decryption password is bind to the URL, so these users need a remote migration. This should only affect a small portion of users.
+- Due to the URL canonicalization, WebDAV and S3 endpoints containing some rare characters will change. Since the decryption password is bound to the URL, these users need a remote migration. This should only affect a small portion of users.
 - Implemented URL compatibility mode and remote migration notice.
 
 ## Sync Engine v3.3.1 - 2026-10-11
