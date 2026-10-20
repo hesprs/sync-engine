@@ -111,7 +111,7 @@ These Context members are not commonly used by modules. Explore source code to o
 | `getNamespace(local?, remote?)`  | Creates storage namespace for optional local/remote FS pair. Returns an `Error` when no backend is set. |
 | `initializeSync()`               | Creates local FS, remote FS, and record store for sync.                                                 |
 | `getCheckConnection()`           | Gets selected backend connection-check function.                                                        |
-| `decideTasks(input)`             | Buckets stats by strategy, invokes the registered decider per bucket, and returns the task plan.        |
+| `decideTasks(mapping, factory)`  | Invokes the registered decider for each strategy bucket in the mapping and returns the task plan.       |
 | `getConflictResolver()`          | Gets selected `ConflictResolver`.                                                                       |
 | `optimizeLocal(input)`           | Applies selected local `BatchOptimizer`.                                                                |
 | `optimizeRemote(input)`          | Applies selected remote `BatchOptimizer`.                                                               |

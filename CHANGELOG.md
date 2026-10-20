@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.3.3 - 2026-10-21
+
+### Core
+
+- Fixed syncing a re-included file whose parent folders have "Don't sync" sync strategy causing sync failures.
+- Optimized sync strategy matching performance.
+
 ## Sync Engine v3.3.2 - 2026-10-18
 
 ### Core

@@ -28,11 +28,11 @@ The default remote lister performs the full traversal. If the remote root does n
 
 The matcher resolves each path to a strategy name plus an `advance` flag. For files, the strategy alone decides membership. For folders, `advance` controls traversal: a synchronized folder is traversed and its descendants inherit its strategy unless a later catch-all `none` rule shadows it; a folder that is itself not synchronized but could contain content matched by a later rule is traversed as a probe. The reporter maps these results to `include`, `exclude`, or `advance` for the backend's `list()`. Rule syntax and precedence are documented in [Sync Strategy Rules](../usage/settings#sync-strategy-rules).
 
-After discovery, entries over the configured [maximum file size](../usage/settings#max-file-size) are removed, probed content is pruned, and the remaining stats are organized into per-strategy buckets: `Record<string, StatsMap>` for local and remote stats, and `Record<string, RecordStatsMap>` for records.
+After discovery, entries over the configured [maximum file size](../usage/settings#max-file-size) are removed. Probe folders that contain no synchronized descendant are pruned; those that do are kept under the reserved `none` strategy. The remaining stats are organized into per-strategy buckets: `Record<string, StatsMap>` for local and remote stats, and `Record<string, RecordStatsMap>` for records.
 
 ## Decider
 
-Planning is strategy-driven. `decideTasks` unions the keys of the local, remote, and record buckets, looks up the registered decider for each strategy name, and fails with a `syncStrategyNotInstalled` error when a strategy has no decider. Each decider receives only its own bucket — `localStats`, `remoteStats`, `records`, and a `taskFactory` — and its tasks are concatenated into the run's task plan. `none` is not a decider; entries resolved to `none` are already dropped before planning.
+Planning is strategy-driven. `decideTasks` walks the per-strategy mapping, looks up the registered decider for each strategy name, and fails with a `syncStrategyNotInstalled` error when a strategy has no decider. Each decider receives only its own bucket — `localStats`, `remoteStats`, `records`, and a `taskFactory` — and its tasks are concatenated into the run's task plan. The reserved `none` strategy has a built-in pholder decider that only creates missing ancestor folders, so that synchronized descendants below unsynchronized ancestors can be transferred on both sides.
 
 The built-in strategies are registered by Bootstrap and are selectable in [Sync Strategy](../usage/settings#sync-strategy) rules:
 

@@ -63,7 +63,7 @@ type DeciderInput = {
 type Decider = (input: DeciderInput) => Array<BaseTask>;
 ```
 
-Stats are bucketed by strategy name before planning; `decideTasks` invokes the registered decider once per bucket that has entries. Each registered decider ID becomes a selectable strategy in [Sync Strategy](../usage/settings#sync-strategy) rules. Use `taskFactory` instead of constructing task classes directly — their constructors require internal sync infrastructure. Built-in deciders include `bidirectional`, `mirrorLocal`, and `mirrorRemote`; see [deep dive: sync](../deep-dive/sync#decider) for their behavior.
+Stats are bucketed by strategy name before planning; `decideTasks` invokes the registered decider once per bucket that has entries. Each registered decider ID that supplies a `prettyName` becomes a selectable strategy in [Sync Strategy](../usage/settings#sync-strategy) rules. Use `taskFactory` instead of constructing task classes directly since their constructors require internal sync infrastructure. Built-in deciders include `bidirectional`, `mirrorLocal`, and `mirrorRemote`; see [deep dive: sync](../deep-dive/sync#decider) for their behavior.
 
 Examples: [bidirectional decider](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/sync/decision/bidirectional.ts) and [mirror deciders](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/sync/decision/mirror.ts).
 

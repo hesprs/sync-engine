@@ -8,7 +8,7 @@ import type { ConflictResolverEntry, DeciderEntry, RemoteFsEntry } from '@/modul
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { Dispatch } from '@/sdk';
 import type { General, GlobStrategy, MaybePromise } from '@/types';
-import { normalizeGlob } from '@/utils/glob-match';
+import { NONE_STRATEGY, normalizeGlob } from '@/utils/glob-match';
 import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
 import ModuleManagement from './module-management';
 import { generateEditableList, reactivelyValidate, s } from './utils';
@@ -156,8 +156,14 @@ export default function headSettings(
 				type: 'page',
 			}),
 			{
-				1000: s(() =>
-					generateEditableList<GlobStrategy>({
+				1000: s(() => {
+					const options: Record<string, string> = {};
+					deciderRegistry.forEach(({ prettyName }, key) => {
+						const name = prettyName?.();
+						if (name) options[key] = name;
+					});
+					options[NONE_STRATEGY] = translate('dontSync');
+					return generateEditableList<GlobStrategy>({
 						defaultValue: { expr: '', strategy: 'bidirectional' },
 						identifier: 'syncStrategy',
 						items: settings.syncStrategy,
@@ -190,11 +196,6 @@ export default function headSettings(
 									if (item.new) text.inputEl.focus();
 								})
 								.addDropdown((dropdown) => {
-									const options: Record<string, string> = {};
-									deciderRegistry.forEach(({ prettyName }, key) => {
-										const name = prettyName?.();
-										if (name) options[key] = name;
-									});
 									dropdown
 										.addOptions(options)
 										.setValue(item.value.strategy)
@@ -211,8 +212,8 @@ export default function headSettings(
 							add: translate('addStrategy'),
 							empty: translate('noStrategyConfigured'),
 						},
-					}),
-				),
+					});
+				}),
 			},
 		),
 		60: s(() => ({
