@@ -34,6 +34,7 @@ import {
 	keepRemoteResolver,
 	latestSurviveResolver,
 	renameAndKeepBothResolver,
+	pholderDecider,
 } from '@/sync';
 import type { Dispatch, On } from './EventBus';
 import type { ObsidianLanguageCode, Translate, TranslationResource } from './I18n';
@@ -366,6 +367,7 @@ export default class Bootstrap {
 			decider: (input) => mirrorRemoteDecider(input, logger),
 			prettyName: () => t('mirrorRemote'),
 		});
+		registerDecider('none', { decider: (input) => pholderDecider(input, logger) }); // The only case for "none" strategy is pholder
 
 		registerConflictResolver('renameAndKeepBoth', {
 			prettyName: () => t('renameAndKeepBoth'),

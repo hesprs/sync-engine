@@ -30,7 +30,7 @@ import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import type { Dispatch, On } from './EventBus';
 import type { Snippet, Translate } from './I18n';
 import type { DeleteConfirmReturn } from './ProgressModal';
-import type { DecideTasksInput, Infras } from './Registrar';
+import type { Infras } from './Registrar';
 
 export type SyncTerminateReason =
 	| { result: 'cancelled' }
@@ -58,7 +58,7 @@ export default class Sync {
 			on: On<Events>;
 			translate: Translate<Translations>;
 			getConflictResolver: () => ConflictResolver;
-			decideTasks: (input: DecideTasksInput) => Array<BaseTask>;
+			decideTasks: (mapping: StrategyMapping, factory: TaskFactory) => Array<BaseTask>;
 		},
 	) {}
 
@@ -77,13 +77,10 @@ export default class Sync {
 	declare readonly settings: { maxFileSize: TogglableValue; syncStrategy: Array<GlobStrategy> };
 	declare readonly i18n: { xOperationsFailed: Snippet<number> };
 
-	private readonly postProcess = (
-		stats: Array<Stat>,
-		organizer: (stats: Array<Stat>) => Record<string, StatsMap>,
-	) => {
+	private readonly postProcess = (stats: Array<Stat>) => {
 		const { enabled, value } = this.settings.maxFileSize;
 		const maxSize = enabled ? value : Infinity;
-		return organizer(stats.filter((stat) => stat.isDir || stat.size <= maxSize));
+		return stats.filter((stat) => stat.isDir || stat.size <= maxSize);
 	};
 
 	private readonly confirmTasks = (tasks: Array<BaseTask>) =>
@@ -170,29 +167,22 @@ export default class Sync {
 			const infras = initializeSync();
 			const { record: recordStore, localFs } = infras;
 			const match = prepareGlobMatch(syncStrategy);
-			const { reporter: localReporter, organizer: localOrganizer } = prepareList(match);
-			const { reporter: remoteReporter, organizer: remoteOrganizer } = prepareList(match);
 			dispatch('syncInitialized', { ...infras, match });
 
-			// oxlint-disable-next-line sort-keys : getting records must be after remote listing, since remote listing may modify records
-			const listRemoteAndGetRecord = async () => ({
-				remoteList: await remoteLister({
-					...infras,
-					reporter: (prog) => {
-						dispatch('remoteWalkProgress', prog);
-						return remoteReporter(prog);
-					},
-				}),
-				recordList: await recordStore.entries(),
+			const { mapping, recordList } = await list({
+				listLocal: (reporter) => localFs.list('/', reporter),
+				listRecord: () => recordStore.entries(),
+				listRemote: (reporter) =>
+					remoteLister({
+						...infras,
+						reporter: (prog) => {
+							dispatch('remoteWalkProgress', prog);
+							return reporter(prog);
+						},
+					}),
+				match,
+				postProcess,
 			});
-			const [localList, { recordList, remoteList }] = await Promise.all([
-				localFs.list('/', localReporter),
-				listRemoteAndGetRecord(),
-			]);
-			if (isCancelled()) throw syncCancelledError;
-			const record = organizeRecord(recordList, match);
-			const local = postProcess(localList, localOrganizer);
-			const remote = postProcess(remoteList, remoteOrganizer);
 			if (isCancelled()) throw syncCancelledError;
 
 			const taskFactory = createTaskFactory({
@@ -200,7 +190,7 @@ export default class Sync {
 				resolver: conflictResolver,
 				translate,
 			});
-			tasks = decideTasks({ local, record, remote, taskFactory });
+			tasks = decideTasks(mapping, taskFactory);
 			if (tasks.length === 0) {
 				terminateReason = { result: 'noop' };
 				return terminateReason;
@@ -349,51 +339,94 @@ function sortTasks(tasks: Array<BaseTask>) {
 	});
 }
 
-function prepareList(match: (path: string) => GlobMatchResult) {
-	const probes = new Set<string>();
-	const strategies = new Map<string, string>();
-	return {
-		// Prune probe folders that need to be excluded and organize stats into strategies
-		organizer: (stats: Array<Stat>) => {
-			const content = stats.filter(({ key }) => !probes.has(key));
-			if (content.length === 0) return {};
-			const keptProbes = new Set<string>();
-			for (const probe of probes)
-				if (content.some(({ key }) => isSub(probe, key, false))) keptProbes.add(probe);
-			const pruned = stats.filter(({ key }) => !probes.has(key) || keptProbes.has(key));
-			const result: Record<string, StatsMap> = {};
-			for (const stat of pruned) {
-				const { key } = stat;
-				const strategy = strategies.get(key);
-				if (!strategy) continue;
-				result[strategy] ??= new Map<string, Stat>();
-				result[strategy].set(key, stat);
-			}
-			return result;
-		},
-		reporter: ({ current }: { current: string }): ListOptions => {
-			const { advance, strategy } = match(current);
-			if (strategy !== NONE_STRATEGY) strategies.set(current, strategy);
-			if (advance) {
-				if (strategy === NONE_STRATEGY) probes.add(current);
-				return 'advance';
-			}
-			if (strategy === NONE_STRATEGY) return 'exclude';
-			return 'include';
-		},
-	};
-}
-
-function organizeRecord(
-	records: Array<[string, RecordStat]>,
-	match: (path: string) => GlobMatchResult,
-) {
-	const result: Record<string, RecordStatsMap> = {};
-	for (const [key, stat] of records) {
-		const { strategy } = match(key);
-		if (strategy === NONE_STRATEGY) continue;
-		result[strategy] ??= new Map<string, RecordStat>();
-		result[strategy].set(key, stat);
+type ReporterLister = (reporter: ListReporter) => MaybePromise<Array<Stat>>;
+export type StrategyMapping = Record<
+	string,
+	{
+		localStats: StatsMap;
+		remoteStats: StatsMap;
+		records: RecordStatsMap;
 	}
-	return result;
+>;
+async function list({
+	listLocal,
+	listRecord,
+	listRemote,
+	match,
+	postProcess,
+}: {
+	listLocal: ReporterLister;
+	listRemote: ReporterLister;
+	listRecord: () => MaybePromise<Array<[string, RecordStat]>>;
+	match: (path: string) => GlobMatchResult;
+	postProcess: (stats: Array<Stat>) => Array<Stat>;
+}) {
+	const matchCache = new Map<string, GlobMatchResult>();
+	const cachedMatch = (path: string): GlobMatchResult => {
+		const cache = matchCache.get(path);
+		if (cache) return cache;
+		const result = match(path);
+		matchCache.set(path, result);
+		return result;
+	};
+	const keptProbes = new Set<string>();
+	const separateProbes = { local: new Set<string>(), remote: new Set<string>() };
+	const mapping: StrategyMapping = {};
+	const ensureStrategy = (strategy: string) =>
+		(mapping[strategy] ??= {
+			localStats: new Map(),
+			records: new Map(),
+			remoteStats: new Map(),
+		});
+	const reporter = ({ current }: { current: string }, side: 'local' | 'remote'): ListOptions => {
+		const { advance, strategy } = cachedMatch(current);
+		if (advance) {
+			if (strategy === NONE_STRATEGY) separateProbes[side].add(current);
+			return 'advance';
+		}
+		if (strategy === NONE_STRATEGY) return 'exclude';
+		return 'include';
+	};
+	const organizer = (stats: Array<Stat>, side: 'local' | 'remote') => {
+		const probes = separateProbes[side];
+		const content = stats.filter(({ key }) => !probes.has(key));
+		if (content.length === 0) return;
+		for (const probe of probes)
+			if (content.some(({ key }) => isSub(probe, key, false))) keptProbes.add(probe);
+	};
+	const synthesizer = (stats: Array<Stat>, side: 'local' | 'remote') => {
+		const pruned = stats.filter(
+			({ key }) => !separateProbes[side].has(key) || keptProbes.has(key),
+		);
+		for (const stat of pruned) {
+			const { key } = stat;
+			const { strategy } = cachedMatch(key);
+			ensureStrategy(strategy);
+			mapping[strategy][`${side}Stats`].set(key, stat);
+		}
+	};
+	const recordSynthesizer = (records: Array<[string, RecordStat]>) =>
+		records.forEach(([key, stat]) => {
+			const { strategy } = match(key);
+			if (strategy === NONE_STRATEGY && !keptProbes.has(key)) return;
+			ensureStrategy(strategy);
+			mapping[strategy].records.set(key, stat);
+		});
+	// oxlint-disable-next-line sort-keys : getting records must be after remote listing, since remote listing may modify records
+	const listRemoteAndRecord = async () => ({
+		remoteList: await listRemote((prog) => reporter(prog, 'remote')),
+		recordList: await listRecord(),
+	});
+	const [localList, { recordList, remoteList }] = await Promise.all([
+		listLocal((prog) => reporter(prog, 'local')),
+		listRemoteAndRecord(),
+	]);
+	const local = postProcess(localList);
+	const remote = postProcess(remoteList);
+	organizer(local, 'local');
+	organizer(remote, 'remote');
+	synthesizer(local, 'local');
+	synthesizer(remote, 'remote');
+	recordSynthesizer(recordList);
+	return { localList, mapping, recordList, remoteList };
 }

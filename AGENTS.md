@@ -43,7 +43,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - Encryption module: `packages/encryption/`, package name `encryption`.
 - Shared utils: `packages/shared/`, package name `@repo/shared`.
 - Documentation site: `docs/`, package name `docs`.
-- I18n modules: `packages/i18n/`, package name `i18n`.
+- I18n modules: `packages/i18n/`, package name `i18n`. English translations are bundled in plugin core.
 - Smart merge module: `packages/smart-merge/`, package name `smart-merge`.
 
 ## Conventions

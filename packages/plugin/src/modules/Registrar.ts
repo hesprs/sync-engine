@@ -6,12 +6,12 @@ import { toError } from '@repo/shared/error';
 import { requestUrl } from 'obsidian';
 import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
 import type { BaseTask, ConflictResolver, Decider, TaskFactory } from '@/sync';
-import type { General, MaybePromise, Binary, StatsMap, RecordStatsMap } from '@/types';
+import type { General, MaybePromise, Binary } from '@/types';
 import { createVaultRequest, VaultFs } from '@/fs';
 import type { Dispatch } from './EventBus';
 import type { Snippet, Translate } from './I18n';
 import type { RecordStore } from './Storage';
-import type { SyncOptions } from './Sync';
+import type { StrategyMapping, SyncOptions } from './Sync';
 
 type RejectableWrapper<T> = (value: T) => T | undefined;
 type OrderedWrapperEntry<T> = { priority: number; apply: RejectableWrapper<T> };
@@ -24,7 +24,7 @@ export type RemoteFsEntry = {
 	prettyName: () => string;
 	checkConnection: (request: Request) => MaybePromise<void | Error>;
 };
-export type DeciderEntry = { decider: Decider; prettyName: () => string };
+export type DeciderEntry = { decider: Decider; prettyName?: () => string };
 export type ConflictResolverEntry = { prettyName: () => string; resolver: ConflictResolver };
 
 type GeneralFn = (...args: ReadonlyArray<General>) => unknown;
@@ -64,13 +64,6 @@ const request: Request = async (url: string, params?: RequestParam) => {
 		status: response.status,
 		text: () => response.text,
 	};
-};
-
-export type DecideTasksInput = {
-	local: Record<string, StatsMap>;
-	remote: Record<string, StatsMap>;
-	record: Record<string, RecordStatsMap>;
-	taskFactory: TaskFactory;
 };
 
 export default class Registrar {
@@ -141,20 +134,12 @@ export default class Registrar {
 		return () => entry.checkConnection(this.getRequest());
 	};
 
-	private readonly decideTasks = ({ local, record, remote, taskFactory }: DecideTasksInput) => {
-		const keys = new Set([
-			...Object.keys(local),
-			...Object.keys(record),
-			...Object.keys(remote),
-		]);
+	private readonly decideTasks = (mapping: StrategyMapping, taskFactory: TaskFactory) => {
 		const tasks: Array<BaseTask> = [];
-		for (const key of keys) {
+		for (const [key, { localStats, records, remoteStats }] of Object.entries(mapping)) {
 			const { translate, dispatch } = this.ctx;
 			const entry = this.deciderRegistry.get(key);
 			if (!entry) throw new Error(translate('syncStrategyNotInstalled', key));
-			const localStats = local[key] ?? new Map();
-			const remoteStats = remote[key] ?? new Map();
-			const records = record[key] ?? new Map();
 			dispatch(
 				'logSync',
 				`Strategy \`${key}\` in scope: local ${localStats.size} item(s), remote ${remoteStats.size} item(s), record ${records.size} item(s).`,

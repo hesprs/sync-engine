@@ -147,6 +147,7 @@ export default function createVaultRequest(app: App): VaultRequest {
 		if (method === 'MOVE')
 			return adapter.rename(path, toVaultPath(params.destination)) as never;
 		if (method === 'MKDIR')
+			// Obsidian adapter mkdir is no-op when target already exists
 			return (
 				key === '/' ? undefined : withCheckChars(key, () => adapter.mkdir(path))
 			) as never;
