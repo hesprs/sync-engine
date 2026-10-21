@@ -1,10 +1,7 @@
 {
 	"extends": "../tsconfig.json",
 	"compilerOptions": {
-		"paths": {
-			"@/*": ["./src/*"],
-			"@": ["./src"]
-		},
+		"paths": { "@/*": ["./src/*"], "@": ["./src"] },
 		"jsx": "preserve",
 		"jsxImportSource": "vue"
 	},

@@ -1,8 +1,22 @@
-import type { Events, Translations } from '@';
-import type { Ref } from 'synthkernel';
+import {
+	RemoveLocal,
+	CreateRemoteDir,
+	Upload,
+	AddRecord,
+	RemoveRecord,
+	convertMoves,
+	syncCancelledError,
+	taskMap,
+} from '@/sync';
+import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import { toError } from '@repo/shared/error';
 import { isSub } from '@repo/shared/path';
 import { ref } from 'synthkernel';
+import type { Dispatch, On } from './EventBus';
+import type { Snippet, Translate } from './I18n';
+import type { DeleteConfirmReturn } from './ProgressModal';
+import type { Infras } from './Registrar';
+import type { Events, Translations } from '@';
 import type { Fs, ListOptions, ListReporter } from '@/fs';
 import type { BaseTask, ConflictResolver, TaskFactory, TaskNames, TaskOptionsMap } from '@/sync';
 import type {
@@ -16,21 +30,7 @@ import type {
 	TogglableValue,
 } from '@/types';
 import type { GlobMatchResult } from '@/utils/glob-match';
-import {
-	RemoveLocal,
-	CreateRemoteDir,
-	Upload,
-	AddRecord,
-	RemoveRecord,
-	convertMoves,
-	syncCancelledError,
-	taskMap,
-} from '@/sync';
-import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
-import type { Dispatch, On } from './EventBus';
-import type { Snippet, Translate } from './I18n';
-import type { DeleteConfirmReturn } from './ProgressModal';
-import type { Infras } from './Registrar';
+import type { Ref } from 'synthkernel';
 
 export type SyncTerminateReason =
 	| { result: 'cancelled' }
@@ -342,11 +342,7 @@ function sortTasks(tasks: Array<BaseTask>) {
 type ReporterLister = (reporter: ListReporter) => MaybePromise<Array<Stat>>;
 export type StrategyMapping = Record<
 	string,
-	{
-		localStats: StatsMap;
-		remoteStats: StatsMap;
-		records: RecordStatsMap;
-	}
+	{ localStats: StatsMap; remoteStats: StatsMap; records: RecordStatsMap }
 >;
 async function list({
 	listLocal,

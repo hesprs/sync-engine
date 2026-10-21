@@ -1,3 +1,5 @@
+import { s, setNeedMigration } from '@hesprs/sync-engine-sdk';
+import { ConfirmationModal, SecretComponent } from 'obsidian';
 import type { EncryptionSettings } from '@';
 import type {
 	CallableOrObjectTree,
@@ -8,8 +10,6 @@ import type {
 	Translations,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
-import { s, setNeedMigration } from '@hesprs/sync-engine-sdk';
-import { ConfirmationModal, SecretComponent } from 'obsidian';
 
 export type EncryptionTranslations = {
 	encryption: string;

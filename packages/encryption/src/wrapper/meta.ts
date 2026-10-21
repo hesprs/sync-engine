@@ -1,11 +1,11 @@
-import type { Binary } from '@hesprs/sync-engine-sdk';
+import { DECRYPTION_ERROR_MESSAGE, importAesGcmKey } from './shared';
 import {
 	textToUint8Array,
 	uint8ArrayToText,
 	concatBinary,
 	toUint8Array,
 } from '@repo/shared/binary';
-import { DECRYPTION_ERROR_MESSAGE, importAesGcmKey } from './shared';
+import type { Binary } from '@hesprs/sync-engine-sdk';
 
 const META_NONCE_LENGTH = 12;
 

@@ -1,3 +1,9 @@
+import { pollDeviceToken, revokeToken, startDeviceAuthorization } from './gdrive/auth';
+import { s } from '@hesprs/sync-engine-sdk';
+import { describeError, toError } from '@repo/shared/error';
+import { normalizeBaseDir } from '@repo/shared/path';
+import { Modal, Notice, Setting } from 'obsidian';
+import type { TokenManager } from './gdrive/auth';
 import type { GdriveSettings } from '@';
 import type {
 	CallableOrObjectTree,
@@ -10,12 +16,6 @@ import type {
 	Events,
 } from '@hesprs/sync-engine-sdk';
 import type { App, SettingGroupItem } from 'obsidian';
-import { s } from '@hesprs/sync-engine-sdk';
-import { describeError, toError } from '@repo/shared/error';
-import { normalizeBaseDir } from '@repo/shared/path';
-import { Modal, Notice, Setting } from 'obsidian';
-import type { TokenManager } from './gdrive/auth';
-import { pollDeviceToken, revokeToken, startDeviceAuthorization } from './gdrive/auth';
 
 export type GdriveTranslations = {
 	gdrive: string;
@@ -62,9 +62,7 @@ class DeviceCodeModal extends Modal {
 		} = this;
 		titleEl.setText(translate('deviceCodeTitle'));
 		contentEl.addClass('markdown-rendered');
-		contentEl.createEl('p', {
-			text: translate('deviceCodeInstruction', verificationUrl),
-		});
+		contentEl.createEl('p', { text: translate('deviceCodeInstruction', verificationUrl) });
 		contentEl.createEl('code', { cls: 'gdrive-device-code', text: userCode });
 		contentEl.createEl('p', {
 			cls: 'gdrive-device-code-status',

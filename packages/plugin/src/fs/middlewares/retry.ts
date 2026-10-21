@@ -1,6 +1,6 @@
-import type { ErrorLike } from '@repo/shared/error';
 import { getStatus } from '@repo/shared/error';
 import type { Request } from '@/modules/Registrar';
+import type { ErrorLike } from '@repo/shared/error';
 
 type RetryOptions = {
 	maxRetry?: number;

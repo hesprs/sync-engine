@@ -1,4 +1,13 @@
 import 'tsdown/client';
+import { TokenManager, bearerMiddleware } from './gdrive/auth';
+import checkConnection from './gdrive/check-connection';
+import GdriveFs from './gdrive/fs';
+import { ru, en, zh, zhTW } from './i18n';
+import gdriveSetting from './setting';
+import styles from './styles.css?inline';
+import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
+import type { GdriveDB } from './gdrive/fs';
+import type { GdriveTranslations } from './setting';
 import type {
 	Context,
 	FsWrapperEntry,
@@ -13,21 +22,8 @@ import type {
 	TranslationResource,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
-import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
-import type { GdriveDB } from './gdrive/fs';
-import type { GdriveTranslations } from './setting';
-import { TokenManager, bearerMiddleware } from './gdrive/auth';
-import checkConnection from './gdrive/check-connection';
-import GdriveFs from './gdrive/fs';
-import { ru, en, zh, zhTW } from './i18n';
-import gdriveSetting from './setting';
-import styles from './styles.css?inline';
 
-export type GdriveSettings = {
-	baseDirectory: string;
-	useTrash: boolean;
-	userId: string;
-};
+export type GdriveSettings = { baseDirectory: string; useTrash: boolean; userId: string };
 
 export default class Gdrive {
 	private readonly cleanup: Array<() => void> = [];
@@ -54,11 +50,7 @@ export default class Gdrive {
 		this.tokenManager = new TokenManager(ctx.app.secretStorage);
 	}
 
-	readonly moduleSettings: GdriveSettings = {
-		baseDirectory: '',
-		useTrash: true,
-		userId: '',
-	};
+	readonly moduleSettings: GdriveSettings = { baseDirectory: '', useTrash: true, userId: '' };
 
 	declare settings: Settings;
 

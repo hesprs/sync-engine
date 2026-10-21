@@ -1,4 +1,8 @@
+import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
+import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
+import { SecretComponent } from 'obsidian';
 import type { S3Settings } from '@';
+import type { UrlStyle } from '@/s3/sigv4';
 import type {
 	CallableOrObjectTree,
 	Fragment,
@@ -7,10 +11,6 @@ import type {
 	Translations,
 } from '@hesprs/sync-engine-sdk';
 import type { App, SettingGroupItem, TextComponent } from 'obsidian';
-import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
-import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
-import { SecretComponent } from 'obsidian';
-import type { UrlStyle } from '@/s3/sigv4';
 
 export type S3Translations = {
 	s3: string;

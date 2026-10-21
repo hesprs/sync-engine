@@ -1,7 +1,7 @@
 import testKit from '$/test-kit';
+import { mirrorLocalDecider, mirrorRemoteDecider } from '@/sync';
 import { expect, test } from 'bun:test';
 import type { Decider } from '@/sync';
-import { mirrorLocalDecider, mirrorRemoteDecider } from '@/sync';
 
 const { file, fileRecord, findTask, folder, folderRecord, runDecider, taskNames } = testKit;
 

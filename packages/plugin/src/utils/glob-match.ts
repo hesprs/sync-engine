@@ -11,18 +11,12 @@ type CompiledRule = {
 	readonly directoryOnly: boolean;
 };
 
-type Path = {
-	readonly segments: Array<string>;
-	readonly directory: boolean;
-};
+type Path = { readonly segments: Array<string>; readonly directory: boolean };
 
 function parsePath(path: string): Path {
 	if (path === '/') return { directory: true, segments: [] };
 	const directory = isFolder(path);
-	return {
-		directory,
-		segments: path.slice(0, directory ? -1 : undefined).split('/'),
-	};
+	return { directory, segments: path.slice(0, directory ? -1 : undefined).split('/') };
 }
 
 function escapeRegExpCharacter(character: string): string {

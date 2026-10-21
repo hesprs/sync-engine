@@ -1,12 +1,7 @@
 import { compileQuery, parseUrl } from '@repo/shared/path';
 import type { UrlStyle } from './sigv4';
 
-export type UrlOptions = {
-	endpoint: string;
-	bucket: string;
-	key: string;
-	urlStyle: UrlStyle;
-};
+export type UrlOptions = { endpoint: string; bucket: string; key: string; urlStyle: UrlStyle };
 
 export function buildUrl({ endpoint, bucket, key, urlStyle }: UrlOptions): string {
 	const encodedPath = parseUrl(key, true);

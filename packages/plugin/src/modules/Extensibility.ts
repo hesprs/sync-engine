@@ -1,28 +1,24 @@
-import type { Context, Events, Translations } from '@';
-import type { App } from 'obsidian';
-import type { Ref } from 'synthkernel';
-import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
+import { VERSION } from './EventBus';
+import UntrustedModuleModal from '@/components/UntrustedModuleModal';
+import sha256 from '@/utils/sha-256';
+import untilTrue from '@/utils/until-true';
 import hash from '@repo/shared/crypto';
 import { importCode } from '@repo/shared/e2e-utils.spec';
 import { describeError, toError } from '@repo/shared/error';
 import { parseUrl } from '@repo/shared/path';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
-import type { General } from '@/types';
-import UntrustedModuleModal from '@/components/UntrustedModuleModal';
-import sha256 from '@/utils/sha-256';
-import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
 import type { Snippet, Translate } from './I18n';
-import { VERSION } from './EventBus';
+import type { Context, Events, Translations } from '@';
+import type { General } from '@/types';
+import type { App } from 'obsidian';
+import type { Ref } from 'synthkernel';
+import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
 
 type WindowAugmentation = { syncEngineApiBridge?: typeof obsidian };
 
-export type ModuleInstance = {
-	moduleSettings: object;
-	dispose?: () => void;
-	start?: () => void;
-};
+export type ModuleInstance = { moduleSettings: object; dispose?: () => void; start?: () => void };
 export type ModuleCtor = new (ctx: object) => ModuleInstance;
 type GeneralCtor = new (...args: ReadonlyArray<General>) => General;
 
@@ -37,11 +33,7 @@ export type ModuleMeta = {
 	readme?: string;
 	integrity: string;
 };
-export type AugmentedModuleMeta = ModuleMeta & {
-	enabled: boolean;
-	source: string;
-	icon: string;
-};
+export type AugmentedModuleMeta = ModuleMeta & { enabled: boolean; source: string; icon: string };
 
 const AUTO_UPDATE_DELAY = 200;
 export const MODULE_EXTENSION = '.js';
@@ -66,10 +58,7 @@ export default class Extensibility {
 		failedToFetchSource: Snippet<string>;
 		integrityCheckFailed: string;
 	};
-	declare readonly events: {
-		moduleLoaded: string;
-		moduleUnloaded: string;
-	};
+	declare readonly events: { moduleLoaded: string; moduleUnloaded: string };
 
 	constructor(
 		private readonly ctx: {

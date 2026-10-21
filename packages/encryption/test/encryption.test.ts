@@ -1,10 +1,10 @@
-import type { Binary, FileStat, Fs } from '@hesprs/sync-engine-sdk';
+import encryptionWrapper from '@/wrapper';
+import { DECRYPTION_ERROR_MESSAGE } from '@/wrapper/shared';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { EncryptionDBMeta, EncryptionDBSchema } from '@/wrapper';
-import encryptionWrapper from '@/wrapper';
-import { DECRYPTION_ERROR_MESSAGE } from '@/wrapper/shared';
+import type { Binary, FileStat, Fs } from '@hesprs/sync-engine-sdk';
 
 const { bytes, file, folder, fs: testFs, stream } = testKit;
 const PASSWORD = 'password';

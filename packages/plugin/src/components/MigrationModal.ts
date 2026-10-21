@@ -1,7 +1,7 @@
-import type { App, ToggleComponent } from 'obsidian';
 import { ConfirmationModal } from 'obsidian';
 import type { Fragment, Translate } from '@/modules/I18n';
 import type { MaybePromise } from '@/types';
+import type { App, ToggleComponent } from 'obsidian';
 
 export type MigrationModalTranslations = {
 	cancel: string;
@@ -11,13 +11,7 @@ export type MigrationModalTranslations = {
 };
 
 export default function setNeedMigration(
-	{
-		app,
-		translate,
-	}: {
-		app: App;
-		translate: Translate<MigrationModalTranslations>;
-	},
+	{ app, translate }: { app: App; translate: Translate<MigrationModalTranslations> },
 	{
 		toggle,
 		needMigration,

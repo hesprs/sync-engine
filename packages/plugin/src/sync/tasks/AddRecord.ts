@@ -1,6 +1,6 @@
-import type { RecordStat, Stat } from '@/types';
-import type { OptionsWithBothStats } from '../decision/interface';
 import { BaseTask } from './interface';
+import type { OptionsWithBothStats } from '../decision/interface';
+import type { RecordStat, Stat } from '@/types';
 
 export default class AddRecord extends BaseTask<OptionsWithBothStats> {
 	async exec() {

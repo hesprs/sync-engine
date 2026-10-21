@@ -1,6 +1,6 @@
 import testKit from '$/test-kit';
-import { expect, test } from 'bun:test';
 import { customHeadersMiddleware } from '@/fs';
+import { expect, test } from 'bun:test';
 
 const { request } = testKit;
 
@@ -20,21 +20,9 @@ test('custom headers middleware merges supplied headers and overrides duplicates
 	});
 
 	expect(
-		wrapped('note.md', {
-			headers: {
-				'x-keep': 'keep',
-				'x-override': 'old',
-			},
-		}),
+		wrapped('note.md', { headers: { 'x-keep': 'keep', 'x-override': 'old' } }),
 	).resolves.toMatchObject({ status: 200 });
 	expect(harness.calls).toStrictEqual([
-		{
-			headers: {
-				'x-added': 'value',
-				'x-keep': 'keep',
-				'x-override': 'new',
-			},
-			url: 'note.md',
-		},
+		{ headers: { 'x-added': 'value', 'x-keep': 'keep', 'x-override': 'new' }, url: 'note.md' },
 	]);
 });

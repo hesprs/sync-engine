@@ -1,6 +1,6 @@
+import { BaseTask } from './interface';
 import { pipe } from '@/utils/pipe';
 import type { OptionsWithLocalFileStat } from '../decision/interface';
-import { BaseTask } from './interface';
 
 export default class Upload extends BaseTask<OptionsWithLocalFileStat> {
 	async exec() {

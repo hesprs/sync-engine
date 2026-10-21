@@ -1,13 +1,9 @@
+import type { TaskOptions } from '../decision/interface';
 import type { Fs } from '@/fs';
 import type { RecordStore } from '@/modules/Storage';
 import type { FileStat, MaybePromise } from '@/types';
-import type { TaskOptions } from '../decision/interface';
 
-export type BaseTaskOptions = {
-	localFs: Fs;
-	remoteFs: Fs;
-	record: RecordStore;
-};
+export type BaseTaskOptions = { localFs: Fs; remoteFs: Fs; record: RecordStore };
 
 export type TaskNames =
 	| 'addRecord'

@@ -1,9 +1,9 @@
-import type { App as ObsidianApp } from 'obsidian';
-import type { Hook } from 'synthkernel';
+import App from './App';
 import { render } from 'solid-js/web';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Translate } from '@/modules/I18n';
-import App from './App';
+import type { App as ObsidianApp } from 'obsidian';
+import type { Hook } from 'synthkernel';
 
 export type PendingAction = 'delete' | 'disable' | 'download' | 'enable' | 'editInfo';
 

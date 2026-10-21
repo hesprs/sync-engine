@@ -1,5 +1,5 @@
-import type { BaseTask } from '@/sync';
 import type { FileTreeData, FileTreeNode } from './types';
+import type { BaseTask } from '@/sync';
 
 function isDeleteTask(node: FileTreeNode | undefined): boolean {
 	return node?.task?.name === 'removeLocal' || node?.task?.name === 'removeRemote';

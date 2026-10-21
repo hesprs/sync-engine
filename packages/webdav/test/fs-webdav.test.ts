@@ -1,3 +1,9 @@
+import { checkConnection } from '@/webdav/check-connection';
+import WebdavFs from '@/webdav/fs';
+import { chunkSize } from '@hesprs/sync-engine-sdk';
+import { testKit } from '@hesprs/sync-engine-sdk/dev';
+import { beforeEach, expect, mock, test } from 'bun:test';
+import type { WebdavFsOptions } from '@/webdav/fs';
 import type {
 	Binary,
 	MaybePromise,
@@ -5,12 +11,6 @@ import type {
 	RequestParam,
 	RequestResponse,
 } from '@hesprs/sync-engine-sdk';
-import { chunkSize } from '@hesprs/sync-engine-sdk';
-import { testKit } from '@hesprs/sync-engine-sdk/dev';
-import { beforeEach, expect, mock, test } from 'bun:test';
-import type { WebdavFsOptions } from '@/webdav/fs';
-import { checkConnection } from '@/webdav/check-connection';
-import WebdavFs from '@/webdav/fs';
 
 const { bytes, deferred, file, flush, folder, request, stream: createStream } = testKit;
 const sharedDate = new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf();
@@ -19,10 +19,7 @@ type Control = (url: string, params: RequestParam) => MaybePromise<Partial<Reque
 type ParsedResponse = { multistatus: { response: Array<unknown> } };
 
 const emptyBinary: Binary = new Uint8Array(0);
-const defaultResponse = {
-	bytes: () => emptyBinary,
-	text: () => '',
-};
+const defaultResponse = { bytes: () => emptyBinary, text: () => '' };
 
 let response: Partial<RequestResponse>;
 let parsedResponse: ParsedResponse;
@@ -35,17 +32,11 @@ const defaultOptions = {
 	username: 'alice',
 } satisfies Omit<WebdavFsOptions, 'request'>;
 
-void mock.module('@repo/shared/parse-xml', () => ({
-	default: () => parsedResponse,
-}));
+void mock.module('@repo/shared/parse-xml', () => ({ default: () => parsedResponse }));
 
 beforeEach(() => {
 	response = defaultResponse;
-	parsedResponse = {
-		multistatus: {
-			response: [],
-		},
-	};
+	parsedResponse = { multistatus: { response: [] } };
 });
 
 function createWebdavFs(options: Partial<WebdavFsOptions> = {}) {
@@ -62,16 +53,8 @@ function createWebdavFs(options: Partial<WebdavFsOptions> = {}) {
 }
 
 function setXmlResponse(items: Array<unknown>, text = '<xml />') {
-	response = {
-		bytes: () => emptyBinary,
-		status: 207,
-		text: () => text,
-	};
-	parsedResponse = {
-		multistatus: {
-			response: items,
-		},
-	};
+	response = { bytes: () => emptyBinary, status: 207, text: () => text };
+	parsedResponse = { multistatus: { response: items } };
 }
 
 async function collectStream(source: ReadableStream<Binary>): Promise<Binary> {
@@ -180,9 +163,7 @@ test('chunked writeStream uses exact Nextcloud urls and headers', async () => {
 	webdav.setRequest((url, params) => {
 		if (params.method === 'MKCOL') {
 			uploadFolderUrl = url;
-			expect(params.headers).toMatchObject({
-				Destination: destination,
-			});
+			expect(params.headers).toMatchObject({ Destination: destination });
 			return { ...defaultResponse, status: 201 };
 		}
 		if (params.method === 'PUT') {
@@ -195,9 +176,7 @@ test('chunked writeStream uses exact Nextcloud urls and headers', async () => {
 		}
 		if (params.method === 'MOVE') {
 			expect(url).toBe(`${uploadFolderUrl}.file`);
-			expect(params.headers).toMatchObject({
-				Destination: destination,
-			});
+			expect(params.headers).toMatchObject({ Destination: destination });
 			return { ...defaultResponse, headers: { 'oc-etag': 'oc-uid' } };
 		}
 		throw new Error(`Unexpected method: ${params.method}`);
@@ -345,10 +324,7 @@ test('list uses infinity when enabled', async () => {
 	setXmlResponse([
 		{
 			href: '/dav/Notes/',
-			propstat: {
-				prop: { resourcetype: { collection: {} } },
-				status: 'HTTP/1.1 200 OK',
-			},
+			propstat: { prop: { resourcetype: { collection: {} } }, status: 'HTTP/1.1 200 OK' },
 		},
 		{
 			href: '/dav/Notes/file.md',
@@ -385,37 +361,24 @@ test('list uses infinity when enabled', async () => {
 			uid: `${sharedDate}~3`,
 		},
 	]);
-	expect(storedProgress).toStrictEqual({
-		completed: 1,
-		current: 'Notes/file.md',
-		total: 1,
-	});
+	expect(storedProgress).toStrictEqual({ completed: 1, current: 'Notes/file.md', total: 1 });
 });
 
 test('list bfs updates progress when infinity is disabled', async () => {
 	const rootItems = [
 		{
 			href: 'https://dav.example.com/dav/Notes/',
-			propstat: {
-				prop: { resourcetype: { collection: {} } },
-				status: 'HTTP/1.1 200 OK',
-			},
+			propstat: { prop: { resourcetype: { collection: {} } }, status: 'HTTP/1.1 200 OK' },
 		},
 		{
 			href: 'https://dav.example.com/dav/Notes/Folder%20A/',
-			propstat: {
-				prop: { resourcetype: { collection: {} } },
-				status: 'HTTP/1.1 200 OK',
-			},
+			propstat: { prop: { resourcetype: { collection: {} } }, status: 'HTTP/1.1 200 OK' },
 		},
 	];
 	const childItems = [
 		{
 			href: 'https://dav.example.com/dav/Notes/Folder%20A/',
-			propstat: {
-				prop: { resourcetype: { collection: {} } },
-				status: 'HTTP/1.1 200 OK',
-			},
+			propstat: { prop: { resourcetype: { collection: {} } }, status: 'HTTP/1.1 200 OK' },
 		},
 		{
 			href: 'https://dav.example.com/dav/Notes/Folder%20A/file.md',
@@ -477,17 +440,11 @@ test('list reporter can exclude entries and stop descent', async () => {
 	const rootItems = [
 		{
 			href: 'https://dav.example.com/dav/Notes/',
-			propstat: {
-				prop: { resourcetype: { collection: {} } },
-				status: 'HTTP/1.1 200 OK',
-			},
+			propstat: { prop: { resourcetype: { collection: {} } }, status: 'HTTP/1.1 200 OK' },
 		},
 		{
 			href: 'https://dav.example.com/dav/Notes/Folder%20A/',
-			propstat: {
-				prop: { resourcetype: { collection: {} } },
-				status: 'HTTP/1.1 200 OK',
-			},
+			propstat: { prop: { resourcetype: { collection: {} } }, status: 'HTTP/1.1 200 OK' },
 		},
 		{
 			href: 'https://dav.example.com/dav/Notes/skip.md',
@@ -573,10 +530,9 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 	expect(encodings.every((encoding) => encoding === 'identity')).toBe(true);
 
 	for (const { byte, length, range } of [...expectedRanges].reverse())
-		pending.get(range)?.resolve({
-			bytes: () => new Uint8Array(length).fill(byte),
-			status: 206,
-		});
+		pending
+			.get(range)
+			?.resolve({ bytes: () => new Uint8Array(length).fill(byte), status: 206 });
 
 	await flush();
 	expect(ranges).toStrictEqual(expectedRanges.map(({ range }) => range));

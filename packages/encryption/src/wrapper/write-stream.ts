@@ -1,5 +1,3 @@
-import type { Binary } from '@hesprs/sync-engine-sdk';
-import { concatBinary } from '@repo/shared/binary';
 import { encryptContentChunk } from './content';
 import {
 	CONTENT_CHUNK_SIZE,
@@ -9,6 +7,8 @@ import {
 	getEncryptedFileSize,
 	importAesGcmKey,
 } from './shared';
+import { concatBinary } from '@repo/shared/binary';
+import type { Binary } from '@hesprs/sync-engine-sdk';
 
 export default async function createEncryptedReadableStream(
 	rootFileKey: Binary,

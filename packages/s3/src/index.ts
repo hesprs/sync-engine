@@ -1,3 +1,13 @@
+import { en, zh, zhTW, ru } from '@/i18n';
+import s3BatchDeleteOptimizer from '@/optimizer';
+import { checkConnection } from '@/s3/check-connection';
+import S3Fs from '@/s3/fs';
+import { sigv4Middleware } from '@/s3/sigv4';
+import s3Setting from '@/setting';
+import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
+import { parseUrl } from '@repo/shared/path';
+import type { UrlStyle } from '@/s3/sigv4';
+import type { S3Translations } from '@/setting';
 import type {
 	RemoteFsEntry,
 	FsWrapperEntry,
@@ -17,33 +27,17 @@ import type {
 	DatabaseAsync,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
-import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
-import { parseUrl } from '@repo/shared/path';
-import type { UrlStyle } from '@/s3/sigv4';
-import type { S3Translations } from '@/setting';
-import { en, zh, zhTW, ru } from '@/i18n';
-import s3BatchDeleteOptimizer from '@/optimizer';
-import { checkConnection } from '@/s3/check-connection';
-import S3Fs from '@/s3/fs';
-import { sigv4Middleware } from '@/s3/sigv4';
-import s3Setting from '@/setting';
 
 export type S3Settings = {
 	endpoint: string;
 	region: string;
 	accessKeyId: string;
 	secretAccessKey: string;
-	sessionToken: {
-		enabled: boolean;
-		value: string;
-	};
+	sessionToken: { enabled: boolean; value: string };
 	bucket: string;
 	urlStyle: UrlStyle;
 	prefix: string;
-	proxyUrl: {
-		enabled: boolean;
-		value: string;
-	};
+	proxyUrl: { enabled: boolean; value: string };
 };
 
 export type S3DB = DatabaseSync<Record<string, unknown>, { s3Key?: Binary; s3KeyMarker?: string }>;
@@ -80,16 +74,10 @@ export default class S3 {
 		bucket: '',
 		endpoint: '',
 		prefix: '/',
-		proxyUrl: {
-			enabled: false,
-			value: '',
-		},
+		proxyUrl: { enabled: false, value: '' },
 		region: 'us-east-1',
 		secretAccessKey: '',
-		sessionToken: {
-			enabled: false,
-			value: '',
-		},
+		sessionToken: { enabled: false, value: '' },
 		urlStyle: 'virtualHosted',
 	};
 
@@ -118,10 +106,7 @@ export default class S3 {
 				},
 				priority: 6298,
 			}),
-			registerRemoteOptimizer({
-				apply: s3BatchDeleteOptimizer,
-				priority: 3343,
-			}),
+			registerRemoteOptimizer({ apply: s3BatchDeleteOptimizer, priority: 3343 }),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
 					if (this.settings.remoteFs !== 's3') return;
@@ -129,13 +114,7 @@ export default class S3 {
 						this.resolveConfig();
 					return sigv4Middleware(
 						request,
-						{
-							accessKeyId,
-							region,
-							secretAccessKey,
-							service: 's3',
-							sessionToken,
-						},
+						{ accessKeyId, region, secretAccessKey, service: 's3', sessionToken },
 						memoryDB,
 					);
 				},

@@ -3,9 +3,10 @@ import type { MaybePromise, Progress, Stat, Binary, FileStat, FolderStat } from 
 
 /**
  * All keys use unified format:
- * - root: `/`
- * - file: `note.md`, `folder/note.md`
- * - folder: `folder/`, `folder/nested/`
+ *
+ * - Root: `/`
+ * - File: `note.md`, `folder/note.md`
+ * - Folder: `folder/`, `folder/nested/`
  */
 export type RootFs = {
 	getUid(): string; // String whose inequality signifies the client is unique
@@ -56,10 +57,7 @@ export type MkdirAtom = {
 	reject: (err: Error) => void;
 };
 export type InputAtom = WriteAtom | DeleteAtom | MoveAtom | MkdirAtom;
-export type CustomAtom = {
-	type: 'custom';
-	execute: () => MaybePromise<void>;
-};
+export type CustomAtom = { type: 'custom'; execute: () => MaybePromise<void> };
 export type OutputAtom = InputAtom | CustomAtom;
 
 export type OptimizerInput = {

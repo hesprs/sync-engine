@@ -1,8 +1,8 @@
-import type { StoreAsync } from '@hesprs/sync-engine-sdk';
+import smartMergeBaseTextWrapper from '@/wrapper';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
-import smartMergeBaseTextWrapper from '@/wrapper';
+import type { StoreAsync } from '@hesprs/sync-engine-sdk';
 
 const { bytes, file, fs } = testKit;
 const db = openMemoryDB<{ baseText: string }>('smart-merge-wrapper-test');

@@ -1,8 +1,8 @@
-import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
+import { buildUrl, getFileUid, getHeader } from './utils';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import { encodeUrlPart } from '@repo/shared/path';
-import { buildUrl, getFileUid, getHeader } from './utils';
+import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
 
 // Nextcloud rejects non-final chunks below 5 MiB
 const NEXTCLOUD_CHUNK_SIZE = 5 * 1024 * 1024;
@@ -57,10 +57,7 @@ export default async function writeNextcloudChunkedUpload(
 			value,
 		});
 
-		const response = await request(uploadFileUrl, {
-			headers: { Destination },
-			method: 'MOVE',
-		});
+		const response = await request(uploadFileUrl, { headers: { Destination }, method: 'MOVE' });
 
 		const etag = getHeader(response.headers, 'etag') ?? getHeader(response.headers, 'oc-etag');
 		const [uid] = await Promise.all([

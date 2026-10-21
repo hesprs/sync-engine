@@ -1,30 +1,22 @@
-import type { Events, Translations } from '@';
-import type { App } from 'obsidian';
-import type { Ref } from 'synthkernel';
-import { Modal, Setting } from 'obsidian';
-import { computed, hook } from 'synthkernel';
-import type { BaseTask, RemoveLocal, TaskNames } from '@/sync';
-import type { Progress } from '@/types';
 import mountFileTree from '@/components/file-tree';
 import renderFailedTasks from '@/components/render-failed-tasks';
 import renderProgress from '@/components/render-progress';
 import roundPercent from '@/utils/round-percent';
+import { Modal, Setting } from 'obsidian';
+import { computed, hook } from 'synthkernel';
 import type { Dispatch, On } from './EventBus';
 import type { Snippet, Translate } from './I18n';
 import type { SyncStage } from './Observability';
 import type { FailedTaskInfo, TaskInfo } from './Sync';
+import type { Events, Translations } from '@';
+import type { BaseTask, RemoveLocal, TaskNames } from '@/sync';
+import type { Progress } from '@/types';
+import type { App } from 'obsidian';
+import type { Ref } from 'synthkernel';
 
-export type DeleteConfirmReturn = {
-	delete: Array<RemoveLocal>;
-	reupload: Array<RemoveLocal>;
-};
+export type DeleteConfirmReturn = { delete: Array<RemoveLocal>; reupload: Array<RemoveLocal> };
 
-type TaskCounts = {
-	total: number;
-	deleteLocal: number;
-	deleteRemote: number;
-	conflict: number;
-};
+type TaskCounts = { total: number; deleteLocal: number; deleteRemote: number; conflict: number };
 
 export default class ProgressModal extends Modal {
 	private readonly moduleCleanupCallbacks: Array<() => void> = [];

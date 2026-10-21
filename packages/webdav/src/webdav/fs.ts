@@ -1,3 +1,12 @@
+import writeNextcloudChunkedUpload from './chunked-upload';
+import { buildUrl, getFileUid, getHeader, parseWebDAVError } from './utils';
+import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
+import { concatBinary } from '@repo/shared/binary';
+import { getStatus } from '@repo/shared/error';
+import normalizeEtag from '@repo/shared/normalize-etag';
+import parseXML from '@repo/shared/parse-xml';
+import { dirname, formatUrl, normalizeKey, parseUrl, stripEndSlash } from '@repo/shared/path';
+import createRangeReadStream from '@repo/shared/read-stream';
 import type {
 	Binary,
 	FileStat,
@@ -10,15 +19,6 @@ import type {
 	RootFs,
 	Stat,
 } from '@hesprs/sync-engine-sdk';
-import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { concatBinary } from '@repo/shared/binary';
-import { getStatus } from '@repo/shared/error';
-import normalizeEtag from '@repo/shared/normalize-etag';
-import parseXML from '@repo/shared/parse-xml';
-import { dirname, formatUrl, normalizeKey, parseUrl, stripEndSlash } from '@repo/shared/path';
-import createRangeReadStream from '@repo/shared/read-stream';
-import writeNextcloudChunkedUpload from './chunked-upload';
-import { buildUrl, getFileUid, getHeader, parseWebDAVError } from './utils';
 
 export type WebdavFsOptions = {
 	endpoint: string;
@@ -42,15 +42,9 @@ type WebDAVProp = {
 	meta?: WebDAVPropValue;
 };
 
-type WebDAVPropstat = {
-	prop?: WebDAVProp;
-	status?: string;
-};
+type WebDAVPropstat = { prop?: WebDAVProp; status?: string };
 
-type WebDAVResponseItem = {
-	href: string;
-	propstat?: WebDAVPropstat | Array<WebDAVPropstat>;
-};
+type WebDAVResponseItem = { href: string; propstat?: WebDAVPropstat | Array<WebDAVPropstat> };
 
 type WebDAVMultistatus = {
 	multistatus: { response: WebDAVResponseItem | Array<WebDAVResponseItem> };
@@ -282,10 +276,7 @@ export default class WebdavFs implements RootFs {
 
 	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
 		const [{ headers }, meta] = await Promise.all([
-			this.requestOrThrow(buildUrl(this.endpoint, key), {
-				body: value,
-				method: 'PUT',
-			}),
+			this.requestOrThrow(buildUrl(this.endpoint, key), { body: value, method: 'PUT' }),
 			this.resolveMeta(stat.meta),
 		]);
 		const etag = getHeader(headers, 'etag');

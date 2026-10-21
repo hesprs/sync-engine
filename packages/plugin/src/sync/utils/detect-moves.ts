@@ -1,9 +1,9 @@
-import { basename, dirname } from '@repo/shared/path';
-import type { RecordStatsMap, Stat } from '@/types';
-import type { TaskNames } from '../tasks/interface';
 import { BaseTask } from '../tasks/interface';
 import MoveLocal from '../tasks/MoveLocal';
 import MoveRemote from '../tasks/MoveRemote';
+import { basename, dirname } from '@repo/shared/path';
+import type { TaskNames } from '../tasks/interface';
+import type { RecordStatsMap, Stat } from '@/types';
 
 type MoveSide = 'local' | 'remote';
 type MoveInfo = { key: string; oldKey: string; side: MoveSide };

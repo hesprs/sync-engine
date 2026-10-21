@@ -1,6 +1,6 @@
+import mergeOriginal from '@/utils/merge';
 import { test, expect } from 'bun:test';
 import type { MergeParams } from '@/utils/merge';
-import mergeOriginal from '@/utils/merge';
 
 function merge(params: MergeParams): string {
 	return mergeOriginal(params, {
@@ -25,29 +25,17 @@ test('local and remote identical content succeeds and is marked identical', () =
 
 // --- Simple merge cases ---
 test('local additions merge when remote is unchanged', () => {
-	const params: MergeParams = {
-		a: 'a\nb\nc',
-		b: 'a\nb',
-		o: 'a\nb',
-	};
+	const params: MergeParams = { a: 'a\nb\nc', b: 'a\nb', o: 'a\nb' };
 	expect(merge(params)).toBe('a\nb\nc');
 });
 
 test('remote deletions merge when local is unchanged', () => {
-	const params: MergeParams = {
-		a: 'a\nb\nc',
-		b: 'a\nc',
-		o: 'a\nb\nc',
-	};
+	const params: MergeParams = { a: 'a\nb\nc', b: 'a\nc', o: 'a\nb\nc' };
 	expect(merge(params)).toBe('a\nc');
 });
 
 test('local edits merge when remote is unchanged', () => {
-	const params: MergeParams = {
-		a: 'hello universe',
-		b: 'hello world',
-		o: 'hello world',
-	};
+	const params: MergeParams = { a: 'hello universe', b: 'hello world', o: 'hello world' };
 	expect(merge(params)).toBe('hello universe');
 });
 
@@ -976,20 +964,12 @@ test('nearby large inserts at same location merge', () => {
 
 // --- Content edge cases ---
 test('concatenate completely different changes', () => {
-	const params: MergeParams = {
-		a: 'local',
-		b: 'remote',
-		o: '',
-	};
+	const params: MergeParams = { a: 'local', b: 'remote', o: '' };
 	expect(merge(params)).toBe(`localremote`);
 });
 
 test('empty base with identical local and remote content succeeds', () => {
-	const params: MergeParams = {
-		a: 'same content',
-		b: 'same content',
-		o: '',
-	};
+	const params: MergeParams = { a: 'same content', b: 'same content', o: '' };
 	// Local and remote are identical, so this is identical content.
 	expect(merge(params)).toBe(`same content`);
 });

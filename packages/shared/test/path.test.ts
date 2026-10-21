@@ -1,4 +1,3 @@
-import { expect, test } from 'bun:test';
 import {
 	normalizeBaseDir,
 	normalizeKey,
@@ -8,6 +7,7 @@ import {
 	basename,
 	dirname,
 } from '@/path';
+import { expect, test } from 'bun:test';
 
 test('normalizes keys with dir suffix', () => {
 	expect(normalizeKey('/base//folder/note.md', false)).toBe('base/folder/note.md');

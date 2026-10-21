@@ -119,8 +119,5 @@ export default class I18n {
 		}
 	}) as Translate<TranslationResource>;
 
-	root = {
-		registerI18n: this.registerI18n,
-		translate: this.translate,
-	};
+	root = { registerI18n: this.registerI18n, translate: this.translate };
 }

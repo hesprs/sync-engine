@@ -1,11 +1,11 @@
+import ModuleEditorModal from '../ModuleEditorModal';
+import { OFFICIAL_SOURCE } from '@/modules/Extensibility';
 import { setIcon, setTooltip, ToggleComponent } from 'obsidian';
 import { Show, createEffect } from 'solid-js';
 import { compare } from 'verkit';
+import type { ModuleManagementContext, PendingAction } from './index';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { MaybePromise } from '@/types';
-import { OFFICIAL_SOURCE } from '@/modules/Extensibility';
-import type { ModuleManagementContext, PendingAction } from './index';
-import ModuleEditorModal from '../ModuleEditorModal';
 
 export default function Card(props: {
 	ctx: Pick<

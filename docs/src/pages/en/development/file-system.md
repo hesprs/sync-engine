@@ -8,11 +8,7 @@ Sync Engine uses a unified file system interface across all backends. Wrappers a
 type Binary = Uint8Array<ArrayBuffer>;
 type MaybePromise<T> = T | Promise<T>;
 
-type Progress<T = string> = {
-  total: number;
-  completed: number;
-  current?: T;
-};
+type Progress<T = string> = { total: number; completed: number; current?: T };
 
 type FileStat = {
   isDir: false;
@@ -82,10 +78,7 @@ type ListReporter = (progress: Required<Progress>) => MaybePromise<ListOptions>;
 ```ts
 import type { Progress, RootFs, Stat, Request } from '@hesprs/sync-engine-sdk';
 
-export type MyFsOptions = {
-  endpoint: string;
-  apiKey: string;
-};
+export type MyFsOptions = { endpoint: string; apiKey: string };
 
 export class MyFs implements RootFs {
   constructor(
@@ -205,9 +198,9 @@ If the optimizer removes atoms from the input array, it **must** call `resolve()
 ### Example: S3 Batch Delete Optimizer
 
 ```ts
-import type { DeleteAtom, OptimizerInput, OptimizerOutput } from '@hesprs/sync-engine-sdk';
-import { digOriginal } from '@hesprs/sync-engine-sdk';
 import S3Fs from './s3/fs';
+import { digOriginal } from '@hesprs/sync-engine-sdk';
+import type { DeleteAtom, OptimizerInput, OptimizerOutput } from '@hesprs/sync-engine-sdk';
 
 export default function s3BatchDeleteOptimizer({
   atoms,

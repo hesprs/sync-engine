@@ -1,6 +1,6 @@
+import { BaseTask } from './interface';
 import { pipe } from '@/utils/pipe';
 import type { OptionsWithRemoteFileStat } from '../decision/interface';
-import { BaseTask } from './interface';
 
 export default class Download extends BaseTask<OptionsWithRemoteFileStat> {
 	async exec() {

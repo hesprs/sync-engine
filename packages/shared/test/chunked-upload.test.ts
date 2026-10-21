@@ -1,7 +1,7 @@
-import { expect, test } from 'bun:test';
-import type { Binary } from '@/binary';
 import { concatBinary } from '@/binary';
 import chunkedUpload from '@/chunked-upload';
+import { expect, test } from 'bun:test';
+import type { Binary } from '@/binary';
 
 function deferred<T>() {
 	let resolve!: (value: T) => void;

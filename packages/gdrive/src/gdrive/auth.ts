@@ -1,6 +1,3 @@
-import type { Request } from '@hesprs/sync-engine-sdk';
-import { getStatus } from '@repo/shared/error';
-import { Platform, requestUrl, SecretStorage } from 'obsidian';
 import {
 	buildUrl,
 	OAUTH_DEVICE_CODE_URL,
@@ -9,6 +6,9 @@ import {
 	OAUTH_TOKEN_URL,
 	TOKEN_REVOKE_URL,
 } from './api';
+import { getStatus } from '@repo/shared/error';
+import { Platform, requestUrl, SecretStorage } from 'obsidian';
+import type { Request } from '@hesprs/sync-engine-sdk';
 
 export const CLIENT_ID = atob(process.env.CLIENT_ID ?? '');
 export const CLIENT_SECRET = atob(process.env.CLIENT_SECRET ?? ''); // Not really a secret
@@ -180,7 +180,11 @@ export function revokeToken(token: string) {
 	}).catch(() => {});
 }
 
-/** Caches the short-lived access token and refreshes it with the stored refresh token when needed. One instance is shared by the request middleware and the connection check so a token refresh happens at most once at a time. */
+/**
+ * Caches the short-lived access token and refreshes it with the stored refresh token when needed.
+ * One instance is shared by the request middleware and the connection check so a token refresh
+ * happens at most once at a time.
+ */
 export class TokenManager {
 	private accessToken?: string;
 	private expiresAt = 0;

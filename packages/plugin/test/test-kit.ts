@@ -1,3 +1,4 @@
+import { taskMap } from '@/sync';
 import type { Fs, ListReporter, RootFs } from '@/fs';
 import type { Request, RequestParam, RequestResponse } from '@/modules/Registrar';
 import type { Decider, TaskFactory, TaskNames, TaskOptions } from '@/sync';
@@ -11,7 +12,6 @@ import type {
 	Stat,
 	StatsMap,
 } from '@/types';
-import { taskMap } from '@/sync';
 
 type FsCalls = {
 	delete: Array<string>;
@@ -26,30 +26,15 @@ type FsCalls = {
 	writeStream: Array<[string, FileStat]>;
 };
 
-type FsOptions = {
-	control?: Partial<Fs>;
-	uid?: string;
-};
+type FsOptions = { control?: Partial<Fs>; uid?: string };
 
-type FsHarness = {
-	calls: FsCalls;
-	control: Fs;
-	fs: RootFs;
-};
+type FsHarness = { calls: FsCalls; control: Fs; fs: RootFs };
 
 type ResponseControl = (url: string, params: RequestParam) => MaybePromise<ResponseOverrides>;
 
-type RequestHarness = {
-	calls: Array<RequestParam & { url: string }>;
-	request: Request;
-};
+type RequestHarness = { calls: Array<RequestParam & { url: string }>; request: Request };
 
-type ExtractedTask = {
-	key: string;
-	local?: Stat;
-	name: TaskNames;
-	remote?: Stat;
-};
+type ExtractedTask = { key: string; local?: Stat; name: TaskNames; remote?: Stat };
 
 const textEncoder = new TextEncoder();
 
@@ -61,12 +46,7 @@ const EMPTY_META: () => Record<string, string> = () => ({});
 
 function file(
 	key: string,
-	options: {
-		mtime?: number;
-		size?: number;
-		uid?: string;
-		meta?: () => Dict<string>;
-	} = {},
+	options: { mtime?: number; size?: number; uid?: string; meta?: () => Dict<string> } = {},
 ): FileStat {
 	const { mtime = 0, size = 0, uid = `${key}-uid`, meta } = options;
 	return { isDir: false, key, meta: meta ?? EMPTY_META, mtime, size, uid };
@@ -201,9 +181,7 @@ const defaultBytes = () => bytes('ok');
 const defaultText = () => 'ok';
 const defaultJson = () => ({});
 
-type ResponseOverrides = Partial<Omit<RequestResponse, 'json'>> & {
-	json?: () => unknown;
-};
+type ResponseOverrides = Partial<Omit<RequestResponse, 'json'>> & { json?: () => unknown };
 
 function response(overrides: ResponseOverrides = {}): RequestResponse {
 	return {

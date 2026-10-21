@@ -1,3 +1,7 @@
+import { formatFileSize, formatTime, parseFileSize, parseTime } from '@/utils/unit-converter';
+import { setIcon } from 'obsidian';
+import type { CallableOrObjectTree, SettingTree } from '@/modules/Setting';
+import type { General, TogglableValue } from '@/types';
 import type {
 	ExtraButtonComponent,
 	Setting,
@@ -8,17 +12,9 @@ import type {
 	TextComponent,
 } from 'obsidian';
 import type { DatabaseSync } from 'uni-kv';
-import { setIcon } from 'obsidian';
-import type { CallableOrObjectTree, SettingTree } from '@/modules/Setting';
-import type { General, TogglableValue } from '@/types';
-import { formatFileSize, formatTime, parseFileSize, parseTime } from '@/utils/unit-converter';
 
 type InputType = 'number' | 'time' | 'fileSize';
-type EphemeralEditableItem<T> = {
-	valid: boolean;
-	new: boolean;
-	value: T;
-};
+type EphemeralEditableItem<T> = { valid: boolean; new: boolean; value: T };
 type EphemeralEditableListSchema = {
 	ephemeralEditableLists: Array<EphemeralEditableItem<General>>;
 };
@@ -27,12 +23,7 @@ export type AugmentedSettingDefinitionItem<K extends string = string> =
 	| SettingDefinitionList<K>
 	| (SettingDefinitionPage<K> & { labels?: Array<LabelDefinition> })
 	| (SettingDefinition<K> & { labels?: Array<LabelDefinition> });
-export type LabelDefinition = {
-	text: string;
-	tooltip: string;
-	color?: string;
-	textColor?: string;
-};
+export type LabelDefinition = { text: string; tooltip: string; color?: string; textColor?: string };
 
 export function s(
 	parent: (self: SettingTree) => AugmentedSettingDefinitionItem,

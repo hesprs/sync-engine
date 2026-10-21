@@ -69,11 +69,7 @@ class PrefixFs implements WrappedFs {
 
 	async list(key: string, reporter: ListReporter) {
 		const stats = await this.original.list(joinKey(this.prefix, key), (progress) =>
-			reporter(
-				Object.assign(progress, {
-					current: stripKey(this.prefix, progress.current),
-				}),
-			),
+			reporter(Object.assign(progress, { current: stripKey(this.prefix, progress.current) })),
 		);
 		return stripKeyFromStats(this.prefix, stats);
 	}

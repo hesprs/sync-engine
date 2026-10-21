@@ -1,5 +1,5 @@
-import { expect, test } from 'bun:test';
 import { diffMerge } from '@/diff3';
+import { expect, test } from 'bun:test';
 
 test('diffMerge returns ok and conflict chunks with source spans', () => {
 	const result = diffMerge(
@@ -96,20 +96,8 @@ test('diffMerge keeps same-place different edits distinct', () => {
 			o: ['common_prefix'],
 			type: 'ok',
 		},
-		{
-			a: ['local_suffix'],
-			b: [],
-			merged: ['local_suffix'],
-			o: [],
-			type: 'ok',
-		},
-		{
-			a: [],
-			b: ['remote_suffix'],
-			merged: ['remote_suffix'],
-			o: [],
-			type: 'ok',
-		},
+		{ a: ['local_suffix'], b: [], merged: ['local_suffix'], o: [], type: 'ok' },
+		{ a: [], b: ['remote_suffix'], merged: ['remote_suffix'], o: [], type: 'ok' },
 	]);
 });
 

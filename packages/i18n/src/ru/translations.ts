@@ -29,9 +29,7 @@ const ru: Translations = {
 		createFragment((frag) => {
 			frag.appendText('Используйте ');
 			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage',
-				},
+				attr: { href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage' },
 				text: 'асимметричное хранилище',
 			});
 			frag.appendText(', чтобы существенно ускорить синхронизацию.');
@@ -184,9 +182,7 @@ const ru: Translations = {
 	integrityVerificationDescription: () =>
 		createFragment((frag) => {
 			frag.appendText('Проверять хеш при каждой загрузке модуля, ');
-			frag.createEl('strong', {
-				text: 'защищая вас от атак с подменой модулей',
-			});
+			frag.createEl('strong', { text: 'защищая вас от атак с подменой модулей' });
 			frag.appendText('.');
 		}),
 	keepLocal: 'Оставить локальную версию',

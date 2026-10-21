@@ -1,6 +1,6 @@
+import { BaseTask } from './interface';
 import type { OptionsWithBothFileStats } from '../decision/interface';
 import type { ConflictResolver } from './interface';
-import { BaseTask } from './interface';
 
 export default class ResolveConflict extends BaseTask<
 	OptionsWithBothFileStats & { resolver: ConflictResolver }

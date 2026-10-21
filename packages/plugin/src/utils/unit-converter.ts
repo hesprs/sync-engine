@@ -1,8 +1,5 @@
 type UnitMap = Record<string, number>;
-type UnitConfig<T extends UnitMap> = {
-	units: T;
-	defaultUnit: keyof T;
-};
+type UnitConfig<T extends UnitMap> = { units: T; defaultUnit: keyof T };
 
 function round(value: number, precision: number): number {
 	const power = 10 ** precision;

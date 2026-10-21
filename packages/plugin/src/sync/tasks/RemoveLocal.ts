@@ -1,5 +1,5 @@
-import type { OptionsWithLocalStat } from '../decision/interface';
 import { BaseTask } from './interface';
+import type { OptionsWithLocalStat } from '../decision/interface';
 
 export default class RemoveLocal extends BaseTask<OptionsWithLocalStat> {
 	async exec() {

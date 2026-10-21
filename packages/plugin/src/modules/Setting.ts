@@ -1,14 +1,14 @@
-import type { Context, Events, Translations } from '@';
-import type { Plugin, SettingDefinitionItem } from 'obsidian';
-import { PluginSettingTab } from 'obsidian';
+import { setRegister } from './Registrar';
 import controlsSettings from '@/settings/controls';
 import developmentSettings from '@/settings/development';
 import featuresSettings from '@/settings/features';
 import headSettings from '@/settings/head';
 import miscellaneousSettings from '@/settings/miscellaneous';
+import { PluginSettingTab } from 'obsidian';
 import type { On } from './EventBus';
 import type { Translate } from './I18n';
-import { setRegister } from './Registrar';
+import type { Context, Events, Translations } from '@';
+import type { Plugin, SettingDefinitionItem } from 'obsidian';
 
 export type SettingTree = {
 	(self: SettingTree): SettingDefinitionItem;

@@ -1,10 +1,10 @@
-import type { JSX } from 'solid-js';
+import constructTaskIcon from '../construct-task-icon';
 import { setIcon, setTooltip } from 'obsidian';
 import { createEffect, For, Show } from 'solid-js';
-import type { Translate } from '@/modules/I18n';
 import type { FileTreeTranslations } from '.';
 import type { FileTreeData } from './types';
-import constructTaskIcon from '../construct-task-icon';
+import type { Translate } from '@/modules/I18n';
+import type { JSX } from 'solid-js';
 
 export default function App(props: {
 	data: FileTreeData;

@@ -1,21 +1,3 @@
-import type {
-	Binary,
-	FileStat,
-	FolderStat,
-	ListReporter,
-	Request,
-	RequestParam,
-	RequestResponse,
-	RootFs,
-	Stat,
-} from '@hesprs/sync-engine-sdk';
-import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { concatBinary, textToUint8Array } from '@repo/shared/binary';
-import { getStatus, toError } from '@repo/shared/error';
-import normalizeEtag from '@repo/shared/normalize-etag';
-import { dirname, isFolder, parseUrl } from '@repo/shared/path';
-import createRangeReadStream from '@repo/shared/read-stream';
-import type { UrlStyle } from './sigv4';
 import { PART_SIZE, multipartUpload } from './multipart';
 import { md5Base64 } from './sigv4';
 import { buildUrl, buildUrlWithQuery, getHeader } from './url';
@@ -27,6 +9,24 @@ import {
 	rootValue,
 	toMetaHeaders,
 } from './utils';
+import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
+import { concatBinary, textToUint8Array } from '@repo/shared/binary';
+import { getStatus, toError } from '@repo/shared/error';
+import normalizeEtag from '@repo/shared/normalize-etag';
+import { dirname, isFolder, parseUrl } from '@repo/shared/path';
+import createRangeReadStream from '@repo/shared/read-stream';
+import type { UrlStyle } from './sigv4';
+import type {
+	Binary,
+	FileStat,
+	FolderStat,
+	ListReporter,
+	Request,
+	RequestParam,
+	RequestResponse,
+	RootFs,
+	Stat,
+} from '@hesprs/sync-engine-sdk';
 
 export type S3FsOptions = {
 	accessKeyId: string;
@@ -45,20 +45,11 @@ type S3ListBucketResult = {
 	NextContinuationToken?: string;
 };
 
-type S3DeleteError = {
-	Key?: string;
-	Code?: string;
-	Message?: string;
-};
+type S3DeleteError = { Key?: string; Code?: string; Message?: string };
 
 type S3DeleteResponse = { Error?: S3DeleteError | Array<S3DeleteError> };
 
-type S3Object = {
-	Key?: string;
-	Size?: string;
-	ETag?: string;
-	LastModified?: string;
-};
+type S3Object = { Key?: string; Size?: string; ETag?: string; LastModified?: string };
 
 const mtimeMissing = new Error('S3 did not return last modified time for objects!');
 const sizeMissing = new Error('S3 did not return size for objects!');
@@ -203,8 +194,8 @@ export default class S3Fs implements RootFs {
 	}
 
 	/**
-	 * Batch delete — S3-specific extension method accessed by the optimizer.
-	 * Up to 1000 keys per DeleteObjects request.
+	 * Batch delete — S3-specific extension method accessed by the optimizer. Up to 1000 keys per
+	 * DeleteObjects request.
 	 */
 	async batchDelete(keys: Array<string>): Promise<Record<string, Error>> {
 		const result: Record<string, Error> = {};

@@ -1,8 +1,8 @@
 import testKit from '$/test-kit';
+import { cancellationMiddleware } from '@/fs';
 import { expect, test } from 'bun:test';
 import { ref } from 'synthkernel';
 import type { RequestResponse } from '@/modules/Registrar';
-import { cancellationMiddleware } from '@/fs';
 
 const { deferred, flush, request } = testKit;
 
@@ -25,9 +25,6 @@ test('cancellation middleware rejects after in-flight response resolves when can
 	isCancelled(true);
 	responseDeferred.resolve({});
 
-	expect(pending).rejects.toMatchObject({
-		message: 'Aborted',
-		name: 'AbortError',
-	});
+	expect(pending).rejects.toMatchObject({ message: 'Aborted', name: 'AbortError' });
 	expect(harness.calls).toStrictEqual([{ url: 'note.md' }]);
 });

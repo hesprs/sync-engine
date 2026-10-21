@@ -3,11 +3,7 @@
 	"compilerOptions": {
 		"jsx": "preserve",
 		"jsxImportSource": "solid-js",
-		"paths": {
-			"@": ["./src"],
-			"@/*": ["./src/*"],
-			"$/*": ["./test/*"]
-		}
+		"paths": { "@": ["./src"], "@/*": ["./src/*"], "$/*": ["./test/*"] }
 	},
 	"include": ["src/**/*.ts", "src/**/*.tsx", "test/**/*.ts", "tsdown.config.ts", "uno.config.ts"]
 }

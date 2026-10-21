@@ -92,10 +92,7 @@ ctx.registerLocalRequestMiddleware(entry: LocalRequestMiddlewareEntry): () => bo
 Register an entry that supplies sync options for a trigger name. See [sync: sync trigger](./sync#sync-trigger).
 
 ```ts
-type TriggerEntry = {
-  priority: number;
-  options?: () => SyncOptions;
-};
+type TriggerEntry = { priority: number; options?: () => SyncOptions };
 ```
 
 ```ts

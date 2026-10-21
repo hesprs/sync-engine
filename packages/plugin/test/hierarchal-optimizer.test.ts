@@ -1,7 +1,7 @@
 import testKit from '$/test-kit';
+import { hierarchicalOptimizer } from '@/fs';
 import { expect, test } from 'bun:test';
 import type { InputAtom, OutputAtom } from '@/fs';
-import { hierarchicalOptimizer } from '@/fs';
 
 const { deferred, flush } = testKit;
 

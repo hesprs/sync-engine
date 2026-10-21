@@ -1,8 +1,8 @@
 import testKit from '$/test-kit';
+import { convertMoves } from '@/sync';
 import { expect, test } from 'bun:test';
 import type { BaseTask, TaskNames } from '@/sync';
 import type { RecordStatsMap, Stat } from '@/types';
-import { convertMoves } from '@/sync';
 
 const { file, folder } = testKit;
 

@@ -63,11 +63,7 @@ Installed module metadata is stored in a IndexedDB store whose name is derived f
 The stored metadata extends source metadata with:
 
 ```ts
-type AugmentedModuleMeta = ModuleMeta & {
-  enabled: boolean;
-  source: string;
-  icon: string;
-};
+type AugmentedModuleMeta = ModuleMeta & { enabled: boolean; source: string; icon: string };
 ```
 
 The `enabled` value used by module loading is stored in this local module record.

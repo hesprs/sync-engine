@@ -1,8 +1,8 @@
 import testKit from '$/test-kit';
+import { bidirectionalDecider } from '@/sync';
 import { expect, test } from 'bun:test';
 import type { Decider } from '@/sync';
 import type { RecordStatsMap, Stat, StatsMap } from '@/types';
-import { bidirectionalDecider } from '@/sync';
 
 const decider: Decider = (input) => bidirectionalDecider(input, () => {});
 

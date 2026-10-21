@@ -1,3 +1,6 @@
+import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
+import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
+import { SecretComponent } from 'obsidian';
 import type { WebdavSettings } from '@';
 import type {
 	CallableOrObjectTree,
@@ -6,9 +9,6 @@ import type {
 	Translate,
 } from '@hesprs/sync-engine-sdk';
 import type { App, Setting, SettingGroupItem, TextComponent } from 'obsidian';
-import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
-import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
-import { SecretComponent } from 'obsidian';
 
 export type WebdavTranslations = {
 	webdav: string;

@@ -15,23 +15,12 @@ export type FileStat = {
 	// Meta fields, to some backends, getting meta fields may be expensive and slow
 	meta: () => MaybePromise<Dict<string>>;
 };
-export type FolderStat = {
-	isDir: true;
-	key: string;
-	meta: () => MaybePromise<Dict<string>>;
-};
+export type FolderStat = { isDir: true; key: string; meta: () => MaybePromise<Dict<string>> };
 export type Stat = FileStat | FolderStat;
 export type RecordStat = { isDir: false; local: string; remote: string } | { isDir: true };
 export type StatsMap = Map<string, Stat>;
 export type RecordStatsMap = Map<string, RecordStat>;
 
-export type GlobStrategy = {
-	expr: string;
-	strategy: string;
-};
+export type GlobStrategy = { expr: string; strategy: string };
 
-export type Progress<T = string> = {
-	total: number;
-	completed: number;
-	current?: T;
-};
+export type Progress<T = string> = { total: number; completed: number; current?: T };

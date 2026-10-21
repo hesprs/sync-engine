@@ -1,5 +1,5 @@
-import type { Binary } from '@hesprs/sync-engine-sdk';
 import { concatBinary, textToUint8Array, toUint8Array } from '@repo/shared/binary';
+import type { Binary } from '@hesprs/sync-engine-sdk';
 
 const EMPTY_SALT: Binary = new Uint8Array(0);
 
@@ -42,12 +42,7 @@ export async function deriveHkdfKey(
 	]);
 	return toUint8Array(
 		await crypto.subtle.deriveBits(
-			{
-				hash: 'SHA-256',
-				info: textToUint8Array(info),
-				name: 'HKDF',
-				salt,
-			},
+			{ hash: 'SHA-256', info: textToUint8Array(info), name: 'HKDF', salt },
 			keyMaterial,
 			MASTER_KEY_LENGTH * 8,
 		),

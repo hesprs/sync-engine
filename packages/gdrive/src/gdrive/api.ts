@@ -1,5 +1,5 @@
-import type { RequestResponse, Stat } from '@hesprs/sync-engine-sdk';
 import { compileQuery } from '@repo/shared/path';
+import type { RequestResponse, Stat } from '@hesprs/sync-engine-sdk';
 
 export const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 export const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
@@ -22,10 +22,7 @@ export type DriveFile = {
 	appProperties?: Record<string, string>;
 };
 
-export type DriveFileList = {
-	files?: Array<DriveFile>;
-	nextPageToken?: string;
-};
+export type DriveFileList = { files?: Array<DriveFile>; nextPageToken?: string };
 
 type DriveError = {
 	error?:

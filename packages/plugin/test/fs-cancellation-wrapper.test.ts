@@ -1,8 +1,8 @@
 import testKit from '$/test-kit';
-import { expect, test } from 'bun:test';
-import { ref } from 'synthkernel';
 import { cancellationWrapper } from '@/fs';
 import { syncCancelledError } from '@/sync';
+import { expect, test } from 'bun:test';
+import { ref } from 'synthkernel';
 
 const { bytes, deferred, file, flush, fs, stream } = testKit;
 

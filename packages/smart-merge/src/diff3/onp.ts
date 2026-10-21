@@ -24,20 +24,14 @@
  *  THE SOFTWARE.
  */
 
-/** The algorithm implemented here is based on "An O(NP) Sequence Comparison Algorithm" described by Sun Wu, Udi Manber and Gene Myers. */
+/**
+ * The algorithm implemented here is based on "An O(NP) Sequence Comparison Algorithm" described by
+ * Sun Wu, Udi Manber and Gene Myers.
+ */
 
-export type DiffHunk = {
-	file1: [number, number];
-	file2: [number, number];
-};
+export type DiffHunk = { file1: [number, number]; file2: [number, number] };
 
-type PathEntry = {
-	endX: number;
-	endY: number;
-	r: number;
-	startX: number;
-	startY: number;
-};
+type PathEntry = { endX: number; endY: number; r: number; startX: number; startY: number };
 
 export default class Onp<T> {
 	private m: number;
@@ -162,13 +156,7 @@ export default class Onp<T> {
 		if (startX === x && startY === y) this.path[k + this.offset] = r;
 		else {
 			this.path[k + this.offset] = this.pathPositions.length;
-			this.pathPositions.push({
-				endX: x,
-				endY: y,
-				r,
-				startX,
-				startY,
-			});
+			this.pathPositions.push({ endX: x, endY: y, r, startX, startY });
 		}
 
 		return y;

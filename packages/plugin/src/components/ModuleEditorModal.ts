@@ -1,10 +1,10 @@
+import { reactivelyValidate } from '@/settings/utils';
+import sha256 from '@/utils/sha-256';
 import { formatUrl, parseUrl } from '@repo/shared/path';
 import { App, Modal, Setting } from 'obsidian';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Fragment, Translate } from '@/modules/I18n';
 import type { MaybePromise } from '@/types';
-import { reactivelyValidate } from '@/settings/utils';
-import sha256 from '@/utils/sha-256';
 
 export type ModuleEditorTranslations = {
 	editModuleInformation: string;

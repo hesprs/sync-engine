@@ -1,6 +1,6 @@
-import type { Request } from '@hesprs/sync-engine-sdk';
-import { toError } from '@repo/shared/error';
 import { buildUrl, parseWebDAVError } from './utils';
+import { toError } from '@repo/shared/error';
+import type { Request } from '@hesprs/sync-engine-sdk';
 
 export type WebdavConnectionOptions = { endpoint: string };
 

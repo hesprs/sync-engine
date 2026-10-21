@@ -1,6 +1,6 @@
+import createRangeReadStream from '@/read-stream';
 import { expect, test } from 'bun:test';
 import type { Binary } from '@/binary';
-import createRangeReadStream from '@/read-stream';
 
 function deferred<T>() {
 	let resolve!: (value: T) => void;

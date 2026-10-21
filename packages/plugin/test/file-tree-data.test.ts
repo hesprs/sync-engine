@@ -1,6 +1,6 @@
+import createFileTreeData from '@/components/file-tree/tree-data';
 import { expect, test } from 'bun:test';
 import type { BaseTask, TaskNames } from '@/sync';
-import createFileTreeData from '@/components/file-tree/tree-data';
 
 function makeTask(input: {
 	name: TaskNames;

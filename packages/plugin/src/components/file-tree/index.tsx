@@ -1,10 +1,10 @@
+import App from './App';
+import createFileTreeSelection from './selection';
+import createFileTreeData from './tree-data';
 import { createStore } from 'solid-js/store';
 import { render } from 'solid-js/web';
 import type { Snippet, Translate } from '@/modules/I18n';
 import type { BaseTask } from '@/sync';
-import App from './App';
-import createFileTreeSelection from './selection';
-import createFileTreeData from './tree-data';
 
 export type FileTreeTranslations = { selectAll: string; xSelected: Snippet<number> };
 
@@ -36,8 +36,5 @@ export default function mount(
 		);
 	}, el);
 
-	return {
-		getState: selection.getState,
-		unmount,
-	};
+	return { getState: selection.getState, unmount };
 }

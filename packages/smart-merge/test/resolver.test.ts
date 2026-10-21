@@ -1,11 +1,11 @@
-import type { DatabaseAsync, RecordStat, RecordStore } from '@hesprs/sync-engine-sdk';
+import smartMergeResolver from '@/resolver';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { uint8ArrayToText } from '@repo/shared/binary';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { SmartMergeDatabase } from '@/index';
 import type { MergeOptions } from '@/utils/merge';
-import smartMergeResolver from '@/resolver';
+import type { DatabaseAsync, RecordStat, RecordStore } from '@hesprs/sync-engine-sdk';
 
 const { bytes, file, fs, stream } = testKit;
 const memoryDB: DatabaseAsync<{ record: RecordStat }> = openMemoryDB(

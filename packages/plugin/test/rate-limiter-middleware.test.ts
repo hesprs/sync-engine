@@ -1,7 +1,7 @@
 import testKit from '$/test-kit';
+import { rateLimiterMiddleware } from '@/fs';
 import { expect, test } from 'bun:test';
 import type { RequestResponse } from '@/modules/Registrar';
-import { rateLimiterMiddleware } from '@/fs';
 
 const { deferred, flush, request } = testKit;
 

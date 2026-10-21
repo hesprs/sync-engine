@@ -1,6 +1,6 @@
-import type { DatabaseSync, StoreSync } from 'uni-kv';
-import type { MaybePromise, Stat, Binary, FileStat, FolderStat } from '@/types';
 import type { WrappedFs, Fs, ListReporter } from '../interface';
+import type { MaybePromise, Stat, Binary, FileStat, FolderStat } from '@/types';
+import type { DatabaseSync, StoreSync } from 'uni-kv';
 
 type ContextOptions<S extends string, M extends string> = {
 	db: DatabaseSync<Record<S, Stat>, Record<M, string>>;

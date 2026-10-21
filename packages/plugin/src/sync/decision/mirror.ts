@@ -1,6 +1,6 @@
-import type { FileStat } from '@/types';
 import type { BaseTask } from '../tasks/interface';
 import type { DeciderInput } from './interface';
+import type { FileStat } from '@/types';
 
 type Source = 'local' | 'remote';
 

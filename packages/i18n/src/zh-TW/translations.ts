@@ -290,9 +290,7 @@ const zhTW: Translations = {
 			p1.appendText('Sync Engine 偵測到一個已安裝的模組，名為 ');
 			p1.createEl('code', { text: fileName });
 			p1.appendText('，此模組從未在此庫中向 Sync Engine 註冊。');
-			p1.createEl('strong', {
-				text: '請在繼續之前檢閱以下資訊：',
-			});
+			p1.createEl('strong', { text: '請在繼續之前檢閱以下資訊：' });
 			const ul = frag
 				.createDiv(
 					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',

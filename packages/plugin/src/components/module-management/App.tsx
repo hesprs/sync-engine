@@ -1,10 +1,10 @@
-import type { SearchResult } from 'obsidian';
+import Card from './Card';
 import { prepareFuzzySearch } from 'obsidian';
 import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
+import type { ModuleManagementContext, ModuleManagementHooks, PendingAction } from './index';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { MaybePromise } from '@/types';
-import type { ModuleManagementContext, ModuleManagementHooks, PendingAction } from './index';
-import Card from './Card';
+import type { SearchResult } from 'obsidian';
 
 export default function App(props: {
 	ctx: ModuleManagementContext;
@@ -84,10 +84,7 @@ export default function App(props: {
 			syncSnapshots();
 		} finally {
 			if (!props.isUnmounted())
-				setPendingByName((current) => ({
-					...current,
-					[id]: undefined,
-				}));
+				setPendingByName((current) => ({ ...current, [id]: undefined }));
 		}
 	};
 

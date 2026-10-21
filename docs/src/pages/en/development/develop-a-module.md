@@ -64,12 +64,7 @@ This config makes Tsdown output a single minified JavaScript file, which can be 
 Finally add following commands to your `package.json`:
 
 ```json
-{
-  "scripts": {
-    "dev": "MODE=dev tsdown",
-    "build": "tsdown"
-  }
-}
+{ "scripts": { "dev": "MODE=dev tsdown", "build": "tsdown" } }
 ```
 
 ## Tsdown Plugin
@@ -185,9 +180,7 @@ export default defineConfig({ clean: process.env.MODE !== 'dev' });
 ```
 
 ```json
-{
-  "dev": "MODE=dev tsdown"
-}
+{ "dev": "MODE=dev tsdown" }
 ```
 
 So simply run `bun dev`, and your module will be rebuilt inside the right folder without clearing other modules.

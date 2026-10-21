@@ -1,3 +1,8 @@
+import { en, zh, ru, zhTW } from '@/i18n';
+import encryptionSetting from '@/setting';
+import encryptionWrapper from '@/wrapper';
+import type { EncryptionTranslations } from '@/setting';
+import type { EncryptionDB } from '@/wrapper';
 import type {
 	Context,
 	ObsidianLanguageCode,
@@ -8,11 +13,6 @@ import type {
 	Translate,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
-import type { EncryptionTranslations } from '@/setting';
-import type { EncryptionDB } from '@/wrapper';
-import { en, zh, ru, zhTW } from '@/i18n';
-import encryptionSetting from '@/setting';
-import encryptionWrapper from '@/wrapper';
 
 export type EncryptionSettings = {
 	enabled: boolean;
@@ -40,10 +40,7 @@ export default class Encryption {
 		ctx.registerI18n('zh-TW', zhTW);
 	}
 
-	moduleSettings: EncryptionSettings = {
-		enabled: false,
-		password: '',
-	};
+	moduleSettings: EncryptionSettings = { enabled: false, password: '' };
 
 	readonly start = () => {
 		const { app, memoryDB, registerRemoteFsWrapper, registerSetting, translate } = this.ctx;

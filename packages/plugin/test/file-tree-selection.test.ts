@@ -1,7 +1,7 @@
-import { expect, test } from 'bun:test';
-import type { BaseTask, TaskNames } from '@/sync';
 import createFileTreeSelection from '@/components/file-tree/selection';
 import createFileTreeData from '@/components/file-tree/tree-data';
+import { expect, test } from 'bun:test';
+import type { BaseTask, TaskNames } from '@/sync';
 
 function makeTask(input: {
 	name: TaskNames;
@@ -110,10 +110,7 @@ test('getState returns selected and deselected task arrays using blueprint names
 
 	selection.toggle('folder', false);
 
-	expect(selection.getState()).toStrictEqual({
-		deselected: [folder, file],
-		selected: [],
-	});
+	expect(selection.getState()).toStrictEqual({ deselected: [folder, file], selected: [] });
 });
 
 test('selecting descendant file task restores required ancestor create-folder tasks', () => {

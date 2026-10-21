@@ -4,8 +4,7 @@ The Google Drive module registers the `gdrive` remote file system. It stores the
 
 ## Settings
 
-The module adds a **Google Drive** settings group. Configure these settings
-before selecting Google Drive as the remote file system:
+The module adds a **Google Drive** settings group. Configure these settings before selecting Google Drive as the remote file system:
 
 ### Connect account / Account connected
 

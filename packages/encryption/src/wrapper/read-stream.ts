@@ -1,5 +1,3 @@
-import type { Binary } from '@hesprs/sync-engine-sdk';
-import { concatBinary } from '@repo/shared/binary';
 import {
 	DECRYPTION_ERROR_MESSAGE,
 	FILE_SALT_LENGTH,
@@ -9,6 +7,8 @@ import {
 	getEncryptedChunkSize,
 	importAesGcmKey,
 } from './shared';
+import { concatBinary } from '@repo/shared/binary';
+import type { Binary } from '@hesprs/sync-engine-sdk';
 
 export default function createDecryptedReadableStream(
 	source: ReadableStream<Binary>,

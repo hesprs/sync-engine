@@ -1,11 +1,11 @@
-import type { Settings } from '@';
-import type { App, SettingGroupItem } from 'obsidian';
-import type { DatabaseSync } from 'uni-kv';
+import { generateEditableList, reactivelyValidate, s } from './utils';
 import { SecretComponent } from 'obsidian';
+import type { Settings } from '@';
 import type { Snippet, Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { General } from '@/types';
-import { generateEditableList, reactivelyValidate, s } from './utils';
+import type { App, SettingGroupItem } from 'obsidian';
+import type { DatabaseSync } from 'uni-kv';
 
 export type MiscellaneousSettingTranslations = {
 	miscellaneous: string;

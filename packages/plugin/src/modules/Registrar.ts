@@ -1,17 +1,17 @@
-import type { Events, Translations } from '@';
-import type { App, RequestUrlParam } from 'obsidian';
+import { createVaultRequest, VaultFs } from '@/fs';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import hash from '@repo/shared/crypto';
 import { toError } from '@repo/shared/error';
 import { requestUrl } from 'obsidian';
-import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
-import type { BaseTask, ConflictResolver, Decider, TaskFactory } from '@/sync';
-import type { General, MaybePromise, Binary } from '@/types';
-import { createVaultRequest, VaultFs } from '@/fs';
 import type { Dispatch } from './EventBus';
 import type { Snippet, Translate } from './I18n';
 import type { RecordStore } from './Storage';
 import type { StrategyMapping, SyncOptions } from './Sync';
+import type { Events, Translations } from '@';
+import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
+import type { BaseTask, ConflictResolver, Decider, TaskFactory } from '@/sync';
+import type { General, MaybePromise, Binary } from '@/types';
+import type { App, RequestUrlParam } from 'obsidian';
 
 type RejectableWrapper<T> = (value: T) => T | undefined;
 type OrderedWrapperEntry<T> = { priority: number; apply: RejectableWrapper<T> };

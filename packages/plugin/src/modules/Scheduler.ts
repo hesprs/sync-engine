@@ -1,17 +1,14 @@
-import type { Events } from '@';
-import type { App, EventRef, TAbstractFile } from 'obsidian';
-import type { Ref } from 'synthkernel';
-import type { GlobStrategy, TogglableValue } from '@/types';
 import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import untilTrue from '@/utils/until-true';
 import type { Dispatch } from './EventBus';
 import type { SyncStage } from './Observability';
 import type { SyncOptions, SyncTerminateReason } from './Sync';
+import type { Events } from '@';
+import type { GlobStrategy, TogglableValue } from '@/types';
+import type { App, EventRef, TAbstractFile } from 'obsidian';
+import type { Ref } from 'synthkernel';
 
-type SyncRequest = {
-	trigger: string;
-	resolve: (result: SyncTerminateReason) => void;
-};
+type SyncRequest = { trigger: string; resolve: (result: SyncTerminateReason) => void };
 
 const OFFLINE_ERROR = new Error('Device is offline.');
 

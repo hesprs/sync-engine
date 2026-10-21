@@ -1,15 +1,15 @@
-import type { Events, Translations } from '@';
-import type { App, Command, DataAdapter, IconName } from 'obsidian';
-import type { Ref } from 'synthkernel';
+import roundPercent from '@/utils/round-percent';
+import { formatTime } from '@/utils/unit-converter';
 import { describeError, toError } from '@repo/shared/error';
 import { Notice, Platform, setIcon } from 'obsidian';
 import { computed, ref } from 'synthkernel';
-import type { Progress } from '@/types';
-import roundPercent from '@/utils/round-percent';
-import { formatTime } from '@/utils/unit-converter';
 import type { Dispatch, On } from './EventBus';
 import type { Translate } from './I18n';
 import type { SyncTerminateReason, TaskInfo } from './Sync';
+import type { Events, Translations } from '@';
+import type { Progress } from '@/types';
+import type { App, Command, DataAdapter, IconName } from 'obsidian';
+import type { Ref } from 'synthkernel';
 
 export type SyncStage =
 	| 'none'
@@ -66,10 +66,7 @@ export default class Observability {
 		},
 	);
 
-	declare readonly settings: {
-		noticeStatusOnMobile: boolean;
-		exportLogsDirectory: string;
-	};
+	declare readonly settings: { noticeStatusOnMobile: boolean; exportLogsDirectory: string };
 	declare readonly i18n: {
 		startSync: string;
 		startNonInteractiveSync: string;
@@ -143,11 +140,7 @@ export default class Observability {
 			on('remoteWalkProgress', (progress) => walkProgress(progress)),
 			on('taskCompleted', (current) => {
 				completedTasks += 1;
-				executionProgress({
-					completed: completedTasks,
-					current,
-					total: totalSyncTasks,
-				});
+				executionProgress({ completed: completedTasks, current, total: totalSyncTasks });
 			}),
 			on('syncTerminated', (reason) => {
 				const { result } = reason;

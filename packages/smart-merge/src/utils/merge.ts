@@ -1,22 +1,14 @@
-import { diffMerge } from '@/diff3';
 import { documentSplitter } from './splitters';
+import { diffMerge } from '@/diff3';
 
 export type MergeSegment = {
 	tokens: Array<string>;
 	joints: Array<string>;
 	splitters: Array<((str: string) => MergeSegment) | undefined>;
 };
-type MergeSegments = {
-	a: MergeSegment;
-	b: MergeSegment;
-	o: MergeSegment;
-};
+type MergeSegments = { a: MergeSegment; b: MergeSegment; o: MergeSegment };
 type SegmentStats = MergeSegment & { index: number };
-export type MergeParams = {
-	a: string;
-	b: string;
-	o: string;
-};
+export type MergeParams = { a: string; b: string; o: string };
 export type MergeOptions = {
 	conflictAEnd: string;
 	conflictBEnd: string;
@@ -149,11 +141,7 @@ export default function merge(
 	options: MergeOptions,
 ) {
 	return mergeRecursive(
-		{
-			a: documentSplitter(a),
-			b: documentSplitter(b),
-			o: documentSplitter(o),
-		},
+		{ a: documentSplitter(a), b: documentSplitter(b), o: documentSplitter(o) },
 		options,
 	);
 }

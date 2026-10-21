@@ -1,8 +1,8 @@
-import { testKit } from '@hesprs/sync-engine-sdk/dev';
-import { expect, mock, test } from 'bun:test';
+import { defaultCredentials, defaultS3Options, memoryDB, response } from './helpers';
 import { checkConnection } from '@/s3/check-connection';
 import { sigv4Middleware } from '@/s3/sigv4';
-import { defaultCredentials, defaultS3Options, memoryDB, response } from './helpers';
+import { testKit } from '@hesprs/sync-engine-sdk/dev';
+import { expect, mock, test } from 'bun:test';
 
 void mock.module('@repo/shared/parse-xml', () => ({
 	default: (xml: string) => {

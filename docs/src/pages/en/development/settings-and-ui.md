@@ -81,9 +81,9 @@ The first `1000` identifies the group. The child `1000` and `6037` keys order se
 Use the SDK `s()` helper when defining a parent and its children together. It attaches the child tree to the parent callback. The parent receives the complete node after all extensions have been merged:
 
 ```ts
+import { s } from '@hesprs/sync-engine-sdk';
 import type { Context, CallableOrObjectTree } from '@hesprs/sync-engine-sdk';
 import type { SettingGroupItem } from 'obsidian';
-import { s } from '@hesprs/sync-engine-sdk';
 
 export default function mySettings(
   ctx: Context,
@@ -136,13 +136,13 @@ Use a `group` for a heading and its children, a `page` for a separate settings p
 
 Core setting sections use these priorities:
 
-| Section           | Priority | Contents                                                                           |
-| ----------------- | -------: | ---------------------------------------------------------------------------------- |
-| Top configuration |      `0` | Backend, module management, auto-update, sync strategy, conflict resolver.         |
-| Features          |   `1000` | Realtime, startup, scheduled sync; realtime fast mode; asymmetric storage.         |
-| Controls          |   `2000` | File-size, request-concurrency, request-interval, memory limits.                   |
-| Miscellaneous     |   `3000` | Custom headers, mobile notices, offline behavior, task and deletion confirmations. |
-| Development       |   `4000` | Record cleanup, log export, and module source pages.                               |
+| Section | Priority | Contents |
+| --- | --: | --- |
+| Top configuration | `0` | Backend, module management, auto-update, sync strategy, conflict resolver. |
+| Features | `1000` | Realtime, startup, scheduled sync; realtime fast mode; asymmetric storage. |
+| Controls | `2000` | File-size, request-concurrency, request-interval, memory limits. |
+| Miscellaneous | `3000` | Custom headers, mobile notices, offline behavior, task and deletion confirmations. |
+| Development | `4000` | Record cleanup, log export, and module source pages. |
 
 Settings contributed by modules are included when the module loads and removed when it unloads. The settings tab refreshes after either event.
 
@@ -154,10 +154,7 @@ Obsidian's setting definitions do not include labels. Sync Engine augments norma
 import type { LabelDefinition } from '@hesprs/sync-engine-sdk';
 
 const labels: Array<LabelDefinition> = [
-  {
-    text: 'Match',
-    tooltip: 'This setting must be kept the same on all devices.',
-  },
+  { text: 'Match', tooltip: 'This setting must be kept the same on all devices.' },
 ];
 ```
 

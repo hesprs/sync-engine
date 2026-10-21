@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { useData } from 'vitepress';
 import modules from '@/modules.json';
+import { useData } from 'vitepress';
 
-const translations: Record<string, string> = {
-	'en-US': 'Download',
-};
+const translations: Record<string, string> = { 'en-US': 'Download' };
 const download = translations[useData().lang.value];
 </script>
 

@@ -1,5 +1,5 @@
-import type { Fragment, Snippet } from '@hesprs/sync-engine-sdk';
 import type { WebdavTranslations } from '@/setting';
+import type { Fragment, Snippet } from '@hesprs/sync-engine-sdk';
 
 function createCapabilityDesc({
 	supporting,

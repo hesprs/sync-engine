@@ -1,7 +1,7 @@
-import type { DeleteAtom, OptimizerInput, OptimizerOutput } from '@hesprs/sync-engine-sdk';
+import S3Fs from '@/s3/fs';
 import { digOriginal } from '@hesprs/sync-engine-sdk';
 import { toError } from '@repo/shared/error';
-import S3Fs from '@/s3/fs';
+import type { DeleteAtom, OptimizerInput, OptimizerOutput } from '@hesprs/sync-engine-sdk';
 
 export default function s3BatchDeleteOptimizer({
 	atoms,

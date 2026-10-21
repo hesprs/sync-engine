@@ -39,11 +39,7 @@ Persists synchronization record entries. `getRecordStore()` selects the current 
 ```ts
 const records = ctx.getRecordStore();
 
-await records.set('note.md', {
-  isDir: false,
-  local: 'local-uid',
-  remote: 'remote-uid',
-});
+await records.set('note.md', { isDir: false, local: 'local-uid', remote: 'remote-uid' });
 
 const record = await records.get('note.md');
 ```

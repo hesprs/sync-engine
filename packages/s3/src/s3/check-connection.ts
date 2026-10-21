@@ -1,8 +1,8 @@
-import type { Request } from '@hesprs/sync-engine-sdk';
-import { toError } from '@repo/shared/error';
-import type { UrlStyle } from './sigv4';
 import { buildUrlWithQuery } from './url';
 import { parseS3Error } from './utils';
+import { toError } from '@repo/shared/error';
+import type { UrlStyle } from './sigv4';
+import type { Request } from '@hesprs/sync-engine-sdk';
 
 export type S3ConnectionOptions = {
 	endpoint: string;

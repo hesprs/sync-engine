@@ -1,6 +1,6 @@
-import type { Stat } from '@hesprs/sync-engine-sdk';
 import parseXML from '@repo/shared/parse-xml';
 import { parseUrl } from '@repo/shared/path';
+import type { Stat } from '@hesprs/sync-engine-sdk';
 
 type WebdavError = { error?: { message?: string } };
 

@@ -1,3 +1,20 @@
+import {
+	DRIVE_API,
+	DRIVE_UPLOAD_API,
+	FILE_FIELDS,
+	FOLDER_MIME,
+	buildUrl,
+	escapeQuery,
+	parseDriveError,
+	toStat,
+} from './api';
+import { guessMimeType, resumableUpload, singleUpload } from './upload';
+import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
+import { textToUint8Array } from '@repo/shared/binary';
+import { getStatus } from '@repo/shared/error';
+import { basename, dirname, isFolder } from '@repo/shared/path';
+import createRangeReadStream from '@repo/shared/read-stream';
+import type { DriveFile, DriveFileList } from './api';
 import type {
 	Binary,
 	DatabaseSync,
@@ -11,28 +28,8 @@ import type {
 	Stat,
 	StoreSync,
 } from '@hesprs/sync-engine-sdk';
-import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { textToUint8Array } from '@repo/shared/binary';
-import { getStatus } from '@repo/shared/error';
-import { basename, dirname, isFolder } from '@repo/shared/path';
-import createRangeReadStream from '@repo/shared/read-stream';
-import type { DriveFile, DriveFileList } from './api';
-import {
-	DRIVE_API,
-	DRIVE_UPLOAD_API,
-	FILE_FIELDS,
-	FOLDER_MIME,
-	buildUrl,
-	escapeQuery,
-	parseDriveError,
-	toStat,
-} from './api';
-import { guessMimeType, resumableUpload, singleUpload } from './upload';
 
-export type GdriveFsOptions = {
-	userId: string;
-	useTrash: boolean;
-};
+export type GdriveFsOptions = { userId: string; useTrash: boolean };
 
 export type GdriveDB = DatabaseSync<{ gdriveIds: string }, { gdriveIdsMarker?: string }>;
 
@@ -47,9 +44,11 @@ function notFoundError(key: string): Error {
 }
 
 /**
- * Google Drive stores files by immutable id inside real folders, while Sync Engine speaks path keys. Fs translates keys to ids and caches the mapping.
+ * Google Drive stores files by immutable id inside real folders, while Sync Engine speaks path
+ * keys. Fs translates keys to ids and caches the mapping.
  *
- * Limitation: cannot download a file with known key but not cached ID, this is fine in current implementation (impossible to happen).
+ * Limitation: cannot download a file with known key but not cached ID, this is fine in current
+ * implementation (impossible to happen).
  */
 export default class GdriveFs implements RootFs {
 	/** Path key (`'/'`, `folder/`, `folder/note.md`) to Drive file id. */
@@ -94,7 +93,10 @@ export default class GdriveFs implements RootFs {
 			if (cachedKey.startsWith(key)) this.ids.delete(cachedKey);
 	}
 
-	/** Walks the path chain of `key` from root with fresh queries, ignoring and refreshing the cache along the way. */
+	/**
+	 * Walks the path chain of `key` from root with fresh queries, ignoring and refreshing the cache
+	 * along the way.
+	 */
 	private async resolveIdFresh(key: string): Promise<string | undefined> {
 		if (key === '/') return ROOT_ID;
 		const segments = key.split('/').filter((segment) => segment !== '');
@@ -251,7 +253,10 @@ export default class GdriveFs implements RootFs {
 		this.dropCache(oldKey);
 	}
 
-	/** Drive folders always need an existing parent id, so missing parents are created regardless of `recursive`. */
+	/**
+	 * Drive folders always need an existing parent id, so missing parents are created regardless of
+	 * `recursive`.
+	 */
 	async mkdir(key: string, stat: FolderStat, recursive: boolean): Promise<void> {
 		const parent = dirname(key);
 		let parentId = this.resolveId(parent);
@@ -300,7 +305,10 @@ export default class GdriveFs implements RootFs {
 		return (await this.resolveIdFresh(key)) !== undefined;
 	}
 
-	/** Fetches every visible file in one paginated query, then walks the tree under the requested key so the reporter can steer traversal. */
+	/**
+	 * Fetches every visible file in one paginated query, then walks the tree under the requested
+	 * key so the reporter can steer traversal.
+	 */
 	async list(key: string, reporter: ListReporter): Promise<Array<Stat>> {
 		const startId = this.resolveId(key) ?? (await this.resolveIdFresh(key));
 		if (startId === undefined) throw notFoundError(key);
@@ -353,7 +361,8 @@ export default class GdriveFs implements RootFs {
 }
 
 /**
- * Drive allows duplicate names inside one folder; syncing needs one entry per key, so the most recently modified file (or the first folder) wins.
+ * Drive allows duplicate names inside one folder; syncing needs one entry per key, so the most
+ * recently modified file (or the first folder) wins.
  */
 function dedupeChildren(entries: Array<DriveFile>): Array<DriveFile> {
 	if (entries.length < 2) return entries;

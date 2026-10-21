@@ -11,6 +11,7 @@ export default function rateLimiterMiddleware<
 
 /**
  * A simple rate limiter for API calls.
+ *
  * @param options.maxConcurrent - The maximum number of concurrent requests.
  * @param options.minTime - The minimum time between requests.
  */

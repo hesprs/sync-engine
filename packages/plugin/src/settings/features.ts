@@ -1,12 +1,12 @@
+import { renderTogglableValue, s } from './utils';
+import setNeedMigration from '@/components/MigrationModal';
+import type { LabelDefinition } from './utils';
 import type { Settings, Context } from '@';
-import type { SettingGroupItem } from 'obsidian';
 import type { MigrationModalTranslations } from '@/components/MigrationModal';
 import type { Fragment, Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { MaybePromise } from '@/types';
-import setNeedMigration from '@/components/MigrationModal';
-import type { LabelDefinition } from './utils';
-import { renderTogglableValue, s } from './utils';
+import type { SettingGroupItem } from 'obsidian';
 
 export type FeaturesSettingTranslations = {
 	features: string;
@@ -94,10 +94,7 @@ export default function featuresSettings(ctx: {
 					}),
 				})),
 				4000: s(() => ({
-					control: {
-						key: 'realtimeSyncFastMode',
-						type: 'toggle',
-					},
+					control: { key: 'realtimeSyncFastMode', type: 'toggle' },
 					desc: translate('realtimeSyncFastModeDescription'),
 					labels: [speedLabel()],
 					name: translate('realtimeSyncFastMode'),

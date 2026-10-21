@@ -1,5 +1,5 @@
-import { expect, test } from 'bun:test';
 import { parseTime, formatTime } from '@/utils/unit-converter';
+import { expect, test } from 'bun:test';
 
 test('parses values with and without explicit units', () => {
 	expect(parseTime('2500ms')).toBe(2500);

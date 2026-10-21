@@ -1,10 +1,10 @@
-import type { Events } from '@';
+import formatDateTime from '@/utils/format-date';
+import { formatTime } from '@/utils/unit-converter';
 import { describeError } from '@repo/shared/error';
 import { apiVersion, Platform } from 'obsidian';
 import { ref } from 'synthkernel';
+import type { Events } from '@';
 import type { General } from '@/types';
-import formatDateTime from '@/utils/format-date';
-import { formatTime } from '@/utils/unit-converter';
 
 // oxlint-disable-next-line sort-keys
 export const OS = {

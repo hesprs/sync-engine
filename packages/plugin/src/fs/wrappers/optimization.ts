@@ -1,4 +1,3 @@
-import type { MaybePromise, Binary, FileStat, FolderStat } from '@/types';
 import type {
 	BatchOptimizer,
 	DeleteAtom,
@@ -11,15 +10,10 @@ import type {
 	OutputAtom,
 	ListReporter,
 } from '../interface';
+import type { MaybePromise, Binary, FileStat, FolderStat } from '@/types';
 
-type OptimizationOptions = {
-	thisPool: Set<string>;
-	batchOptimizer: BatchOptimizer;
-};
-type OptimizationCompanionOptions = {
-	thatPool: Set<string>;
-	getThatFs: () => Fs;
-};
+type OptimizationOptions = { thisPool: Set<string>; batchOptimizer: BatchOptimizer };
+type OptimizationCompanionOptions = { thatPool: Set<string>; getThatFs: () => Fs };
 
 type Omitted<T> = Omit<T, 'resolve' | 'reject'>;
 

@@ -1,6 +1,6 @@
+import { BaseTask } from './interface';
 import moveValue from '@/utils/move-value';
 import type { OptionsWithRemoteStatAndOldKey } from '../decision/interface';
-import { BaseTask } from './interface';
 
 export default class MoveLocal extends BaseTask<OptionsWithRemoteStatAndOldKey> {
 	async exec() {

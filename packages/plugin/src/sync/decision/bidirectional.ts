@@ -1,7 +1,7 @@
-import type { FileStat, FolderStat, Stat } from '@/types';
+import isChanged from '../utils/is-changed';
 import type { BaseTask } from '../tasks/interface';
 import type { DeciderInput } from './interface';
-import isChanged from '../utils/is-changed';
+import type { FileStat, FolderStat, Stat } from '@/types';
 
 export default function bidirectionalDecider(
 	input: DeciderInput,
@@ -10,21 +10,9 @@ export default function bidirectionalDecider(
 	const { localStats, remoteStats, records, taskFactory } = input;
 
 	const tasks: Array<BaseTask> = [];
-	const files: Array<{
-		key: string;
-		local?: FileStat;
-		remote?: FileStat;
-	}> = [];
-	const folders: Array<{
-		key: string;
-		local?: FolderStat;
-		remote?: FolderStat;
-	}> = [];
-	const fileFolders: Array<{
-		key: string;
-		local: Stat;
-		remote: Stat;
-	}> = [];
+	const files: Array<{ key: string; local?: FileStat; remote?: FileStat }> = [];
+	const folders: Array<{ key: string; local?: FolderStat; remote?: FolderStat }> = [];
+	const fileFolders: Array<{ key: string; local: Stat; remote: Stat }> = [];
 	const removeRecords: Array<string> = [];
 
 	new Set([...localStats.keys(), ...remoteStats.keys(), ...records.keys()]).forEach((key) => {
@@ -232,12 +220,7 @@ export default function bidirectionalDecider(
 	for (const { key, remote, local } of fileFolders) {
 		const record = records.get(key);
 		let caseName: keyof typeof operations;
-		const localChanged = isChanged({
-			currentStats: localStats,
-			key,
-			records,
-			source: 'local',
-		});
+		const localChanged = isChanged({ currentStats: localStats, key, records, source: 'local' });
 		const remoteChanged = isChanged({
 			currentStats: remoteStats,
 			key,

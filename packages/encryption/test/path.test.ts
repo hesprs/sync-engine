@@ -1,8 +1,8 @@
+import { decryptPathSegments, encryptPathSegments } from '@/wrapper/path';
 import { expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { EncryptionDBSchema } from '@/wrapper';
 import type { EncryptionStores } from '@/wrapper/path';
-import { decryptPathSegments, encryptPathSegments } from '@/wrapper/path';
 
 const NAME_KEY = new Uint8Array(32);
 let dbIndex = 0;

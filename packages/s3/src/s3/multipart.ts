@@ -1,10 +1,10 @@
-import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
+import { buildUrlWithQuery, getHeader } from './url';
+import { getFileUid, rootValue, toMetaHeaders } from './utils';
 import { textToUint8Array } from '@repo/shared/binary';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import type { UrlStyle } from './sigv4';
-import { buildUrlWithQuery, getHeader } from './url';
-import { getFileUid, rootValue, toMetaHeaders } from './utils';
+import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
 
 export const PART_SIZE = 5 * 1024 * 1024; // 5 MiB — S3 minimum part size
 const MAX_CONCURRENT = 3;

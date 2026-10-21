@@ -1,3 +1,10 @@
+import { defaultCredentials, defaultS3Options, memoryDB, response } from './helpers';
+import s3BatchDeleteOptimizer from '@/optimizer';
+import S3Fs from '@/s3/fs';
+import { sigv4Middleware } from '@/s3/sigv4';
+import { testKit } from '@hesprs/sync-engine-sdk/dev';
+import { expect, mock, test } from 'bun:test';
+import type { S3FsOptions } from '@/s3/fs';
 import type {
 	Binary,
 	InputAtom,
@@ -6,27 +13,16 @@ import type {
 	RequestParam,
 	RequestResponse,
 } from '@hesprs/sync-engine-sdk';
-import { testKit } from '@hesprs/sync-engine-sdk/dev';
-import { expect, mock, test } from 'bun:test';
-import type { S3FsOptions } from '@/s3/fs';
-import s3BatchDeleteOptimizer from '@/optimizer';
-import S3Fs from '@/s3/fs';
-import { sigv4Middleware } from '@/s3/sigv4';
-import { defaultCredentials, defaultS3Options, memoryDB, response } from './helpers';
 
 const { bytes, deferred, file, folder, stream: createStream } = testKit;
 
 let parsedResponse: unknown = {};
 
-void mock.module('@repo/shared/parse-xml', () => ({
-	default: () => parsedResponse,
-}));
+void mock.module('@repo/shared/parse-xml', () => ({ default: () => parsedResponse }));
 
 type Control = (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>;
 
-const defaultOptions = {
-	...defaultS3Options,
-} as const satisfies Omit<S3FsOptions, 'request'>;
+const defaultOptions = { ...defaultS3Options } as const satisfies Omit<S3FsOptions, 'request'>;
 
 function createS3Fs(options: Partial<S3FsOptions> = {}) {
 	let requestHandler: Control = () => response();
@@ -43,9 +39,7 @@ function createS3Fs(options: Partial<S3FsOptions> = {}) {
 
 function assertSignedRequest(params: RequestParam, method: string) {
 	expect(params.method).toBe(method);
-	expect(params.headers).toMatchObject({
-		'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
-	});
+	expect(params.headers).toMatchObject({ 'x-amz-content-sha256': 'UNSIGNED-PAYLOAD' });
 	expect(params.headers?.['x-amz-date']).toMatch(/^\d{8}T\d{6}Z$/u);
 	expect(params.headers?.authorization).toMatch(
 		/^AWS4-HMAC-SHA256 Credential=access-key\/\d{8}\/us-east-1\/s3\/aws4_request, SignedHeaders=.*?, Signature=[0-9a-f]{64}$/u,
@@ -101,10 +95,7 @@ test('write sends binary PUT with meta headers and uses ETag or HEAD metadata fa
 		if (params.method === 'PUT') return response();
 		expect(params.method).toBe('HEAD');
 		return response({
-			headers: {
-				'content-length': '5',
-				'last-modified': 'Mon, 01 Jan 2024 00:00:00 GMT',
-			},
+			headers: { 'content-length': '5', 'last-modified': 'Mon, 01 Jan 2024 00:00:00 GMT' },
 		});
 	});
 	expect(
@@ -228,11 +219,7 @@ test('batchDelete escapes keys, sends MD5 XML, and batches at 1000 keys', async 
 		parsedResponse = hasSpecialKey
 			? {
 					DeleteResult: {
-						Error: {
-							Code: 'AccessDenied',
-							Key: 'a<&"\'',
-							Message: 'no permission',
-						},
+						Error: { Code: 'AccessDenied', Key: 'a<&"\'', Message: 'no permission' },
 					},
 				}
 			: { DeleteResult: {} };

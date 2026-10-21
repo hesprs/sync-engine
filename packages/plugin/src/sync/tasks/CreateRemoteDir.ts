@@ -1,5 +1,5 @@
-import type { OptionsWithLocalFolderStat } from '../decision/interface';
 import { BaseTask } from './interface';
+import type { OptionsWithLocalFolderStat } from '../decision/interface';
 
 export default class CreateRemoteDir extends BaseTask<OptionsWithLocalFolderStat> {
 	async exec() {

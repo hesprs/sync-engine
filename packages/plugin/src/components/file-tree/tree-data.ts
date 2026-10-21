@@ -1,5 +1,5 @@
-import type { BaseTask } from '@/sync';
 import type { FileTreeData, FileTreeNode } from './types';
+import type { BaseTask } from '@/sync';
 
 const ROOT_NODE_ID = '__root__';
 
@@ -17,10 +17,7 @@ type InternalNode = {
 	ancestorDeleteFolderTaskIds: Array<string>;
 };
 
-type VisibleEndpoint = {
-	nodeId: string;
-	compressedLabel: string;
-};
+type VisibleEndpoint = { nodeId: string; compressedLabel: string };
 
 function getPathSegments(path: string): Array<string> {
 	return path.split('/').filter(Boolean);
@@ -94,10 +91,7 @@ function resolveVisibleEndpoint(
 		labelSegments.push(child.name);
 		current = child;
 	}
-	return {
-		compressedLabel: labelSegments.join(' / '),
-		nodeId: current.id,
-	};
+	return { compressedLabel: labelSegments.join(' / '), nodeId: current.id };
 }
 
 function isFolderVisibleNode(node: InternalNode): boolean {
@@ -267,9 +261,5 @@ export default function createFileTreeData(tasks: Array<BaseTask>): FileTreeData
 			visibleNodes,
 		});
 
-	return {
-		nodes: visibleNodes,
-		orderedNodeIds,
-		taskNodeIds,
-	};
+	return { nodes: visibleNodes, orderedNodeIds, taskNodeIds };
 }

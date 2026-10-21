@@ -1,6 +1,6 @@
-import type { Request } from '@hesprs/sync-engine-sdk';
-import { toError } from '@repo/shared/error';
 import { DRIVE_API, buildUrl, parseDriveError } from './api';
+import { toError } from '@repo/shared/error';
+import type { Request } from '@hesprs/sync-engine-sdk';
 
 export default async function checkConnection(request: Request): Promise<void | Error> {
 	try {

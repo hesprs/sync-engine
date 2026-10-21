@@ -1,17 +1,17 @@
-import type { Context, Events, Settings } from '@';
-import type { DatabaseSync } from 'uni-kv';
+import ModuleManagement from './module-management';
+import { generateEditableList, reactivelyValidate, s } from './utils';
+import { normalizeGlob } from '@/utils/glob-match';
 import { describeError, toError } from '@repo/shared/error';
 import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
+import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
+import type { Context, Events, Settings } from '@';
 import type { ModuleCtor } from '@/modules/Extensibility';
 import type { Fragment, Snippet, Translate } from '@/modules/I18n';
 import type { ConflictResolverEntry, DeciderEntry, RemoteFsEntry } from '@/modules/Registrar';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { Dispatch } from '@/sdk';
 import type { General, GlobStrategy, MaybePromise } from '@/types';
-import { normalizeGlob } from '@/utils/glob-match';
-import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
-import ModuleManagement from './module-management';
-import { generateEditableList, reactivelyValidate, s } from './utils';
+import type { DatabaseSync } from 'uni-kv';
 
 const CHECK_CONNECTION_INTERVAL = 10_000;
 

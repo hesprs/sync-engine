@@ -30,9 +30,7 @@ The initial context also contributes Obsidian primitives such as `app`, `addComm
 Each module is a class constructor. SynthKernel constructs the internal constructors once, then resolves constructor parameters from the merged context. A module publishes capabilities through properties such as:
 
 ```ts
-root = {
-  executeSync: this.executeSync,
-};
+root = { executeSync: this.executeSync };
 ```
 
 It can also declare the shape of values it contributes to merged keys:

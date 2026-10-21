@@ -1,12 +1,12 @@
-import type { Vault, Stat, ListedFiles, App, DataWriteOptions } from 'obsidian';
+import { OS } from '@/modules/EventBus';
+import { chunkSize, concurrency } from '@/utils/pipe';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import { requestNative } from '@repo/shared/e2e-utils.spec';
 import { basename, isFolder, stripEndSlash } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import { TFile, TFolder } from 'obsidian';
 import type { Binary, MaybePromise } from '@/types';
-import { OS } from '@/modules/EventBus';
-import { chunkSize, concurrency } from '@/utils/pipe';
+import type { Vault, Stat, ListedFiles, App, DataWriteOptions } from 'obsidian';
 
 export const TEMP_FOLDER = '.trash';
 

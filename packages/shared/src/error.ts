@@ -1,12 +1,8 @@
 export type ErrorLike = {
 	message?: unknown;
 	status?: unknown;
-	res?: {
-		status?: unknown;
-	};
-	response?: {
-		status?: unknown;
-	};
+	res?: { status?: unknown };
+	response?: { status?: unknown };
 	cause?: unknown;
 	error?: unknown;
 	code?: unknown;

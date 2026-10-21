@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import type { JSONCanvas } from '@json-canvas-viewer/vue';
 import {
 	JSONCanvasViewerComponent as Viewer,
 	Minimap,
@@ -7,6 +6,7 @@ import {
 	Controls,
 } from '@json-canvas-viewer/vue';
 import { useData } from 'vitepress';
+import type { JSONCanvas } from '@json-canvas-viewer/vue';
 
 const { isDark } = useData();
 const isPrerendering = Boolean(import.meta.env.SSR);
@@ -16,11 +16,7 @@ const { canvas } = defineProps<{ canvas: JSONCanvas }>();
 <template>
 	<Suspense>
 		<Viewer
-			:options="{
-				loading: 'lazy',
-				minimapCollapsed: true,
-				preventMistouchAtStart: true,
-			}"
+			:options="{ loading: 'lazy', minimapCollapsed: true, preventMistouchAtStart: true }"
 			class="canvas-viewer"
 			:modules="[Minimap, MistouchPreventer, Controls]"
 			:theme="isDark ? 'dark' : 'light'"

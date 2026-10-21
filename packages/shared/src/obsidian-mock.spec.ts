@@ -1,17 +1,9 @@
 // oxlint-disable typescript/require-await typescript/no-extraneous-class no-useless-constructor no-empty-function
 export async function requestUrl() {
-	return {
-		headers: {},
-		status: 200,
-		text: '',
-	};
+	return { headers: {}, status: 200, text: '' };
 }
 
-export const Platform = {
-	isAndroidApp: false,
-	isDesktop: true,
-	isMobile: false,
-};
+export const Platform = { isAndroidApp: false, isDesktop: true, isMobile: false };
 
 export function normalizePath(path: string) {
 	return path.replaceAll('\\', '/').replaceAll(/\/+/gu, '/');

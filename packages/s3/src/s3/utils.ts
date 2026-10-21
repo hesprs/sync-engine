@@ -1,15 +1,12 @@
-import type { Stat } from '@hesprs/sync-engine-sdk';
 import parseXML from '@repo/shared/parse-xml';
+import type { Stat } from '@hesprs/sync-engine-sdk';
 
 // oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 export function rootValue<T extends object>(xml: string): T {
 	return Object.values(parseXML<Record<string, T>>(xml))[0];
 }
 
-type S3ErrorResponse = {
-	Code?: string;
-	Message?: string;
-};
+type S3ErrorResponse = { Code?: string; Message?: string };
 export function parseS3Error(xml: string): string | undefined {
 	try {
 		const error = rootValue<S3ErrorResponse>(xml);

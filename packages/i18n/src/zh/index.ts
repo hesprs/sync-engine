@@ -1,9 +1,9 @@
+import zh from './translations';
 import type {
 	SelectFromContext,
 	ObsidianLanguageCode,
 	TranslationResource,
 } from '@hesprs/sync-engine-sdk';
-import zh from './translations';
 
 // oxlint-disable-next-line typescript/no-extraneous-class
 export default class I18nZh {

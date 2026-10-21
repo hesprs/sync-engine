@@ -1,5 +1,5 @@
-import type { Binary, FileStat, FolderStat, MaybePromise } from '@/types';
 import type { Fs, ListReporter, WrappedFs } from '../interface';
+import type { Binary, FileStat, FolderStat, MaybePromise } from '@/types';
 
 type HangingOperation = {
 	/** Memory reservation, capped at `STREAM_RESERVATION_SIZE`. */
@@ -56,11 +56,7 @@ function reserveMemory(state: MemoryControlSharedState, stat: FileStat) {
 	}
 
 	return new Promise<void>((resolve) => {
-		insertHangingOperation(state, {
-			priority: stat.size,
-			resume: () => resolve(),
-			size,
-		});
+		insertHangingOperation(state, { priority: stat.size, resume: () => resolve(), size });
 	});
 }
 

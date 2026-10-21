@@ -1,9 +1,9 @@
-import type { ErrorLike } from '@repo/shared/error';
+import { STREAM_RESERVATION_SIZE } from '@/fs/wrappers/memory-control';
 import { getStatus } from '@repo/shared/error';
 import { Platform } from 'obsidian';
 import type { Fs } from '@/fs';
 import type { Binary, FileStat } from '@/types';
-import { STREAM_RESERVATION_SIZE } from '@/fs/wrappers/memory-control';
+import type { ErrorLike } from '@repo/shared/error';
 
 function getSizeCaps(): { streamThreshold: number; chunkSize: number; concurrency: number } {
 	let size = 5 * 1024 ** 2; // 5 MiB

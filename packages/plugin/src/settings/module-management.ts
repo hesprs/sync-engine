@@ -1,14 +1,14 @@
-import type { Settings } from '@';
+import { mountModuleManagementList } from '@/components/module-management';
+import ModuleEditorModal from '@/components/ModuleEditorModal';
+import { MODULE_EXTENSION } from '@/modules/Extensibility';
 import { App, Menu, SearchComponent, setIcon, SettingPage, Notice, MenuItem } from 'obsidian';
 import { hook } from 'synthkernel';
+import type { Settings } from '@';
 import type { ModuleManagementTranslations } from '@/components/module-management';
 import type { ModuleEditorTranslations } from '@/components/ModuleEditorModal';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Fragment, Translate } from '@/modules/I18n';
 import type { MaybePromise } from '@/types';
-import { mountModuleManagementList } from '@/components/module-management';
-import ModuleEditorModal from '@/components/ModuleEditorModal';
-import { MODULE_EXTENSION } from '@/modules/Extensibility';
 
 const ALTERNATIVE_MODULE_EXTENSION = '.mjs';
 

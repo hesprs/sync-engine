@@ -23,14 +23,10 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import type { DiffHunk } from './onp';
 import Onp from './onp';
+import type { DiffHunk } from './onp';
 
-export type Conflict<T> = {
-	a: Array<T>;
-	o: Array<T>;
-	b: Array<T>;
-};
+export type Conflict<T> = { a: Array<T>; o: Array<T>; b: Array<T> };
 
 export type MergeChunk<T> =
 	| { type: 'ok'; merged: Array<T>; a: Array<T>; o: Array<T>; b: Array<T> }
@@ -44,12 +40,7 @@ export type DiffCommonResult<T> =
 
 type Side = 0 | 1 | 2;
 type ChangedSide = 0 | 2;
-type Hunk = {
-	side: ChangedSide;
-	a: Span;
-	o: Span;
-	b: Span;
-};
+type Hunk = { side: ChangedSide; a: Span; o: Span; b: Span };
 type Region = [
 	changedStart: number,
 	changedEnd: number,
@@ -89,19 +80,8 @@ function spanForRegion(region: Region, originalStart: number, originalEnd: numbe
 }
 
 type MergeIndex =
-	| {
-			type: 'ok';
-			mergedSide: Side;
-			a: Span;
-			o: Span;
-			b: Span;
-	  }
-	| {
-			type: 'conflict';
-			a: Span;
-			o: Span;
-			b: Span;
-	  };
+	| { type: 'ok'; mergedSide: Side; a: Span; o: Span; b: Span }
+	| { type: 'conflict'; a: Span; o: Span; b: Span };
 type ConflictIndex = Extract<MergeIndex, { type: 'conflict' }>;
 
 function diff3MergeIndices<T>(

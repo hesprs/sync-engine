@@ -23,8 +23,7 @@ type RequestResponse = {
 type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
 ```
 
-`RequestParam` extends Obsidian's `RequestUrlParam` (minus `body` and `url`) with a `body` field accepting `string | Binary`. The URL is always the first argument; omitting `params` performs a plain `GET`.
-`RequestResponse` is an exported SDK type for the response returned by `Request`.
+`RequestParam` extends Obsidian's `RequestUrlParam` (minus `body` and `url`) with a `body` field accepting `string | Binary`. The URL is always the first argument; omitting `params` performs a plain `GET`. `RequestResponse` is an exported SDK type for the response returned by `Request`.
 
 Set `ignoreCancellation` to `true` to let a request through after the sync has been cancelled. Reserve it for cleanup calls that release remote resources the backend already created, such as aborting an incomplete multipart upload.
 

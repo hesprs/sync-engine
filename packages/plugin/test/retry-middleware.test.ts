@@ -1,6 +1,6 @@
 import testKit from '$/test-kit';
-import { expect, spyOn, test } from 'bun:test';
 import { retryMiddleware } from '@/fs';
+import { expect, spyOn, test } from 'bun:test';
 
 const { request } = testKit;
 const sleepSpy = spyOn(globalThis, 'sleep').mockImplementation(() => Promise.resolve());

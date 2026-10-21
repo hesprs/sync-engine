@@ -1,6 +1,3 @@
-import type { Binary } from '@hesprs/sync-engine-sdk';
-import { concatBinary, textToUint8Array, toUint8Array } from '@repo/shared/binary';
-import { argon2id } from 'hash-wasm';
 import {
 	CONTENT_CHUNK_SIZE,
 	DECRYPTION_ERROR_MESSAGE,
@@ -16,6 +13,9 @@ import {
 	importAesGcmKey,
 	sha256Digest,
 } from './shared';
+import { concatBinary, textToUint8Array, toUint8Array } from '@repo/shared/binary';
+import { argon2id } from 'hash-wasm';
+import type { Binary } from '@hesprs/sync-engine-sdk';
 
 const ROOT_FILE_KEY_INFO = 'root-file-key-v1';
 const NAME_KEY_INFO = 'name-key-v1';

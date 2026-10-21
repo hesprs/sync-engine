@@ -1,5 +1,5 @@
-import type { Binary } from '@hesprs/sync-engine-sdk';
 import { openMemoryDB } from 'uni-kv';
+import type { Binary } from '@hesprs/sync-engine-sdk';
 
 export const memoryDB = openMemoryDB<
 	Record<string, unknown>,

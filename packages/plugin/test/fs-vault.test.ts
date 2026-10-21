@@ -1,20 +1,15 @@
-import type { ListedFiles } from 'obsidian';
 import testKit from '$/test-kit';
+import { createVaultRequest, VaultFs } from '@/fs';
 import { expect, test } from 'bun:test';
 import { App, TFile, TFolder } from 'obsidian';
 import type { RootFs, VaultRequest } from '@/fs';
 import type { MaybePromise } from '@/types';
-import { createVaultRequest, VaultFs } from '@/fs';
+import type { ListedFiles } from 'obsidian';
 
 const { stream, bytes, file } = testKit;
 const textDecoder = new TextDecoder();
 
-type VaultFixtureStat = {
-	ctime?: number;
-	mtime: number;
-	size?: number;
-	type: 'file' | 'folder';
-};
+type VaultFixtureStat = { ctime?: number; mtime: number; size?: number; type: 'file' | 'folder' };
 
 type VaultCalls = {
 	appendBinary: Array<[string, string]>;
@@ -44,12 +39,7 @@ type VaultControl = {
 	writeBinary: (path: string, data: ArrayBuffer) => MaybePromise<void>;
 };
 
-type VaultHarness = {
-	calls: VaultCalls;
-	control: VaultControl;
-	fs: RootFs;
-	request: VaultRequest;
-};
+type VaultHarness = { calls: VaultCalls; control: VaultControl; fs: RootFs; request: VaultRequest };
 
 type VaultHarnessOptions = {
 	config?: { trashOption?: 'local' };
@@ -180,12 +170,7 @@ function createVaultStub(options: VaultHarnessOptions): VaultHarness {
 	} as never;
 	const request = createVaultRequest(app);
 
-	return {
-		calls,
-		control,
-		fs: new VaultFs(request, 'Vault Name'),
-		request,
-	};
+	return { calls, control, fs: new VaultFs(request, 'Vault Name'), request };
 }
 
 test('stat should normalize root, file, and folder keys', async () => {
@@ -221,11 +206,7 @@ test('stat should normalize root, file, and folder keys', async () => {
 });
 
 test('write should return refreshed file uid from stat', async () => {
-	const vault = createVaultStub({
-		stats: {
-			'note.md': { mtime: 456, size: 5, type: 'file' },
-		},
-	});
+	const vault = createVaultStub({ stats: { 'note.md': { mtime: 456, size: 5, type: 'file' } } });
 	const data = bytes('hello');
 
 	expect(await vault.fs.write('note.md', data, file('note.md'))).toBe('456~5');
@@ -234,11 +215,7 @@ test('write should return refreshed file uid from stat', async () => {
 });
 
 test('writeStream should append to temp file then rename into place', async () => {
-	const vault = createVaultStub({
-		stats: {
-			'note.md': { mtime: 999, size: 6, type: 'file' },
-		},
-	});
+	const vault = createVaultStub({ stats: { 'note.md': { mtime: 999, size: 6, type: 'file' } } });
 
 	const uid = await vault.fs.writeStream('note.md', stream(['ab', 'cdef']), file('note.md'));
 

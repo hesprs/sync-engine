@@ -1,19 +1,15 @@
 import testKit from '$/test-kit';
+import { memoryControlWrapper } from '@/fs';
 import { expect, test } from 'bun:test';
 import type { MemoryControlSharedState } from '@/fs';
 import type { Binary } from '@/types';
-import { memoryControlWrapper } from '@/fs';
 
 const { bytes, deferred, file, fs, flush, stream } = testKit;
 
 const SIXTEEN_MIB = 16 * 1024 * 1024;
 
 function createSharedState(maxMemory: number, memoryConsumption = 0): MemoryControlSharedState {
-	return {
-		hangingOperations: [],
-		maxMemory,
-		memoryConsumption,
-	};
+	return { hangingOperations: [], maxMemory, memoryConsumption };
 }
 
 test('memory wrapper delays read when shared budget is exhausted', async () => {

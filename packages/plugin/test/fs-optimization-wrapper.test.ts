@@ -1,7 +1,7 @@
 import testKit from '$/test-kit';
+import { optimizationCompanionWrapper, optimizationWrapper } from '@/fs';
 import { expect, test } from 'bun:test';
 import type { OptimizerInput, OptimizerOutput } from '@/fs';
-import { optimizationCompanionWrapper, optimizationWrapper } from '@/fs';
 
 type BatchOptimizer = (input: OptimizerInput) => OptimizerOutput;
 const { bytes, deferred, file, flush, folder, fs, stream } = testKit;
@@ -27,10 +27,7 @@ function createBatchRecorder() {
 test('optimization wrapper forwards queued atoms to batch optimizer', async () => {
 	const remote = fs();
 	const { batchOptimizer, seen } = createBatchRecorder();
-	const wrapper = optimizationWrapper(remote.fs, {
-		batchOptimizer,
-		thisPool: new Set(),
-	});
+	const wrapper = optimizationWrapper(remote.fs, { batchOptimizer, thisPool: new Set() });
 
 	const pending = Promise.all([
 		wrapper.delete('folder/'),
@@ -49,10 +46,7 @@ test('optimization wrapper anticipates write using transformed operation key', a
 	const local = fs();
 	const localPool = new Set<string>();
 	const { batchOptimizer, seen } = createBatchRecorder();
-	const wrapper = optimizationWrapper(local.fs, {
-		batchOptimizer,
-		thisPool: localPool,
-	});
+	const wrapper = optimizationWrapper(local.fs, { batchOptimizer, thisPool: localPool });
 	const deleteDeferred = deferred<void>();
 	const mkdirDeferred = deferred<void>();
 
@@ -86,10 +80,7 @@ test('optimization wrapper anticipates writeStream using transformed operation k
 	const local = fs();
 	const localPool = new Set<string>();
 	const { batchOptimizer, seen } = createBatchRecorder();
-	const wrapper = optimizationWrapper(local.fs, {
-		batchOptimizer,
-		thisPool: localPool,
-	});
+	const wrapper = optimizationWrapper(local.fs, { batchOptimizer, thisPool: localPool });
 	const deleteDeferred = deferred<void>();
 	const mkdirDeferred = deferred<void>();
 
@@ -174,11 +165,7 @@ test('optimization companion dispatches read discovery for readStream through re
 
 test('optimization companion swallows failed discovery reads', async () => {
 	const remote = fs();
-	const local = fs({
-		control: {
-			read: () => Promise.reject(new Error('discovery failed')),
-		},
-	});
+	const local = fs({ control: { read: () => Promise.reject(new Error('discovery failed')) } });
 	const wrapper = optimizationCompanionWrapper(remote.fs, {
 		getThatFs: () => local.fs,
 		thatPool: new Set(),
@@ -265,10 +252,7 @@ test('optimization wrapper bypasses batch optimizer for single call', async () =
 		throw new Error('batch optimizer should not run');
 	};
 	const recursiveValues: Array<boolean | undefined> = [];
-	const wrapper = optimizationWrapper(remote.fs, {
-		batchOptimizer,
-		thisPool: new Set(),
-	});
+	const wrapper = optimizationWrapper(remote.fs, { batchOptimizer, thisPool: new Set() });
 
 	remote.control.mkdir = (_key, _stat, recursive) => {
 		recursiveValues.push(recursive);
@@ -282,11 +266,7 @@ test('optimization wrapper bypasses batch optimizer for single call', async () =
 
 test('optimization wrapper propagates queued operation rejection', async () => {
 	const remoteError = new Error('delete failed');
-	const remote = fs({
-		control: {
-			delete: () => Promise.reject(remoteError),
-		},
-	});
+	const remote = fs({ control: { delete: () => Promise.reject(remoteError) } });
 	const wrapper = optimizationWrapper(remote.fs, {
 		batchOptimizer: ({ atoms }) => atoms,
 		thisPool: new Set(),
@@ -303,11 +283,7 @@ test('optimization wrapper propagates queued operation rejection', async () => {
 
 test('optimization wrapper propagates anticipated write rejection', async () => {
 	const writeError = new Error('write failed');
-	const local = fs({
-		control: {
-			write: () => Promise.reject(writeError),
-		},
-	});
+	const local = fs({ control: { write: () => Promise.reject(writeError) } });
 	const localPool = new Set(['note.md']);
 	const wrapper = optimizationWrapper(local.fs, {
 		batchOptimizer: ({ atoms }) => atoms,

@@ -1,6 +1,6 @@
-import type { DatabaseAsync, StoreAsync } from 'uni-kv';
 import { deleteMemoryDB, openIndexedDB, openMemoryDB } from 'uni-kv';
 import type { General, MaybePromise, RecordStat } from '@/types';
+import type { DatabaseAsync, StoreAsync } from 'uni-kv';
 
 export type IndexedDBSchema = Record<string, RecordStat>;
 export type RecordStore = StoreAsync<RecordStat>;

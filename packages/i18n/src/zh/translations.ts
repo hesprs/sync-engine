@@ -11,9 +11,7 @@ const zh: Translations = {
 		createFragment((frag) => {
 			frag.appendText('使用 ');
 			frag.createEl('a', {
-				attr: {
-					href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage',
-				},
+				attr: { href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage' },
 				text: '非对称存储',
 			});
 			frag.appendText(' 来大幅提升同步速度。');
@@ -144,9 +142,7 @@ const zh: Translations = {
 	integrityVerificationDescription: () =>
 		createFragment((frag) => {
 			frag.appendText('每次加载模块时验证其哈希值，');
-			frag.createEl('strong', {
-				text: '保护您免受恶意模块替换攻击',
-			});
+			frag.createEl('strong', { text: '保护您免受恶意模块替换攻击' });
 			frag.appendText('。');
 		}),
 	keepLocal: '保留本地',
@@ -292,9 +288,7 @@ const zh: Translations = {
 			p1.appendText('Sync Engine 检测到一个名为 ');
 			p1.createEl('code', { text: fileName });
 			p1.appendText(' 的已安装模块，该模块从未在当前仓库的 Sync Engine 中注册。');
-			p1.createEl('strong', {
-				text: '请在继续之前查看以下信息：',
-			});
+			p1.createEl('strong', { text: '请在继续之前查看以下信息：' });
 			const ul = frag
 				.createDiv(
 					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',

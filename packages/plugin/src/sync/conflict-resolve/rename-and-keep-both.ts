@@ -1,5 +1,5 @@
-import { uint8ArrayEquals } from '@repo/shared/binary';
 import { readWithSize, writeWithValue } from '@/utils/pipe';
+import { uint8ArrayEquals } from '@repo/shared/binary';
 import type { ConflictResolverPayload } from '../tasks/interface';
 
 export default async function renameAndKeepBothResolver({

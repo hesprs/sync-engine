@@ -1,15 +1,3 @@
-import type {
-	DatabaseSync,
-	Fs,
-	WrappedFs,
-	Stat,
-	Binary,
-	FileStat,
-	ListReporter,
-	FolderStat,
-} from '@hesprs/sync-engine-sdk';
-import { parseUrl } from '@repo/shared/path';
-import type { EncryptionStores } from './path';
 import {
 	decryptFileContent,
 	deriveMasterKey,
@@ -24,22 +12,24 @@ import { decryptPathSegments, encryptPathSegments } from './path';
 import createDecryptedReadableStream from './read-stream';
 import { getEncryptedFileSize } from './shared';
 import createEncryptedReadableStream from './write-stream';
+import { parseUrl } from '@repo/shared/path';
+import type { EncryptionStores } from './path';
+import type {
+	DatabaseSync,
+	Fs,
+	WrappedFs,
+	Stat,
+	Binary,
+	FileStat,
+	ListReporter,
+	FolderStat,
+} from '@hesprs/sync-engine-sdk';
 
-export type DerivedKeys = {
-	nameKey: Binary;
-	rootFileKey: Binary;
-	metaKey: Binary;
-};
+export type DerivedKeys = { nameKey: Binary; rootFileKey: Binary; metaKey: Binary };
 
-export type EncryptionDBSchema = {
-	decryptedToEncrypted: string;
-	encryptedToDecrypted: string;
-};
+export type EncryptionDBSchema = { decryptedToEncrypted: string; encryptedToDecrypted: string };
 
-export type EncryptionDBMeta = {
-	encryptionKeys?: DerivedKeys;
-	encryptionMarker?: string;
-};
+export type EncryptionDBMeta = { encryptionKeys?: DerivedKeys; encryptionMarker?: string };
 
 export type EncryptionDB = DatabaseSync<EncryptionDBSchema, EncryptionDBMeta>;
 

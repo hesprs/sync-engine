@@ -1,11 +1,11 @@
-import type { DatabaseSync } from 'uni-kv';
 import testKit from '$/test-kit';
+import { contextWrapper } from '@/fs';
+import { STORAGE_NAME } from '@/modules/Storage';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { Fs } from '@/fs';
 import type { FileStat, Stat } from '@/types';
-import { contextWrapper } from '@/fs';
-import { STORAGE_NAME } from '@/modules/Storage';
+import type { DatabaseSync } from 'uni-kv';
 
 const { bytes, file, folder, fs, stream } = testKit;
 type ContextMemoryDB = DatabaseSync<
@@ -23,11 +23,7 @@ function remoteContextWrapper(rootFs: Fs) {
 }
 
 function localContextWrapper(rootFs: Fs) {
-	return contextWrapper(rootFs, {
-		db,
-		marker: 'lastLocalContextUid',
-		store: 'localStatContext',
-	});
+	return contextWrapper(rootFs, { db, marker: 'lastLocalContextUid', store: 'localStatContext' });
 }
 
 function getLocalStore() {

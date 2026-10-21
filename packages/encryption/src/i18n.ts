@@ -147,35 +147,23 @@ export const zhTW: EncryptionTranslations = {
 	encryptionMigration: (mode) =>
 		createFragment((frag) => {
 			if (mode) {
-				frag.createEl('p', {
-					text: '在啟用加密前，請務必留意以下幾點：',
-				});
+				frag.createEl('p', { text: '在啟用加密前，請務必留意以下幾點：' });
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: '後續的所有上傳都將進行加密。' });
 				ol.createEl('li', { text: '請確保所有裝置皆已啟用加密。' });
-				ol.createEl('li', {
-					text: '若您先前曾於未加密的狀態下進行同步，則必須執行遷移。',
-				});
-				const li = ol.createEl('li', {
-					text: '您應確保所有裝置上的以下項目完全一致：',
-				});
+				ol.createEl('li', { text: '若您先前曾於未加密的狀態下進行同步，則必須執行遷移。' });
+				const li = ol.createEl('li', { text: '您應確保所有裝置上的以下項目完全一致：' });
 				const ul = li.createEl('ul');
 				const subItems = ['加密密碼', '伺服器 URL', '帳號名稱'];
 				subItems.forEach((item) => ul.createEl('li', { text: item }));
 				ol.createEl('li', {
 					text: '此加密演算法會將解密金鑰與伺服器識別資訊綁定。這能提供更好的安全性，但也意味著若您將加密檔案移至其他伺服器，您將無法解密該檔案。',
 				});
-				ol.createEl('li', {
-					text: '請避免在伺服器端手動管理加密檔案。',
-				});
+				ol.createEl('li', { text: '請避免在伺服器端手動管理加密檔案。' });
 			} else {
-				frag.createEl('p', {
-					text: '在停用加密前，請務必留意以下幾點：',
-				});
+				frag.createEl('p', { text: '在停用加密前，請務必留意以下幾點：' });
 				const ol = frag.createEl('ol');
-				ol.createEl('li', {
-					text: '後續的所有上傳都將以未加密的明文形式進行。',
-				});
+				ol.createEl('li', { text: '後續的所有上傳都將以未加密的明文形式進行。' });
 				ol.createEl('li', { text: '請確保所有裝置皆已停用加密。' });
 				ol.createEl('li', {
 					text: '若此儲存庫先前是在啟用加密的狀態下同步，則必須執行遷移。',

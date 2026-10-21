@@ -1,8 +1,8 @@
-import type { Binary, Request, RequestParam } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
 import { compileQuery } from '@repo/shared/path';
 import { md5 } from 'hash-wasm';
 import type { S3DB } from '..';
+import type { Binary, Request, RequestParam } from '@hesprs/sync-engine-sdk';
 
 export type UrlStyle = 'virtualHosted' | 'path';
 
@@ -54,9 +54,9 @@ function getDateStamp(date: Date): string {
 }
 
 /**
- * Split URI into canonical URI path and query string.
- * Canonical URI: URI-encoded path, each path segment encoded, slashes preserved.
- * Canonical query string: sorted by key, URI-encoded key=value pairs.
+ * Split URI into canonical URI path and query string. Canonical URI: URI-encoded path, each path
+ * segment encoded, slashes preserved. Canonical query string: sorted by key, URI-encoded key=value
+ * pairs.
  */
 function canonicalizeUrl(url: string): { canonicalUri: string; canonicalQuery: string } {
 	const parsed = new URL(url);
