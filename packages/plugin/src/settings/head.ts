@@ -8,7 +8,7 @@ import type { ConflictResolverEntry, DeciderEntry, RemoteFsEntry } from '@/modul
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { Dispatch } from '@/sdk';
 import type { General, GlobStrategy, MaybePromise } from '@/types';
-import { NONE_STRATEGY, normalizeGlob } from '@/utils/glob-match';
+import { normalizeGlob } from '@/utils/glob-match';
 import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
 import ModuleManagement from './module-management';
 import { generateEditableList, reactivelyValidate, s } from './utils';
@@ -35,7 +35,6 @@ export type HeadSettingTranslations = {
 	settingTips: Fragment<{ labels: Array<LabelDefinition>; addLabel: typeof addLabel }>;
 	addStrategy: string;
 	noStrategyConfigured: string;
-	dontSync: string;
 };
 
 type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs: string }>;
@@ -162,7 +161,6 @@ export default function headSettings(
 						const name = prettyName?.();
 						if (name) options[key] = name;
 					});
-					options[NONE_STRATEGY] = translate('dontSync');
 					return generateEditableList<GlobStrategy>({
 						defaultValue: { expr: '', strategy: 'bidirectional' },
 						identifier: 'syncStrategy',

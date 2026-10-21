@@ -5,6 +5,7 @@ import {
 	buildUrl,
 	OAUTH_DEVICE_CODE_URL,
 	OAUTH_SCOPE,
+	OAUTH_SCOPES,
 	OAUTH_TOKEN_URL,
 	TOKEN_REVOKE_URL,
 } from './api';
@@ -16,6 +17,7 @@ const KEYCHAIN_SECRET_ID = 'sync-engine-gdrive-refresh-token'; // Secret storage
 type TokenResponse = {
 	access_token: string;
 	expires_in: number;
+	scope: string;
 	refresh_token?: string;
 	id_token?: string;
 };
@@ -128,14 +130,19 @@ export async function pollDeviceToken(options: {
 		}
 		const data = response.json as TokenResponse | TokenError;
 		if ('access_token' in data)
-			if (data.refresh_token && data.id_token)
+			if (data.refresh_token && data.id_token) {
+				// Google may grant fewer scopes than requested, e.g. when a Workspace admin restricts the app.
+				if (!OAUTH_SCOPES.every((scope) => data.scope.split(' ').includes(scope)))
+					throw new Error(
+						'Google did not grant the requested permissions. Please allow all of them and connect again.',
+					);
 				return {
 					accessToken: data.access_token,
 					expiresIn: data.expires_in,
 					refreshToken: data.refresh_token,
 					userId: extractSub(data.id_token),
 				};
-			else throw new Error('Google authorization payload is malformed!');
+			} else throw new Error('Google authorization payload is malformed!');
 		switch (data.error) {
 			case 'authorization_pending': {
 				continue;

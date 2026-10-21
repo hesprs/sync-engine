@@ -923,7 +923,6 @@ type HeadSettingTranslations = {
   }>;
   addStrategy: string;
   noStrategyConfigured: string;
-  dontSync: string;
 };
 declare function addLabel(element: Element, { text, tooltip, color, textColor }: LabelDefinition): HTMLSpanElement;
 //#endregion
@@ -1040,6 +1039,7 @@ declare class Bootstrap {
     keepRemote: string;
     renameAndKeepBoth: string;
     skip: string;
+    dontSync: string;
   } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
     maxMemoryConsumption: TogglableValue;

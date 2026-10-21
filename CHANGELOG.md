@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 - Fixed syncing a re-included file whose parent folders have "Don't sync" sync strategy causing sync failures.
 - Optimized sync strategy matching performance.
 
+### Google Drive Module
+
+- Enhanced token scope check and error message parsing.
+
 ## Sync Engine v3.3.2 - 2026-10-18
 
 ### Core

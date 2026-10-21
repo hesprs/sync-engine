@@ -5,7 +5,8 @@ export const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 export const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
 export const OAUTH_DEVICE_CODE_URL = 'https://oauth2.googleapis.com/device/code';
 export const OAUTH_TOKEN_URL = 'https://oauth2.googleapis.com/token';
-export const OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.file openid';
+export const OAUTH_SCOPES = ['https://www.googleapis.com/auth/drive.file', 'openid'];
+export const OAUTH_SCOPE = OAUTH_SCOPES.join(' ');
 export const FOLDER_MIME = 'application/vnd.google-apps.folder';
 export const FILE_FIELDS = 'id,name,mimeType,md5Checksum,modifiedTime,size,parents,appProperties';
 export const TOKEN_REVOKE_URL = 'https://oauth2.googleapis.com/revoke';
@@ -27,7 +28,14 @@ export type DriveFileList = {
 };
 
 type DriveError = {
-	error?: { code?: number; message?: string } | string;
+	error?:
+		| {
+				code?: number;
+				message?: string;
+				errors?: Array<{ reason?: string }>;
+				details?: Array<{ reason?: string }>;
+		  }
+		| string;
 	error_description?: string;
 };
 
@@ -55,8 +63,12 @@ export function parseDriveError(response: RequestResponse): string | undefined {
 	try {
 		const { error, error_description } = response.json<DriveError>();
 		if (typeof error === 'string') return `Google Drive ${error}: ${error_description ?? ''}`;
-		if (error?.message)
-			return `Google Drive ${error.code ?? response.status}: ${error.message}`;
+		if (error?.message) {
+			const reason = [...(error.errors ?? []), ...(error.details ?? [])].find(
+				(entry) => entry.reason,
+			)?.reason;
+			return `Google Drive ${error.code ?? response.status}: ${error.message}${reason ? ` (${reason})` : ''}`;
+		}
 	} catch {
 		// Non-JSON error body (e.g. empty 503 responses).
 	}

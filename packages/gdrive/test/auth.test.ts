@@ -24,6 +24,8 @@ void mock.module('obsidian', () => ({
 const { TokenManager, bearerMiddleware, pollDeviceToken, startDeviceAuthorization } =
 	await import('@/gdrive/auth');
 
+const GRANTED_SCOPE = 'https://www.googleapis.com/auth/drive.file openid';
+
 function reset(...next: Array<HttpResponse>) {
 	requests.length = 0;
 	responses = [...next];
@@ -81,6 +83,7 @@ test('polls device authorization and extracts user id from ID token', async () =
 			expires_in: 3600,
 			id_token: `header.${payload}.signature`,
 			refresh_token: 'refresh',
+			scope: GRANTED_SCOPE,
 		},
 	});
 
@@ -123,6 +126,7 @@ test('keeps polling through Android background network suspension', async () => 
 					expires_in: 3600,
 					id_token: `header.${payload}.signature`,
 					refresh_token: 'refresh',
+					scope: GRANTED_SCOPE,
 				},
 			},
 		);
@@ -166,6 +170,41 @@ test('rethrows network errors other than the Android background suspension', asy
 		),
 		'UnknownHostException',
 	);
+});
+
+test('rejects a grant that lacks any requested scope', async () => {
+	const payload = btoa(JSON.stringify({ sub: 'google-user' }))
+		.replaceAll('+', '-')
+		.replaceAll('/', '_')
+		.replaceAll('=', '');
+	for (const scope of ['openid', 'https://www.googleapis.com/auth/drive.file']) {
+		reset({
+			json: {
+				access_token: 'access',
+				expires_in: 3600,
+				id_token: `header.${payload}.signature`,
+				refresh_token: 'refresh',
+				scope,
+			},
+		});
+
+		let caught: unknown;
+		try {
+			await pollDeviceToken({
+				authorization: {
+					deviceCode: 'device',
+					expiresIn: 60,
+					interval: 0,
+					userCode: 'code',
+					verificationUrl: 'url',
+				},
+				isCancelled: () => false,
+			});
+		} catch (error) {
+			caught = error;
+		}
+		expect(String(caught)).toContain('did not grant the requested permissions');
+	}
 });
 
 test('caches tokens and retries bearer requests after a 401', async () => {

@@ -87,6 +87,7 @@ export default class Bootstrap {
 		keepRemote: string;
 		renameAndKeepBoth: string;
 		skip: string;
+		dontSync: string;
 	} & ControlsSettingTranslations &
 		DevelopmentSettingTranslations &
 		FeaturesSettingTranslations &
@@ -368,7 +369,11 @@ export default class Bootstrap {
 			decider: (input) => mirrorRemoteDecider(input, logger),
 			prettyName: () => t('mirrorRemote'),
 		});
-		registerDecider(NONE_STRATEGY, { decider: (input) => pholderDecider(input, logger) }); // The only case for "none" strategy is pholder
+		registerDecider(NONE_STRATEGY, {
+			// The only case for "none" strategy is pholder
+			decider: (input) => pholderDecider(input, logger),
+			prettyName: () => t('dontSync'),
+		});
 
 		registerConflictResolver('renameAndKeepBoth', {
 			prettyName: () => t('renameAndKeepBoth'),
