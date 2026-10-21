@@ -1,9 +1,9 @@
+// oxlint-disable import/no-nodejs-modules
 import { configGenerator } from './i18n';
 import { lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import canvas from 'vite-plugin-json-canvas';
 import { defineConfig } from 'vitepress';
-// oxlint-disable import/no-nodejs-modules
 import type { ThemeConfig } from 'vitepress-theme-trito';
 
 function p(path: string) {
