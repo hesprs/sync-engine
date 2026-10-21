@@ -23,11 +23,9 @@ This defines the folder in Google Drive that serves as the root directory for th
 
 ::: warning
 
-The base directory is an application-managed namespace. The module can see and operate only on files that it created through its Google Drive integration. Files or folders created manually in Drive, or created by another application, are not visible to this module even when they are inside the configured base directory. They will not be imported, synchronized, or listed.
+The base directory is an application-managed namespace. The module can see and operate only on files that it created through its Google Drive integration. Files or folders created manually in Drive, or created by another application, are not visible to this module even when they are inside the configured base directory. They will not be imported, synchronized, or listed. So please do not manually create, rename, move, or maintain vault files in this Drive folder.
 
-Do not manually create, rename, move, or maintain vault files in this Drive folder. Set the base directory in the module settings, then let the first sync create it and let Sync Engine manage its contents. Manual Drive operations can leave files outside the module's visible set or cause conflicting changes.
-
-This is a consequence of Google's `drive.file` scope, not a filtering option that can be disabled in Sync Engine. The module is intentionally not granted full Drive access.
+This is a consequence of Google's `drive.file` scope. The module is intentionally not granted full Drive access.
 
 :::
 
@@ -35,9 +33,21 @@ This is a consequence of Google's `drive.file` scope, not a filtering option tha
 
 When enabled, files deleted remotely are moved to the Google Drive trash instead of being permanently removed. When disabled, deleted files are permanently erased immediately. Note that Google Drive typically clears items from the trash after 30 days.
 
-## File Metadata
+## Authentication Flow
 
-Google Drive stores file metadata as `appProperties` on the file resource. `write()` and `writeStream()` include `appProperties` when the file's `meta` is non-empty. `stat()` and `list()` return `appProperties` as the file's `meta` when present.
+The module uses [**Google OAuth 2.0 for TV and Limited-Input Device Applications**](https://developers.google.com/identity/protocols/oauth2/limited-input-device):
+
+1. When you click **Connect**, the module requests a device code from Google's device authorization endpoint.
+2. Obsidian displays Google's verification URL and a one-time user code. The module can copy the code and open the URL in a browser.
+3. You sign in to Google in that browser and approve the requested access. Please remember to select the following while authorizing:
+
+![tick "See, edit, create, and delete only the specific Google Drive files you use with this app." when authorizing Google Drive](https://img1.tucang.cc/api/image/show/6d34bcb968f679ebfb31c8cd4e6dc354)
+
+4. While the dialog remains open, Obsidian polls Google's token endpoint. It waits when authorization is pending and backs off when Google requests a slower polling interval.
+5. After approval, Google returns a short-lived access token, a refresh token, and an OpenID ID token. The module extracts the account subject from the ID token, stores the refresh token in Obsidian's secret storage, and caches the access token in memory.
+6. Later Drive requests use the cached access token. When it is close to expiry, the module exchanges the refresh token for a new access token. A failed request with HTTP 401 causes one forced refresh and retry.
+
+Device authorization is used because Obsidian mobile cannot reliably provide the local browser redirect, localhost listener, or desktop-style custom URL callback required by common interactive OAuth flows. Device authorization keeps the OAuth interaction in a normal browser while the Obsidian app polls Google's endpoint, so the same connection flow works on desktop and mobile.
 
 ## Permissions And Scopes
 
@@ -60,18 +70,9 @@ The scope does **not** grant general access to the user's Drive. In particular, 
 
 The `openid` scope makes Google return an OpenID Connect ID token during device authorization. The module reads the token's stable `sub` subject identifier and stores it as the connected account identifier. This lets Sync Engine identify which Google account is connected and distinguish multiple account connections, so that the sync record for different Google accounts don't interfere; it does not read the user's profile or request broad identity permissions.
 
-## Authentication Flow
+## File Metadata
 
-The module uses [**Google OAuth 2.0 for TV and Limited-Input Device Applications**](https://developers.google.com/identity/protocols/oauth2/limited-input-device):
-
-1. When you click **Connect**, the module requests a device code from Google's device authorization endpoint with the two scopes above.
-2. Obsidian displays Google's verification URL and a one-time user code. The module can copy the code and open the URL in a browser.
-3. You sign in to Google in that browser and approve the requested access.
-4. While the dialog remains open, Obsidian polls Google's token endpoint. It waits when authorization is pending and backs off when Google requests a slower polling interval.
-5. After approval, Google returns a short-lived access token, a refresh token, and an OpenID ID token. The module extracts the account subject from the ID token, stores the refresh token in Obsidian's secret storage, and caches the access token in memory.
-6. Later Drive requests use the cached access token. When it is close to expiry, the module exchanges the refresh token for a new access token. A failed request with HTTP 401 causes one forced refresh and retry.
-
-Device authorization is used because Obsidian mobile cannot reliably provide the local browser redirect, localhost listener, or desktop-style custom URL callback required by common interactive OAuth flows. Device authorization keeps the OAuth interaction in a normal browser while the Obsidian app polls Google's endpoint, so the same connection flow works on desktop and mobile.
+Google Drive stores file metadata as `appProperties` on the file resource. `write()` and `writeStream()` include `appProperties` when the file's `meta` is non-empty. `stat()` and `list()` return `appProperties` as the file's `meta` when present.
 
 ## Privacy Policy
 
