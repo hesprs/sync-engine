@@ -51,14 +51,10 @@ export default class Encryption {
 			registerRemoteFsWrapper({
 				apply: (fs) => {
 					if (!this.moduleSettings.enabled) return;
-					const { password: pwd } = this.moduleSettings;
+					const { password: pwd, legacyEndpoint } = this.moduleSettings;
 					const password = app.secretStorage.getSecret(pwd);
 					if (!password) throw new Error(translate('pleaseSetPassword'));
-					return encryptionWrapper(fs, {
-						legacyEndpoint: this.moduleSettings.legacyEndpoint,
-						memoryDB,
-						password,
-					});
+					return encryptionWrapper(fs, { legacyEndpoint, memoryDB, password });
 				},
 				priority: 7919,
 			}),

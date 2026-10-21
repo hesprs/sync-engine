@@ -11,11 +11,15 @@ body:
       value: Thanks for taking the time to fill out this bug report!
 
   - type: textarea
-    id: real-outcome
+    id: reproduction
     attributes:
-      label: Real Outcome
-      description: A brief and clear description on what happened.
-      placeholder: Tell us what you see!
+      label: Steps to Reproduce and Outcome
+      description: How can we reproduce this behavior? And then what happened?
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. Wait for '...'
+        4. See error '...'
     validations:
       required: true
 
@@ -23,7 +27,7 @@ body:
     id: expected-outcome
     attributes:
       label: Expected Outcome
-      description: Tell us what do you think is the correct behaviour.
+      description: Tell us what do you think is the correct behavior.
       placeholder: Tell us what you expect!
     validations:
       required: true
@@ -38,25 +42,12 @@ body:
       required: true
 
   - type: textarea
-    id: reproduction
-    attributes:
-      label: Steps to Reproduce
-      description: How can we reproduce this behaviour?
-      placeholder: |
-        1. Go to '...'
-        2. Click on '....'
-        3. Wait for '....'
-        4. See error
-    validations:
-      required: true
-
-  - type: textarea
     id: logs
     attributes:
       label: Logs
-      description: Please go to plugin settings - `Development` - `Export logs`, click `Export to note`, copy and paste the content of the full log. This will be automatically formatted into code, so no need for backticks.
+      description: Please go to plugin settings - `Development` - `Export logs`, click `Export`, copy and paste the content of the full log. This will be automatically formatted into code, so no need for backticks.
       render: shell
-      placeholder: If the support log contains information that you think is improper to disclose, only pasting lines with `ERROR` labels is OK.
+      placeholder: If the log contains information that you think is improper to disclose, it's OK to only paste sections with `ERROR` labels.
 
   - type: checkboxes
     id: terms
@@ -70,8 +61,9 @@ body:
   - type: markdown
     attributes:
       value: |
+        - I have updated Sync Engine to the latest version but the bug persists.
         - I have provided clear and reproducible information about the bug.
         - I have ensured that this issue only contains one bug.
         - I have checked historical bugs and there's no entry fitting this scenario.
         - I have confirmed that the issue doesn't contain any sensitive information.
-        - Issues where maintainers have requested clarification / coordinated testing but the reporter hasn't provide any further information will be closed after 72 hours.
+        - I understand that issues where maintainers have requested clarification / coordinated testing but the reporter hasn't provide any further information will be closed after 72 hours.

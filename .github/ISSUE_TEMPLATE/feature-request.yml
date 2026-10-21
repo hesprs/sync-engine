@@ -16,7 +16,7 @@ body:
       label: Duplication Check
       description: Please confirm that you have searched existing feature requests and found no similar.
       options:
-        - label: I have searched the existing issues
+        - label: I have searched existing issues
           required: true
 
   - type: textarea
@@ -24,7 +24,7 @@ body:
     attributes:
       label: How Should It Be Like?
       description: A clear and concise description of how you dreamed function will be like.
-      placeholder: I'm always frustrated when [...]
+      placeholder: I'm always frustrated when ...
     validations:
       required: true
 
@@ -32,4 +32,4 @@ body:
     id: mechanism
     attributes:
       label: How Would It Work?
-      description: If you are the developer, how would you write code and design the mechanism to achieve the requested feature? (OK to keep blank if you don't understand the code).
+      description: Imagine you are the developer, how would you design the mechanism to achieve the requested feature? (OK to keep blank if you don't understand the code).

@@ -58,7 +58,7 @@ class EncryptionFs implements WrappedFs {
 		private readonly options: EncryptionWrapperOptions,
 	) {
 		const { password, memoryDB } = options;
-		const marker = `${original.getUid()}~${password}`;
+		const marker = `${this.getLegacyUid()}~${password}`;
 		this.pathStores = {
 			decryptedToEncrypted: memoryDB.getStore('decryptedToEncrypted'),
 			encryptedToDecrypted: memoryDB.getStore('encryptedToDecrypted'),
