@@ -99,6 +99,13 @@ function getRecursiveKeys(key: string): Array<string> {
 	return keys.reverse();
 }
 
+function assertReadVersion(headers: Record<string, string>, stat?: FileStat) {
+	const etag = getHeader(headers, 'etag');
+	if (!stat || !etag || stat.uid === `${stat.mtime}~${stat.size}`) return;
+	if (normalizeEtag(etag) !== stat.uid)
+		throw new Error(`S3 object changed during download: ${stat.key}`);
+}
+
 export default class S3Fs implements RootFs {
 	private readonly endpoint: string;
 	private readonly bucket: string;
@@ -140,13 +147,15 @@ export default class S3Fs implements RootFs {
 		throw error;
 	};
 
-	async read(key: string): Promise<Binary> {
+	async read(key: string, stat?: FileStat): Promise<Binary> {
 		const response = await this.requestOrThrow(this.buildUrl(key), { method: 'GET' });
+		assertReadVersion(response.headers, stat);
 		this.metaCache.set(key, extractMetaHeaders(response.headers));
 		return response.bytes();
 	}
 
-	readStream(key: string, { size }: FileStat) {
+	readStream(key: string, stat: FileStat) {
+		const { size } = stat;
 		const url = this.buildUrl(key);
 		return createRangeReadStream({
 			chunkSize,
@@ -156,6 +165,7 @@ export default class S3Fs implements RootFs {
 					headers: { Range: `bytes=${start}-${endInclusive}` },
 					method: 'GET',
 				});
+				assertReadVersion(response.headers, stat);
 				if (start === 0) this.metaCache.set(key, extractMetaHeaders(response.headers));
 				return response.bytes();
 			},

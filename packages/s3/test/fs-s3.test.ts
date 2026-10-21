@@ -61,9 +61,11 @@ test('read gets encoded object bytes and maps S3 XML errors', async () => {
 	s3.setRequest((url, params) => {
 		assertSignedRequest(params, 'GET');
 		expect(url).toBe('https://s3.example.com/vault/Notes/file%20A.md');
-		return response({ body: bytes('content') });
+		return response({ body: bytes('content'), headers: { ETag: '"read-etag"' } });
 	});
 	expect(await s3.fs.read('Notes/file A.md')).toStrictEqual(bytes('content'));
+	const snapshot = file('Notes/file A.md', { uid: '0~0' });
+	expect(await s3.fs.read(snapshot.key, snapshot)).toStrictEqual(bytes('content'));
 
 	const errorFs = createS3Fs();
 	errorFs.setRequest(() =>
