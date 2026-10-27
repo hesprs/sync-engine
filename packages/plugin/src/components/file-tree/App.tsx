@@ -4,13 +4,13 @@ import { createEffect, For, Show } from 'solid-js';
 import type { FileTreeTranslations } from '.';
 import type { FileTreeData } from './types';
 import type { Translate } from '@/modules/I18n';
-import type { BaseTask } from '@/sync';
+import type { Task } from '@/sync';
 import type { JSX } from 'solid-js';
 
 export default function App(props: {
 	data: FileTreeData;
 	isSelected: (nodeId: string) => boolean;
-	getTask: (nodeId: string) => BaseTask | undefined;
+	getTask: (nodeId: string) => Task | undefined;
 	toggle: (nodeId: string, nextSelected: boolean) => void;
 	translate: Translate<FileTreeTranslations>;
 }): JSX.Element {

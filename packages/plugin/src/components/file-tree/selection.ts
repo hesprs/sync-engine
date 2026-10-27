@@ -1,36 +1,31 @@
 import CreateLocalDir from '@/sync/tasks/CreateLocalDir';
 import CreateRemoteDir from '@/sync/tasks/CreateRemoteDir';
-import MoveLocal from '@/sync/tasks/MoveLocal';
-import MoveRemote from '@/sync/tasks/MoveRemote';
 import type { FileTreeData, FileTreeNode } from './types';
-import type { BaseTask, BaseTaskOptions } from '@/sync';
+import type { Task, MoveLocal, MoveRemote } from '@/sync';
 
-function isDeleteTask(node: FileTreeNode | undefined): boolean {
+function isDeleteTask(node?: FileTreeNode): boolean {
 	return node?.task?.name === 'removeLocal' || node?.task?.name === 'removeRemote';
 }
 
-function usesCreationCascade(node: FileTreeNode | undefined): boolean {
+function usesCreationCascade(node?: FileTreeNode): boolean {
 	return node?.task !== undefined && !isDeleteTask(node);
 }
 
-function isMoveTask(task: BaseTask | undefined): boolean {
+function isMoveTask(task?: Task): boolean {
 	return task?.name === 'moveLocal' || task?.name === 'moveRemote';
 }
 
-function convertMoveToCreateDir(move: BaseTask): BaseTask {
-	const name = move.name === 'moveLocal' ? 'createLocalDir' : 'createRemoteDir';
-	if (move instanceof MoveLocal || move instanceof MoveRemote) {
-		const { oldKey: _, ...options } = move.options as BaseTaskOptions & { oldKey?: string };
-		const converted =
-			name === 'createLocalDir'
-				? new CreateLocalDir(options as never)
-				: new CreateRemoteDir(options as never);
-		converted.name = name;
-		return converted;
-	}
-	return Object.assign(Object.create(Object.getPrototypeOf(move) as object), move, {
-		name,
-	}) as BaseTask;
+function convertMoveToCreateDir({
+	name,
+	options,
+}: MoveLocal | MoveRemote): CreateLocalDir | CreateRemoteDir {
+	const { key: _, newKey: key, ...rest } = options;
+	const ops = Object.assign(rest, {
+		key,
+		local: { isDir: true },
+		remote: { isDir: true },
+	}) as never;
+	return name === 'moveLocal' ? new CreateLocalDir(ops) : new CreateRemoteDir(ops);
 }
 
 function setSelected(
@@ -67,9 +62,9 @@ function forEachTaskAncestor(data: FileTreeData, nodeId: string, visit: (nodeId:
 
 export default function createFileTreeSelection(data: FileTreeData): {
 	isSelected: (nodeId: string) => boolean;
-	getTask: (nodeId: string) => BaseTask | undefined;
+	getTask: (nodeId: string) => Task | undefined;
 	toggle: (nodeId: string, nextSelected: boolean) => Set<string>;
-	getState: () => { selected: Array<BaseTask>; deselected: Array<BaseTask> };
+	getState: () => { selected: Array<Task>; deselected: Array<Task> };
 } {
 	const selectedTaskIds = new Set(data.taskNodeIds);
 
@@ -123,10 +118,18 @@ export default function createFileTreeSelection(data: FileTreeData): {
 
 	let convertedIds = computeConversions(new Set<string>());
 
+	function getTask(nodeId: string): Task | undefined {
+		const { task } = data.nodes[nodeId] ?? {};
+		return convertedIds.has(nodeId) &&
+			(task?.name === 'moveLocal' || task?.name === 'moveRemote')
+			? convertMoveToCreateDir(task)
+			: task;
+	}
+
 	return {
 		getState() {
-			const selected: Array<BaseTask> = [];
-			const deselected: Array<BaseTask> = [];
+			const selected: Array<Task> = [];
+			const deselected: Array<Task> = [];
 			for (const taskNodeId of data.taskNodeIds) {
 				const task = getTask(taskNodeId);
 				if (!task) continue;
@@ -173,10 +176,4 @@ export default function createFileTreeSelection(data: FileTreeData): {
 			return changed;
 		},
 	};
-
-	function getTask(nodeId: string): BaseTask | undefined {
-		const node = data.nodes[nodeId];
-		if (!node?.task) return;
-		return convertedIds.has(nodeId) ? convertMoveToCreateDir(node.task) : node.task;
-	}
 }

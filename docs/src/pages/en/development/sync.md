@@ -57,7 +57,7 @@ type DeciderInput = {
   taskFactory: TaskFactory;
 };
 
-type Decider = (input: DeciderInput) => Array<BaseTask>;
+type Decider = (input: DeciderInput) => Array<Task>;
 ```
 
 Stats are bucketed by strategy name before planning; `decideTasks` invokes the registered decider once per bucket that has entries. Each registered decider ID that supplies a `prettyName` becomes a selectable strategy in [Sync Strategy](../usage/settings#sync-strategy) rules. Use `taskFactory` instead of constructing task classes directly since their constructors require internal sync infrastructure. Built-in deciders include `bidirectional`, `mirrorLocal`, and `mirrorRemote`; see [deep dive: sync](../deep-dive/sync#decider) for their behavior.
@@ -175,8 +175,8 @@ type TaskFactory = <N extends TaskNames>(
 | `CreateRemoteDir` | `local: FolderStat` | Creates remote directory and its sync record. |
 | `RemoveLocal` | `local: Stat` | Deletes local path and its sync record. |
 | `RemoveRemote` | `remote: Stat` | Deletes remote path and its sync record. |
-| `MoveLocal` | `oldKey: string`, `remote: Stat` | Moves local path from `oldKey` to `key` and moves its record. |
-| `MoveRemote` | `oldKey: string`, `local: Stat` | Moves remote path from `oldKey` to `key` and moves its record. |
+| `MoveLocal` | `newKey: string` | Moves local path from `key` to `newKey` and moves its record. |
+| `MoveRemote` | `newKey: string` | Moves remote path from `key` to `newKey` and moves its record. |
 | `ResolveConflict` | `local: FileStat`, `remote: FileStat`, `resolver: ConflictResolver` | Invokes resolver with both file states and sync infrastructure. |
 
 ## `SyncTerminateReason`

@@ -240,10 +240,9 @@ export default class S3Fs implements RootFs {
 		return result;
 	}
 
-	async move(oldKey: string, newKey: string): Promise<void> {
-		// S3 has no native rename — copy then delete
-		const copySource = `${this.bucket}/${parseUrl(oldKey, true)}`;
-		const destUrl = this.buildUrl(newKey);
+	private async copy(source: string, destination: string): Promise<void> {
+		const copySource = `${this.bucket}/${parseUrl(source, true)}`;
+		const destUrl = this.buildUrl(destination);
 		await this.requestOrThrow(destUrl, {
 			headers: {
 				'Content-Type': 'application/octet-stream',
@@ -251,7 +250,31 @@ export default class S3Fs implements RootFs {
 			},
 			method: 'PUT',
 		});
+	}
+
+	async move(oldKey: string, newKey: string): Promise<void> {
+		// S3 has no native rename, copy then delete
+		await this.copy(oldKey, newKey);
 		await this.delete(oldKey);
+	}
+
+	async batchMove(
+		moves: Array<{ oldKey: string; newKey: string }>,
+	): Promise<Record<string, Error>> {
+		const result: Record<string, Error> = {};
+		await Promise.all(
+			moves.map(({ oldKey, newKey }) =>
+				this.copy(oldKey, newKey).catch(
+					(error: unknown) => (result[oldKey] = toError(error)),
+				),
+			),
+		);
+		return Object.assign(
+			result,
+			await this.batchDelete(
+				moves.map(({ oldKey }) => oldKey).filter((oldKey) => !result[oldKey]),
+			),
+		);
 	}
 
 	async mkdir(key: string, { meta }: FolderStat, recursive?: boolean): Promise<void> {

@@ -1,9 +1,11 @@
 import { BaseTask } from './interface';
-import type { OptionsWithRemoteFolderStat } from '../decision/interface';
+import type { WithRemoteFolderStat } from './interface';
 
-export default class CreateLocalDir extends BaseTask<OptionsWithRemoteFolderStat> {
+export default class CreateLocalDir extends BaseTask<WithRemoteFolderStat> {
 	async exec() {
-		await this.localFs.mkdir(this.key, this.remote);
-		await this.record.set(this.key, { isDir: true });
+		const { localFs, key, remote, record } = this;
+		await localFs.mkdir(key, remote);
+		await record.set(key, { isDir: true });
 	}
+	readonly name = 'createLocalDir';
 }

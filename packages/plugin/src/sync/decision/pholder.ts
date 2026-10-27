@@ -1,13 +1,13 @@
-import type { BaseTask } from '../tasks/interface';
+import type { Task } from '../tasks/interface';
 import type { DeciderInput } from './interface';
 
 // Decider for the specific case that a folder's strategy is set to "none", but it has at least one descendant at a non-none strategy: a pholder
 export default function pholderDecider(
 	input: DeciderInput,
 	logger: (log: string) => void,
-): Array<BaseTask> {
+): Array<Task> {
 	const { localStats, remoteStats, taskFactory } = input;
-	const tasks: Array<BaseTask> = [];
+	const tasks: Array<Task> = [];
 	new Set([...localStats.keys(), ...remoteStats.keys()]).forEach((key) => {
 		const remote = remoteStats.get(key);
 		const local = localStats.get(key);

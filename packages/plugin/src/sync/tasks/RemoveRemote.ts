@@ -1,9 +1,11 @@
 import { BaseTask } from './interface';
-import type { OptionsWithRemoteStat } from '../decision/interface';
+import type { WithRemoteStat } from './interface';
 
-export default class RemoveRemote extends BaseTask<OptionsWithRemoteStat> {
+export default class RemoveRemote extends BaseTask<WithRemoteStat> {
 	async exec() {
-		await this.remoteFs.delete(this.key);
-		await this.record.delete(this.key);
+		const { remoteFs, record, key } = this;
+		await remoteFs.delete(key);
+		await record.delete(key);
 	}
+	readonly name = 'removeRemote';
 }

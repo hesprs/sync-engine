@@ -1,12 +1,13 @@
+import { isFolder } from '@repo/shared/path';
 import type { FileTreeData, FileTreeNode } from './types';
-import type { BaseTask } from '@/sync';
+import type { Task } from '@/sync';
 
 const ROOT_NODE_ID = '__root__';
 
 type InternalNode = {
 	name: string;
 	childIds: Array<string>;
-	task?: BaseTask;
+	task?: Task;
 	isFolderTask: boolean;
 	isCreateFolderTask: boolean;
 	isDeleteFolderTask: boolean;
@@ -20,17 +21,16 @@ function getPathSegments(path: string): Array<string> {
 	return path.split('/').filter(Boolean);
 }
 
-function isFolderTask(task: BaseTask): boolean {
-	const { name, local, remote } = task;
+function isFolderTask(task: Task): boolean {
+	const { name, local, remote, key } = task;
 	if (name === 'createLocalDir' || name === 'createRemoteDir') return true;
-	if (name === 'removeLocal') return local?.isDir === true;
-	if (name === 'removeRemote') return remote?.isDir === true;
-	if (name === 'moveLocal') return remote?.isDir === true;
-	if (name === 'moveRemote') return local?.isDir === true;
+	if (name === 'removeLocal') return local.isDir;
+	if (name === 'removeRemote') return remote.isDir;
+	if (name === 'moveLocal' || name === 'moveRemote') return isFolder(key);
 	return false;
 }
 
-function setTask(node: InternalNode, task: BaseTask) {
+function setTask(node: InternalNode, task: Task) {
 	node.task = task;
 	node.isFolderTask = isFolderTask(task);
 	node.isCreateFolderTask =
@@ -39,7 +39,7 @@ function setTask(node: InternalNode, task: BaseTask) {
 		node.isFolderTask && (task.name === 'removeLocal' || task.name === 'removeRemote');
 }
 
-function createNode(name: string, task?: BaseTask): InternalNode {
+function createNode(name: string, task?: Task): InternalNode {
 	const node: InternalNode = {
 		childIds: [],
 		isCreateFolderTask: false,
@@ -147,7 +147,7 @@ function buildVisibleTree({
 		});
 }
 
-export default function createFileTreeData(tasks: Array<BaseTask>): FileTreeData {
+export default function createFileTreeData(tasks: Array<Task>): FileTreeData {
 	const nodes: Record<string, InternalNode> = { [ROOT_NODE_ID]: createNode('') };
 	const taskNodeIds: Array<string> = [];
 	const taskNodeIdSet = new Set<string>();

@@ -9,34 +9,9 @@ import RemoveRecord from '../tasks/RemoveRecord';
 import RemoveRemote from '../tasks/RemoveRemote';
 import ResolveConflict from '../tasks/ResolveConflict';
 import Upload from '../tasks/Upload';
-import type { BaseTask, TaskNames } from '../tasks/interface';
-import type { FileStat, FolderStat, Stat, RecordStatsMap, StatsMap } from '@/types';
+import type { Task, TaskNames, TaskOptionsMap } from '../tasks/interface';
+import type { RecordStatsMap, StatsMap } from '@/types';
 
-export type TaskOptions = { key: string; remote?: Stat; local?: Stat };
-export type OptionsWithRemoteFileStat = { remote: FileStat } & TaskOptions;
-export type OptionsWithLocalFileStat = { local: FileStat } & TaskOptions;
-export type OptionsWithRemoteFolderStat = { remote: FolderStat } & TaskOptions;
-export type OptionsWithLocalFolderStat = { local: FolderStat } & TaskOptions;
-export type OptionsWithLocalStat = { local: Stat } & TaskOptions;
-export type OptionsWithRemoteStat = { remote: Stat } & TaskOptions;
-export type OptionsWithBothStats = { local: Stat; remote: Stat } & TaskOptions;
-export type OptionsWithBothFileStats = { local: FileStat; remote: FileStat } & TaskOptions;
-export type OptionsWithLocalStatAndOldKey = { local: Stat; oldKey: string } & TaskOptions;
-export type OptionsWithRemoteStatAndOldKey = { remote: Stat; oldKey: string } & TaskOptions;
-
-export type TaskOptionsMap = {
-	download: OptionsWithRemoteFileStat;
-	upload: OptionsWithLocalFileStat;
-	resolveConflict: OptionsWithBothFileStats;
-	removeLocal: OptionsWithLocalStat;
-	removeRemote: OptionsWithRemoteStat;
-	createLocalDir: OptionsWithRemoteFolderStat;
-	createRemoteDir: OptionsWithLocalFolderStat;
-	removeRecord: TaskOptions;
-	addRecord: OptionsWithBothStats;
-	moveLocal: OptionsWithRemoteStatAndOldKey;
-	moveRemote: OptionsWithLocalStatAndOldKey;
-};
 export const taskMap = {
 	addRecord: AddRecord,
 	createLocalDir: CreateLocalDir,
@@ -55,7 +30,7 @@ export type TaskFactory = <N extends TaskNames>(
 	options: TaskOptionsMap[N],
 ) => InstanceType<(typeof taskMap)[N]>;
 
-export type Decider = (input: DeciderInput) => Array<BaseTask>;
+export type Decider = (input: DeciderInput) => Array<Task>;
 
 export type DeciderInput = {
 	localStats: StatsMap;

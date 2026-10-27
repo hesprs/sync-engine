@@ -1,17 +1,9 @@
 import { BaseTask } from './interface';
-import type { OptionsWithBothFileStats } from '../decision/interface';
-import type { ConflictResolver } from './interface';
+import type { WithBothFileStats, ConflictResolver } from './interface';
 
 export default class ResolveConflict extends BaseTask<
-	OptionsWithBothFileStats & { resolver: ConflictResolver }
+	WithBothFileStats & { resolver: ConflictResolver }
 > {
-	exec = () =>
-		this.options.resolver({
-			key: this.key,
-			local: this.local,
-			localFs: this.localFs,
-			record: this.record,
-			remote: this.remote,
-			remoteFs: this.remoteFs,
-		});
+	exec = () => this.options.resolver(this);
+	readonly name = 'resolveConflict';
 }

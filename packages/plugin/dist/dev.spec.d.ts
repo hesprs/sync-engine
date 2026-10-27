@@ -1,4 +1,4 @@
-import { At as FileStat, Dt as RootFs, Ft as RecordStatsMap, It as Stat, Lt as StatsMap, Mt as MaybePromise, Ot as WrappedFs, Pt as RecordStat, Rt as Binary, Y as TaskNames, Z as Decider, d as RequestResponse, jt as FolderStat, l as Request, u as RequestParam, vt as Fs } from "./index-CZ53nAsh.spec.js";
+import { At as FileStat, Dt as RootFs, Ft as RecordStatsMap, G as TaskNames, It as Stat, Lt as StatsMap, Mt as MaybePromise, Ot as WrappedFs, Pt as RecordStat, R as Decider, Rt as Binary, d as RequestResponse, jt as FolderStat, l as Request, u as RequestParam, vt as Fs } from "./index-BDQ5Fxzf.spec.js";
 declare function debugWrapper(original: Fs, log: (content: string) => void): WrappedFs;
 type FsCalls = {
   delete: Array<string>;

@@ -2,7 +2,7 @@ import Download from '../tasks/Download';
 import ResolveConflict from '../tasks/ResolveConflict';
 import Upload from '../tasks/Upload';
 import { isSub } from '@repo/shared/path';
-import type { BaseTask } from '../tasks/interface';
+import type { Task } from '../tasks/interface';
 import type { RecordStatsMap, StatsMap } from '@/types';
 
 export default function isChanged({
@@ -16,7 +16,7 @@ export default function isChanged({
 	source: 'local' | 'remote';
 	records: RecordStatsMap;
 	currentStats: StatsMap;
-	tasks?: Array<BaseTask>;
+	tasks?: Array<Task>;
 }) {
 	const inRecords = records.get(key);
 	const record = inRecords

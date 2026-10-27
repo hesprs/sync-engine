@@ -186,180 +186,6 @@ type Ref<T> = {
   unsubscribe(func: RefMatchingFunc<T>): void;
   clear(): void;
 };
-declare class AddRecord extends BaseTask<OptionsWithBothStats> {
-  exec(): Promise<void>;
-}
-declare class CreateRemoteDir extends BaseTask<OptionsWithLocalFolderStat> {
-  exec(): Promise<void>;
-}
-declare class Download extends BaseTask<OptionsWithRemoteFileStat> {
-  exec(): Promise<void>;
-}
-declare class MoveLocal extends BaseTask<OptionsWithRemoteStatAndOldKey> {
-  exec(): Promise<void>;
-}
-declare class MoveRemote extends BaseTask<OptionsWithLocalStatAndOldKey> {
-  exec(): Promise<void>;
-}
-declare class RemoveLocal extends BaseTask<OptionsWithLocalStat> {
-  exec(): Promise<void>;
-}
-declare class RemoveRecord extends BaseTask {
-  exec(): Promise<void>;
-}
-declare class RemoveRemote extends BaseTask<OptionsWithRemoteStat> {
-  exec(): Promise<void>;
-}
-declare class ResolveConflict extends BaseTask<OptionsWithBothFileStats & {
-  resolver: ConflictResolver;
-}> {
-  exec: () => MaybePromise<void>;
-}
-declare class Upload extends BaseTask<OptionsWithLocalFileStat> {
-  exec(): Promise<void>;
-}
-type TaskOptions = {
-  key: string;
-  remote?: Stat$1;
-  local?: Stat$1;
-};
-type OptionsWithRemoteFileStat = {
-  remote: FileStat;
-} & TaskOptions;
-type OptionsWithLocalFileStat = {
-  local: FileStat;
-} & TaskOptions;
-type OptionsWithRemoteFolderStat = {
-  remote: FolderStat;
-} & TaskOptions;
-type OptionsWithLocalFolderStat = {
-  local: FolderStat;
-} & TaskOptions;
-type OptionsWithLocalStat = {
-  local: Stat$1;
-} & TaskOptions;
-type OptionsWithRemoteStat = {
-  remote: Stat$1;
-} & TaskOptions;
-type OptionsWithBothStats = {
-  local: Stat$1;
-  remote: Stat$1;
-} & TaskOptions;
-type OptionsWithBothFileStats = {
-  local: FileStat;
-  remote: FileStat;
-} & TaskOptions;
-type OptionsWithLocalStatAndOldKey = {
-  local: Stat$1;
-  oldKey: string;
-} & TaskOptions;
-type OptionsWithRemoteStatAndOldKey = {
-  remote: Stat$1;
-  oldKey: string;
-} & TaskOptions;
-type TaskOptionsMap = {
-  download: OptionsWithRemoteFileStat;
-  upload: OptionsWithLocalFileStat;
-  resolveConflict: OptionsWithBothFileStats;
-  removeLocal: OptionsWithLocalStat;
-  removeRemote: OptionsWithRemoteStat;
-  createLocalDir: OptionsWithRemoteFolderStat;
-  createRemoteDir: OptionsWithLocalFolderStat;
-  removeRecord: TaskOptions;
-  addRecord: OptionsWithBothStats;
-  moveLocal: OptionsWithRemoteStatAndOldKey;
-  moveRemote: OptionsWithLocalStatAndOldKey;
-};
-declare const taskMap: {
-  readonly addRecord: typeof AddRecord;
-  readonly createLocalDir: typeof CreateLocalDir;
-  readonly createRemoteDir: typeof CreateRemoteDir;
-  readonly download: typeof Download;
-  readonly moveLocal: typeof MoveLocal;
-  readonly moveRemote: typeof MoveRemote;
-  readonly removeLocal: typeof RemoveLocal;
-  readonly removeRecord: typeof RemoveRecord;
-  readonly removeRemote: typeof RemoveRemote;
-  readonly resolveConflict: typeof ResolveConflict;
-  readonly upload: typeof Upload;
-};
-type TaskFactory = <N extends TaskNames>(name: N, options: TaskOptionsMap[N]) => InstanceType<(typeof taskMap)[N]>;
-type Decider = (input: DeciderInput) => Array<BaseTask>;
-type DeciderInput = {
-  localStats: StatsMap;
-  remoteStats: StatsMap;
-  records: RecordStatsMap;
-  taskFactory: TaskFactory;
-};
-type RecordStore = StoreAsync<RecordStat>;
-declare class Storage {
-  private readonly ctx;
-  private readonly memoryDB;
-  private readonly indexedDB;
-  constructor(ctx: {
-    getNamespace: () => string | Error;
-  });
-  private readonly getRecordStore;
-  private readonly deleteRecordStore;
-  private readonly clearRecordStores;
-  private readonly recordStoreExists;
-  readonly root: {
-    clearRecordStores: () => Promise<void>;
-    deleteRecordStore: (namespace?: string) => MaybePromise<void>;
-    getRecordStore: <N extends string | undefined>(namespace?: N) => N extends string ? RecordStore : RecordStore | undefined;
-    indexedDB: DatabaseAsync<General$1, General$1>;
-    memoryDB: {
-      getStore<K extends string | number | symbol>(name: K): {
-        get(key: string): any;
-        set(key: string, value: any): void;
-        delete(key: string): void;
-        clear(): void;
-        keys(): string[];
-        values(): any[];
-        entries(): [string, any][];
-        batch(operations: StoreOperations<any>[]): GetResult<any>[];
-      };
-      getStoreNames(): string[];
-      deleteStore(name: string): void;
-      clearStores(): void;
-      getMeta<T extends string | number | symbol>(key: T): any;
-      setMeta<T extends string | number | symbol>(key: T, value: any): void;
-      dispose(): void;
-    };
-    recordStoreExists: (namespace?: string) => MaybePromise<boolean>;
-  };
-  readonly dispose: () => void;
-}
-type BaseTaskOptions = {
-  localFs: Fs;
-  remoteFs: Fs;
-  record: RecordStore;
-};
-type TaskNames = 'addRecord' | 'removeRecord' | 'createLocalDir' | 'createRemoteDir' | 'download' | 'resolveConflict' | 'removeLocal' | 'removeRemote' | 'upload' | 'moveLocal' | 'moveRemote';
-type ConflictResolverPayload = {
-  local: FileStat;
-  remote: FileStat;
-  key: string;
-  localFs: Fs;
-  remoteFs: Fs;
-  record: RecordStore;
-};
-type ConflictResolver = (payload: ConflictResolverPayload) => MaybePromise<void>;
-declare abstract class BaseTask<T extends TaskOptions = TaskOptions> {
-  readonly options: BaseTaskOptions & T;
-  constructor(options: BaseTaskOptions & T);
-  protected readonly remoteFs: Fs;
-  protected readonly localFs: Fs;
-  protected readonly record: RecordStore;
-  name: TaskNames;
-  readonly key: string;
-  readonly local: (BaseTaskOptions & T)['local'];
-  readonly remote: (BaseTaskOptions & T)['remote'];
-  abstract exec(): MaybePromise<void>;
-}
-declare class CreateLocalDir extends BaseTask<OptionsWithRemoteFolderStat> {
-  exec(): Promise<void>;
-}
 type Dispatch<O extends object> = <K extends keyof O>(...[key, payload]: undefined extends O[K] ? [K] : [K, O[K]]) => void;
 type On<O extends object> = <K extends keyof O>(key: K, callback: (payload: O[K]) => void) => () => void;
 declare class EventBus {
@@ -409,6 +235,187 @@ declare class I18n {
     translate: Translate<TranslationResource>;
   };
 }
+type RecordStore = StoreAsync<RecordStat>;
+declare class Storage {
+  private readonly ctx;
+  private readonly memoryDB;
+  private readonly indexedDB;
+  constructor(ctx: {
+    getNamespace: () => string | Error;
+  });
+  private readonly getRecordStore;
+  private readonly deleteRecordStore;
+  private readonly clearRecordStores;
+  private readonly recordStoreExists;
+  readonly root: {
+    clearRecordStores: () => Promise<void>;
+    deleteRecordStore: (namespace?: string) => MaybePromise<void>;
+    getRecordStore: <N extends string | undefined>(namespace?: N) => N extends string ? RecordStore : RecordStore | undefined;
+    indexedDB: DatabaseAsync<General$1, General$1>;
+    memoryDB: {
+      getStore<K extends string | number | symbol>(name: K): {
+        get(key: string): any;
+        set(key: string, value: any): void;
+        delete(key: string): void;
+        clear(): void;
+        keys(): string[];
+        values(): any[];
+        entries(): [string, any][];
+        batch(operations: StoreOperations<any>[]): GetResult<any>[];
+      };
+      getStoreNames(): string[];
+      deleteStore(name: string): void;
+      clearStores(): void;
+      getMeta<T extends string | number | symbol>(key: T): any;
+      setMeta<T extends string | number | symbol>(key: T, value: any): void;
+      dispose(): void;
+    };
+    recordStoreExists: (namespace?: string) => MaybePromise<boolean>;
+  };
+  readonly dispose: () => void;
+}
+declare class CreateLocalDir extends BaseTask<WithRemoteFolderStat> {
+  exec(): Promise<void>;
+  readonly name = "createLocalDir";
+}
+declare class CreateRemoteDir extends BaseTask<WithLocalFolderStat> {
+  exec(): Promise<void>;
+  readonly name = "createRemoteDir";
+}
+declare class Download extends BaseTask<WithRemoteFileStat> {
+  exec(): Promise<void>;
+  readonly name = "download";
+}
+declare class MoveLocal extends BaseTask<WithNewKey> {
+  exec(): Promise<void>;
+  readonly name = "moveLocal";
+}
+declare class MoveRemote extends BaseTask<WithNewKey> {
+  exec(): Promise<void>;
+  readonly name = "moveRemote";
+}
+declare class RemoveLocal extends BaseTask<WithLocalStat> {
+  exec(): Promise<void>;
+  readonly name = "removeLocal";
+}
+declare class RemoveRecord extends BaseTask {
+  exec(): Promise<void>;
+  readonly name = "removeRecord";
+}
+declare class RemoveRemote extends BaseTask<WithRemoteStat> {
+  exec(): Promise<void>;
+  readonly name = "removeRemote";
+}
+declare class ResolveConflict extends BaseTask<WithBothFileStats & {
+  resolver: ConflictResolver;
+}> {
+  exec: () => MaybePromise<void>;
+  readonly name = "resolveConflict";
+}
+declare class Upload extends BaseTask<WithLocalFileStat> {
+  exec(): Promise<void>;
+  readonly name = "upload";
+}
+type BaseTaskOptions = {
+  localFs: Fs;
+  remoteFs: Fs;
+  record: RecordStore;
+};
+type GenericOptions = {
+  key: string;
+  local?: Stat$1;
+  remote?: Stat$1;
+};
+type WithRemoteFileStat = {
+  remote: FileStat;
+} & GenericOptions;
+type WithLocalFileStat = {
+  local: FileStat;
+} & GenericOptions;
+type WithRemoteFolderStat = {
+  remote: FolderStat;
+} & GenericOptions;
+type WithLocalFolderStat = {
+  local: FolderStat;
+} & GenericOptions;
+type WithLocalStat = {
+  local: Stat$1;
+} & GenericOptions;
+type WithRemoteStat = {
+  remote: Stat$1;
+} & GenericOptions;
+type WithBothStats = {
+  local: Stat$1;
+  remote: Stat$1;
+} & GenericOptions;
+type WithBothFileStats = {
+  local: FileStat;
+  remote: FileStat;
+} & GenericOptions;
+type WithNewKey = {
+  newKey: string;
+} & GenericOptions;
+type TaskOptionsMap = {
+  download: WithRemoteFileStat;
+  upload: WithLocalFileStat;
+  resolveConflict: WithBothFileStats;
+  removeLocal: WithLocalStat;
+  removeRemote: WithRemoteStat;
+  createLocalDir: WithRemoteFolderStat;
+  createRemoteDir: WithLocalFolderStat;
+  removeRecord: GenericOptions;
+  addRecord: WithBothStats;
+  moveLocal: WithNewKey;
+  moveRemote: WithNewKey;
+};
+type TaskNames = 'addRecord' | 'removeRecord' | 'createLocalDir' | 'createRemoteDir' | 'download' | 'resolveConflict' | 'removeLocal' | 'removeRemote' | 'upload' | 'moveLocal' | 'moveRemote';
+type Task = CreateLocalDir | CreateRemoteDir | Download | Upload | RemoveLocal | RemoveRemote | RemoveRecord | AddRecord | ResolveConflict | MoveLocal | MoveRemote;
+type ConflictResolverPayload = {
+  local: FileStat;
+  remote: FileStat;
+  key: string;
+  localFs: Fs;
+  remoteFs: Fs;
+  record: RecordStore;
+};
+type ConflictResolver = (payload: ConflictResolverPayload) => MaybePromise<void>;
+declare abstract class BaseTask<T extends GenericOptions = GenericOptions> {
+  readonly options: BaseTaskOptions & T;
+  constructor(options: BaseTaskOptions & T);
+  readonly remoteFs: Fs;
+  readonly localFs: Fs;
+  readonly record: RecordStore;
+  readonly key: string;
+  readonly local: T['local'];
+  readonly remote: T['remote'];
+  abstract exec(): MaybePromise<void>;
+  abstract readonly name: TaskNames;
+}
+declare class AddRecord extends BaseTask<WithBothStats> {
+  exec(): Promise<void>;
+  readonly name = "addRecord";
+}
+declare const taskMap: {
+  readonly addRecord: typeof AddRecord;
+  readonly createLocalDir: typeof CreateLocalDir;
+  readonly createRemoteDir: typeof CreateRemoteDir;
+  readonly download: typeof Download;
+  readonly moveLocal: typeof MoveLocal;
+  readonly moveRemote: typeof MoveRemote;
+  readonly removeLocal: typeof RemoveLocal;
+  readonly removeRecord: typeof RemoveRecord;
+  readonly removeRemote: typeof RemoveRemote;
+  readonly resolveConflict: typeof ResolveConflict;
+  readonly upload: typeof Upload;
+};
+type TaskFactory = <N extends TaskNames>(name: N, options: TaskOptionsMap[N]) => InstanceType<(typeof taskMap)[N]>;
+type Decider = (input: DeciderInput) => Array<Task>;
+type DeciderInput = {
+  localStats: StatsMap;
+  remoteStats: StatsMap;
+  records: RecordStatsMap;
+  taskFactory: TaskFactory;
+};
 type FileTreeTranslations = {
   selectAll: string;
   xSelected: Snippet<number>;
@@ -942,7 +949,7 @@ declare class ProgressModal extends Modal {
     executionProgress: Ref<Progress<TaskInfo>>;
   });
   readonly events: {
-    tasksConfirmed: Array<BaseTask>;
+    tasksConfirmed: Array<Task>;
     deleteConfirmed: DeleteConfirmReturn;
   };
   readonly i18n: {
@@ -1068,7 +1075,7 @@ declare class Sync {
     on: On<Events>;
     translate: Translate<Translations>;
     getConflictResolver: () => ConflictResolver;
-    decideTasks: (mapping: StrategyMapping, factory: TaskFactory) => Array<BaseTask>;
+    decideTasks: (mapping: StrategyMapping, factory: TaskFactory) => Array<Task>;
   });
   readonly events: {
     syncStarted: {
@@ -1081,11 +1088,11 @@ declare class Sync {
     remoteWalkProgress: Progress;
     syncTerminated: SyncTerminateReason;
     requestConfirmDelete: Array<RemoveLocal>;
-    requestConfirmTasks: Array<BaseTask>;
+    requestConfirmTasks: Array<Task>;
     syncCanceled: undefined;
     taskCompleted: TaskInfo;
     taskFailed: FailedTaskInfo;
-    executionStarted: Array<BaseTask>;
+    executionStarted: Array<Task>;
   };
   readonly settings: {
     maxFileSize: TogglableValue;
@@ -1202,7 +1209,7 @@ declare class Registrar {
     conflictResolverRegistry: Map<string, ConflictResolverEntry>;
     createLocalFs: () => Fs;
     createRemoteFs: (remoteFs?: string) => Fs | Error;
-    decideTasks: (mapping: StrategyMapping, taskFactory: TaskFactory) => BaseTask<TaskOptions>[];
+    decideTasks: (mapping: StrategyMapping, taskFactory: TaskFactory) => Task[];
     deciderRegistry: Map<string, DeciderEntry>;
     getCheckConnection: (remoteFs?: string) => () => MaybePromise<void | Error>;
     getConflictResolver: () => ConflictResolver;
@@ -1277,4 +1284,4 @@ type VaultRequest = <T extends VaultRequestParam = {
   method: 'GET';
 }>(key: string, params?: T) => Promise<VaultRequestResponseMap[T['method']]>;
 type TrashOption = 'local' | 'system' | 'permanent';
-export { TaskFactory as $, LabelDefinition as A, FileStat as At, Snippet as B, chunkSize as C, MoveAtom as Ct, writeWithValue as D, RootFs as Dt, readWithSize as E, OutputAtom as Et, SettingEntry as F, RecordStatsMap as Ft, CreateLocalDir as G, TranslationResource as H, AugmentedModuleMeta as I, Stat$1 as It, ConflictResolverPayload as J, BaseTask as K, ModuleMeta as L, StatsMap as Lt, reactivelyValidate as M, MaybePromise as Mt, s as N, Progress as Nt, prefixWrapper as O, WrappedFs as Ot, CallableOrObjectTree as P, RecordStat as Pt, DeciderInput as Q, Fragment as R, Binary as Rt, digOriginal as S, MkdirAtom as St, pipe as T, OptimizerOutput as Tt, Dispatch as U, Translate as V, On as W, RecordStore as X, TaskNames as Y, Decider as Z, Events as _, DeleteAtom as _t, LocalRequestMiddlewareEntry as a, MoveRemote as at, ExistingMemoryDB as b, ListOptions as bt, RemoteRequestMiddlewareEntry as c, CreateRemoteDir as ct, RequestResponse as d, DatabaseSync as dt, Upload as et, TriggerEntry as f, StoreAsync as ft, Context as g, CustomAtom as gt, SyncTerminateReason as h, BatchOptimizer as ht, FsWrapperEntry as i, RemoveLocal as it, generateEditableList as j, FolderStat as jt, setNeedMigration as k, WriteAtom as kt, Request as l, AddRecord as lt, SyncOptions as m, StoreSync as mt, ConflictResolverEntry as n, RemoveRemote as nt, OptimizerEntry as o, MoveLocal as ot, RemoteLister as p, StoreOperations as pt, ConflictResolver as q, DeciderEntry as r, RemoveRecord as rt, RemoteFsEntry as s, Download as st, VaultRequest as t, ResolveConflict as tt, RequestParam as u, DatabaseAsync as ut, Settings as v, Fs as vt, concurrency as w, OptimizerInput as wt, SelectFromContext as x, ListReporter as xt, Translations as y, InputAtom as yt, ObsidianLanguageCode as z };
+export { Download as $, LabelDefinition as A, FileStat as At, TaskFactory as B, chunkSize as C, MoveAtom as Ct, writeWithValue as D, RootFs as Dt, readWithSize as E, OutputAtom as Et, SettingEntry as F, RecordStatsMap as Ft, TaskNames as G, ConflictResolver as H, AugmentedModuleMeta as I, Stat$1 as It, RemoveRemote as J, Upload as K, ModuleMeta as L, StatsMap as Lt, reactivelyValidate as M, MaybePromise as Mt, s as N, Progress as Nt, prefixWrapper as O, WrappedFs as Ot, CallableOrObjectTree as P, RecordStat as Pt, MoveLocal as Q, Decider as R, Binary as Rt, digOriginal as S, MkdirAtom as St, pipe as T, OptimizerOutput as Tt, ConflictResolverPayload as U, AddRecord as V, Task as W, RemoveLocal as X, RemoveRecord as Y, MoveRemote as Z, Events as _, DeleteAtom as _t, LocalRequestMiddlewareEntry as a, Snippet as at, ExistingMemoryDB as b, ListOptions as bt, RemoteRequestMiddlewareEntry as c, Dispatch as ct, RequestResponse as d, DatabaseSync as dt, CreateRemoteDir as et, TriggerEntry as f, StoreAsync as ft, Context as g, CustomAtom as gt, SyncTerminateReason as h, BatchOptimizer as ht, FsWrapperEntry as i, ObsidianLanguageCode as it, generateEditableList as j, FolderStat as jt, setNeedMigration as k, WriteAtom as kt, Request as l, On as lt, SyncOptions as m, StoreSync as mt, ConflictResolverEntry as n, RecordStore as nt, OptimizerEntry as o, Translate as ot, RemoteLister as p, StoreOperations as pt, ResolveConflict as q, DeciderEntry as r, Fragment as rt, RemoteFsEntry as s, TranslationResource as st, VaultRequest as t, CreateLocalDir as tt, RequestParam as u, DatabaseAsync as ut, Settings as v, Fs as vt, concurrency as w, OptimizerInput as wt, SelectFromContext as x, ListReporter as xt, Translations as y, InputAtom as yt, DeciderInput as z };

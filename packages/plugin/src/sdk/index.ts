@@ -37,7 +37,7 @@ export type {
 	ConflictResolverPayload,
 	TaskFactory,
 	TaskNames,
-	BaseTask,
+	Task,
 	Decider,
 	RemoveLocal,
 	RemoveRecord,

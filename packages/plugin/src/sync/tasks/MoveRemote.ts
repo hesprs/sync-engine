@@ -1,11 +1,12 @@
 import { BaseTask } from './interface';
 import moveValue from '@/utils/move-value';
-import type { OptionsWithLocalStatAndOldKey } from '../decision/interface';
+import type { WithNewKey } from './interface';
 
-export default class MoveRemote extends BaseTask<OptionsWithLocalStatAndOldKey> {
+export default class MoveRemote extends BaseTask<WithNewKey> {
 	async exec() {
-		const { key, oldKey } = this.options;
-		await this.remoteFs.move(oldKey, key);
-		await moveValue({ newKey: key, oldKey, store: this.record });
+		const { key, newKey, remoteFs, record } = this.options;
+		await remoteFs.move(key, newKey);
+		await moveValue({ newKey, oldKey: key, store: record });
 	}
+	readonly name = 'moveRemote';
 }

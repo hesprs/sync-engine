@@ -1,11 +1,13 @@
 import { BaseTask } from './interface';
-import type { OptionsWithBothStats } from '../decision/interface';
+import type { WithBothStats } from './interface';
 import type { RecordStat, Stat } from '@/types';
 
-export default class AddRecord extends BaseTask<OptionsWithBothStats> {
+export default class AddRecord extends BaseTask<WithBothStats> {
 	async exec() {
-		await this.record.set(this.key, toRecordStat(this.local, this.remote));
+		const { record, key, local, remote } = this;
+		await record.set(key, toRecordStat(local, remote));
 	}
+	readonly name = 'addRecord';
 }
 
 function toRecordStat(local: Stat, remote: Stat): RecordStat {

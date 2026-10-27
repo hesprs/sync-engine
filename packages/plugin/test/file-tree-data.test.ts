@@ -1,13 +1,13 @@
 import createFileTreeData from '@/components/file-tree/tree-data';
 import { expect, test } from 'bun:test';
-import type { BaseTask, TaskNames } from '@/sync';
+import type { Task, TaskNames } from '@/sync';
 
 function makeTask(input: {
 	name: TaskNames;
 	key: string;
 	localIsDir?: boolean;
 	remoteIsDir?: boolean;
-}): BaseTask {
+}): Task {
 	return {
 		exec: () => {},
 		key: input.key,
@@ -15,7 +15,7 @@ function makeTask(input: {
 		name: input.name,
 		remote:
 			input.remoteIsDir === undefined ? undefined : ({ isDir: input.remoteIsDir } as never),
-	} as BaseTask;
+	} as Task;
 }
 
 test('compacts structural single-child folder chains into visible labels', () => {

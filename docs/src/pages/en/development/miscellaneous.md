@@ -39,14 +39,14 @@
 | Core data | `Binary`, `MaybePromise`, `Progress`, `FileStat`, `FolderStat`, `Stat`, `StatsMap`, `RecordStat`, `RecordStatsMap` |
 | Filesystem | `RootFs`, `WrappedFs`, `Fs`, `WriteAtom`, `DeleteAtom`, `MoveAtom`, `MkdirAtom`, `InputAtom`, `CustomAtom`, `OutputAtom`, `ListOptions`, `ListReporter`, `OptimizerInput`, `OptimizerOutput`, `BatchOptimizer` |
 | Registration | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `TriggerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request` |
-| Sync | `TaskNames`, `BaseTask`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `SyncOptions`, `RemoteLister`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
+| Sync | `TaskNames`, `Task`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `SyncOptions`, `RemoteLister`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
 | Storage | `RecordStore`, `StoreAsync`, `StoreSync`, `StoreOperations`, `DatabaseAsync`, `DatabaseSync` |
 | Modules | `ModuleMeta`, `AugmentedModuleMeta` |
 | Request | `VaultRequest`, `RequestParam`, `RequestResponse` (the response type returned by `Request`) |
 | Internationalization | `ObsidianLanguageCode`, `Fragment`, `Snippet`, `TranslationResource`, `Translate` |
 | Other | `ExistingMemoryDB` |
 
-Internal supporting types can appear in exported signatures but are not standalone root exports. They include `TogglableValue`, `GlobStrategy`, `GlobMatchResult`, `Infras`, `BaseTaskOptions`, `TaskOptions`, `TaskOptionsMap`, `TaskInfo`, `FailedTaskInfo`, `DeleteConfirmReturn`, and `CustomHeaders`.
+Internal supporting types can appear in exported signatures but are not standalone root exports. They include `TogglableValue`, `GlobStrategy`, `GlobMatchResult`, `Infras`, `BaseTaskOptions`, `GenericOptions`, `WithRemoteFileStat`, `WithLocalFileStat`, `WithRemoteFolderStat`, `WithLocalFolderStat`, `WithLocalStat`, `WithRemoteStat`, `WithBothStats`, `WithBothFileStats`, `WithNewKey`, `TaskOptionsMap`, `TaskInfo`, `FailedTaskInfo`, `DeleteConfirmReturn`, and `CustomHeaders`.
 
 ## Settings
 

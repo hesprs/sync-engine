@@ -52,12 +52,12 @@ unsubscribe();
 | `remoteWalkProgress` | `Progress` |
 | `syncTerminated` | `SyncTerminateReason` |
 | `requestConfirmDelete` | `Array<RemoveLocal>` pending local-remove tasks |
-| `requestConfirmTasks` | `Array<BaseTask>` |
+| `requestConfirmTasks` | `Array<Task>` |
 | `syncCanceled` | `undefined` (no payload) |
 | `taskCompleted` | `TaskInfo` (`{ name: TaskNames; key: string; prettyName: string; isDir: boolean }`) |
 | `taskFailed` | `FailedTaskInfo` (`TaskInfo` & `{ error: Error }`) |
-| `executionStarted` | `Array<BaseTask>` |
-| `tasksConfirmed` | `Array<BaseTask>` |
+| `executionStarted` | `Array<Task>` |
+| `tasksConfirmed` | `Array<Task>` |
 | `deleteConfirmed` | `{ delete: Array<RemoveLocal>; reupload: Array<RemoveLocal> }` |
 
 ::: tip

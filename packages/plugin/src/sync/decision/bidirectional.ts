@@ -1,15 +1,15 @@
 import isChanged from '../utils/is-changed';
-import type { BaseTask } from '../tasks/interface';
+import type { Task } from '../tasks/interface';
 import type { DeciderInput } from './interface';
 import type { FileStat, FolderStat, Stat } from '@/types';
 
 export default function bidirectionalDecider(
 	input: DeciderInput,
 	logger: (log: string) => void,
-): Array<BaseTask> {
+): Array<Task> {
 	const { localStats, remoteStats, records, taskFactory } = input;
 
-	const tasks: Array<BaseTask> = [];
+	const tasks: Array<Task> = [];
 	const files: Array<{ key: string; local?: FileStat; remote?: FileStat }> = [];
 	const folders: Array<{ key: string; local?: FolderStat; remote?: FolderStat }> = [];
 	const fileFolders: Array<{ key: string; local: Stat; remote: Stat }> = [];

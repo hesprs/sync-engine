@@ -9,7 +9,7 @@ import type { RecordStore } from './Storage';
 import type { StrategyMapping, SyncOptions } from './Sync';
 import type { Events, Translations } from '@';
 import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
-import type { BaseTask, ConflictResolver, Decider, TaskFactory } from '@/sync';
+import type { Task, ConflictResolver, Decider, TaskFactory } from '@/sync';
 import type { General, MaybePromise, Binary } from '@/types';
 import type { App, RequestUrlParam } from 'obsidian';
 
@@ -135,7 +135,7 @@ export default class Registrar {
 	};
 
 	private readonly decideTasks = (mapping: StrategyMapping, taskFactory: TaskFactory) => {
-		const tasks: Array<BaseTask> = [];
+		const tasks: Array<Task> = [];
 		for (const [key, { localStats, records, remoteStats }] of Object.entries(mapping)) {
 			const { translate, dispatch } = this.ctx;
 			const entry = this.deciderRegistry.get(key);

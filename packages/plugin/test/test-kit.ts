@@ -1,7 +1,8 @@
 import { taskMap } from '@/sync';
 import type { Fs, ListReporter, RootFs } from '@/fs';
 import type { Request, RequestParam, RequestResponse } from '@/modules/Registrar';
-import type { Decider, TaskFactory, TaskNames, TaskOptions } from '@/sync';
+import type { Decider, TaskFactory, TaskNames } from '@/sync';
+import type { GenericOptions } from '@/sync/tasks/interface';
 import type {
 	Binary,
 	FileStat,
@@ -72,7 +73,7 @@ function runDecider(
 	const remoteStats = input.remoteStats ?? new Map<string, Stat>();
 	const records = input.records ?? new Map<string, RecordStat>();
 	const tasks: Array<ExtractedTask> = [];
-	const taskFactory = ((name: TaskNames, options: TaskOptions) => {
+	const taskFactory = ((name: TaskNames, options: GenericOptions) => {
 		const Task = taskMap[name];
 		const task = new Task({
 			...options,
@@ -80,7 +81,6 @@ function runDecider(
 			record: {} as never,
 			remoteFs: {} as never,
 		} as never);
-		task.name = name;
 		tasks.push({
 			key: options.key,
 			name,

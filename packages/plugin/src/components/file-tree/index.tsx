@@ -5,7 +5,7 @@ import { createSignal } from 'solid-js';
 import { createStore } from 'solid-js/store';
 import { render } from 'solid-js/web';
 import type { Snippet, Translate } from '@/modules/I18n';
-import type { BaseTask, TaskNames } from '@/sync';
+import type { Task, TaskNames } from '@/sync';
 
 export type FileTreeTranslations = { selectAll: string; xSelected: Snippet<number> } & Record<
 	TaskNames,
@@ -14,7 +14,7 @@ export type FileTreeTranslations = { selectAll: string; xSelected: Snippet<numbe
 
 export default function mount(
 	el: Element,
-	tasks: Array<BaseTask>,
+	tasks: Array<Task>,
 	translate: Translate<FileTreeTranslations>,
 ) {
 	const data = createFileTreeData(tasks);

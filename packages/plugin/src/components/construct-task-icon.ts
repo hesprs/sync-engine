@@ -1,3 +1,4 @@
+import { getTaskSide } from '@/sync';
 import { setIcon } from 'obsidian';
 import type { TaskNames } from '@/sync';
 
@@ -33,8 +34,7 @@ function getIcon(element: HTMLElement) {
 function getMain(name: TaskNames, isDir: boolean): IconColor {
 	const color = 'currentColor';
 	const red = 'var(--color-red)';
-	if (name === 'createRemoteDir') return { color, icon: 'folder-up' };
-	if (name === 'createLocalDir') return { color, icon: 'folder-down' };
+	if (name === 'createLocalDir' || name === 'createRemoteDir') return { color, icon: 'folder' };
 	if (name === 'resolveConflict') return { color: 'var(--color-yellow)', icon: 'combine' };
 	if (name === 'download' || name === 'upload') return { color, icon: 'file' };
 	if (name === 'removeLocal' || name === 'removeRemote')
@@ -45,13 +45,7 @@ function getMain(name: TaskNames, isDir: boolean): IconColor {
 }
 
 function getAuxiliary(name: TaskNames): IconColor | undefined {
-	if (name === 'resolveConflict') return;
-	if (
-		name === 'removeLocal' ||
-		name === 'createLocalDir' ||
-		name === 'moveLocal' ||
-		name === 'download'
-	)
-		return { color: 'var(--color-green)', icon: 'arrow-down' };
-	return { color: 'var(--color-blue)', icon: 'arrow-up' };
+	const side = getTaskSide(name);
+	if (side === 'local') return { color: 'var(--color-green)', icon: 'arrow-down' };
+	if (side === 'remote') return { color: 'var(--color-blue)', icon: 'arrow-up' };
 }

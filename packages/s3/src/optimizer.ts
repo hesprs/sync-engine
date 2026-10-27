@@ -1,7 +1,12 @@
 import S3Fs from '@/s3/fs';
 import { digOriginal } from '@hesprs/sync-engine-sdk';
 import { toError } from '@repo/shared/error';
-import type { DeleteAtom, OptimizerInput, OptimizerOutput } from '@hesprs/sync-engine-sdk';
+import type {
+	DeleteAtom,
+	MoveAtom,
+	OptimizerInput,
+	OptimizerOutput,
+} from '@hesprs/sync-engine-sdk';
 
 export default function s3BatchDeleteOptimizer({
 	atoms,
@@ -9,25 +14,40 @@ export default function s3BatchDeleteOptimizer({
 }: OptimizerInput): OptimizerOutput | undefined {
 	const original = digOriginal(fs);
 	if (!(original instanceof S3Fs)) return;
-	const deleteAtoms = atoms.filter((a): a is DeleteAtom => a.type === 'delete');
-	if (deleteAtoms.length <= 1) return atoms;
-	const otherAtoms = atoms.filter((a) => a.type !== 'delete');
-	const batchAtom = {
-		execute: async () => {
-			const keys = deleteAtoms.map((a) => a.key);
-			try {
-				const result = await original.batchDelete(keys);
-				deleteAtoms.forEach((atom) => {
-					const status = result[atom.key];
-					if (status) atom.reject(status);
-					else atom.resolve();
-				});
-			} catch (error) {
-				const reason = toError(error);
-				deleteAtoms.forEach((atom) => atom.reject(reason));
-			}
-		},
-		type: 'custom' as const,
+	const deleteAtoms: Array<DeleteAtom> = [];
+	const moveAtoms: Array<MoveAtom> = [];
+	const result: OptimizerOutput = [];
+	for (const atom of atoms) {
+		const { type } = atom;
+		if (type === 'delete') deleteAtoms.push(atom);
+		else if (type === 'move') moveAtoms.push(atom);
+		else result.push(atom);
+	}
+	if (deleteAtoms.length <= 1 && moveAtoms.length <= 1) return atoms;
+	const batchExecute = async (
+		type: 'move' | 'delete',
+		targetAtoms: Array<MoveAtom | DeleteAtom>,
+	) => {
+		try {
+			const res = await (type === 'delete'
+				? original.batchDelete(deleteAtoms.map(({ key }) => key))
+				: original.batchMove(moveAtoms));
+			targetAtoms.forEach((atom) => {
+				const status = res[atom.type === 'delete' ? atom.key : atom.oldKey];
+				if (status) atom.reject(status);
+				else atom.resolve();
+			});
+		} catch (error) {
+			const reason = toError(error);
+			targetAtoms.forEach((atom) => atom.reject(reason));
+		}
 	};
-	return [...otherAtoms, batchAtom];
+	if (deleteAtoms.length > 1)
+		result.push({
+			execute: () => batchExecute('delete', deleteAtoms),
+			type: 'custom' as const,
+		});
+	if (moveAtoms.length > 1)
+		result.push({ execute: () => batchExecute('move', moveAtoms), type: 'custom' as const });
+	return result;
 }

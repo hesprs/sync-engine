@@ -9,7 +9,7 @@ import type { Snippet, Translate } from './I18n';
 import type { SyncStage } from './Observability';
 import type { FailedTaskInfo, TaskInfo } from './Sync';
 import type { Events, Translations } from '@';
-import type { BaseTask, RemoveLocal, TaskNames } from '@/sync';
+import type { Task, RemoveLocal, TaskNames } from '@/sync';
 import type { Progress } from '@/types';
 import type { App } from 'obsidian';
 import type { Ref } from 'synthkernel';
@@ -119,10 +119,7 @@ export default class ProgressModal extends Modal {
 		);
 	}
 
-	declare readonly events: {
-		tasksConfirmed: Array<BaseTask>;
-		deleteConfirmed: DeleteConfirmReturn;
-	};
+	declare readonly events: { tasksConfirmed: Array<Task>; deleteConfirmed: DeleteConfirmReturn };
 
 	declare readonly i18n: {
 		syncProgress: string;

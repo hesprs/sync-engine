@@ -2,7 +2,7 @@
 
 File tree is a SolidJS component that visualizes an array of sync tasks, and enables selecting / deselecting tasks.
 
-## Mechanisms
+## How It Works
 
 Creates visual hierarchy (left padding) for different folder nesting levels.
 
@@ -25,15 +25,6 @@ Renders select box, Obsidian tooltip, icon, and task path
 
 Behavior: selecting / unselecting only, no collapsing, no expansion.
 
-Single API shape:
-
-```TypeScript
-type Mount = (el: Element, tasks: Array<BaseTask>, selectAll: string) => {
-	unmount: () => void;
-	getState: () => { selected: Array<BaseTask>; deselected: Array<BaseTask> };
-};
-```
-
 Select all / deselect all:
 
 - This option is rendered in style similar to a normal tree node with a checkbox icon `folders`, and corresponding state text `selectAll` or `deselectAll`, positioned like a root node in the tree, above all task nodes.
@@ -48,6 +39,6 @@ First, build a prefix tree from the array of task paths. Then, run a recursive "
 
 2. Rendering and input validation:
 
-Flatten the compacted tree into a 1D array, and store it in a `Record` object. The cascade logic is handled by a pure function that triggers dependent tasks.
+Flatten the compacted tree into a 1D array, and store it in a `Record` object. The cascade logic is handled by a pure function that triggers on tasks selection and deselection.
 
 The UI simply maps over the flat array and applies padding-left based on the depth property.

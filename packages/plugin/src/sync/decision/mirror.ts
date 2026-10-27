@@ -1,4 +1,4 @@
-import type { BaseTask } from '../tasks/interface';
+import type { Task } from '../tasks/interface';
 import type { DeciderInput } from './interface';
 import type { FileStat } from '@/types';
 
@@ -7,14 +7,14 @@ type Source = 'local' | 'remote';
 export function mirrorLocalDecider(
 	input: DeciderInput,
 	logger: (log: string) => void,
-): Array<BaseTask> {
+): Array<Task> {
 	return mirrorDecider(input, logger, 'local');
 }
 
 export function mirrorRemoteDecider(
 	input: DeciderInput,
 	logger: (log: string) => void,
-): Array<BaseTask> {
+): Array<Task> {
 	return mirrorDecider(input, logger, 'remote');
 }
 
@@ -22,11 +22,11 @@ function mirrorDecider(
 	input: DeciderInput,
 	logger: (log: string) => void,
 	source: Source,
-): Array<BaseTask> {
+): Array<Task> {
 	const { localStats, records, remoteStats, taskFactory } = input;
 	const sourceStats = source === 'local' ? localStats : remoteStats;
 	const targetStats = source === 'local' ? remoteStats : localStats;
-	const tasks: Array<BaseTask> = [];
+	const tasks: Array<Task> = [];
 
 	for (const key of new Set([...sourceStats.keys(), ...targetStats.keys(), ...records.keys()])) {
 		const sourceStat = sourceStats.get(key);

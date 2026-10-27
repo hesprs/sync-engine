@@ -18,7 +18,7 @@ import type { DeleteConfirmReturn } from './ProgressModal';
 import type { Infras } from './Registrar';
 import type { Events, Translations } from '@';
 import type { Fs, ListOptions, ListReporter } from '@/fs';
-import type { BaseTask, ConflictResolver, TaskFactory, TaskNames, TaskOptionsMap } from '@/sync';
+import type { Task, ConflictResolver, TaskFactory, TaskNames, TaskOptionsMap } from '@/sync';
 import type {
 	GlobStrategy,
 	MaybePromise,
@@ -58,7 +58,7 @@ export default class Sync {
 			on: On<Events>;
 			translate: Translate<Translations>;
 			getConflictResolver: () => ConflictResolver;
-			decideTasks: (mapping: StrategyMapping, factory: TaskFactory) => Array<BaseTask>;
+			decideTasks: (mapping: StrategyMapping, factory: TaskFactory) => Array<Task>;
 		},
 	) {}
 
@@ -68,11 +68,11 @@ export default class Sync {
 		remoteWalkProgress: Progress;
 		syncTerminated: SyncTerminateReason;
 		requestConfirmDelete: Array<RemoveLocal>;
-		requestConfirmTasks: Array<BaseTask>;
+		requestConfirmTasks: Array<Task>;
 		syncCanceled: undefined;
 		taskCompleted: TaskInfo;
 		taskFailed: FailedTaskInfo;
-		executionStarted: Array<BaseTask>;
+		executionStarted: Array<Task>;
 	};
 	declare readonly settings: { maxFileSize: TogglableValue; syncStrategy: Array<GlobStrategy> };
 	declare readonly i18n: { xOperationsFailed: Snippet<number> };
@@ -83,8 +83,8 @@ export default class Sync {
 		return stats.filter((stat) => stat.isDir || stat.size <= maxSize);
 	};
 
-	private readonly confirmTasks = (tasks: Array<BaseTask>) =>
-		new Promise<Array<BaseTask>>((resolve, reject) => {
+	private readonly confirmTasks = (tasks: Array<Task>) =>
+		new Promise<Array<Task>>((resolve, reject) => {
 			const { on, dispatch } = this.ctx;
 			const unsub1 = on('tasksConfirmed', (result) => {
 				cleanup();
@@ -157,7 +157,7 @@ export default class Sync {
 
 		const isCancelled = ref(false);
 		let failedCount = 0;
-		let tasks: Array<BaseTask>;
+		let tasks: Array<Task>;
 		let terminateReason!: SyncTerminateReason;
 		const cleanup = on('syncCanceled', () => isCancelled(true));
 		try {
@@ -298,7 +298,6 @@ function createTaskFactory({
 			name === 'resolveConflict'
 				? new taskMap[name]({ ...options, ...baseOptions, resolver } as never)
 				: new taskMap[name]({ ...options, ...baseOptions } as never);
-		task.name = name;
 		return task;
 	}) as TaskFactory;
 }
@@ -313,13 +312,13 @@ function partition<T, U extends T>(
 	return [truthy as Array<U>, falsy as Array<Exclude<T, U>>];
 }
 
-function toTaskInfo({ key, name, local, remote }: BaseTask): TaskInfo {
+function toTaskInfo({ key, name, local, remote }: Task): TaskInfo {
 	const isDir = local?.isDir ?? remote?.isDir ?? false;
 	return { isDir, key, name };
 }
 
-function sortTasks(tasks: Array<BaseTask>) {
-	const region = (task: BaseTask) => {
+function sortTasks(tasks: Array<Task>) {
+	const region = (task: Task) => {
 		const isFolder = task.local?.isDir === true || task.remote?.isDir === true;
 		if (task.name === 'removeLocal' || task.name === 'removeRemote') return isFolder ? 3 : 0;
 		if (task.name === 'createLocalDir' || task.name === 'createRemoteDir') return 1;

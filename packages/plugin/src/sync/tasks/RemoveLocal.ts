@@ -1,9 +1,11 @@
 import { BaseTask } from './interface';
-import type { OptionsWithLocalStat } from '../decision/interface';
+import type { WithLocalStat } from './interface';
 
-export default class RemoveLocal extends BaseTask<OptionsWithLocalStat> {
+export default class RemoveLocal extends BaseTask<WithLocalStat> {
 	async exec() {
-		await this.localFs.delete(this.key);
-		await this.record.delete(this.key);
+		const { key, localFs, record } = this;
+		await localFs.delete(key);
+		await record.delete(key);
 	}
+	readonly name = 'removeLocal';
 }

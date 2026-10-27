@@ -1,10 +1,10 @@
-import type { BaseTask } from '@/sync';
+import type { Task } from '@/sync';
 
 export type FileTreeNode = {
 	depth: number;
 	childIds: Array<string>;
 	compressedLabel: string;
-	task?: BaseTask;
+	task?: Task;
 	taskParentId?: string;
 	taskChildIds: Array<string>;
 	isCreateFolderTask: boolean;
