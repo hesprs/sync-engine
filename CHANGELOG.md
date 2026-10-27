@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.3.4 - 2026-10-27
+
+### Core
+
+- Supported loading module from JavaScript code.
+- Fixed deselecting a child move operation subsumed by a parent move during sync plan phase still moves the child. Now deselected children moves will be kept as-is.
+
 ## Sync Engine v3.3.3 - 2026-10-21
 
 ### Core

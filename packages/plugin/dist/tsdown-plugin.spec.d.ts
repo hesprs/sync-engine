@@ -1,4 +1,3 @@
-//#region src/sdk/tsdown-plugin.d.ts
 type SyncEngineConfig = {
   deps?: {
     neverBundle?: true | string | RegExp | Array<string | RegExp> | ((id: string, parentId: string | undefined, isResolved: boolean) => boolean | null | undefined);
@@ -18,5 +17,4 @@ export default function syncEngineModule(meta?: ModuleMeta | Array<ModuleMetaWit
   } | undefined;
   tsdownConfig(config: SyncEngineConfig): void;
 };
-//#endregion
 export {};
