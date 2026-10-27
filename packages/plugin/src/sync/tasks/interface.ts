@@ -42,7 +42,6 @@ export abstract class BaseTask<T extends TaskOptions = TaskOptions> {
 	protected readonly localFs: Fs;
 	protected readonly record: RecordStore;
 	declare name: TaskNames;
-	declare prettyName: string;
 	readonly key: string;
 	readonly local: (BaseTaskOptions & T)['local'];
 	readonly remote: (BaseTaskOptions & T)['remote'];

@@ -13,25 +13,15 @@ import type { BaseTask, TaskNames } from '../tasks/interface';
 import type { FileStat, FolderStat, Stat, RecordStatsMap, StatsMap } from '@/types';
 
 export type TaskOptions = { key: string; remote?: Stat; local?: Stat };
-
 export type OptionsWithRemoteFileStat = { remote: FileStat } & TaskOptions;
-
 export type OptionsWithLocalFileStat = { local: FileStat } & TaskOptions;
-
 export type OptionsWithRemoteFolderStat = { remote: FolderStat } & TaskOptions;
-
 export type OptionsWithLocalFolderStat = { local: FolderStat } & TaskOptions;
-
 export type OptionsWithLocalStat = { local: Stat } & TaskOptions;
-
 export type OptionsWithRemoteStat = { remote: Stat } & TaskOptions;
-
 export type OptionsWithBothStats = { local: Stat; remote: Stat } & TaskOptions;
-
 export type OptionsWithBothFileStats = { local: FileStat; remote: FileStat } & TaskOptions;
-
 export type OptionsWithLocalStatAndOldKey = { local: Stat; oldKey: string } & TaskOptions;
-
 export type OptionsWithRemoteStatAndOldKey = { remote: Stat; oldKey: string } & TaskOptions;
 
 export type TaskOptionsMap = {

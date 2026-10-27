@@ -134,6 +134,7 @@ const zh: Translations = {
 		}),
 	iconPlaceholder: '输入图标代码（例如 puzzle）',
 	idle: '空闲',
+	installModuleFromCode: '从代码安装模块',
 	installModuleFromFile: '从文件安装模块',
 	installed: '已安装',
 	integrityCheckFailed:
@@ -330,6 +331,8 @@ const zh: Translations = {
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: '上传',
 	walkingRemote: '正在探测远程文件',
+	writeCode: '编写代码',
+	writeCodeDescription: '在此处使用 JavaScript 编写您的模块代码',
 	xConfigured: (count) => `已配置 ${count} 项`,
 	xEnabled: (count) => `已启用 ${count} 个模块`,
 	xOperationsFailed: (count) => `${count} 个操作失败`,

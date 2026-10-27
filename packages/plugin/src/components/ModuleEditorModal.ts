@@ -37,7 +37,7 @@ export default class ModuleEditorModal extends Modal {
 	constructor(
 		private readonly ctx: { app: App; translate: Translate<ModuleEditorTranslations> },
 		private readonly options: {
-			initial: Partial<AugmentedModuleMeta> & { id: string };
+			initial?: Partial<AugmentedModuleMeta>;
 			file?: string;
 			onSave: (updated: AugmentedModuleMeta) => MaybePromise<void>;
 			onCancel?: () => MaybePromise<void>;
@@ -60,7 +60,8 @@ export default class ModuleEditorModal extends Modal {
 			version,
 			main = '',
 			readme,
-		} = initial;
+			id,
+		} = initial ?? {};
 
 		const magic = file ? parseMagicBytes(file) : {};
 		const updated: AugmentedModuleMeta = {
@@ -68,6 +69,7 @@ export default class ModuleEditorModal extends Modal {
 			description: description || magic.description || 'An unknown module.',
 			enabled,
 			icon: icon || magic.icon || 'puzzle',
+			id: id || name || magic.name || crypto.randomUUID(),
 			integrity,
 			main,
 			name: name || magic.name || 'Unknown Module',

@@ -1,14 +1,16 @@
-import constructTaskIcon from '../construct-task-icon';
-import { setIcon, setTooltip } from 'obsidian';
+import TaskRow from './TaskRow';
+import { setIcon } from 'obsidian';
 import { createEffect, For, Show } from 'solid-js';
 import type { FileTreeTranslations } from '.';
 import type { FileTreeData } from './types';
 import type { Translate } from '@/modules/I18n';
+import type { BaseTask } from '@/sync';
 import type { JSX } from 'solid-js';
 
 export default function App(props: {
 	data: FileTreeData;
 	isSelected: (nodeId: string) => boolean;
+	getTask: (nodeId: string) => BaseTask | undefined;
 	toggle: (nodeId: string, nextSelected: boolean) => void;
 	translate: Translate<FileTreeTranslations>;
 }): JSX.Element {
@@ -48,44 +50,16 @@ export default function App(props: {
 				</div>
 			</Show>
 			<For each={props.data.orderedNodeIds}>
-				{(nodeId) => {
-					const node = props.data.nodes[nodeId];
-					const task = node.task;
-					const taskIsDir = task?.local?.isDir ?? task?.remote?.isDir ?? false;
-					const isSelected = () => (task ? props.isSelected(nodeId) : false);
-					return (
-						<div
-							class="flex w-fit items-center gap-2 pr-3"
-							onClick={() => task && props.toggle(nodeId, !isSelected())}
-							style={{ 'padding-left': `${node.depth * 24}px` }}
-						>
-							{task ? (
-								<input
-									checked={isSelected()}
-									class="m-0 accent-[--interactive-accent] cursor-pointer"
-									style={{ 'margin-inline-end': '0' }}
-									type="checkbox"
-								/>
-							) : (
-								<div class="m-1 h-2 w-2 flex-shrink-0 rounded-full bg-[--text-muted]" />
-							)}
-							<div
-								class="w-[--icon-size] h-[--icon-size]"
-								ref={(element) => {
-									if (task) {
-										constructTaskIcon(element, task.name, taskIsDir);
-										setTooltip(element, task.prettyName);
-									} else setIcon(element, 'folder-open');
-								}}
-							/>
-							<div
-								class={`whitespace-nowrap ${task && !isSelected() ? 'text-[--text-muted]' : 'text-[--text-normal]'}`}
-							>
-								{node.compressedLabel}
-							</div>
-						</div>
-					);
-				}}
+				{(nodeId) => (
+					<TaskRow
+						isSelected={props.isSelected(nodeId)}
+						node={props.data.nodes[nodeId]}
+						nodeId={nodeId}
+						task={props.getTask(nodeId)}
+						toggle={props.toggle}
+						translate={props.translate}
+					/>
+				)}
 			</For>
 		</div>
 	);

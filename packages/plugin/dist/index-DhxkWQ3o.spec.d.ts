@@ -391,7 +391,6 @@ declare abstract class BaseTask<T extends TaskOptions = TaskOptions> {
   protected readonly localFs: Fs;
   protected readonly record: RecordStore;
   name: TaskNames;
-  prettyName: string;
   readonly key: string;
   readonly local: (BaseTaskOptions & T)['local'];
   readonly remote: (BaseTaskOptions & T)['remote'];
@@ -460,7 +459,7 @@ declare class I18n {
 type FileTreeTranslations = {
   selectAll: string;
   xSelected: Snippet<number>;
-};
+} & Record<TaskNames, string>;
 //#endregion
 //#region src/modules/Extensibility.d.ts
 type ModuleInstance = {
@@ -814,6 +813,14 @@ type MiscellaneousSettingTranslations = {
   avoidAutoSyncWhenOfflineDescription: string;
 };
 //#endregion
+//#region src/components/CodeInputModal.d.ts
+type CodeInputTranslations = {
+  confirm: string;
+  cancel: string;
+  writeCode: string;
+  writeCodeDescription: string;
+};
+//#endregion
 //#region src/components/module-management/index.d.ts
 type ModuleManagementTranslations = {
   disableModule: string;
@@ -860,11 +867,12 @@ type ModuleEditorTranslations = {
 };
 //#endregion
 //#region src/settings/module-management.d.ts
-type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & {
+type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & CodeInputTranslations & {
   searchModules: string;
   moduleManagement: string;
   showInstalledOnly: string;
   installModuleFromFile: string;
+  installModuleFromCode: string;
   moduleExtensionWarning: Fragment;
 };
 //#endregion
@@ -1131,7 +1139,6 @@ type SyncTerminateReason = {
 type TaskInfo = {
   name: TaskNames;
   key: string;
-  prettyName: string;
   isDir: boolean;
 };
 type FailedTaskInfo = TaskInfo & {

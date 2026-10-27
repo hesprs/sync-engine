@@ -8,14 +8,12 @@ function makeTask(input: {
 	key: string;
 	localIsDir?: boolean;
 	remoteIsDir?: boolean;
-	prettyName?: string;
 }): BaseTask {
 	return {
 		exec: () => {},
 		key: input.key,
 		local: input.localIsDir === undefined ? undefined : ({ isDir: input.localIsDir } as never),
 		name: input.name,
-		prettyName: input.prettyName ?? input.name,
 		remote:
 			input.remoteIsDir === undefined ? undefined : ({ isDir: input.remoteIsDir } as never),
 	} as BaseTask;
@@ -23,6 +21,12 @@ function makeTask(input: {
 
 function createSelection(tasks: Array<BaseTask>) {
 	return createFileTreeSelection(createFileTreeData(tasks));
+}
+
+function asCreateDir(task: BaseTask): BaseTask {
+	return Object.assign(Object.create(Object.getPrototypeOf(task) as object) as BaseTask, task, {
+		name: task.name === 'moveLocal' ? 'createLocalDir' : 'createRemoteDir',
+	});
 }
 
 test('deselecting child delete task deselects ancestor delete tasks recursively', () => {
@@ -124,4 +128,47 @@ test('selecting descendant file task restores required ancestor create-folder ta
 
 	expect(selection.isSelected('folder')).toBe(true);
 	expect(selection.isSelected('folder/note.md')).toBe(true);
+});
+
+test('deselecting direct child move task converts parent move task into create-dir task', () => {
+	const parent = makeTask({ key: 'folder', name: 'moveLocal', remoteIsDir: true });
+	const child = makeTask({ key: 'folder/note.md', name: 'moveLocal' });
+	const selection = createSelection([parent, child]);
+
+	selection.toggle('folder/note.md', false);
+
+	expect(selection.isSelected('folder')).toBe(true);
+	expect(selection.getState()).toStrictEqual({
+		deselected: [child],
+		selected: [asCreateDir(parent)],
+	});
+});
+
+test('conversion cascades through ancestor move tasks', () => {
+	const parent = makeTask({ key: 'a', name: 'moveLocal', remoteIsDir: true });
+	const child = makeTask({ key: 'a/b', name: 'moveLocal', remoteIsDir: true });
+	const grandChild = makeTask({ key: 'a/b/c.md', name: 'moveLocal' });
+	const selection = createSelection([parent, child, grandChild]);
+
+	selection.toggle('a/b/c.md', false);
+
+	expect(selection.getState()).toStrictEqual({
+		deselected: [grandChild],
+		selected: [asCreateDir(parent), asCreateDir(child)],
+	});
+});
+
+test('selecting all direct child move tasks converts converted create-dir task back to move task', () => {
+	const parent = makeTask({ key: 'a', name: 'moveLocal', remoteIsDir: true });
+	const child = makeTask({ key: 'a/b', name: 'moveLocal', remoteIsDir: true });
+	const grandChild = makeTask({ key: 'a/b/c.md', name: 'moveLocal' });
+	const selection = createSelection([parent, child, grandChild]);
+
+	selection.toggle('a/b/c.md', false);
+	selection.toggle('a/b/c.md', true);
+
+	expect(selection.getState()).toStrictEqual({
+		deselected: [],
+		selected: [parent, child, grandChild],
+	});
 });

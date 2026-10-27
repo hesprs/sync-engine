@@ -2,7 +2,6 @@ import { BaseTask } from '../tasks/interface';
 import MoveLocal from '../tasks/MoveLocal';
 import MoveRemote from '../tasks/MoveRemote';
 import { basename, dirname } from '@repo/shared/path';
-import type { TaskNames } from '../tasks/interface';
 import type { RecordStatsMap, Stat } from '@/types';
 
 type MoveSide = 'local' | 'remote';
@@ -12,10 +11,9 @@ type FolderPair = { create: Candidate; delete: Candidate; newKey: string };
 
 export default function convertMoves(
 	tasks: Array<BaseTask>,
-	translate: (name: TaskNames) => string,
 	records: RecordStatsMap,
 ): Array<BaseTask> {
-	let result = collapseFileMoves(tasks, translate, records);
+	let result = collapseFileMoves(tasks, records);
 	while (true) {
 		const pair = findFolderPairs(result)
 			.sort((a, b) => b.delete.key.length - a.delete.key.length)
@@ -25,16 +23,12 @@ export default function convertMoves(
 			result,
 			pair.delete.task,
 			pair.create.task,
-			createMoveTask(pair.delete.task, pair.create.task, pair.delete.side, translate),
+			createMoveTask(pair.delete.task, pair.create.task, pair.delete.side),
 		);
 	}
 }
 
-function collapseFileMoves(
-	tasks: Array<BaseTask>,
-	translate: (name: TaskNames) => string,
-	records: RecordStatsMap,
-) {
+function collapseFileMoves(tasks: Array<BaseTask>, records: RecordStatsMap) {
 	const deletes = tasks.map((task) => getCandidate(task, false, false, records)).filter(defined);
 	const creates = tasks.map((task) => getCandidate(task, true, false, records)).filter(defined);
 	const paired = new Set<BaseTask>();
@@ -47,7 +41,7 @@ function collapseFileMoves(
 		if (!created || deleted.task.key === created.task.key) continue;
 		paired.add(deleted.task);
 		paired.add(created.task);
-		moves.push(createMoveTask(deleted.task, created.task, deleted.side, translate));
+		moves.push(createMoveTask(deleted.task, created.task, deleted.side));
 	}
 	return [...tasks.filter((task) => !paired.has(task)), ...moves];
 }
@@ -145,19 +139,13 @@ function defined<T>(value: T | undefined): value is T {
 	return value !== undefined;
 }
 
-function createMoveTask(
-	deleteTask: BaseTask,
-	createTask: BaseTask,
-	side: MoveSide,
-	translate: (name: TaskNames) => string,
-) {
+function createMoveTask(deleteTask: BaseTask, createTask: BaseTask, side: MoveSide) {
 	const name = side === 'local' ? 'moveLocal' : 'moveRemote';
 	const move =
 		side === 'local'
 			? new MoveLocal({ ...createTask.options, oldKey: deleteTask.key } as never)
 			: new MoveRemote({ ...createTask.options, oldKey: deleteTask.key } as never);
 	move.name = name;
-	move.prettyName = translate(name);
 	return move;
 }
 

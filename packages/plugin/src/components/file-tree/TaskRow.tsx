@@ -1,0 +1,59 @@
+import constructTaskIcon from '../construct-task-icon';
+import { setIcon, setTooltip } from 'obsidian';
+import { createEffect } from 'solid-js';
+import type { FileTreeTranslations } from '.';
+import type { FileTreeNode } from './types';
+import type { Translate } from '@/modules/I18n';
+import type { BaseTask } from '@/sync';
+import type { JSX } from 'solid-js';
+
+export default function TaskRow(props: {
+	nodeId: string;
+	node: FileTreeNode;
+	task: BaseTask | undefined;
+	isSelected: boolean;
+	toggle: (nodeId: string, nextSelected: boolean) => void;
+	translate: Translate<FileTreeTranslations>;
+}): JSX.Element {
+	const isSelected = () => props.task !== undefined && props.isSelected;
+
+	return (
+		<div
+			class="flex w-fit items-center gap-2 pr-3"
+			onClick={() => props.task && props.toggle(props.nodeId, !isSelected())}
+			style={{ 'padding-left': `${props.node.depth * 24}px` }}
+		>
+			{props.task ? (
+				<input
+					checked={isSelected()}
+					class="m-0 accent-[--interactive-accent] cursor-pointer"
+					style={{ 'margin-inline-end': '0' }}
+					type="checkbox"
+				/>
+			) : (
+				<div class="m-1 h-2 w-2 flex-shrink-0 rounded-full bg-[--text-muted]" />
+			)}
+			<div
+				class="w-[--icon-size] h-[--icon-size]"
+				ref={(element) =>
+					createEffect(() => {
+						const task = props.task;
+						if (task) {
+							constructTaskIcon(
+								element,
+								task.name,
+								task.local?.isDir ?? task.remote?.isDir ?? false,
+							);
+							setTooltip(element, props.translate(task.name));
+						} else setIcon(element, 'folder-open');
+					})
+				}
+			/>
+			<div
+				class={`whitespace-nowrap ${isSelected() ? 'text-[--text-normal]' : 'text-[--text-muted]'}`}
+			>
+				{props.node.compressedLabel}
+			</div>
+		</div>
+	);
+}

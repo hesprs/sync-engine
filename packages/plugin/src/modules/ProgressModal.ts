@@ -58,7 +58,7 @@ export default class ProgressModal extends Modal {
 					this.renderDone();
 				}
 				this.description?.setText(this.t('failedTasksDescription', failedTasks.length));
-				renderFailedTasks(this.detailContainer as HTMLDivElement, failedTasks);
+				renderFailedTasks(this.detailContainer as HTMLDivElement, failedTasks, this.t);
 				this.showDetails();
 				failedTasks.length = 0;
 			}),
@@ -256,11 +256,11 @@ export default class ProgressModal extends Modal {
 			{ deps: [this.ctx.walkProgress, this.ctx.syncStage, this.ctx.executionProgress] },
 		);
 
-		const container = contentEl.createDiv('flex flex-col gap-4 max-h-[75vh] pt-3 pb-3');
+		const container = contentEl.createDiv('flex flex-col gap-4 max-h-75vh py-3');
 		const { bar, left, right } = renderProgress(container);
 		this.description = container.createEl('p', 'whitespace-pre-line hidden my-0');
 		this.detailContainer = container.createDiv(
-			'max-h-[50vh] overflow-y-auto rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] p-3 hidden',
+			'max-h-50vh overflow-y-auto rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] p-3 hidden',
 		);
 
 		this.modalCleanupCallbacks.subscribe(

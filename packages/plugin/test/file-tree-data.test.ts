@@ -7,14 +7,12 @@ function makeTask(input: {
 	key: string;
 	localIsDir?: boolean;
 	remoteIsDir?: boolean;
-	prettyName?: string;
 }): BaseTask {
 	return {
 		exec: () => {},
 		key: input.key,
 		local: input.localIsDir === undefined ? undefined : ({ isDir: input.localIsDir } as never),
 		name: input.name,
-		prettyName: input.prettyName ?? input.name,
 		remote:
 			input.remoteIsDir === undefined ? undefined : ({ isDir: input.remoteIsDir } as never),
 	} as BaseTask;

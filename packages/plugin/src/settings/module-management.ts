@@ -1,9 +1,11 @@
+import CodeInputModal from '@/components/CodeInputModal';
 import { mountModuleManagementList } from '@/components/module-management';
 import ModuleEditorModal from '@/components/ModuleEditorModal';
 import { MODULE_EXTENSION } from '@/modules/Extensibility';
 import { App, Menu, SearchComponent, setIcon, SettingPage, Notice, MenuItem } from 'obsidian';
 import { hook } from 'synthkernel';
 import type { Settings } from '@';
+import type { CodeInputTranslations } from '@/components/CodeInputModal';
 import type { ModuleManagementTranslations } from '@/components/module-management';
 import type { ModuleEditorTranslations } from '@/components/ModuleEditorModal';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
@@ -13,11 +15,13 @@ import type { MaybePromise } from '@/types';
 const ALTERNATIVE_MODULE_EXTENSION = '.mjs';
 
 export type ModulesTranslations = ModuleEditorTranslations &
-	ModuleManagementTranslations & {
+	ModuleManagementTranslations &
+	CodeInputTranslations & {
 		searchModules: string;
 		moduleManagement: string;
 		showInstalledOnly: string;
 		installModuleFromFile: string;
+		installModuleFromCode: string;
 		moduleExtensionWarning: Fragment;
 	};
 
@@ -107,6 +111,22 @@ export default class ModuleManagement extends SettingPage {
 						}).open();
 					},
 				),
+			)
+			.addItem((item) =>
+				item
+					.setIcon('code-xml')
+					.setTitle(t('installModuleFromCode'))
+					.onClick(() => {
+						new CodeInputModal(ctx, (file) =>
+							new ModuleEditorModal(ctx, {
+								file,
+								onSave: async (meta) => {
+									await installModule(meta, file);
+									onInstallModuleFromFile();
+								},
+							}).open(),
+						).open();
+					}),
 			);
 		menuButton.onClickEvent((event) => menu.showAtMouseEvent(event));
 

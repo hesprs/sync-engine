@@ -174,6 +174,7 @@ const ru: Translations = {
 		}),
 	iconPlaceholder: 'Введите код иконки (например, puzzle)',
 	idle: 'В ожидании',
+	installModuleFromCode: 'Установить модуль из кода',
 	installModuleFromFile: 'Установить модуль из файла',
 	installed: 'Установлено',
 	integrityCheckFailed:
@@ -380,6 +381,8 @@ const ru: Translations = {
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Загрузить',
 	walkingRemote: 'Сканирование удалённых файлов',
+	writeCode: 'Написать код',
+	writeCodeDescription: 'Напишите код своего модуля здесь на JavaScript',
 	xConfigured: (count) => `Настроено: ${count}`,
 	xEnabled: (count) => `Включено модулей: ${count}`,
 	xOperationsFailed: (count) => `Не удалось выполнить ${pcOperationAccusative(count)}`,

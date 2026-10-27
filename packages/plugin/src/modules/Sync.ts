@@ -38,7 +38,7 @@ export type SyncTerminateReason =
 	| { result: 'failed'; error: Error }
 	| { result: 'noop' };
 
-export type TaskInfo = { name: TaskNames; key: string; prettyName: string; isDir: boolean };
+export type TaskInfo = { name: TaskNames; key: string; isDir: boolean };
 export type FailedTaskInfo = TaskInfo & { error: Error };
 export type RemoteLister = (info: Infras & { reporter: ListReporter }) => MaybePromise<Array<Stat>>;
 export type SyncOptions = {
@@ -188,7 +188,6 @@ export default class Sync {
 			const taskFactory = createTaskFactory({
 				baseOptions: infras,
 				resolver: conflictResolver,
-				translate,
 			});
 			tasks = decideTasks(mapping, taskFactory);
 			if (tasks.length === 0) {
@@ -198,7 +197,7 @@ export default class Sync {
 
 			if (detectMoves) {
 				const initialTasks = tasks.length;
-				tasks = convertMoves(tasks, translate, new Map(recordList));
+				tasks = convertMoves(tasks, new Map(recordList));
 				const convertedTasks = initialTasks - tasks.length;
 				if (convertedTasks)
 					dispatch('logSync', `Discovered and converted ${convertedTasks} move task(s).`);
@@ -289,11 +288,9 @@ export default class Sync {
 
 function createTaskFactory({
 	baseOptions,
-	translate,
 	resolver,
 }: {
 	baseOptions: Infras;
-	translate: (name: TaskNames) => string;
 	resolver: ConflictResolver;
 }): TaskFactory {
 	return (<N extends TaskNames>(name: N, options: TaskOptionsMap[N]) => {
@@ -302,7 +299,6 @@ function createTaskFactory({
 				? new taskMap[name]({ ...options, ...baseOptions, resolver } as never)
 				: new taskMap[name]({ ...options, ...baseOptions } as never);
 		task.name = name;
-		task.prettyName = translate(name);
 		return task;
 	}) as TaskFactory;
 }
@@ -317,9 +313,9 @@ function partition<T, U extends T>(
 	return [truthy as Array<U>, falsy as Array<Exclude<T, U>>];
 }
 
-function toTaskInfo({ key, name, prettyName, local, remote }: BaseTask): TaskInfo {
+function toTaskInfo({ key, name, local, remote }: BaseTask): TaskInfo {
 	const isDir = local?.isDir ?? remote?.isDir ?? false;
-	return { isDir, key, name, prettyName };
+	return { isDir, key, name };
 }
 
 function sortTasks(tasks: Array<BaseTask>) {

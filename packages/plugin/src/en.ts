@@ -159,6 +159,7 @@ const en: Translations = {
 		}),
 	iconPlaceholder: 'Enter icon code (e.g. puzzle)',
 	idle: 'Idle',
+	installModuleFromCode: 'Install module from code',
 	installModuleFromFile: 'Install module from file',
 	installed: 'Installed',
 	integrityCheckFailed:
@@ -368,6 +369,8 @@ const en: Translations = {
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Upload',
 	walkingRemote: 'Discovering remote files',
+	writeCode: 'Write code',
+	writeCodeDescription: 'Write your module code here as JavaScript',
 	xConfigured: (count) => `${count} configured`,
 	xEnabled: (count) => `${count} enabled`,
 	xOperationsFailed: (count) => `${pcOperations(count)} failed`,

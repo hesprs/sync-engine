@@ -12,14 +12,16 @@ Renders select box, Obsidian tooltip, icon, and task path
 
 - if a folder only has one children in the task list, and the folder itself is not in the task list, the children and folder combines into one entry with path shown as `<parent-basename> / <child-basename>`. This applies to each two path segments, so continuous nesting chains can be joined continuously, only stop at shallowest common parent.
 
-6 input validation rules:
+8 input validation rules:
 
 - Deselecting any direct children delete task deselects parent delete.
 - Selecting parent delete task selects all direct children delete tasks.
 - Deselecting folder creation tasks deselects all direct children creation tasks.
 - Selecting any children creation tasks selects its parent creation.
 - All the four rules above cascade propagate.
-- `Move` tasks are equal to creation tasks.
+- `Move` tasks are equal to creation tasks in validation logic.
+- Convert a `Move` task into a `CreateDir` task if any direct child `Move` tasks is deselected or converted to a `CreateDir` task.
+- Convert a `CreateDir` into a `Move` task if it was previously converted from a `Move` task and all its direct children are selected `Move` tasks.
 
 Behavior: selecting / unselecting only, no collapsing, no expansion.
 
