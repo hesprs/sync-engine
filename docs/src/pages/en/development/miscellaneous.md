@@ -66,6 +66,7 @@ Internal supporting types can appear in exported signatures but are not standalo
 | `noticeStatusOnMobile` | `boolean` |
 | `avoidAutoSyncWhenOffline` | `boolean` |
 | `startupSync` | `TogglableValue` delay in milliseconds |
+| `focusSync` | `TogglableValue` minimum gap between focus syncs in milliseconds |
 | `scheduledSync` | `TogglableValue` interval in milliseconds |
 | `realtimeSync` | `TogglableValue` debounce delay in milliseconds |
 | `maxMemoryConsumption` | `TogglableValue` in bytes |

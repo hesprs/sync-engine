@@ -139,7 +139,7 @@ Core setting sections use these priorities:
 | Section | Priority | Contents |
 | --- | --: | --- |
 | Top configuration | `0` | Backend, module management, auto-update, sync strategy, conflict resolver. |
-| Features | `1000` | Realtime, startup, scheduled sync; realtime fast mode; asymmetric storage. |
+| Features | `1000` | Realtime, startup, scheduled, focus sync; realtime fast mode; asymmetric storage. |
 | Controls | `2000` | File-size, request-concurrency, request-interval, memory limits. |
 | Miscellaneous | `3000` | Custom headers, mobile notices, offline behavior, task and deletion confirmations. |
 | Development | `4000` | Record cleanup, log export, and module source pages. |

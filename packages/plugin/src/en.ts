@@ -141,6 +141,10 @@ const en: Translations = {
 	failedToFetchSource: (url) => `Failed to fetch source from "${url}"`,
 	failedToLoadModule: (name) => `Failed to load module "${name}"`,
 	features: 'Features',
+	focusSync: 'Focus sync',
+	focusSyncDescription:
+		'Automatically trigger a sync when you switch back to Obsidian, after the minimum gap since the last sync. Alter the gap in the field.',
+	focusSyncPlaceholder: 'Enter minimum gap (e.g. 30s, 1min)',
 	globPlaceholder: 'E.g. temp.md, .trash/**/*',
 	headerKeyPlaceholder: 'Header key',
 	headerValuePlaceholder: 'Header value',

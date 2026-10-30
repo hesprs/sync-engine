@@ -65,6 +65,12 @@ Start syncs repeatedly at a fixed interval. Enter an interval such as `10min` or
 
 Disabled by default. The default interval is `15min`. The interval must be greater than zero.
 
+### Focus Sync
+
+Start a sync when you switch back to Obsidian, so changes made on another device or by another tool arrive without waiting for the next scheduled sync. Enter the minimum time between syncs, for example `30s` or `1min`. A focus sync is skipped while a sync is running or when the last sync ended less than this time ago, which avoids repeated syncs when you switch windows often.
+
+Disabled by default. The default minimum time is `30s`. Turn it off on devices where you do not want it, such as phones.
+
 ### Realtime Sync Fast Mode
 
 Reuse recently cached remote information during realtime syncs and skip some remote discovery work. This can make quick edits sync faster, especially for large remote folders.
@@ -208,7 +214,7 @@ Enabled by default.
 
 Ask before an automatic sync deletes local files. In the confirmation window, you can accept the deletions or choose to re-upload those files instead.
 
-Enabled by default. This applies to realtime, startup, and scheduled syncs.
+Enabled by default. This applies to realtime, focus, startup, and scheduled syncs.
 
 ## Development
 

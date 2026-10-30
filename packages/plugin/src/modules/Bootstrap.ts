@@ -192,6 +192,10 @@ export default class Bootstrap {
 			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
 			priority: 2000,
 		});
+		registerTrigger('focus', {
+			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
+			priority: 2500,
+		});
 		registerTrigger('startup', {
 			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
 			priority: 3000,

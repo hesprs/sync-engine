@@ -63,6 +63,7 @@ export default class SyncEngine extends Plugin {
 			conflictResolver: 'renameAndKeepBoth',
 			customHeaders: [],
 			exportLogsDirectory: 'Sync Engine Logs/',
+			focusSync: { enabled: false, value: 30_000 },
 			maxFileSize: { enabled: false, value: 31_457_280 },
 			maxMemoryConsumption: { enabled: true, value: 100 * 1024 ** 2 },
 			maxRequestConcurrency: { enabled: true, value: 50 },

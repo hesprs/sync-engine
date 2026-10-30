@@ -29,7 +29,7 @@ type SyncOptions = {
 
 `GlobStrategy` is `{ expr: string; strategy: string }`, where `strategy` is a registered decider ID or `none`. Supplying `syncStrategy` replaces the configured rules for that run; it does not merge with them.
 
-The plugin registers built-in entries: `realtime` (priority 1000), `interval` (2000), `startup` (3000), `nonInteractiveManual` (3990), and `manual` (4000). Registering under an existing name replaces the entry.
+The plugin registers built-in entries: `realtime` (priority 1000), `interval` (2000), `focus` (2500), `startup` (3000), `nonInteractiveManual` (3990), and `manual` (4000). Registering under an existing name replaces the entry.
 
 ### Remote Lister
 

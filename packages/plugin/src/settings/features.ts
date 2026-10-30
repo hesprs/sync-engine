@@ -21,6 +21,9 @@ export type FeaturesSettingTranslations = {
 	scheduledSync: string;
 	scheduledSyncDescription: string;
 	scheduledSyncPlaceholder: string;
+	focusSync: string;
+	focusSyncDescription: string;
+	focusSyncPlaceholder: string;
 	asymmetricStorage: string;
 	asymmetricStorageDescription: Fragment;
 	asymmetricStorageMigration: Fragment<boolean>;
@@ -89,6 +92,16 @@ export default function featuresSettings(ctx: {
 						},
 						placeholder: translate('scheduledSyncPlaceholder'),
 						rejectZero: true,
+						saveSettings,
+						type: 'time',
+					}),
+				})),
+				3500: s(() => ({
+					desc: translate('focusSyncDescription'),
+					name: translate('focusSync'),
+					render: renderTogglableValue({
+						field: settings.focusSync,
+						placeholder: translate('focusSyncPlaceholder'),
 						saveSettings,
 						type: 'time',
 					}),

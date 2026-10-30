@@ -120,6 +120,10 @@ const zhTW: Translations = {
 	failedToFetchSource: (url) => `無法從 "${url}" 取得來源`,
 	failedToLoadModule: (name) => `載入模組 "${name}" 失敗`,
 	features: '功能特徵',
+	focusSync: '焦點同步',
+	focusSyncDescription:
+		'切換回 Obsidian 時自動觸發同步，且須距上一次同步已超過最短間隔。請在欄位中修改最短間隔。',
+	focusSyncPlaceholder: '輸入最短間隔（例如 30s, 1min）',
 	globPlaceholder: '例如 temp.md, .trash/**/*',
 	headerKeyPlaceholder: '標頭名稱',
 	headerValuePlaceholder: '標頭數值',

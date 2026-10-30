@@ -15,6 +15,7 @@ const OFFLINE_ERROR = new Error('Device is offline.');
 export default class Scheduler {
 	private readonly pendingRequests: Array<SyncRequest> = [];
 	private isScheduling = false;
+	private lastSyncAt = 0;
 	private realtimeSyncTimer?: number;
 	private scheduledSyncTimer?: number;
 	private startupSyncTimer?: number;
@@ -35,6 +36,7 @@ export default class Scheduler {
 		startupSync: TogglableValue;
 		scheduledSync: TogglableValue;
 		realtimeSync: TogglableValue;
+		focusSync: TogglableValue;
 		syncStrategy: Array<GlobStrategy>;
 		avoidAutoSyncWhenOffline: boolean;
 	};
@@ -66,6 +68,8 @@ export default class Scheduler {
 			this.ctx.registerEvent(vault.on('modify', this.onChange));
 			this.ctx.registerEvent(vault.on('rename', this.onChange));
 		});
+		window.addEventListener('focus', this.onFocus);
+		document.addEventListener('visibilitychange', this.onFocus);
 		const { scheduledSync, startupSync } = this.settings;
 		const schedule = () => {
 			if (scheduledSync.enabled) this.startScheduledSync();
@@ -78,6 +82,8 @@ export default class Scheduler {
 	};
 
 	dispose = () => {
+		window.removeEventListener('focus', this.onFocus);
+		document.removeEventListener('visibilitychange', this.onFocus);
 		while (this.pendingRequests.length > 0) {
 			const request = this.pendingRequests.shift();
 			request?.resolve({ result: 'cancelled' });
@@ -106,6 +112,15 @@ export default class Scheduler {
 			window.clearInterval(this.scheduledSyncTimer);
 			this.scheduledSyncTimer = undefined;
 		}
+	};
+
+	private readonly onFocus = () => {
+		const { enabled, value } = this.settings.focusSync;
+		// `visibilitychange` also fires when the app goes to the background
+		if (!enabled || document.visibilityState === 'hidden') return;
+		if (!this.ctx.isIdle() || Date.now() - this.lastSyncAt < value) return;
+		this.lastSyncAt = Date.now();
+		void this.requestSync('focus');
 	};
 
 	private readonly onChange = ({ path }: TAbstractFile, old?: string) => {
@@ -142,6 +157,8 @@ export default class Scheduler {
 		const triggers = batch.map(({ trigger }) => trigger);
 		const { trigger, options } = reduceTriggers(triggers);
 		const result = await executeSync(trigger, options);
+		// The minimum gap of focus sync is measured from the end of any sync
+		this.lastSyncAt = Date.now();
 		for (const request of batch) request.resolve(result);
 	};
 
