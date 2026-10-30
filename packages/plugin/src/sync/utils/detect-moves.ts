@@ -14,7 +14,7 @@ import type {
 import type { RecordStatsMap, Stat } from '@/types';
 
 type MoveSide = 'local' | 'remote';
-type MoveInfo = { key: string; newKey: string; side: MoveSide };
+type MoveInfo = { key: string; oldKey: string; side: MoveSide };
 type DeleteCandidate = { side: MoveSide; task: RemoveLocal | RemoveRemote; uid?: string };
 type CreateCandidate = {
 	side: MoveSide;
@@ -96,8 +96,8 @@ function findFolderPairs(tasks: Array<Task>, records: RecordStatsMap) {
 		const destinations = new Set(
 			tasks.flatMap((task) => {
 				const move = getMoveInfo(task);
-				return move?.side === deleted.side && dirname(move.key) === deleted.task.key
-					? [dirname(move.newKey)]
+				return move?.side === deleted.side && dirname(move.oldKey) === deleted.task.key
+					? [dirname(move.key)]
 					: [];
 			}),
 		);
@@ -114,7 +114,7 @@ function canCollapseFolder(pair: Pair, tasks: Array<Task>) {
 	const children = tasks.filter(
 		(task) =>
 			getTaskSide(task.name) === pair.delete.side &&
-			dirname(getMoveInfo(task)?.key ?? task.key) === pair.delete.task.key,
+			dirname(getMoveInfo(task)?.oldKey ?? task.key) === pair.delete.task.key,
 	);
 	if (children.length === 0) return false;
 	return children.every((task) => {
@@ -122,16 +122,16 @@ function canCollapseFolder(pair: Pair, tasks: Array<Task>) {
 		return (
 			move !== undefined &&
 			move.side === pair.delete.side &&
-			dirname(move.newKey) === pair.create.task.key &&
-			basename(move.key) === basename(move.newKey)
+			dirname(move.key) === pair.create.task.key &&
+			basename(move.oldKey) === basename(move.key)
 		);
 	});
 }
 
 function createMoveTask({ create, delete: remove }: Pair) {
 	return create.side === 'local'
-		? new MoveLocal({ ...remove.task.options, newKey: create.task.key, remote: create.stat })
-		: new MoveRemote({ ...remove.task.options, local: create.stat, newKey: create.task.key });
+		? new MoveLocal({ ...create.task.options, oldKey: remove.task.key, remote: create.stat })
+		: new MoveRemote({ ...create.task.options, local: create.stat, oldKey: remove.task.key });
 }
 
 function getMoveInfo(task: Task): MoveInfo | undefined {

@@ -4,25 +4,11 @@ import type { Task } from '@/sync';
 
 const ROOT_NODE_ID = '__root__';
 
-type InternalNode = {
-	name: string;
-	childIds: Array<string>;
-	task?: Task;
-	isFolderTask: boolean;
-	isCreateFolderTask: boolean;
-	isDeleteFolderTask: boolean;
-	taskParentId?: string;
-	taskChildIds: Array<string>;
-};
+type InternalNode = { name: string; childIds: Array<string>; task?: Task };
 
 type VisibleEndpoint = { nodeId: string; compressedLabel: string };
 
-function getPathSegments(path: string): Array<string> {
-	return path.split('/').filter(Boolean);
-}
-
-function isFolderTask(task: Task): boolean {
-	const { name, local, remote, key } = task;
+function isFolderTask({ name, local, remote, key }: Task): boolean {
 	if (name === 'createLocalDir' || name === 'createRemoteDir') return true;
 	if (name === 'removeLocal') return local.isDir;
 	if (name === 'removeRemote') return remote.isDir;
@@ -30,26 +16,8 @@ function isFolderTask(task: Task): boolean {
 	return false;
 }
 
-function setTask(node: InternalNode, task: Task) {
-	node.task = task;
-	node.isFolderTask = isFolderTask(task);
-	node.isCreateFolderTask =
-		node.isFolderTask && task.name !== 'removeLocal' && task.name !== 'removeRemote';
-	node.isDeleteFolderTask =
-		node.isFolderTask && (task.name === 'removeLocal' || task.name === 'removeRemote');
-}
-
-function createNode(name: string, task?: Task): InternalNode {
-	const node: InternalNode = {
-		childIds: [],
-		isCreateFolderTask: false,
-		isDeleteFolderTask: false,
-		isFolderTask: false,
-		name,
-		taskChildIds: [],
-	};
-	if (task) setTask(node, task);
-	return node;
+function isFolderNode(node: InternalNode): boolean {
+	return node.task === undefined || isFolderTask(node.task);
 }
 
 function resolveVisibleEndpoint(
@@ -67,10 +35,6 @@ function resolveVisibleEndpoint(
 	return { compressedLabel: labelSegments.join(' / '), nodeId: currentId };
 }
 
-function isFolderVisibleNode(node: InternalNode): boolean {
-	return node.task === undefined || node.isFolderTask;
-}
-
 function getVisibleChildren(
 	nodes: Record<string, InternalNode>,
 	nodeId: string,
@@ -79,68 +43,44 @@ function getVisibleChildren(
 		resolveVisibleEndpoint(nodes, childId),
 	);
 	visibleChildren.sort((left, right) => {
-		const leftNode = nodes[left.nodeId];
-		const rightNode = nodes[right.nodeId];
-		const leftIsFolder = isFolderVisibleNode(leftNode);
-		const rightIsFolder = isFolderVisibleNode(rightNode);
+		const leftIsFolder = isFolderNode(nodes[left.nodeId]);
+		const rightIsFolder = isFolderNode(nodes[right.nodeId]);
 		if (leftIsFolder !== rightIsFolder) return leftIsFolder ? -1 : 1;
 		return left.compressedLabel.localeCompare(right.compressedLabel);
 	});
 	return visibleChildren;
 }
 
-function annotateTaskTree(
-	nodes: Record<string, InternalNode>,
-	nodeId: string,
-	taskAncestorId?: string,
-) {
-	const node = nodes[nodeId];
-	if (node.task) node.taskParentId = taskAncestorId;
-	const nextTaskAncestorId = node.task ? nodeId : taskAncestorId;
-	const taskChildIds: Array<string> = [];
-	for (const childId of node.childIds) {
-		const child = nodes[childId];
-		annotateTaskTree(nodes, childId, nextTaskAncestorId);
-		if (child.task) taskChildIds.push(childId);
-		else taskChildIds.push(...child.taskChildIds);
-	}
-	node.taskChildIds = taskChildIds;
-}
-
 function buildVisibleTree({
 	nodes,
-	nodeId,
-	visibleEndpoint,
 	orderedNodeIds,
+	parentId,
 	visibleDepth,
+	visibleEndpoint,
 	visibleNodes,
 }: {
 	nodes: Record<string, InternalNode>;
-	nodeId: string;
-	visibleEndpoint: VisibleEndpoint;
 	orderedNodeIds: Array<string>;
+	parentId?: string;
 	visibleDepth: number;
+	visibleEndpoint: VisibleEndpoint;
 	visibleNodes: Record<string, FileTreeNode>;
 }) {
-	const node = nodes[nodeId];
-	const visibleChildren = getVisibleChildren(nodes, nodeId);
+	const { compressedLabel, nodeId } = visibleEndpoint;
 	visibleNodes[nodeId] = {
-		childIds: visibleChildren.map((child) => child.nodeId),
-		compressedLabel: visibleEndpoint.compressedLabel,
+		compressedLabel,
 		depth: visibleDepth,
-		isCreateFolderTask: node.isCreateFolderTask,
-		isDeleteFolderTask: node.isDeleteFolderTask,
-		task: node.task,
-		taskChildIds: node.taskChildIds,
-		taskParentId: node.taskParentId,
+		isFolderTask: isFolderNode(nodes[nodeId]),
+		parentId,
+		task: nodes[nodeId].task,
+		taskChildIds: [],
 	};
 	orderedNodeIds.push(nodeId);
-
-	for (const child of visibleChildren)
+	for (const child of getVisibleChildren(nodes, nodeId))
 		buildVisibleTree({
-			nodeId: child.nodeId,
 			nodes,
 			orderedNodeIds,
+			parentId: nodeId,
 			visibleDepth: visibleDepth + 1,
 			visibleEndpoint: child,
 			visibleNodes,
@@ -148,12 +88,12 @@ function buildVisibleTree({
 }
 
 export default function createFileTreeData(tasks: Array<Task>): FileTreeData {
-	const nodes: Record<string, InternalNode> = { [ROOT_NODE_ID]: createNode('') };
+	const nodes: Record<string, InternalNode> = { [ROOT_NODE_ID]: { childIds: [], name: '' } };
 	const taskNodeIds: Array<string> = [];
 	const taskNodeIdSet = new Set<string>();
 
 	for (const task of tasks) {
-		const segments = getPathSegments(task.key);
+		const segments = task.key.split('/').filter(Boolean);
 		let parentId = ROOT_NODE_ID;
 		let currentPath = '';
 		let leafNodeId = task.key;
@@ -164,9 +104,9 @@ export default function createFileTreeData(tasks: Array<Task>): FileTreeData {
 			if (isLeaf) leafNodeId = nodeId;
 			const existing = nodes[nodeId];
 			if (!existing) {
-				nodes[nodeId] = createNode(segment, isLeaf ? task : undefined);
+				nodes[nodeId] = { childIds: [], name: segment, task: isLeaf ? task : undefined };
 				nodes[parentId].childIds.push(nodeId);
-			} else if (isLeaf) setTask(existing, task);
+			} else if (isLeaf) existing.task = task;
 
 			parentId = nodeId;
 		}
@@ -176,19 +116,33 @@ export default function createFileTreeData(tasks: Array<Task>): FileTreeData {
 		}
 	}
 
-	annotateTaskTree(nodes, ROOT_NODE_ID);
-
 	const orderedNodeIds: Array<string> = [];
 	const visibleNodes: Record<string, FileTreeNode> = {};
 	for (const child of getVisibleChildren(nodes, ROOT_NODE_ID))
 		buildVisibleTree({
-			nodeId: child.nodeId,
 			nodes,
 			orderedNodeIds,
 			visibleDepth: 0,
 			visibleEndpoint: child,
 			visibleNodes,
 		});
+
+	// Preorder: a node's visible parent is always resolved before itself.
+	for (const nodeId of orderedNodeIds) {
+		const node = visibleNodes[nodeId];
+		if (node.parentId === undefined) continue;
+		const parent = visibleNodes[node.parentId];
+		const taskParentId = parent.task === undefined ? parent.taskParentId : node.parentId;
+		if (taskParentId === undefined) continue;
+		node.taskParentId = taskParentId;
+		if (node.task) {
+			let ancestorId: string | undefined = taskParentId;
+			while (ancestorId !== undefined) {
+				visibleNodes[ancestorId].taskChildIds.push(nodeId);
+				ancestorId = visibleNodes[ancestorId].taskParentId;
+			}
+		}
+	}
 
 	return { nodes: visibleNodes, orderedNodeIds, taskNodeIds };
 }

@@ -1,12 +1,12 @@
 import { BaseTask } from './interface';
 import moveValue from '@/utils/move-value';
-import type { WithNewKey } from './interface';
+import type { WithOldKey } from './interface';
 
-export default class MoveLocal extends BaseTask<WithNewKey> {
+export default class MoveLocal extends BaseTask<WithOldKey> {
 	async exec() {
-		const { key, newKey, localFs, record } = this.options;
-		await localFs.move(key, newKey);
-		await moveValue({ newKey, oldKey: key, store: record });
+		const { key, oldKey, localFs, record } = this.options;
+		await localFs.move(oldKey, key);
+		await moveValue({ newKey: key, oldKey, store: record });
 	}
 	readonly name = 'moveLocal';
 }

@@ -18,8 +18,8 @@ function makeTask(input: { name: TaskNames; key: string; local?: Stat; remote?: 
 	return { ...input, exec: () => {}, options } as Task;
 }
 
-function newKey({ options }: Task) {
-	return (options as { newKey: string }).newKey;
+function oldKey({ options }: Task) {
+	return (options as { oldKey: string }).oldKey;
 }
 
 test('pairs file tasks using opposite-side record UIDs', () => {
@@ -42,8 +42,8 @@ test('pairs file tasks using opposite-side record UIDs', () => {
 	const [move] = convertMoves(tasks, records);
 
 	expect(move.name).toBe('moveLocal');
-	expect(newKey(move)).toBe('new.md');
-	expect(move.key).toBe('old.md');
+	expect(move.key).toBe('new.md');
+	expect(oldKey(move)).toBe('old.md');
 });
 
 test('keeps folder tasks when child basenames change', () => {
@@ -72,7 +72,7 @@ test('keeps folder tasks when child basenames change', () => {
 		'createLocalDir',
 		'moveLocal',
 	]);
-	expect(result.find((task) => task.name === 'moveLocal')?.key).toBe('old/note.md');
+	expect(oldKey(result.find((task) => task.name === 'moveLocal') as Task)).toBe('old/note.md');
 });
 
 test('collapses nested folders while retaining child moves', () => {
@@ -98,7 +98,7 @@ test('collapses nested folders while retaining child moves', () => {
 
 	const result = convertMoves(tasks, records);
 
-	expect(result.map((task) => [task.name, newKey(task), task.key])).toStrictEqual([
+	expect(result.map((task) => [task.name, task.key, oldKey(task)])).toStrictEqual([
 		['moveLocal', 'new/nested/note.md', 'old/nested/note.md'],
 		['moveLocal', 'new/nested/', 'old/nested/'],
 		['moveLocal', 'new/', 'old/'],

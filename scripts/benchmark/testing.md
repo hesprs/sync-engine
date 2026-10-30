@@ -5,7 +5,7 @@ This document specifies how to test services locally and simulate real network c
 ## WebDAV
 
 ```sh
-rclone serve webdav /home/hesprs/Desktop/DAV --addr :5005
+rclone serve webdav ~/Desktop/DAV --addr :5005
 ```
 
 - Server URL: `http://localhost:5005`

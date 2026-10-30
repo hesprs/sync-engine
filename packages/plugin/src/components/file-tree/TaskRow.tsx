@@ -1,6 +1,6 @@
 import constructTaskIcon from '../construct-task-icon';
 import { setIcon, setTooltip } from 'obsidian';
-import { createEffect } from 'solid-js';
+import { createEffect, Show } from 'solid-js';
 import type { FileTreeTranslations } from '.';
 import type { FileTreeNode } from './types';
 import type { Translate } from '@/modules/I18n';
@@ -16,6 +16,12 @@ export default function TaskRow(props: {
 	translate: Translate<FileTreeTranslations>;
 }): JSX.Element {
 	const isSelected = () => props.task !== undefined && props.isSelected;
+	const moveSource = () => {
+		const { task } = props;
+		return task?.name === 'moveLocal' || task?.name === 'moveRemote'
+			? task.options.oldKey
+			: undefined;
+	};
 
 	return (
 		<div
@@ -50,9 +56,22 @@ export default function TaskRow(props: {
 				}
 			/>
 			<div
-				class={`whitespace-nowrap ${isSelected() ? 'text-[--text-normal]' : 'text-[--text-muted]'}`}
+				class={`flex items-center gap-2 whitespace-nowrap ${isSelected() ? 'text-[--text-normal]' : 'text-[--text-muted]'}`}
 			>
 				{props.node.compressedLabel}
+				<Show when={moveSource()}>
+					{(oldKey) => (
+						<>
+							<div
+								class="h-3.5 w-3.5 text-[--text-faint]"
+								ref={(element) => setIcon(element, 'arrow-left')}
+							/>
+							<span class="text-[--text-faint]">
+								{oldKey().split('/').filter(Boolean).join(' / ')}
+							</span>
+						</>
+					)}
+				</Show>
 			</div>
 		</div>
 	);

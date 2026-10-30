@@ -11,7 +11,7 @@ const { file, folder } = testKit;
 function makeTask(input: {
 	name: TaskNames;
 	key: string;
-	newKey?: string;
+	oldKey?: string;
 	local?: Stat;
 	remote?: Stat;
 }): Task {
@@ -75,7 +75,7 @@ test('deselecting create or move folder task deselects descendant create and mov
 		makeTask({
 			key: 'folder/nested/',
 			name: 'moveLocal',
-			newKey: 'moved/nested/',
+			oldKey: 'old/nested/',
 			remote: folder('folder/nested/'),
 		}),
 		makeTask({
@@ -103,7 +103,7 @@ test('selecting child create or move task selects ancestor create-folder tasks r
 		makeTask({
 			key: 'folder/nested/deeper/',
 			name: 'moveLocal',
-			newKey: 'moved/deeper/',
+			oldKey: 'old/deeper/',
 			remote: folder('folder/nested/deeper/'),
 		}),
 	]);
@@ -124,7 +124,7 @@ test('treats move-folder tasks as creation tasks in mixed cascades', () => {
 		makeTask({
 			key: 'folder/nested/',
 			name: 'moveLocal',
-			newKey: 'moved/nested/',
+			oldKey: 'old/nested/',
 			remote: folder('folder/nested/'),
 		}),
 	]);
@@ -178,13 +178,13 @@ test('deselecting direct child move task converts parent move task into create-d
 	const parent = makeTask({
 		key: 'folder/',
 		name: 'moveLocal',
-		newKey: 'moved/',
+		oldKey: 'old/folder/',
 		remote: folder('folder/'),
 	});
 	const child = makeTask({
 		key: 'folder/note.md',
 		name: 'moveLocal',
-		newKey: 'moved/note.md',
+		oldKey: 'old/note.md',
 		remote: file('folder/note.md'),
 	});
 	const selection = createSelection([parent, child]);
@@ -193,23 +193,28 @@ test('deselecting direct child move task converts parent move task into create-d
 
 	expect(selection.isSelected('folder')).toBe(true);
 	expect(selection.getState().selected.map(describeTask)).toStrictEqual([
-		['createLocalDir', 'moved/'],
+		['createLocalDir', 'folder/'],
 	]);
 	expect(selection.getState().deselected).toStrictEqual([child]);
 });
 
 test('conversion cascades through ancestor move tasks', () => {
-	const parent = makeTask({ key: 'a/', name: 'moveLocal', newKey: 'x/', remote: folder('a/') });
+	const parent = makeTask({
+		key: 'a/',
+		name: 'moveLocal',
+		oldKey: 'old/a/',
+		remote: folder('a/'),
+	});
 	const child = makeTask({
 		key: 'a/b/',
 		name: 'moveLocal',
-		newKey: 'x/b/',
+		oldKey: 'old/a/b/',
 		remote: folder('a/b/'),
 	});
 	const grandChild = makeTask({
 		key: 'a/b/c.md',
 		name: 'moveLocal',
-		newKey: 'x/b/c.md',
+		oldKey: 'old/a/b/c.md',
 		remote: file('a/b/c.md'),
 	});
 	const selection = createSelection([parent, child, grandChild]);
@@ -217,24 +222,29 @@ test('conversion cascades through ancestor move tasks', () => {
 	selection.toggle('a/b/c.md', false);
 
 	expect(selection.getState().selected.map(describeTask)).toStrictEqual([
-		['createLocalDir', 'x/'],
-		['createLocalDir', 'x/b/'],
+		['createLocalDir', 'a/'],
+		['createLocalDir', 'a/b/'],
 	]);
 	expect(selection.getState().deselected).toStrictEqual([grandChild]);
 });
 
 test('selecting all direct child move tasks converts converted create-dir task back to move task', () => {
-	const parent = makeTask({ key: 'a/', name: 'moveLocal', newKey: 'x/', remote: folder('a/') });
+	const parent = makeTask({
+		key: 'a/',
+		name: 'moveLocal',
+		oldKey: 'old/a/',
+		remote: folder('a/'),
+	});
 	const child = makeTask({
 		key: 'a/b/',
 		name: 'moveLocal',
-		newKey: 'x/b/',
+		oldKey: 'old/a/b/',
 		remote: folder('a/b/'),
 	});
 	const grandChild = makeTask({
 		key: 'a/b/c.md',
 		name: 'moveLocal',
-		newKey: 'x/b/c.md',
+		oldKey: 'old/a/b/c.md',
 		remote: file('a/b/c.md'),
 	});
 	const selection = createSelection([parent, child, grandChild]);

@@ -2,25 +2,23 @@ import TaskRow from './TaskRow';
 import { setIcon } from 'obsidian';
 import { createEffect, For, Show } from 'solid-js';
 import type { FileTreeTranslations } from '.';
+import type createFileTreeSelection from './selection';
 import type { FileTreeData } from './types';
 import type { Translate } from '@/modules/I18n';
-import type { Task } from '@/sync';
 import type { JSX } from 'solid-js';
 
 export default function App(props: {
 	data: FileTreeData;
-	isSelected: (nodeId: string) => boolean;
-	getTask: (nodeId: string) => Task | undefined;
-	toggle: (nodeId: string, nextSelected: boolean) => void;
+	selection: ReturnType<typeof createFileTreeSelection>;
 	translate: Translate<FileTreeTranslations>;
 }): JSX.Element {
 	const selectedCount = () =>
-		props.data.taskNodeIds.filter((nodeId) => props.isSelected(nodeId)).length;
+		props.data.taskNodeIds.filter((nodeId) => props.selection.isSelected(nodeId)).length;
 	const allSelected = () => selectedCount() === props.data.taskNodeIds.length;
 	const someSelected = () => selectedCount() > 0 && !allSelected();
 	const toggleAll = () => {
 		const nextSelected = selectedCount() === 0;
-		for (const nodeId of props.data.taskNodeIds) props.toggle(nodeId, nextSelected);
+		for (const nodeId of props.data.taskNodeIds) props.selection.toggle(nodeId, nextSelected);
 	};
 
 	return (
@@ -52,11 +50,11 @@ export default function App(props: {
 			<For each={props.data.orderedNodeIds}>
 				{(nodeId) => (
 					<TaskRow
-						isSelected={props.isSelected(nodeId)}
+						isSelected={props.selection.isSelected(nodeId)}
 						node={props.data.nodes[nodeId]}
 						nodeId={nodeId}
-						task={props.getTask(nodeId)}
-						toggle={props.toggle}
+						task={props.selection.getTask(nodeId)}
+						toggle={props.selection.toggle}
 						translate={props.translate}
 					/>
 				)}

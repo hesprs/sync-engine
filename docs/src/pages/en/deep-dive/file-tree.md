@@ -12,16 +12,13 @@ Renders select box, Obsidian tooltip, icon, and task path
 
 - if a folder only has one children in the task list, and the folder itself is not in the task list, the children and folder combines into one entry with path shown as `<parent-basename> / <child-basename>`. This applies to each two path segments, so continuous nesting chains can be joined continuously, only stop at shallowest common parent.
 
-8 input validation rules:
+Selection rules:
 
-- Deselecting any direct children delete task deselects parent delete.
-- Selecting parent delete task selects all direct children delete tasks.
-- Deselecting folder creation tasks deselects all direct children creation tasks.
-- Selecting any children creation tasks selects its parent creation.
-- All the four rules above cascade propagate.
-- `Move` tasks are equal to creation tasks in validation logic.
-- Convert a `Move` task into a `CreateDir` task if any direct child `Move` tasks is deselected or converted to a `CreateDir` task.
-- Convert a `CreateDir` into a `Move` task if it was previously converted from a `Move` task and all its direct children are selected `Move` tasks.
+- Deselecting a delete task deselects ancestor delete-folder tasks; selecting a delete-folder task selects descendant delete tasks.
+- Deselecting a folder creation task deselects descendant creation tasks; selecting a creation task selects ancestor creation-folder tasks.
+- These rules cascade through all task ancestors and descendants.
+- `Move` tasks follow creation-selection rules.
+- A move task is presented as a folder creation whenever any descendant move task is deselected; conversion is derived from current selection.
 
 Behavior: selecting / unselecting only, no collapsing, no expansion.
 
@@ -35,10 +32,10 @@ Select all / deselect all:
 
 1. Pre-process:
 
-First, build a prefix tree from the array of task paths. Then, run a recursive "compact" function that merges single-child folders.
+First, build a prefix tree from task paths, then recursively compact single-child folders. The flattened visible tree stores task ancestor and descendant links for selection cascades.
 
-2. Rendering and input validation:
+2. Rendering and selection:
 
-Flatten the compacted tree into a 1D array, and store it in a `Record` object. The cascade logic is handled by a pure function that triggers on tasks selection and deselection.
+Flatten the compacted tree into a 1D array and store nodes in a `Record`. Selection lives in a Solid store; task conversions are derived from that selection.
 
 The UI simply maps over the flat array and applies padding-left based on the depth property.

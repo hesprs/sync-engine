@@ -2,13 +2,12 @@ import type { Task } from '@/sync';
 
 export type FileTreeNode = {
 	depth: number;
-	childIds: Array<string>;
+	parentId?: string;
 	compressedLabel: string;
 	task?: Task;
+	isFolderTask: boolean;
 	taskParentId?: string;
 	taskChildIds: Array<string>;
-	isCreateFolderTask: boolean;
-	isDeleteFolderTask: boolean;
 };
 
 export type FileTreeData = {

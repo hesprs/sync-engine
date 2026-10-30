@@ -1,179 +1,110 @@
 import CreateLocalDir from '@/sync/tasks/CreateLocalDir';
 import CreateRemoteDir from '@/sync/tasks/CreateRemoteDir';
+import { createStore } from 'solid-js/store';
 import type { FileTreeData, FileTreeNode } from './types';
 import type { Task, MoveLocal, MoveRemote } from '@/sync';
 
-function isDeleteTask(node?: FileTreeNode): boolean {
-	return node?.task?.name === 'removeLocal' || node?.task?.name === 'removeRemote';
-}
-
-function usesCreationCascade(node?: FileTreeNode): boolean {
-	return node?.task !== undefined && !isDeleteTask(node);
-}
-
-function isMoveTask(task?: Task): boolean {
+function isMoveTask(task?: Task): task is MoveLocal | MoveRemote {
 	return task?.name === 'moveLocal' || task?.name === 'moveRemote';
+}
+
+function isRemoveTask(task?: Task): boolean {
+	return task?.name === 'removeLocal' || task?.name === 'removeRemote';
+}
+
+function isCreateFolderNode(node: FileTreeNode): boolean {
+	return node.isFolderTask && !isRemoveTask(node.task);
+}
+
+function isRemoveFolderNode(node: FileTreeNode): boolean {
+	return node.isFolderTask && isRemoveTask(node.task);
+}
+
+function usesCreationCascade(node: FileTreeNode): boolean {
+	return node.task !== undefined && !isRemoveTask(node.task);
 }
 
 function convertMoveToCreateDir({
 	name,
 	options,
 }: MoveLocal | MoveRemote): CreateLocalDir | CreateRemoteDir {
-	const { key: _, newKey: key, ...rest } = options;
-	const ops = Object.assign(rest, {
-		key,
-		local: { isDir: true },
-		remote: { isDir: true },
-	}) as never;
+	// The old key is meaningless to a folder creation, and the stat only needs to be a folder.
+	const { oldKey: _, ...rest } = options;
+	const ops = Object.assign(rest, { local: { isDir: true }, remote: { isDir: true } }) as never;
 	return name === 'moveLocal' ? new CreateLocalDir(ops) : new CreateRemoteDir(ops);
 }
 
-function setSelected(
-	selectedTaskIds: Set<string>,
-	nodeId: string,
-	nextSelected: boolean,
-	changed: Set<string>,
-) {
-	const has = selectedTaskIds.has(nodeId);
-	if (has === nextSelected) return;
-	if (nextSelected) selectedTaskIds.add(nodeId);
-	else selectedTaskIds.delete(nodeId);
-	changed.add(nodeId);
-}
-
-function forEachTaskDescendant(
-	data: FileTreeData,
-	nodeId: string,
-	visit: (nodeId: string) => void,
-) {
-	for (const childId of data.nodes[nodeId].taskChildIds) {
-		visit(childId);
-		forEachTaskDescendant(data, childId, visit);
-	}
-}
-
-function forEachTaskAncestor(data: FileTreeData, nodeId: string, visit: (nodeId: string) => void) {
-	let current = data.nodes[nodeId].taskParentId;
-	while (current !== undefined) {
-		visit(current);
-		current = data.nodes[current].taskParentId;
-	}
-}
-
-export default function createFileTreeSelection(data: FileTreeData): {
-	isSelected: (nodeId: string) => boolean;
-	getTask: (nodeId: string) => Task | undefined;
-	toggle: (nodeId: string, nextSelected: boolean) => Set<string>;
-	getState: () => { selected: Array<Task>; deselected: Array<Task> };
-} {
-	const selectedTaskIds = new Set(data.taskNodeIds);
-
-	function getConversionState(
-		nodeId: string,
-		wasConverted: boolean,
-		converted: Set<string>,
-	): boolean {
-		const node = data.nodes[nodeId];
-		if (!node?.task || !isMoveTask(node.task)) return false;
-		if (
-			node.taskChildIds.some(
-				(childId) =>
-					isMoveTask(data.nodes[childId]?.task) &&
-					(!selectedTaskIds.has(childId) || converted.has(childId)),
-			)
-		)
-			return true;
-		if (!wasConverted) return false;
-		const reversible =
-			node.taskChildIds.length > 0 &&
-			node.taskChildIds.every((childId) => {
-				const child = data.nodes[childId];
-				return (
-					child.task !== undefined &&
-					isMoveTask(child.task) &&
-					selectedTaskIds.has(childId) &&
-					!converted.has(childId)
-				);
-			});
-		return !reversible;
-	}
-
-	function computeConversions(previous: Set<string>): Set<string> {
-		const converted = new Set(previous);
-		let changed = true;
-		while (changed) {
-			changed = false;
-			for (const nodeId of data.taskNodeIds) {
-				const wasConverted = converted.has(nodeId);
-				const next = getConversionState(nodeId, wasConverted, converted);
-				if (next !== wasConverted) {
-					if (next) converted.add(nodeId);
-					else converted.delete(nodeId);
-					changed = true;
-				}
-			}
-		}
-		return converted;
-	}
-
-	let convertedIds = computeConversions(new Set<string>());
+export default function createFileTreeSelection(data: FileTreeData) {
+	const [selected, setSelected] = createStore<Record<string, boolean>>(
+		Object.fromEntries(data.taskNodeIds.map((taskNodeId) => [taskNodeId, true])),
+	);
+	const isSelected = (nodeId: string) => selected[nodeId] ?? false;
 
 	function getTask(nodeId: string): Task | undefined {
-		const { task } = data.nodes[nodeId] ?? {};
-		return convertedIds.has(nodeId) &&
-			(task?.name === 'moveLocal' || task?.name === 'moveRemote')
+		const { task, taskChildIds } = data.nodes[nodeId];
+		return isMoveTask(task) &&
+			taskChildIds.some(
+				(childId) => !isSelected(childId) && isMoveTask(data.nodes[childId].task),
+			)
 			? convertMoveToCreateDir(task)
 			: task;
 	}
 
+	function setSelection(nodeId: string, nextSelected: boolean) {
+		if (isSelected(nodeId) !== nextSelected) setSelected(nodeId, nextSelected);
+	}
+
+	function forEachTaskDescendant(nodeId: string, visit: (nodeId: string) => void) {
+		for (const descendantId of data.nodes[nodeId].taskChildIds) visit(descendantId);
+	}
+
+	function forEachTaskAncestor(nodeId: string, visit: (nodeId: string) => void) {
+		let current = data.nodes[nodeId].taskParentId;
+		while (current !== undefined) {
+			visit(current);
+			current = data.nodes[current].taskParentId;
+		}
+	}
+
 	return {
 		getState() {
-			const selected: Array<Task> = [];
+			const selectedTasks: Array<Task> = [];
 			const deselected: Array<Task> = [];
 			for (const taskNodeId of data.taskNodeIds) {
 				const task = getTask(taskNodeId);
 				if (!task) continue;
-				if (selectedTaskIds.has(taskNodeId)) selected.push(task);
+				if (isSelected(taskNodeId)) selectedTasks.push(task);
 				else deselected.push(task);
 			}
-			return { deselected, selected };
+			return { deselected, selected: selectedTasks };
 		},
 		getTask,
-		isSelected(nodeId: string) {
-			return selectedTaskIds.has(nodeId);
-		},
+		isSelected,
 		toggle(nodeId: string, nextSelected: boolean) {
-			const changed = new Set<string>();
 			const node = data.nodes[nodeId];
-			if (!node?.task) return changed;
+			if (!node?.task) return;
 
-			setSelected(selectedTaskIds, nodeId, nextSelected, changed);
+			setSelection(nodeId, nextSelected);
 
-			if (!nextSelected && node.isCreateFolderTask)
-				forEachTaskDescendant(data, nodeId, (descendantId) => {
+			if (!nextSelected && isCreateFolderNode(node))
+				forEachTaskDescendant(nodeId, (descendantId) => {
 					if (usesCreationCascade(data.nodes[descendantId]))
-						setSelected(selectedTaskIds, descendantId, false, changed);
+						setSelection(descendantId, false);
 				});
-			else if (nextSelected && node.isDeleteFolderTask)
-				forEachTaskDescendant(data, nodeId, (descendantId) => {
-					if (isDeleteTask(data.nodes[descendantId]))
-						setSelected(selectedTaskIds, descendantId, true, changed);
+			else if (nextSelected && isRemoveFolderNode(node))
+				forEachTaskDescendant(nodeId, (descendantId) => {
+					if (isRemoveTask(data.nodes[descendantId].task))
+						setSelection(descendantId, true);
 				});
 
 			if (nextSelected && usesCreationCascade(node))
-				forEachTaskAncestor(data, nodeId, (ancestorId) => {
-					if (data.nodes[ancestorId].isCreateFolderTask)
-						setSelected(selectedTaskIds, ancestorId, true, changed);
+				forEachTaskAncestor(nodeId, (ancestorId) => {
+					if (isCreateFolderNode(data.nodes[ancestorId])) setSelection(ancestorId, true);
 				});
-			else if (!nextSelected && isDeleteTask(node))
-				forEachTaskAncestor(data, nodeId, (ancestorId) => {
-					if (data.nodes[ancestorId].isDeleteFolderTask)
-						setSelected(selectedTaskIds, ancestorId, false, changed);
+			else if (!nextSelected && isRemoveTask(node.task))
+				forEachTaskAncestor(nodeId, (ancestorId) => {
+					if (isRemoveFolderNode(data.nodes[ancestorId])) setSelection(ancestorId, false);
 				});
-
-			convertedIds = computeConversions(convertedIds);
-
-			return changed;
 		},
 	};
 }

@@ -9,6 +9,6 @@ code.gdrive-device-code {
 }
 
 .gdrive-device-code-status {
-	color: var(--text-muted);
+	color: var(--text-faint);
 	text-align: center;
 }

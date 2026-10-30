@@ -23,7 +23,7 @@ export type WithLocalStat = { local: Stat } & GenericOptions;
 export type WithRemoteStat = { remote: Stat } & GenericOptions;
 export type WithBothStats = { local: Stat; remote: Stat } & GenericOptions;
 export type WithBothFileStats = { local: FileStat; remote: FileStat } & GenericOptions;
-export type WithNewKey = { newKey: string } & GenericOptions;
+export type WithOldKey = { oldKey: string } & GenericOptions;
 
 export type TaskOptionsMap = {
 	download: WithRemoteFileStat;
@@ -35,8 +35,8 @@ export type TaskOptionsMap = {
 	createRemoteDir: WithLocalFolderStat;
 	removeRecord: GenericOptions;
 	addRecord: WithBothStats;
-	moveLocal: WithNewKey;
-	moveRemote: WithNewKey;
+	moveLocal: WithOldKey;
+	moveRemote: WithOldKey;
 };
 
 export type TaskNames =

@@ -46,11 +46,11 @@ export default function Card(props: {
 					/>
 					{props.module.name}
 				</div>
-				<div class="flex-shrink-0 text-xs text-[--text-muted]">{versionLabel()}</div>
+				<div class="flex-shrink-0 text-xs text-[--text-faint]">{versionLabel()}</div>
 			</div>
 
 			<div class="flex flex-1 flex-col gap-2">
-				<div class="flex flex-wrap gap-2 text-xs text-[--text-muted]">
+				<div class="flex flex-wrap gap-2">
 					<Show when={props.module.source === OFFICIAL_SOURCE}>
 						<span class="flair m-0 sync-engine-prominent">
 							{props.ctx.translate('official')}
