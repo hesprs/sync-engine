@@ -96,7 +96,7 @@ export default function featuresSettings(ctx: {
 						type: 'time',
 					}),
 				})),
-				3500: s(() => ({
+				4000: s(() => ({
 					desc: translate('focusSyncDescription'),
 					name: translate('focusSync'),
 					render: renderTogglableValue({
@@ -106,13 +106,13 @@ export default function featuresSettings(ctx: {
 						type: 'time',
 					}),
 				})),
-				4000: s(() => ({
+				5000: s(() => ({
 					control: { key: 'realtimeSyncFastMode', type: 'toggle' },
 					desc: translate('realtimeSyncFastModeDescription'),
 					labels: [speedLabel()],
 					name: translate('realtimeSyncFastMode'),
 				})),
-				5000: s(() => ({
+				6000: s(() => ({
 					desc: translate('asymmetricStorageDescription'),
 					labels: [matchLabel(), speedLabel()],
 					name: translate('asymmetricStorage'),

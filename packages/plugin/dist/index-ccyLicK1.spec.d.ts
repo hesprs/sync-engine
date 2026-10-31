@@ -286,11 +286,11 @@ declare class Download extends BaseTask<WithRemoteFileStat> {
   exec(): Promise<void>;
   readonly name = "download";
 }
-declare class MoveLocal extends BaseTask<WithNewKey> {
+declare class MoveLocal extends BaseTask<WithOldKey> {
   exec(): Promise<void>;
   readonly name = "moveLocal";
 }
-declare class MoveRemote extends BaseTask<WithNewKey> {
+declare class MoveRemote extends BaseTask<WithOldKey> {
   exec(): Promise<void>;
   readonly name = "moveRemote";
 }
@@ -352,8 +352,8 @@ type WithBothFileStats = {
   local: FileStat;
   remote: FileStat;
 } & GenericOptions;
-type WithNewKey = {
-  newKey: string;
+type WithOldKey = {
+  oldKey: string;
 } & GenericOptions;
 type TaskOptionsMap = {
   download: WithRemoteFileStat;
@@ -365,8 +365,8 @@ type TaskOptionsMap = {
   createRemoteDir: WithLocalFolderStat;
   removeRecord: GenericOptions;
   addRecord: WithBothStats;
-  moveLocal: WithNewKey;
-  moveRemote: WithNewKey;
+  moveLocal: WithOldKey;
+  moveRemote: WithOldKey;
 };
 type TaskNames = 'addRecord' | 'removeRecord' | 'createLocalDir' | 'createRemoteDir' | 'download' | 'resolveConflict' | 'removeLocal' | 'removeRemote' | 'upload' | 'moveLocal' | 'moveRemote';
 type Task = CreateLocalDir | CreateRemoteDir | Download | Upload | RemoveLocal | RemoveRemote | RemoveRecord | AddRecord | ResolveConflict | MoveLocal | MoveRemote;
@@ -681,6 +681,9 @@ type FeaturesSettingTranslations = {
   scheduledSync: string;
   scheduledSyncDescription: string;
   scheduledSyncPlaceholder: string;
+  focusSync: string;
+  focusSyncDescription: string;
+  focusSyncPlaceholder: string;
   asymmetricStorage: string;
   asymmetricStorageDescription: Fragment;
   asymmetricStorageMigration: Fragment<boolean>;
@@ -984,6 +987,7 @@ declare class Scheduler {
   private readonly ctx;
   private readonly pendingRequests;
   private isScheduling;
+  private lastSyncAt;
   private realtimeSyncTimer?;
   private scheduledSyncTimer?;
   private startupSyncTimer?;
@@ -1003,6 +1007,7 @@ declare class Scheduler {
     startupSync: TogglableValue;
     scheduledSync: TogglableValue;
     realtimeSync: TogglableValue;
+    focusSync: TogglableValue;
     syncStrategy: Array<GlobStrategy>;
     avoidAutoSyncWhenOffline: boolean;
   };
@@ -1011,6 +1016,7 @@ declare class Scheduler {
   dispose: () => void;
   private readonly startScheduledSync;
   private readonly stopScheduledSync;
+  private readonly onFocus;
   private readonly onChange;
   private readonly scheduleFlush;
   private readonly flush;

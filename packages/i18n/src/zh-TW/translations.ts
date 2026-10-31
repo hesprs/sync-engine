@@ -122,7 +122,7 @@ const zhTW: Translations = {
 	features: '功能特徵',
 	focusSync: '焦點同步',
 	focusSyncDescription:
-		'切換回 Obsidian 時自動觸發同步，且須距上一次同步已超過最短間隔。請在欄位中修改最短間隔。',
+		'切換回 Obsidian 前景時自動觸發同步。請在欄位中修改距上一次同步的最短間隔。',
 	focusSyncPlaceholder: '輸入最短間隔（例如 30s, 1min）',
 	globPlaceholder: '例如 temp.md, .trash/**/*',
 	headerKeyPlaceholder: '標頭名稱',
