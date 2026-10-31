@@ -23,7 +23,7 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 
 ### Core Functions
 
-- Startup / periodic / save-on-change syncing.
+- Startup / periodic / sync-on-focus / save-on-change syncing.
 - Granular sync strategy configuration (bidirectional / mirror remote / mirror local / don't sync) using Glob rules.
 - Conflict resolve strategies (keep both / latest survive / keep remote / keep local / skip).
 - Rate / memory control options.

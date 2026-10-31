@@ -55,7 +55,7 @@ Sync Engine 是一款用于**多设备间同步 Vault 笔记文件**的插件，
 
 - [客户端端到端加密](https://sync.consensia.cc/deep-dive/modules/encryption)
 - 使用 Glob 规则进行精细化的同步策略配置（双向同步 / 镜像远程 / 镜像本地 / 不同步）。
-- 支持启动时同步、定时同步以及变更自动保存时同步。
+- 支持启动时同步、定时同步、焦点同步以及变更时同步。
 - 灵活的冲突解决方案（[智能合并](https://sync.consensia.cc/deep-dive/modules/smart-merge) / 保留两者 / 保留最新版 / 覆盖为远端 / 覆盖为本地 / 直接跳过）。
 - 同步文件创建 / 修改时间。
 - 速率与内存占用调优选项。
