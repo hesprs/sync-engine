@@ -69,7 +69,7 @@ Disabled by default. The default interval is `15min`. The interval must be great
 
 Start a sync when you switch back to Obsidian, so changes made on another device or by another tool arrive without waiting for the next scheduled sync. Enter the minimum time between syncs, for example `30s` or `1min`. A focus sync is skipped while a sync is running or when the last sync ended less than this time ago, which avoids repeated syncs when you switch windows often.
 
-Disabled by default. The default minimum time is `30s`. Turn it off on devices where you do not want it, such as phones.
+Disabled by default. The default minimum time is `5min`. Turn it off on devices where you do not want it, such as phones.
 
 ### Realtime Sync Fast Mode
 

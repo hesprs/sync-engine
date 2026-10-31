@@ -63,7 +63,7 @@ export default class SyncEngine extends Plugin {
 			conflictResolver: 'renameAndKeepBoth',
 			customHeaders: [],
 			exportLogsDirectory: 'Sync Engine Logs/',
-			focusSync: { enabled: false, value: 30_000 },
+			focusSync: { enabled: false, value: 300_000 },
 			maxFileSize: { enabled: false, value: 31_457_280 },
 			maxMemoryConsumption: { enabled: true, value: 100 * 1024 ** 2 },
 			maxRequestConcurrency: { enabled: true, value: 50 },
@@ -75,7 +75,7 @@ export default class SyncEngine extends Plugin {
 			realtimeSync: { enabled: false, value: 5000 },
 			realtimeSyncFastMode: true,
 			remoteFs: '',
-			scheduledSync: { enabled: false, value: 15 * 60 * 1000 },
+			scheduledSync: { enabled: false, value: 300_000 },
 			startupSync: { enabled: false, value: 5000 },
 			syncStrategy: [
 				{ expr: '*', strategy: 'bidirectional' },
@@ -96,8 +96,6 @@ export default class SyncEngine extends Plugin {
 			],
 			...((await this.loadData()) as object),
 		};
-
-		migrateSettings(settings, this.saveSettings);
 
 		// https://github.com/microsoft/TypeScript/issues/62995
 		const preMerge = {
@@ -133,25 +131,4 @@ export default class SyncEngine extends Plugin {
 	}
 
 	readonly saveSettings = () => this.saveData(this.settings);
-}
-
-// TODO: remove after November 1, 2026
-type LegacySetting = {
-	inclusionRules?: Array<{ expr: string }>;
-	exclusionRules?: Array<{ expr: string }>;
-	decider?: string;
-};
-function migrateSettings(setting: Settings, save: () => Promise<void>) {
-	const legacy = setting as unknown as LegacySetting;
-	const { inclusionRules, exclusionRules, decider } = legacy;
-	if (!inclusionRules || !exclusionRules || !decider) return;
-	setting.syncStrategy = [
-		{ expr: '*', strategy: decider },
-		...exclusionRules.map(({ expr }) => ({ expr, strategy: NONE_STRATEGY })),
-		...inclusionRules.map(({ expr }) => ({ expr, strategy: decider })),
-	];
-	delete legacy.exclusionRules;
-	delete legacy.inclusionRules;
-	delete legacy.decider;
-	void save();
 }

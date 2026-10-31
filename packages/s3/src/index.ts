@@ -147,8 +147,6 @@ export default class S3 {
 			}),
 		);
 
-		// TODO: remove after October 31
-		if ('fetchObjectMeta' in this.moduleSettings) delete this.moduleSettings.fetchObjectMeta;
 		void this.migrateEndpoint().catch(() => {});
 	};
 
