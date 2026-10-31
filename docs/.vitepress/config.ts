@@ -159,6 +159,10 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 								{ link: `${deepDive}/modules/gdrive`, text: t('gdrive') },
 								{ link: `${deepDive}/modules/encryption`, text: t('encryption') },
 								{ link: `${deepDive}/modules/smart-merge`, text: t('smartMerge') },
+								{
+									link: `${deepDive}/modules/rclone-s3-compat`,
+									text: t('rcloneS3Compat'),
+								},
 							],
 							text: t('modules'),
 						},
