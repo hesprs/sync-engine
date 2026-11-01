@@ -48,7 +48,7 @@ aws s3api create-bucket --bucket obsidian-sync --endpoint-url http://127.0.0.1:5
 - 5MiB/s outbound (client downloads)
 
 ```sh
-sudo tc qdisc add dev lo root handle 1: prio
+sudo tc qdisc add dev lo root handle 1: prio bands 3 priomap 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2
 sudo tc qdisc add dev lo parent 1:1 handle 10: netem delay 100ms rate 24576kbit
 sudo tc qdisc add dev lo parent 1:2 handle 20: netem delay 100ms rate 40960kbit
 sudo tc filter add dev lo protocol ip parent 1: prio 1 u32 match ip dport 5005 0xffff flowid 1:1

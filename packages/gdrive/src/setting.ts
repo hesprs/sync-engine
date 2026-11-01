@@ -21,7 +21,6 @@ export type GdriveTranslations = {
 	gdrive: string;
 	connectAccount: string;
 	accountConnected: string;
-	accountConnectedDescription: string;
 	connectAccountDescription: string;
 	connect: string;
 	disconnect: string;
@@ -176,7 +175,7 @@ export default function gdriveSetting(
 					visible: () => !tokenManager.getRefreshToken(),
 				})),
 				1100: s(() => ({
-					desc: translate('accountConnectedDescription'),
+					desc: translate('connectSuccess'),
 					name: translate('accountConnected'),
 					render: (setting) => {
 						setting.addButton((button) =>

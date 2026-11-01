@@ -19,6 +19,7 @@ async function httpPing(target: string): Promise<number> {
 	const start = performance.now();
 	await fetch(target, {
 		cache: 'no-store',
+		headers: { connection: 'close' },
 		method: 'HEAD',
 		redirect: 'follow',
 	});
