@@ -36,6 +36,7 @@ const en = {
 	modules: 'Modules',
 	nativeName: 'English',
 	permissions: 'Permissions',
+	rcloneS3Compat: 'Rclone S3 Compatibility',
 	registration: 'Registration',
 	remoteMigration: 'Remote Migration',
 	request: 'Request',

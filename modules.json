@@ -20,6 +20,16 @@
 		"readme": "https://sync.consensia.cc/deep-dive/modules/s3"
 	},
 	{
+		"id": "rclone-s3-compat",
+		"name": "Rclone S3 Compatibility",
+		"version": "0.0.1",
+		"description": "Preserves file modification times when the S3 backend is an \"rclone serve s3\" server. Install this module alongside the S3 module if you're using it.",
+		"icon": "bandage",
+		"main": "https://sync.consensia.cc/modules/rclone-s3-compat.js",
+		"minPluginVersion": "3.3.0",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/rclone-s3-compat"
+	},
+	{
 		"id": "gdrive",
 		"name": "Google Drive",
 		"version": "0.2.1",
