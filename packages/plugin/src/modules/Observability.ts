@@ -8,7 +8,7 @@ import type { Translate } from './I18n';
 import type { SyncTerminateReason, TaskInfo } from './Sync';
 import type { Events, Translations } from '@';
 import type { Progress } from '@/types';
-import type { App, Command, DataAdapter, IconName } from 'obsidian';
+import type { App, Command, DataAdapter, Plugin } from 'obsidian';
 import type { Ref } from 'synthkernel';
 
 export type SyncStage =
@@ -22,12 +22,6 @@ export type SyncStage =
 	| 'failed';
 
 const MOBILE_SYNC_NOTICE_HIDE_DELAY = 2000;
-
-export type AddRibbonIcon = (
-	icon: IconName,
-	title: string,
-	callback: (evt: MouseEvent) => void,
-) => HTMLElement;
 
 export default class Observability {
 	private lastSyncTime = 0;
@@ -87,7 +81,7 @@ export default class Observability {
 			requestSync: (trigger: string) => Promise<SyncTerminateReason>;
 			showProgress: () => void;
 			addCommand: (command: Command) => Command;
-			addRibbonIcon: AddRibbonIcon;
+			addRibbonIcon: Plugin['addRibbonIcon'];
 			getLogs: () => string;
 			app: App;
 		},

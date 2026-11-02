@@ -13,8 +13,7 @@ import Storage from '@/modules/Storage';
 import Sync from '@/modules/Sync';
 import { Plugin } from 'obsidian';
 import { createContext } from 'synthkernel';
-import type { AddRibbonIcon } from '@/modules/Observability';
-import type { Command, EventRef, App } from 'obsidian';
+import type { App, PluginManifest } from 'obsidian';
 import type { Context as KernelContext, MergeSingleKey } from 'synthkernel';
 
 const internalModules = [
@@ -38,10 +37,23 @@ export type Context = KernelContext<
 	MergeKeys,
 	{
 		app: App;
-		addCommand: (command: Command) => Command;
-		registerEvent: (ref: EventRef) => void;
-		addRibbonIcon: AddRibbonIcon;
-		addStatusBarItem: () => HTMLElement;
+		addCommand: Plugin['addCommand'];
+		removeCommand: Plugin['removeChild'];
+		registerEvent: Plugin['registerEvent'];
+		addRibbonIcon: Plugin['addRibbonIcon'];
+		manifest: PluginManifest;
+		addStatusBarItem: Plugin['addStatusBarItem'];
+		registerView: Plugin['registerView'];
+		registerHoverLinkSource: Plugin['registerHoverLinkSource'];
+		registerExtensions: Plugin['registerExtensions'];
+		registerMarkdownPostProcessor: Plugin['registerMarkdownPostProcessor'];
+		registerMarkdownCodeBlockProcessor: Plugin['registerMarkdownCodeBlockProcessor'];
+		registerBasesView: Plugin['registerBasesView'];
+		registerEditorExtension: Plugin['registerEditorExtension'];
+		registerEditorSuggest: Plugin['registerEditorSuggest'];
+		registerObsidianProtocolHandler: Plugin['registerObsidianProtocolHandler'];
+		registerCliHandler: Plugin['registerCliHandler'];
+		registerDomEvent: Plugin['registerDomEvent'];
 		saveSettings: () => Promise<void>;
 	}
 >;
@@ -104,8 +116,21 @@ export default class SyncEngine extends Plugin {
 			addStatusBarItem: this.addStatusBarItem.bind(this),
 			allModules: this.allModules,
 			app: this.app,
+			manifest: this.manifest,
+			registerBasesView: this.registerBasesView.bind(this),
+			registerCliHandler: this.registerCliHandler.bind(this),
+			registerDomEvent: this.registerDomEvent.bind(this),
+			registerEditorExtension: this.registerEditorExtension.bind(this),
+			registerEditorSuggest: this.registerEditorSuggest.bind(this),
 			registerEvent: this.registerEvent.bind(this),
-			saveSettings: this.saveSettings,
+			registerExtensions: this.registerExtensions.bind(this),
+			registerHoverLinkSource: this.registerHoverLinkSource.bind(this),
+			registerMarkdownCodeBlockProcessor: this.registerMarkdownCodeBlockProcessor.bind(this),
+			registerMarkdownPostProcessor: this.registerMarkdownPostProcessor.bind(this),
+			registerObsidianProtocolHandler: this.registerObsidianProtocolHandler.bind(this),
+			registerView: this.registerView.bind(this),
+			removeCommand: this.removeCommand.bind(this),
+			saveSettings: this.saveSettings.bind(this),
 		};
 		this.context = createContext(internalModules, {
 			injectKeys: ['settings', 'i18n', 'root'],
