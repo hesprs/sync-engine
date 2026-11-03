@@ -1,7 +1,7 @@
 import writeNextcloudChunkedUpload from './chunked-upload';
 import { buildUrl, getFileUid, getHeader, parseWebDAVError } from './utils';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { concatBinary } from '@repo/shared/binary';
+import { collectStreamToBinary } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
@@ -84,10 +84,13 @@ function getRecursiveKeys(key: string) {
 	return keys.reverse();
 }
 
-// Different WebDAV servers can return 3 different kinds of href:
-// 1. full URL
-// 2. absolute path relative to server root
-// 3. path relative to root folder
+/**
+ * Different WebDAV servers can return 3 different kinds of href:
+ *
+ * 1. Full URL
+ * 2. Absolute path relative to server root
+ * 3. Path relative to root folder
+ */
 function stripEndpoint(endpoint: string, href: string) {
 	href = parseUrl(href, true);
 	if (href.startsWith(endpoint)) href = href.slice(endpoint.length);
@@ -111,21 +114,6 @@ function extractNextLink(linkHeader: string): string | undefined {
 
 function isTargetItem(key: string, endpoint: string, { href }: WebDAVResponseItem) {
 	return stripEndSlash(stripEndpoint(endpoint, href)).normalize('NFC') === stripEndSlash(key);
-}
-
-async function collectStreamToBinary(source: ReadableStream<Binary>): Promise<Binary> {
-	const reader = source.getReader();
-	const chunks: Array<Binary> = [];
-	try {
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			chunks.push(value);
-		}
-		return concatBinary(...chunks);
-	} finally {
-		reader.releaseLock();
-	}
 }
 
 export default class WebdavFs implements RootFs {

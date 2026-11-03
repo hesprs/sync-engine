@@ -73,7 +73,7 @@ export default class Extensibility {
 			manifest: PluginManifest;
 		},
 	) {
-		this.moduleDir = `${ctx.app.vault.configDir}/plugins/sync-engine/modules`;
+		this.moduleDir = `${ctx.manifest.dir}/modules`;
 		(window as WindowAugmentation).syncEngineApiBridge = obsidian;
 		this.moduleStore = ctx.indexedDB.getStore(`modules-${hash(ctx.app.vault.getName())}`);
 	}

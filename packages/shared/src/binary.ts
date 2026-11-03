@@ -41,3 +41,35 @@ export function concatBinary(...arrays: Array<BufferSource>): Binary {
 	}
 	return result;
 }
+
+/** Collects every chunk of a stream into one Binary, releasing the reader lock when done. */
+export async function collectStreamToBinary(source: ReadableStream<Binary>): Promise<Binary> {
+	const reader = source.getReader();
+	const chunks: Array<Binary> = [];
+	try {
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+			chunks.push(value);
+		}
+		return concatBinary(...chunks);
+	} finally {
+		reader.releaseLock();
+	}
+}
+
+export function encodeBase64Url(value: Binary): string {
+	return btoa(Array.from(value, (byte) => String.fromCodePoint(byte)).join(''))
+		.replaceAll('+', '-')
+		.replaceAll('/', '_')
+		.replaceAll('=', '');
+}
+
+export function decodeBase64Url(value: string): Binary {
+	const padding = value.length % 4;
+	const normalized =
+		value.replaceAll('-', '+').replaceAll('_', '/') +
+		(padding === 0 ? '' : '='.repeat(4 - padding));
+	const binary = atob(normalized);
+	return Uint8Array.from(binary, (char) => char.codePointAt(0) as number);
+}

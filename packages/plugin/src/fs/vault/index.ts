@@ -58,8 +58,9 @@ export default class VaultFs implements RootFs {
 		// https://forum.obsidian.md/t/on-android-vault-create-intermittently-fails-to-write-file-content/102935
 		let uid: string | undefined;
 		let trial = 0;
+		const times = extractTimes(await stat.meta());
 		do {
-			await this.request(key, { method: 'PUT', value, ...extractTimes(await stat.meta()) });
+			await this.request(key, { method: 'PUT', value, ...times });
 			uid = await getFileUid(this, key, value.byteLength);
 			trial++;
 		} while (!uid && trial < MAX_WRITE_TRIAL);
@@ -72,12 +73,13 @@ export default class VaultFs implements RootFs {
 		const reader = value.getReader();
 		if (!(await this.exists(TEMP_FOLDER))) await this.mkdir(TEMP_FOLDER);
 		try {
+			const meta = stat.meta();
 			while (true) {
 				const result = await reader.read();
 				if (result.done) break;
 				await this.request(tempPath, { method: 'APPEND', value: result.value });
 			}
-			const times = extractTimes(await stat.meta());
+			const times = extractTimes(await meta);
 			if (times)
 				await this.request(tempPath, {
 					method: 'APPEND',

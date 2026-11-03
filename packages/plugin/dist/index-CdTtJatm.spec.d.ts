@@ -1,4 +1,4 @@
-import { App, Command, DataWriteOptions, EventRef, ExtraButtonComponent, IconName, ListedFiles, Modal, Plugin, RequestUrlParam, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, Stat, TextComponent, ToggleComponent } from "obsidian";
+import { App, Command, DataWriteOptions, EventRef, ExtraButtonComponent, ListedFiles, Modal, ObsidianProtocolHandler, Plugin, PluginManifest, RequestUrlParam, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, Stat, TextComponent, ToggleComponent } from "obsidian";
 type General$1 = any;
 type Binary = Uint8Array<ArrayBuffer>;
 type MaybePromise<T> = Promise<T> | T;
@@ -189,6 +189,7 @@ type Ref<T> = {
 type Dispatch<O extends object> = <K extends keyof O>(...[key, payload]: undefined extends O[K] ? [K] : [K, O[K]]) => void;
 type On<O extends object> = <K extends keyof O>(key: K, callback: (payload: O[K]) => void) => () => void;
 declare class EventBus {
+  private readonly ctx;
   readonly events: {
     logSync: string;
     logGeneral: string;
@@ -199,7 +200,9 @@ declare class EventBus {
   private readonly isIdle;
   private readonly syncLogs;
   private readonly generalLogs;
-  constructor();
+  constructor(ctx: {
+    manifest: PluginManifest;
+  });
   private readonly getThisSync;
   private readonly putSyncLog;
   private readonly putGeneralLog;
@@ -240,13 +243,6 @@ declare class Storage {
   private readonly ctx;
   private readonly memoryDB;
   private readonly indexedDB;
-  constructor(ctx: {
-    getNamespace: () => string | Error;
-  });
-  private readonly getRecordStore;
-  private readonly deleteRecordStore;
-  private readonly clearRecordStores;
-  private readonly recordStoreExists;
   readonly root: {
     clearRecordStores: () => Promise<void>;
     deleteRecordStore: (namespace?: string) => MaybePromise<void>;
@@ -272,6 +268,14 @@ declare class Storage {
     };
     recordStoreExists: (namespace?: string) => MaybePromise<boolean>;
   };
+  constructor(ctx: {
+    getNamespace: () => string | Error;
+    manifest: PluginManifest;
+  });
+  private readonly getRecordStore;
+  private readonly deleteRecordStore;
+  private readonly clearRecordStores;
+  private readonly recordStoreExists;
   readonly dispose: () => void;
 }
 declare class CreateLocalDir extends BaseTask<WithRemoteFolderStat> {
@@ -475,6 +479,7 @@ declare class Extensibility {
     isIdle: Ref<boolean>;
     saveSettings: () => Promise<void>;
     indexedDB: DatabaseAsync<Record<string, AugmentedModuleMeta>>;
+    manifest: PluginManifest;
   });
   readonly start: () => void;
   private readonly createOperationFactory;
@@ -872,7 +877,6 @@ declare class Bootstrap {
   readonly dispose: () => void;
 }
 type SyncStage = 'none' | 'walkingRemote' | 'awaitingConfirmation' | 'executing' | 'completed' | 'completedNoop' | 'cancelled' | 'failed';
-type AddRibbonIcon = (icon: IconName, title: string, callback: (evt: MouseEvent) => void) => HTMLElement;
 declare class Observability {
   private readonly ctx;
   private lastSyncTime;
@@ -906,7 +910,7 @@ declare class Observability {
     requestSync: (trigger: string) => Promise<SyncTerminateReason>;
     showProgress: () => void;
     addCommand: (command: Command) => Command;
-    addRibbonIcon: AddRibbonIcon;
+    addRibbonIcon: Plugin['addRibbonIcon'];
     getLogs: () => string;
     app: App;
   });
@@ -1031,10 +1035,23 @@ type InternalModules = typeof internalModules;
 type MergeKeys = 'settings' | 'root' | 'events' | 'i18n';
 type Context = Context$1<InternalModules, MergeKeys, {
   app: App;
-  addCommand: (command: Command) => Command;
-  registerEvent: (ref: EventRef) => void;
-  addRibbonIcon: AddRibbonIcon;
-  addStatusBarItem: () => HTMLElement;
+  addCommand: Plugin['addCommand'];
+  removeCommand: Plugin['removeChild'];
+  registerEvent: Plugin['registerEvent'];
+  addRibbonIcon: Plugin['addRibbonIcon'];
+  manifest: PluginManifest;
+  addStatusBarItem: Plugin['addStatusBarItem'];
+  registerView: Plugin['registerView'];
+  registerHoverLinkSource: Plugin['registerHoverLinkSource'];
+  registerExtensions: Plugin['registerExtensions'];
+  registerMarkdownPostProcessor: Plugin['registerMarkdownPostProcessor'];
+  registerMarkdownCodeBlockProcessor: Plugin['registerMarkdownCodeBlockProcessor'];
+  registerBasesView: Plugin['registerBasesView'];
+  registerEditorExtension: Plugin['registerEditorExtension'];
+  registerEditorSuggest: Plugin['registerEditorSuggest'];
+  registerObsidianProtocolHandler: Plugin['registerObsidianProtocolHandler'];
+  registerCliHandler: Plugin['registerCliHandler'];
+  registerDomEvent: Plugin['registerDomEvent'];
   saveSettings: () => Promise<void>;
 }>;
 type Events = MergeSingleKey<InternalModules, 'events'>;
@@ -1172,46 +1189,7 @@ type RequestResponse = {
 type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
 declare class Registrar {
   private readonly ctx;
-  private readonly cleanupCallbacks;
-  private readonly localFsWrapperRegistry;
-  private readonly remoteFsWrapperRegistry;
-  private readonly localOptimizerRegistry;
-  private readonly remoteOptimizerRegistry;
-  private readonly remoteRequestMiddlewareRegistry;
-  private readonly localRequestMiddlewareRegistry;
-  private readonly remoteFsRegistry;
-  private readonly deciderRegistry;
-  private readonly triggerRegistry;
-  private readonly conflictResolverRegistry;
-  readonly settings: {
-    remoteFs: string;
-    conflictResolver: string;
-  };
-  readonly i18n: {
-    pleaseSetBackend: string;
-    backendNotInstalled: Snippet<string>;
-    syncStrategyNotInstalled: Snippet<string>;
-    conflictResolveStrategyNotInstalled: Snippet<string>;
-  };
-  constructor(ctx: {
-    app: App;
-    getRecordStore: (namespace: string) => RecordStore;
-    translate: Translate<Translations>;
-    dispatch: Dispatch<Events>;
-  });
-  private readonly getVaultRequest;
-  private readonly createLocalFs;
-  private readonly createRemoteFs;
-  private readonly getRequest;
-  private readonly getCheckConnection;
-  private readonly decideTasks;
-  private readonly optimizeLocal;
-  private readonly optimizeRemote;
-  private readonly reduceTriggers;
-  private readonly getConflictResolver;
-  private readonly getNamespace;
-  private readonly initializeSync;
-  root: {
+  readonly root: {
     conflictResolverRegistry: Map<string, ConflictResolverEntry>;
     createLocalFs: () => Fs;
     createRemoteFs: (remoteFs?: string) => Fs | Error;
@@ -1235,6 +1213,7 @@ declare class Registrar {
     registerLocalFsWrapper: (entry: FsWrapperEntry) => () => boolean;
     registerLocalOptimizer: (entry: OptimizerEntry) => () => boolean;
     registerLocalRequestMiddleware: (entry: LocalRequestMiddlewareEntry) => () => boolean;
+    registerObsidianProtocolHandler: (action: string, handler: ObsidianProtocolHandler) => () => Map<string, ObsidianProtocolHandler>;
     registerRemoteFs: (key: string, entry: RemoteFsEntry) => () => boolean;
     registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => boolean;
     registerRemoteOptimizer: (entry: OptimizerEntry) => () => boolean;
@@ -1242,6 +1221,47 @@ declare class Registrar {
     registerTrigger: (key: string, entry: TriggerEntry) => () => boolean;
     remoteFsRegistry: Map<string, RemoteFsEntry>;
   };
+  private readonly cleanupCallbacks;
+  private readonly localFsWrapperRegistry;
+  private readonly remoteFsWrapperRegistry;
+  private readonly localOptimizerRegistry;
+  private readonly remoteOptimizerRegistry;
+  private readonly remoteRequestMiddlewareRegistry;
+  private readonly localRequestMiddlewareRegistry;
+  private readonly remoteFsRegistry;
+  private readonly deciderRegistry;
+  private readonly triggerRegistry;
+  private readonly conflictResolverRegistry;
+  private readonly protocolHandlerRegistry;
+  readonly settings: {
+    remoteFs: string;
+    conflictResolver: string;
+  };
+  readonly i18n: {
+    pleaseSetBackend: string;
+    backendNotInstalled: Snippet<string>;
+    syncStrategyNotInstalled: Snippet<string>;
+    conflictResolveStrategyNotInstalled: Snippet<string>;
+  };
+  constructor(ctx: {
+    app: App;
+    getRecordStore: (namespace: string) => RecordStore;
+    translate: Translate<Translations>;
+    dispatch: Dispatch<Events>;
+    registerObsidianProtocolHandler: Plugin['registerObsidianProtocolHandler'];
+  });
+  private readonly getVaultRequest;
+  private readonly createLocalFs;
+  private readonly createRemoteFs;
+  private readonly getRequest;
+  private readonly getCheckConnection;
+  private readonly decideTasks;
+  private readonly optimizeLocal;
+  private readonly optimizeRemote;
+  private readonly reduceTriggers;
+  private readonly getConflictResolver;
+  private readonly getNamespace;
+  private readonly initializeSync;
   readonly dispose: () => void;
 }
 type VaultRequestParam = ({

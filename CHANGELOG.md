@@ -436,9 +436,9 @@ All notable changes to this project will be documented in this file.
 - Replaced the rxjs-based sync event bus with lightweight hooks/ref helpers, simplifying sync state propagation across the modal, ribbon, commands, unload flow, and related UI/services.
 - Refactored sync task handling and logging to reduce noise, tighten typing, remove unnecessary async/await patterns, and simplify progress summary structures.
 - Changed planning to create tasks directly from current file stats instead of snapshot-based planning, and moved file-content loading into push/pull/merge tasks for lazier, more targeted fetches.
-- Removed the planning “deciding” substage and updated progress/i18n text accordingly.
-- Introduced a maxConcurrentSyncTasks setting and updated task optimization to chunk work by the new concurrency limit.
-- Raised the default maxConcurrentWebDAVCalls to 100 and migrated existing configs from 0.
+- Removed the planning "deciding" substage and updated progress/i18n text accordingly.
+- Introduced a `maxConcurrentSyncTasks` setting and updated task optimization to chunk work by the new concurrency limit.
+- Raised the default `maxConcurrentWebDAVCalls` to 100 and migrated existing configs from 0.
 
 ### Sync correctness and compatibility
 

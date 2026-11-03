@@ -1,0 +1,24 @@
+{
+	"name": "dropbox",
+	"version": "0.0.1",
+	"private": true,
+	"license": "MIT",
+	"contributors": [
+		{
+			"name": "Hēsperus",
+			"github": "hesprs"
+		}
+	],
+	"type": "module",
+	"scripts": {
+		"dev": "MODE=dev bun --bun --env-file=.env tsdown",
+		"compile": "bun --bun --env-file=.env tsdown",
+		"fix": "oxlint --silent --fix && oxfmt",
+		"check": "oxlint && oxfmt --check",
+		"tests": "bun --preload=./test/mocks test"
+	},
+	"devDependencies": {
+		"@hesprs/sync-engine-sdk": "workspace:*",
+		"@repo/shared": "workspace:*"
+	}
+}

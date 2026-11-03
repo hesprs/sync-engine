@@ -18,22 +18,6 @@ For implementation simplicity, migrations are ad-hoc and time-bounded:
 
 ## Ongoing Migrations
 
-### Sync Strategies
-
-- Reason: 3.2.0 update unified sync strategy and inclusion / exclusion rules handling into a single list.
-- Window: 2026-09-28 to 2026-11-01
-- Scope: all users.
-- Operation: `inclusionRules`, `exclusionRules`, and `decider` are merged.
-- Human action: automatic, no human action needed.
-
-### S3 `fetchObjectMeta`
-
-- Reason: 3.3.1 metadata handling rework made the toggle obsolete.
-- Window: 2026-10-11 to 2026-10-31
-- Scope: all S3 users.
-- Operation: the stale `fetchObjectMeta` key is deleted on module start.
-- Human action: automatic, no human action needed.
-
 ### URL Canonicalization
 
 - Reason: the URL discipline enforcement requires endpoints to be stored in RFC 3986 percent-encoded form instead of whatever the user supplied.

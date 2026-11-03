@@ -1,6 +1,5 @@
 import testKit from '$/test-kit';
 import { contextWrapper } from '@/fs';
-import { STORAGE_NAME } from '@/modules/Storage';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { Fs } from '@/fs';
@@ -12,7 +11,7 @@ type ContextMemoryDB = DatabaseSync<
 	{ localStatContext: Stat; remoteStatContext: Stat },
 	{ lastLocalContextUid: string; lastRemoteContextUid: string }
 >;
-const db: ContextMemoryDB = openMemoryDB(STORAGE_NAME);
+const db: ContextMemoryDB = openMemoryDB('context-test-db');
 
 function remoteContextWrapper(rootFs: Fs) {
 	return contextWrapper(rootFs, {

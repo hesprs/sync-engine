@@ -10,7 +10,7 @@ import {
 	toMetaHeaders,
 } from './utils';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { concatBinary, textToUint8Array } from '@repo/shared/binary';
+import { collectStreamToBinary, textToUint8Array } from '@repo/shared/binary';
 import { getStatus, toError } from '@repo/shared/error';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import { dirname, isFolder, parseUrl } from '@repo/shared/path';
@@ -383,20 +383,5 @@ export default class S3Fs implements RootFs {
 		} while (continuationToken);
 
 		return results;
-	}
-}
-
-async function collectStreamToBinary(source: ReadableStream<Binary>): Promise<Binary> {
-	const reader = source.getReader();
-	const chunks: Array<Binary> = [];
-	try {
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			chunks.push(value);
-		}
-		return concatBinary(...chunks);
-	} finally {
-		reader.releaseLock();
 	}
 }

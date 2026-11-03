@@ -18,6 +18,7 @@ const en = {
 	development: 'Development',
 	discipline: 'Project discipline',
 	distribution: 'Distribution',
+	dropbox: 'Dropbox',
 	encryption: 'Encryption',
 	events: 'Events',
 	extensibility: 'Extensibility',
