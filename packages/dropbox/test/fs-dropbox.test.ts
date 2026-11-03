@@ -89,7 +89,7 @@ const FOLDER_CONFLICT_409 = {
 test('uploads a file with a single request and returns the content hash', async () => {
 	const { calls, fs } = createFs(() => json(fileMeta('note.md', '/note.md')));
 
-	const stat = file('note.md', { mtime: 1_700_000_000_000, size: 5 });
+	const stat = file('note.md', { meta: () => ({ mtime: String(1_700_000_000_000) }), size: 5 });
 	expect(await fs.write('note.md', bytes('hello'), stat)).toBe('hash-note.md');
 	expect(calls.length).toBe(1);
 	expect(calls[0]?.url).toBe(UPLOAD_URL);
@@ -136,7 +136,7 @@ test('streams uploads through a concurrent session with aligned chunks', async (
 				controller.close();
 			},
 		}),
-		file('big.bin', { mtime: 1_700_000_000_000, size: total }),
+		file('big.bin', { meta: () => ({ mtime: String(1_700_000_000_000) }), size: total }),
 	);
 
 	expect(uid).toBe('hash-big.bin');
