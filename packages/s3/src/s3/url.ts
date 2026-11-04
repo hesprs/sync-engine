@@ -1,5 +1,6 @@
 import { compileQuery, parseUrl } from '@repo/shared/path';
 import type { UrlStyle } from './sigv4';
+import type { StringKV } from '@hesprs/sync-engine-sdk';
 
 export type UrlOptions = { endpoint: string; bucket: string; key: string; urlStyle: UrlStyle };
 
@@ -12,7 +13,7 @@ export function buildUrl({ endpoint, bucket, key, urlStyle }: UrlOptions): strin
 	return `${endpoint}/${bucket}${encodedPath.startsWith('/') ? encodedPath : `/${encodedPath}`}`;
 }
 
-export function buildUrlWithQuery(options: UrlOptions, query: Record<string, string>): string {
+export function buildUrlWithQuery(options: UrlOptions, query: StringKV): string {
 	const queryString = compileQuery(query);
 	const baseUrl = buildUrl(options);
 	return queryString ? `${baseUrl}?${queryString}` : baseUrl;

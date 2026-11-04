@@ -1,7 +1,8 @@
 import { TEMP_FOLDER } from './request';
+import parseTimestamp from '@repo/shared/timestamp';
 import type { ListReporter, RootFs } from '../interface';
 import type { VaultRequest } from './request';
-import type { Stat, Binary, FileStat } from '@/types';
+import type { Stat, Binary, FileStat, StringKV } from '@/types';
 import type { DataWriteOptions } from 'obsidian';
 
 const MAX_WRITE_TRIAL = 5;
@@ -23,16 +24,8 @@ async function getFileUid(
 	return stat.uid;
 }
 
-function extractTimes({
-	mtime,
-	ctime,
-}: {
-	ctime?: string;
-	mtime?: string;
-}): DataWriteOptions | undefined {
-	const cNum = Number(ctime);
-	const mNum = Number(mtime);
-	if (cNum || mNum) return { ctime: cNum || undefined, mtime: mNum || undefined };
+function extractTimes({ mtime, ctime }: StringKV): DataWriteOptions {
+	return { ctime: parseTimestamp(ctime), mtime: parseTimestamp(mtime) };
 }
 
 export default class VaultFs implements RootFs {
@@ -58,9 +51,8 @@ export default class VaultFs implements RootFs {
 		// https://forum.obsidian.md/t/on-android-vault-create-intermittently-fails-to-write-file-content/102935
 		let uid: string | undefined;
 		let trial = 0;
-		const times = extractTimes(await stat.meta());
 		do {
-			await this.request(key, { method: 'PUT', value, ...times });
+			await this.request(key, { method: 'PUT', value, ...extractTimes(await stat.meta()) });
 			uid = await getFileUid(this, key, value.byteLength);
 			trial++;
 		} while (!uid && trial < MAX_WRITE_TRIAL);
@@ -73,21 +65,21 @@ export default class VaultFs implements RootFs {
 		const reader = value.getReader();
 		if (!(await this.exists(TEMP_FOLDER))) await this.mkdir(TEMP_FOLDER);
 		try {
-			const meta = stat.meta();
+			const metaPromise = stat.meta();
+			const removePromise = this.removeIfExist(key);
 			while (true) {
 				const result = await reader.read();
 				if (result.done) break;
 				await this.request(tempPath, { method: 'APPEND', value: result.value });
 			}
-			const times = extractTimes(await meta);
-			if (times)
+			const times = extractTimes(await metaPromise);
+			if (Object.values(times).some(Boolean))
 				await this.request(tempPath, {
 					method: 'APPEND',
 					value: new Uint8Array(0),
 					...times,
 				});
-			if (await this.exists(key))
-				await this.request(key, { method: 'DELETE', trash: 'permanent' });
+			await removePromise;
 			await this.move(tempPath, key);
 			return await getFileUid(this, key);
 		} catch (error) {
@@ -110,7 +102,7 @@ export default class VaultFs implements RootFs {
 	}
 
 	async move(oldKey: string, newKey: string): Promise<void> {
-		if (await this.exists(newKey)) await this.delete(newKey);
+		await this.removeIfExist(newKey);
 		return this.request(oldKey, { destination: newKey, method: 'MOVE' });
 	}
 
@@ -168,5 +160,9 @@ export default class VaultFs implements RootFs {
 		return type === 'file'
 			? { isDir: false, key, meta, mtime, size, uid: `${mtime}~${size}` }
 			: { isDir: true, key, meta };
+	}
+
+	async removeIfExist(key: string) {
+		if (await this.exists(key)) await this.delete(key);
 	}
 }

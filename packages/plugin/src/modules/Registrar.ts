@@ -10,7 +10,7 @@ import type { StrategyMapping, SyncOptions } from './Sync';
 import type { Events, Translations } from '@';
 import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
 import type { Task, ConflictResolver, Decider, TaskFactory } from '@/sync';
-import type { General, MaybePromise, Binary } from '@/types';
+import type { General, MaybePromise, Binary, StringKV } from '@/types';
 import type { App, RequestUrlParam, Plugin, ObsidianProtocolHandler } from 'obsidian';
 
 type RejectableWrapper<T> = (value: T) => T | undefined;
@@ -46,7 +46,7 @@ export type RequestResponse = {
 	bytes: () => Binary;
 	// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 	json: <T extends object = object>() => T;
-	headers: Record<string, string>;
+	headers: StringKV;
 	status: number;
 };
 export type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;

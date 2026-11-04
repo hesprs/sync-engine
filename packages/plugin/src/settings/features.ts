@@ -1,4 +1,4 @@
-import { renderTogglableValue, s } from './utils';
+import { renderTogglableValue, settingEntry as s } from './utils';
 import setNeedMigration from '@/components/MigrationModal';
 import type { LabelDefinition } from './utils';
 import type { Settings, Context } from '@';

@@ -6,18 +6,19 @@ type TogglableValue<T = number> = {
   enabled: boolean;
   value: T;
 };
+type StringKV = Record<string, string>;
 type FileStat = {
   isDir: false;
   key: string;
   mtime: number;
   size: number;
   uid: string;
-  meta: () => MaybePromise<Dict<string>>;
+  meta: () => MaybePromise<StringKV>;
 };
 type FolderStat = {
   isDir: true;
   key: string;
-  meta: () => MaybePromise<Dict<string>>;
+  meta: () => MaybePromise<StringKV>;
 };
 type Stat$1 = FileStat | FolderStat;
 type RecordStat = {
@@ -601,7 +602,7 @@ type LabelDefinition = {
   color?: string;
   textColor?: string;
 };
-declare function s(parent: (self: SettingTree) => AugmentedSettingDefinitionItem, children?: CallableOrObjectTree): CallableOrObjectTree;
+declare function settingEntry(parent: (self: SettingTree) => AugmentedSettingDefinitionItem, children?: CallableOrObjectTree): CallableOrObjectTree;
 declare function reactivelyValidate<T>({ text, parse, onSave, format, immediate }: {
   text: TextComponent;
   parse: (value: string) => T | undefined;
@@ -1183,7 +1184,7 @@ type RequestResponse = {
   text: () => string;
   bytes: () => Binary;
   json: <T extends object = object>() => T;
-  headers: Record<string, string>;
+  headers: StringKV;
   status: number;
 };
 type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
@@ -1310,4 +1311,4 @@ type VaultRequest = <T extends VaultRequestParam = {
   method: 'GET';
 }>(key: string, params?: T) => Promise<VaultRequestResponseMap[T['method']]>;
 type TrashOption = 'local' | 'system' | 'permanent';
-export { Download as $, LabelDefinition as A, FileStat as At, TaskFactory as B, chunkSize as C, MoveAtom as Ct, writeWithValue as D, RootFs as Dt, readWithSize as E, OutputAtom as Et, SettingEntry as F, RecordStatsMap as Ft, TaskNames as G, ConflictResolver as H, AugmentedModuleMeta as I, Stat$1 as It, RemoveRemote as J, Upload as K, ModuleMeta as L, StatsMap as Lt, reactivelyValidate as M, MaybePromise as Mt, s as N, Progress as Nt, prefixWrapper as O, WrappedFs as Ot, CallableOrObjectTree as P, RecordStat as Pt, MoveLocal as Q, Decider as R, Binary as Rt, digOriginal as S, MkdirAtom as St, pipe as T, OptimizerOutput as Tt, ConflictResolverPayload as U, AddRecord as V, Task as W, RemoveLocal as X, RemoveRecord as Y, MoveRemote as Z, Events as _, DeleteAtom as _t, LocalRequestMiddlewareEntry as a, Snippet as at, ExistingMemoryDB as b, ListOptions as bt, RemoteRequestMiddlewareEntry as c, Dispatch as ct, RequestResponse as d, DatabaseSync as dt, CreateRemoteDir as et, TriggerEntry as f, StoreAsync as ft, Context as g, CustomAtom as gt, SyncTerminateReason as h, BatchOptimizer as ht, FsWrapperEntry as i, ObsidianLanguageCode as it, generateEditableList as j, FolderStat as jt, setNeedMigration as k, WriteAtom as kt, Request as l, On as lt, SyncOptions as m, StoreSync as mt, ConflictResolverEntry as n, RecordStore as nt, OptimizerEntry as o, Translate as ot, RemoteLister as p, StoreOperations as pt, ResolveConflict as q, DeciderEntry as r, Fragment as rt, RemoteFsEntry as s, TranslationResource as st, VaultRequest as t, CreateLocalDir as tt, RequestParam as u, DatabaseAsync as ut, Settings as v, Fs as vt, concurrency as w, OptimizerInput as wt, SelectFromContext as x, ListReporter as xt, Translations as y, InputAtom as yt, DeciderInput as z };
+export { Download as $, LabelDefinition as A, FileStat as At, TaskFactory as B, chunkSize as C, MoveAtom as Ct, writeWithValue as D, RootFs as Dt, readWithSize as E, OutputAtom as Et, SettingEntry as F, RecordStatsMap as Ft, TaskNames as G, ConflictResolver as H, AugmentedModuleMeta as I, Stat$1 as It, RemoveRemote as J, Upload as K, ModuleMeta as L, StatsMap as Lt, reactivelyValidate as M, MaybePromise as Mt, settingEntry as N, Progress as Nt, prefixWrapper as O, WrappedFs as Ot, CallableOrObjectTree as P, RecordStat as Pt, MoveLocal as Q, Decider as R, StringKV as Rt, digOriginal as S, MkdirAtom as St, pipe as T, OptimizerOutput as Tt, ConflictResolverPayload as U, AddRecord as V, Task as W, RemoveLocal as X, RemoveRecord as Y, MoveRemote as Z, Events as _, DeleteAtom as _t, LocalRequestMiddlewareEntry as a, Snippet as at, ExistingMemoryDB as b, ListOptions as bt, RemoteRequestMiddlewareEntry as c, Dispatch as ct, RequestResponse as d, DatabaseSync as dt, CreateRemoteDir as et, TriggerEntry as f, StoreAsync as ft, Context as g, CustomAtom as gt, SyncTerminateReason as h, BatchOptimizer as ht, FsWrapperEntry as i, ObsidianLanguageCode as it, generateEditableList as j, FolderStat as jt, setNeedMigration as k, WriteAtom as kt, Request as l, On as lt, SyncOptions as m, StoreSync as mt, ConflictResolverEntry as n, RecordStore as nt, OptimizerEntry as o, Translate as ot, RemoteLister as p, StoreOperations as pt, ResolveConflict as q, DeciderEntry as r, Fragment as rt, RemoteFsEntry as s, TranslationResource as st, VaultRequest as t, CreateLocalDir as tt, RequestParam as u, DatabaseAsync as ut, Settings as v, Fs as vt, concurrency as w, OptimizerInput as wt, SelectFromContext as x, ListReporter as xt, Translations as y, InputAtom as yt, DeciderInput as z, Binary as zt };

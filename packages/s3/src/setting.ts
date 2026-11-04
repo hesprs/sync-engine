@@ -1,4 +1,4 @@
-import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
+import { reactivelyValidate, settingEntry as s } from '@hesprs/sync-engine-sdk';
 import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
 import { SecretComponent } from 'obsidian';
 import type { S3Settings } from '@';

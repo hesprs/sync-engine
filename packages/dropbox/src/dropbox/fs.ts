@@ -15,6 +15,7 @@ import { collectStreamToBinary } from '@repo/shared/binary';
 import { toError } from '@repo/shared/error';
 import { dirname } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
+import parseTimestamp from '@repo/shared/timestamp';
 import type {
 	CreateFolderBatchEntry,
 	DeleteBatchEntry,
@@ -33,6 +34,7 @@ import type {
 	RequestResponse,
 	RootFs,
 	Stat,
+	StringKV,
 } from '@hesprs/sync-engine-sdk';
 
 export type DropboxFsOptions = { accountId: string; useTrash: boolean };
@@ -70,8 +72,8 @@ function isCaseOnly(oldKey: string, newKey: string): boolean {
 	return oldKey !== newKey && oldKey.toLowerCase() === newKey.toLowerCase();
 }
 
-function uploadArg(key: string, { mtime }: Dict<string>): UploadArg {
-	const mtimeNum = Number(mtime);
+function uploadArg(key: string, { mtime }: StringKV): UploadArg {
+	const mtimeNum = parseTimestamp(mtime);
 	return {
 		autorename: false,
 		client_modified: mtimeNum ? `${new Date(mtimeNum).toISOString().slice(0, 19)}Z` : undefined,

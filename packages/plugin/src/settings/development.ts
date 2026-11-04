@@ -1,4 +1,4 @@
-import { generateEditableList, reactivelyValidate, s } from './utils';
+import { generateEditableList, reactivelyValidate, settingEntry as s } from './utils';
 import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
 import { Notice } from 'obsidian';
 import type { Settings } from '@';

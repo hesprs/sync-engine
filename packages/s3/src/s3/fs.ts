@@ -26,6 +26,7 @@ import type {
 	RequestResponse,
 	RootFs,
 	Stat,
+	StringKV,
 } from '@hesprs/sync-engine-sdk';
 
 export type S3FsOptions = {
@@ -94,7 +95,7 @@ export default class S3Fs implements RootFs {
 	private readonly endpoint: string;
 	private readonly bucket: string;
 	private readonly urlStyle: UrlStyle;
-	private readonly metaCache = new Map<string, Record<string, string>>();
+	private readonly metaCache = new Map<string, StringKV>();
 
 	constructor(private readonly options: S3FsOptions) {
 		this.endpoint = options.endpoint;
@@ -292,7 +293,7 @@ export default class S3Fs implements RootFs {
 		);
 	}
 
-	private async fetchMeta(key: string): Promise<Record<string, string>> {
+	private async fetchMeta(key: string): Promise<StringKV> {
 		const cached = this.metaCache.get(key);
 		if (cached) return cached;
 		const { headers } = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
@@ -302,6 +303,8 @@ export default class S3Fs implements RootFs {
 	async stat(key: string): Promise<Stat> {
 		if (isFolder(key)) return { isDir: true, key, meta: () => this.fetchMeta(key) };
 		const { headers } = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
+		const meta = extractMetaHeaders(headers);
+		this.metaCache.set(key, meta);
 		const etag = getHeader(headers, 'etag');
 		const contentLength = getHeader(headers, 'content-length');
 		const lastModified = getHeader(headers, 'last-modified');
@@ -312,7 +315,7 @@ export default class S3Fs implements RootFs {
 		return {
 			isDir: false,
 			key,
-			meta: () => extractMetaHeaders(headers),
+			meta: () => ({ mtime: String(mtime), ...meta }),
 			mtime,
 			size,
 			uid: etag ? normalizeEtag(etag) : `${mtime}~${size}`,
@@ -334,10 +337,7 @@ export default class S3Fs implements RootFs {
 		const results: Array<Stat> = [];
 		let continuationToken: string | undefined;
 		do {
-			const query: Record<string, string> = {
-				'list-type': '2',
-				prefix: key === '/' ? '' : key,
-			};
+			const query: StringKV = { 'list-type': '2', prefix: key === '/' ? '' : key };
 			if (continuationToken) query['continuation-token'] = continuationToken;
 			const url = buildUrlWithQuery(
 				{ bucket: this.bucket, endpoint: this.endpoint, key: '/', urlStyle: this.urlStyle },
@@ -369,7 +369,11 @@ export default class S3Fs implements RootFs {
 						results.push({
 							isDir: false,
 							key: Key,
-							meta,
+							meta: async () => {
+								const result = await meta();
+								result.mtime ??= String(mtime);
+								return result;
+							},
 							mtime,
 							size,
 							uid: ETag ? normalizeEtag(ETag) : `${mtime}~${size}`,

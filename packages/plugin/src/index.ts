@@ -73,7 +73,7 @@ export default class SyncEngine extends Plugin {
 
 	async onload() {
 		const settings: Settings = {
-			asymmetricStorage: true,
+			asymmetricStorage: false,
 			avoidAutoSyncWhenOffline: true,
 			confirmDeleteInAutoSync: true,
 			confirmTasksInSync: true,

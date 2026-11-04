@@ -2,7 +2,7 @@ import { API_RPC, OAUTH_AUTHORIZE_URL, OAUTH_TOKEN_URL } from './api';
 import { encodeBase64Url } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
 import { requestUrl } from 'obsidian';
-import type { Binary, Request } from '@hesprs/sync-engine-sdk';
+import type { Binary, Request, StringKV } from '@hesprs/sync-engine-sdk';
 import type { ObsidianProtocolData, SecretStorage } from 'obsidian';
 
 export const APP_KEY = atob(process.env.DROPBOX_APP_KEY ?? '');
@@ -29,7 +29,7 @@ export type TokenResult = {
 
 export type AuthorizationRequest = { state: string; url: string; verifier: string };
 
-function formEncode(fields: Record<string, string>): string {
+function formEncode(fields: StringKV): string {
 	return new URLSearchParams(fields).toString();
 }
 

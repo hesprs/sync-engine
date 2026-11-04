@@ -48,7 +48,6 @@ export default class Dropbox {
 			) => () => void;
 		}>,
 	) {
-		this.moduleSettings.baseDirectory ||= `${ctx.app.vault.getName().normalize('NFC')}/`;
 		ctx.registerI18n('en', en);
 		ctx.registerI18n('zh', zh);
 		ctx.registerI18n('zh-TW', zhTW);
@@ -56,7 +55,11 @@ export default class Dropbox {
 		this.tokenManager = new TokenManager(ctx.app.secretStorage);
 	}
 
-	readonly moduleSettings: DropboxSettings = { accountId: '', baseDirectory: '', useTrash: true };
+	readonly moduleSettings: DropboxSettings = {
+		accountId: '',
+		baseDirectory: '/',
+		useTrash: true,
+	};
 
 	declare settings: Settings;
 

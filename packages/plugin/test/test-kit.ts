@@ -12,6 +12,7 @@ import type {
 	RecordStatsMap,
 	Stat,
 	StatsMap,
+	StringKV,
 } from '@/types';
 
 type FsCalls = {
@@ -43,17 +44,17 @@ function bytes(value: string): Binary {
 	return textEncoder.encode(value);
 }
 
-const EMPTY_META: () => Record<string, string> = () => ({});
+const EMPTY_META: () => StringKV = () => ({});
 
 function file(
 	key: string,
-	options: { mtime?: number; size?: number; uid?: string; meta?: () => Dict<string> } = {},
+	options: { mtime?: number; size?: number; uid?: string; meta?: () => StringKV } = {},
 ): FileStat {
 	const { mtime = 0, size = 0, uid = `${key}-uid`, meta } = options;
 	return { isDir: false, key, meta: meta ?? EMPTY_META, mtime, size, uid };
 }
 
-function folder(key: string, meta?: () => Dict<string>): FolderStat {
+function folder(key: string, meta?: () => StringKV): FolderStat {
 	return { isDir: true, key, meta: meta ?? EMPTY_META };
 }
 

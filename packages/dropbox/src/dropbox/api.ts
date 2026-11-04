@@ -140,12 +140,8 @@ export function batchEntryError(failure: Record<string, unknown>): Error & { tag
 	return error;
 }
 
-export function uidOf(metadata: FileMetadata): string {
-	return (
-		metadata.content_hash ??
-		metadata.rev ??
-		`${Date.parse(metadata.client_modified)}~${metadata.size}`
-	);
+export function uidOf({ client_modified, content_hash, rev, size }: FileMetadata): string {
+	return content_hash ?? rev ?? `${Date.parse(client_modified)}~${size}`;
 }
 
 export function toStat(key: string, metadata: Metadata): Stat {

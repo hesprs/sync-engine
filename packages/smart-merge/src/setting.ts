@@ -1,4 +1,4 @@
-import { s } from '@hesprs/sync-engine-sdk';
+import { settingEntry as s } from '@hesprs/sync-engine-sdk';
 import type { SmartMergeTranslations } from '@/i18n';
 import type { MergeOptions } from '@/utils/merge';
 import type { CallableOrObjectTree, Translate } from '@hesprs/sync-engine-sdk';

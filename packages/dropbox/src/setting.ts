@@ -1,5 +1,5 @@
 import { exchangeCodeForTokens, revokeToken, startAuthorization } from './dropbox/auth';
-import { s } from '@hesprs/sync-engine-sdk';
+import { settingEntry as s } from '@hesprs/sync-engine-sdk';
 import { describeError, toError } from '@repo/shared/error';
 import { normalizeBaseDir } from '@repo/shared/path';
 import { Modal, Notice, Setting } from 'obsidian';

@@ -58,11 +58,16 @@ export async function collectStreamToBinary(source: ReadableStream<Binary>): Pro
 	}
 }
 
+export function encodeBase64(bytes: Binary): string {
+	return btoa(Array.from(bytes, (byte) => String.fromCodePoint(byte)).join(''));
+}
+
+export function decodeBase64(value: string): Binary {
+	return Uint8Array.from(atob(value), (char) => char.codePointAt(0) as number);
+}
+
 export function encodeBase64Url(value: Binary): string {
-	return btoa(Array.from(value, (byte) => String.fromCodePoint(byte)).join(''))
-		.replaceAll('+', '-')
-		.replaceAll('/', '_')
-		.replaceAll('=', '');
+	return encodeBase64(value).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 }
 
 export function decodeBase64Url(value: string): Binary {
@@ -70,6 +75,5 @@ export function decodeBase64Url(value: string): Binary {
 	const normalized =
 		value.replaceAll('-', '+').replaceAll('_', '/') +
 		(padding === 0 ? '' : '='.repeat(4 - padding));
-	const binary = atob(normalized);
-	return Uint8Array.from(binary, (char) => char.codePointAt(0) as number);
+	return decodeBase64(normalized);
 }

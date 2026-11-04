@@ -4,7 +4,7 @@ import { formatUrl, parseUrl } from '@repo/shared/path';
 import { App, Modal, Setting } from 'obsidian';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Fragment, Translate } from '@/modules/I18n';
-import type { MaybePromise } from '@/types';
+import type { MaybePromise, StringKV } from '@/types';
 
 export type ModuleEditorTranslations = {
 	editModuleInformation: string;
@@ -206,7 +206,7 @@ export default class ModuleEditorModal extends Modal {
 	}
 }
 
-function parseMagicBytes(file: string): Record<string, string> {
+function parseMagicBytes(file: string): StringKV {
 	const block = /^\s*\/\*!(?<block>[\s\S]*?)\*\//u.exec(file)?.groups?.block ?? '';
 	return Object.fromEntries(
 		[...block.matchAll(/^(?<key>.+?):\s*(?<value>.*)$/gmu)].map(({ groups }) => {

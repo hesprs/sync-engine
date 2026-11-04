@@ -1,8 +1,15 @@
 import merge from '@/utils/merge';
 import { pipe } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array, uint8ArrayToText } from '@repo/shared/binary';
+import parseTimestamp from '@repo/shared/timestamp';
 import type { MergeOptions } from '@/utils/merge';
-import type { ConflictResolver, DatabaseAsync, FileStat, Fs } from '@hesprs/sync-engine-sdk';
+import type {
+	ConflictResolver,
+	DatabaseAsync,
+	FileStat,
+	Fs,
+	StringKV,
+} from '@hesprs/sync-engine-sdk';
 
 type SmartMergeStoreSchema = Record<`base-text-${string}`, string>;
 type SmartMergeStoreMeta = Record<string, never>;
@@ -34,20 +41,25 @@ export default function smartMergeResolver(
 				isDir: false,
 				key,
 				meta: async () => {
-					const { mtime: _r, ctime: remoteCtime, ...remoteRest } = await remote.meta();
-					const { mtime: _l, ctime: localCtime, ...localRest } = await local.meta();
-					const mergeCtime = () => {
-						if (!remoteCtime && !localCtime) return;
-						if (remoteCtime && localCtime)
-							return String(Math.min(Number(remoteCtime), Number(localCtime)));
-						return remoteCtime || localCtime;
-					};
-					return {
-						ctime: mergeCtime(),
+					const [
+						{ mtime: _r, ctime: rc, ...remoteRest },
+						{ mtime: _l, ctime: lc, ...localRest },
+					] = await Promise.all([remote.meta(), local.meta()]);
+					const remoteCtime = parseTimestamp(rc);
+					const localCtime = parseTimestamp(lc);
+					const result: StringKV = {
 						mtime: String(mergeTime),
 						...localRest,
 						...remoteRest,
 					};
+					const mergeCtime = () => {
+						if (!remoteCtime && !localCtime) return;
+						if (remoteCtime && localCtime) return Math.min(remoteCtime, localCtime);
+						return remoteCtime || localCtime;
+					};
+					const ctime = mergeCtime();
+					if (ctime) result.ctime = String(ctime);
+					return result;
 				},
 				mtime: Math.max(local.mtime, remote.mtime),
 				size: mergedBuffer.byteLength,

@@ -9,6 +9,7 @@ import type {
 	RequestParam,
 	RequestResponse,
 	OutputAtom,
+	StringKV,
 } from '@hesprs/sync-engine-sdk';
 
 const { deferred, flush, request } = testKit;
@@ -38,7 +39,7 @@ function bodyOf(params: RequestParam): Record<string, unknown> {
 	) as Record<string, unknown>;
 }
 
-function batchEntries(paths: Array<string>, failures: Record<string, string> = {}) {
+function batchEntries(paths: Array<string>, failures: StringKV = {}) {
 	return {
 		'.tag': 'complete',
 		entries: paths.map((path) =>

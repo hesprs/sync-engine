@@ -14,6 +14,7 @@ import { textToUint8Array } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
 import { basename, dirname, isFolder } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
+import parseTimestamp from '@repo/shared/timestamp';
 import type { DriveFile, DriveFileList } from './api';
 import type {
 	Binary,
@@ -27,6 +28,7 @@ import type {
 	RootFs,
 	Stat,
 	StoreSync,
+	StringKV,
 } from '@hesprs/sync-engine-sdk';
 
 export type GdriveFsOptions = { userId: string; useTrash: boolean };
@@ -144,7 +146,9 @@ export default class GdriveFs implements RootFs {
 			};
 		const parentId = this.resolveId(dirname(key));
 		Object.assign(metadata, {
+			createdTime: parseTimestamp(meta.ctime),
 			mimeType: guessMimeType(basename(key)),
+			modifiedTime: parseTimestamp(meta.mtime),
 			name: basename(key),
 			parents: [parentId],
 		});
@@ -237,7 +241,7 @@ export default class GdriveFs implements RootFs {
 		const oldParentId = this.resolveId(dirname(oldKey));
 		const newParentId = this.resolveId(dirname(newKey));
 		if (!newParentId) throw new Error(`Parent not created when moving to "${newKey}"!`);
-		const query: Record<string, string> = { fields: 'id' };
+		const query: StringKV = { fields: 'id' };
 		if (oldParentId !== newParentId) {
 			query.addParents = newParentId;
 			if (oldParentId !== undefined) query.removeParents = oldParentId;
@@ -300,8 +304,8 @@ export default class GdriveFs implements RootFs {
 		return toStat(key, entry);
 	}
 
-	// When Sync Engine calls `exists()`, the only possibility is that something is unexpected, don't trust cache here
 	async exists(key: string): Promise<boolean> {
+		// When Sync Engine calls `exists()`, the only possibility is that something unexpected happened, don't trust cache here
 		return (await this.resolveIdFresh(key)) !== undefined;
 	}
 
@@ -315,7 +319,7 @@ export default class GdriveFs implements RootFs {
 		const all: Array<DriveFile> = [];
 		let pageToken: string | undefined;
 		do {
-			const query: Record<string, string> = {
+			const query: StringKV = {
 				fields: `nextPageToken,files(${FILE_FIELDS})`,
 				pageSize: String(PAGE_SIZE),
 				q: 'trashed = false',

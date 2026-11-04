@@ -2,7 +2,7 @@ import { API_RPC, OAUTH_TOKEN_URL } from '@/dropbox/api';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import ObsidianMock from '@repo/shared/obsidian-mock';
 import { expect, mock, test } from 'bun:test';
-import type { RequestParam } from '@hesprs/sync-engine-sdk';
+import type { RequestParam, StringKV } from '@hesprs/sync-engine-sdk';
 import type { ObsidianProtocolData, SecretStorage } from 'obsidian';
 
 const { request } = testKit;
@@ -55,7 +55,7 @@ function formBody(index: number): URLSearchParams {
 	return new URLSearchParams(String(requests[index]?.body));
 }
 
-function callback(fields: Record<string, string>): ObsidianProtocolData {
+function callback(fields: StringKV): ObsidianProtocolData {
 	return { action: 'sync-engine-dropbox-auth', ...fields } as ObsidianProtocolData;
 }
 

@@ -1,7 +1,7 @@
 import { API_CONTENT, escapeHeaderJson, request2xx } from './api';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import type { FileMetadata, UploadArg } from './api';
-import type { Binary, Request } from '@hesprs/sync-engine-sdk';
+import type { Binary, Request, StringKV } from '@hesprs/sync-engine-sdk';
 
 /** Fixed 2^22-byte chunk: the concurrent-session alignment unit, independent of SDK settings. */
 export const SESSION_CHUNK_SIZE = 4 * 1024 ** 2;
@@ -15,7 +15,7 @@ type UploadOptions = { request: Request; arg: UploadArg };
 export async function read2xx(
 	request: Request,
 	url: string,
-	params: { body?: Binary; headers: Record<string, string> },
+	params: { body?: Binary; headers: StringKV },
 ): Promise<FileMetadata> {
 	const response = await request2xx(
 		request,

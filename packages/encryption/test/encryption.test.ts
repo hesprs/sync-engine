@@ -4,7 +4,7 @@ import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { EncryptionDBMeta, EncryptionDBSchema } from '@/wrapper';
-import type { Binary, FileStat, Fs } from '@hesprs/sync-engine-sdk';
+import type { Binary, FileStat, Fs, StringKV } from '@hesprs/sync-engine-sdk';
 
 const { bytes, file, folder, fs: testFs, stream } = testKit;
 const PASSWORD = 'password';
@@ -400,7 +400,7 @@ test('zero byte content round trips', async () => {
 
 test('meta values round-trip through write and stat', async () => {
 	const remote = createRemote();
-	let capturedMeta: Dict<string> = {};
+	let capturedMeta: StringKV = {};
 	const wrappedFs = {
 		...remote.fs,
 		async write(key: string, value: Binary, stat: FileStat) {
@@ -435,7 +435,7 @@ test('meta values round-trip through write and stat', async () => {
 
 test('meta values round-trip through writeStream and stat', async () => {
 	const remote = createRemote();
-	let capturedMeta: Dict<string> = {};
+	let capturedMeta: StringKV = {};
 	const wrappedFs = {
 		...remote.fs,
 		async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
@@ -466,7 +466,7 @@ test('meta values round-trip through writeStream and stat', async () => {
 
 test('list decrypts meta values', async () => {
 	const remote = createRemote();
-	let capturedMeta: Dict<string> = {};
+	let capturedMeta: StringKV = {};
 	const wrappedFs = {
 		...remote.fs,
 		async write(key: string, value: Binary, stat: FileStat) {
@@ -516,7 +516,7 @@ test('empty meta round-trips', async () => {
 
 test('wrong password fails to decrypt meta', async () => {
 	const good = createRemote();
-	let capturedMeta: Dict<string> = {};
+	let capturedMeta: StringKV = {};
 	const goodFs = {
 		...good.fs,
 		async write(key: string, value: Binary, stat: FileStat) {

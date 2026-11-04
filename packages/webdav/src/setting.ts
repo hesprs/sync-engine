@@ -1,4 +1,4 @@
-import { reactivelyValidate, s } from '@hesprs/sync-engine-sdk';
+import { reactivelyValidate, settingEntry as s } from '@hesprs/sync-engine-sdk';
 import { formatUrl, normalizeBaseDir, parseUrl } from '@repo/shared/path';
 import { SecretComponent } from 'obsidian';
 import type { WebdavSettings } from '@';
@@ -31,6 +31,8 @@ export type WebdavTranslations = {
 	chunkedUploadDescription: Fragment;
 	fileMetadata: string;
 	fileMetadataDescription: Fragment;
+	timestampHeaders: string;
+	timestampHeadersDescription: Fragment;
 	pleaseConfigureAccount: string;
 };
 
@@ -63,7 +65,8 @@ export default function webdavSetting(
 			void saveSettings();
 		});
 	const capabilityToggle =
-		(capability: 'depthInfinity' | 'chunkedUpload' | 'fileMetadata') => (setting: Setting) => {
+		(capability: 'depthInfinity' | 'chunkedUpload' | 'fileMetadata' | 'timestampHeaders') =>
+		(setting: Setting) => {
 			setting
 				.addToggle((toggle) =>
 					toggle.setValue(settings[capability]).onChange((value) => {
@@ -177,6 +180,11 @@ export default function webdavSetting(
 							desc: translate('fileMetadataDescription'),
 							name: translate('fileMetadata'),
 							render: capabilityToggle('fileMetadata'),
+						})),
+						4000: s(() => ({
+							desc: translate('timestampHeadersDescription'),
+							name: translate('timestampHeaders'),
+							render: capabilityToggle('timestampHeaders'),
 						})),
 					},
 				),

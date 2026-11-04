@@ -10,6 +10,7 @@ import type {
 	Progress,
 	RequestParam,
 	RequestResponse,
+	StringKV,
 } from '@hesprs/sync-engine-sdk';
 
 const { bytes, deferred, file, flush, folder, request, stream: createStream } = testKit;
@@ -29,6 +30,7 @@ const defaultOptions = {
 	depthInfinity: false,
 	endpoint: 'https://dav.example.com/dav',
 	fileMetadata: false,
+	timestampHeaders: false,
 	username: 'alice',
 } satisfies Omit<WebdavFsOptions, 'request'>;
 
@@ -547,7 +549,7 @@ test('readStream requests SDK chunk size ranges from stat size', async () => {
 
 test('write sends PROPPATCH with se:meta when fileMetadata is enabled', async () => {
 	const webdav = createWebdavFs({ fileMetadata: true });
-	const calls: Array<{ method?: string; body?: unknown; headers?: Record<string, string> }> = [];
+	const calls: Array<{ method?: string; body?: unknown; headers?: StringKV }> = [];
 	webdav.setRequest((_url, params) => {
 		calls.push({ body: params.body, headers: params.headers, method: params.method });
 		if (params.method === 'PUT') return { ...defaultResponse, headers: { etag: 'meta-uid' } };

@@ -210,7 +210,7 @@ function printError({ cause, message, stack }: Error, time?: boolean): Array<str
 			causeString = String(cause);
 		}
 	const result = [addLevel('ERROR', message)];
-	if (time) addTime(result[0]);
+	if (time) result[0] = addTime(result[0]);
 	if (causeString || stack) {
 		result[0] += ':';
 		result.push('', '```');

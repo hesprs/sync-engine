@@ -45,7 +45,7 @@ import type { FeaturesSettingTranslations } from '@/settings/features';
 import type { HeadSettingTranslations } from '@/settings/head';
 import type { MiscellaneousSettingTranslations } from '@/settings/miscellaneous';
 import type { ModulesTranslations } from '@/settings/module-management';
-import type { Stat, TogglableValue } from '@/types';
+import type { Stat, StringKV, TogglableValue } from '@/types';
 import type { App, SecretStorage } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { DatabaseSync } from 'uni-kv';
@@ -420,7 +420,7 @@ export default class Bootstrap {
 	};
 }
 
-function synthesizeHeaders(headers: CustomHeaders, secret: SecretStorage): Record<string, string> {
+function synthesizeHeaders(headers: CustomHeaders, secret: SecretStorage): StringKV {
 	return Object.fromEntries(
 		headers.map(({ key, type, value }) => {
 			if (type === 'plaintext') return [key, value];

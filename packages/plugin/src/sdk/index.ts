@@ -9,7 +9,7 @@ export function digOriginal(wrapped: Fs) {
 export { default as setNeedMigration } from '@/components/MigrationModal';
 export { default as prefixWrapper } from './prefix';
 export { pipe, readWithSize, writeWithValue, chunkSize, concurrency } from '@/utils/pipe';
-export { s, reactivelyValidate, generateEditableList } from '@/settings/utils';
+export { settingEntry, reactivelyValidate, generateEditableList } from '@/settings/utils';
 
 export type {
 	Translate,
@@ -31,6 +31,7 @@ export type {
 	Stat,
 	MaybePromise,
 	Binary,
+	StringKV,
 } from '@/types';
 export type {
 	ConflictResolver,

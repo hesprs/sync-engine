@@ -1,4 +1,4 @@
-import { generateEditableList, reactivelyValidate, s } from './utils';
+import { generateEditableList, reactivelyValidate, settingEntry as s } from './utils';
 import { SecretComponent } from 'obsidian';
 import type { Settings } from '@';
 import type { Snippet, Translate } from '@/modules/I18n';

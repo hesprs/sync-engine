@@ -2,7 +2,8 @@ import { buildUrl, getFileUid, getHeader } from './utils';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import { encodeUrlPart } from '@repo/shared/path';
-import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
+import type { ResolvedMeta } from './fs';
+import type { Binary, Request, Stat, StringKV } from '@hesprs/sync-engine-sdk';
 
 // Nextcloud rejects non-final chunks below 5 MiB
 const NEXTCLOUD_CHUNK_SIZE = 5 * 1024 * 1024;
@@ -12,7 +13,8 @@ type NextcloudChunkedUploadOptions = {
 	endpoint: string;
 	request: Request;
 	stat: (key: string) => Promise<Stat>;
-	patchMeta: () => Promise<void>;
+	proppatch: (key: string, meta: StringKV) => Promise<void>;
+	resolveMeta: () => Promise<ResolvedMeta>;
 	username: string;
 };
 
@@ -29,7 +31,7 @@ function deleteChunkUpload(request: Request, uploadFolderUrl: string) {
 }
 
 export default async function writeNextcloudChunkedUpload(
-	{ endpoint, username, request, stat, patchMeta }: NextcloudChunkedUploadOptions,
+	{ endpoint, username, request, stat, resolveMeta, proppatch }: NextcloudChunkedUploadOptions,
 	key: string,
 	value: ReadableStream<Binary>,
 	size: number,
@@ -40,6 +42,7 @@ export default async function writeNextcloudChunkedUpload(
 	const uploadFolderUrl = buildUrl(uploadEndpoint, uploadFolderKey);
 	const uploadFileUrl = buildUrl(uploadEndpoint, `${uploadId}/.file`);
 	const Destination = buildUrl(endpoint, key);
+	const metaPromise = resolveMeta();
 
 	await request(uploadFolderUrl, { headers: { Destination }, method: 'MKCOL' });
 
@@ -56,15 +59,17 @@ export default async function writeNextcloudChunkedUpload(
 			},
 			value,
 		});
-
-		const response = await request(uploadFileUrl, { headers: { Destination }, method: 'MOVE' });
-
-		const etag = getHeader(response.headers, 'etag') ?? getHeader(response.headers, 'oc-etag');
+		const { headers: metaHeaders, meta } = await metaPromise;
+		const { headers } = await request(uploadFileUrl, {
+			headers: { Destination, ...metaHeaders },
+			method: 'MOVE',
+		});
+		const etag = getHeader(headers, 'etag') ?? getHeader(headers, 'oc-etag');
 		const [uid] = await Promise.all([
 			etag
 				? Promise.resolve(normalizeEtag(etag))
 				: stat(key).then((newStat) => getFileUid(newStat, key)),
-			patchMeta(),
+			meta ? proppatch(key, meta) : Promise.resolve(),
 		]);
 		return uid;
 	} catch (error) {
