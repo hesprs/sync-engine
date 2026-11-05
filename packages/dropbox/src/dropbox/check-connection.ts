@@ -5,16 +5,11 @@ import type { Request } from '@hesprs/sync-engine-sdk';
 /** Validates the token by listing the app folder root, the lightest permission-honoring call. */
 export default async function checkConnection(request: Request): Promise<void | Error> {
 	try {
-		await request2xx(
-			request,
-			`${API_RPC}/2/files/list_folder`,
-			{
-				body: JSON.stringify({ path: '' }),
-				headers: { 'Content-Type': 'application/json' },
-				method: 'POST',
-			},
-			'Dropbox connection check failed',
-		);
+		await request2xx(request, `${API_RPC}/2/files/list_folder`, {
+			body: JSON.stringify({ path: '' }),
+			headers: { 'Content-Type': 'application/json' },
+			method: 'POST',
+		});
 	} catch (error) {
 		return toError(error);
 	}

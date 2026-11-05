@@ -60,8 +60,6 @@ export type ExistingMemoryDB = DatabaseSync<
 	}
 >;
 
-const MAX_VAULT_CONCURRENCY = 200;
-
 export default class Bootstrap {
 	private readonly cleanupCallbacks: Array<() => void> = [];
 
@@ -322,15 +320,15 @@ export default class Bootstrap {
 			priority: 21_000,
 		});
 
-		registerRemoteRequestMiddleware({ apply: retryMiddleware, priority: 1000 });
 		registerRemoteRequestMiddleware({
 			apply: (request) =>
 				rateLimiterMiddleware(request, {
 					maxConcurrency: getMaxConcurrency(),
 					minInterval: getMinInterval(),
 				}),
-			priority: 2000,
+			priority: 1000,
 		});
+		registerRemoteRequestMiddleware({ apply: retryMiddleware, priority: 2000 });
 		registerRemoteRequestMiddleware({
 			apply: (fs) =>
 				customHeadersMiddleware(
@@ -347,18 +345,10 @@ export default class Bootstrap {
 		});
 
 		registerLocalRequestMiddleware({
-			apply: (request) =>
-				rateLimiterMiddleware(request, {
-					maxConcurrency: MAX_VAULT_CONCURRENCY,
-					minInterval: 0,
-				}),
-			priority: 1000,
-		});
-		registerLocalRequestMiddleware({
 			apply: (request) => {
 				if (this.isCancelled) return cancellationMiddleware(request, this.isCancelled);
 			},
-			priority: 2000,
+			priority: 1000,
 		});
 
 		registerDecider('bidirectional', {

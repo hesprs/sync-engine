@@ -514,7 +514,7 @@ test('empty meta round-trips', async () => {
 	expect(await stat.meta()).toStrictEqual({});
 });
 
-test('wrong password fails to decrypt meta', async () => {
+test('wrong password passes undecryptable meta values through', async () => {
 	const good = createRemote();
 	let capturedMeta: StringKV = {};
 	const goodFs = {
@@ -542,5 +542,8 @@ test('wrong password fails to decrypt meta', async () => {
 	});
 	const stat = await wrongShim.stat('file.md');
 	if (stat.isDir) throw new Error('expected file');
-	expect(stat.meta()).rejects.toThrow(DECRYPTION_ERROR_MESSAGE);
+	// Backends inject plaintext values (e.g. mtime) into meta, so undecryptable values must pass
+	// through unchanged instead of rejecting the whole meta.
+	expect(await stat.meta()).toStrictEqual({ secret: capturedMeta.secret });
+	expect(capturedMeta.secret).not.toBe('data');
 });

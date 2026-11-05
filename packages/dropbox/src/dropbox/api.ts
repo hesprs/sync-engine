@@ -78,6 +78,9 @@ export function escapeHeaderJson(arg: Record<string, unknown>): string {
 function collectTags(error: unknown): Array<string> {
 	const tags: Array<string> = [];
 	let current = error as Record<string, unknown> | undefined;
+	if (current !== null && typeof current === 'object' && typeof current['.tag'] !== 'string')
+		// Rate-limit bodies wrap the union tag in `reason` instead of the top level.
+		current = current.reason as Record<string, unknown> | undefined;
 	while (current !== null && typeof current === 'object' && tags.length < 8) {
 		const tag = current['.tag'];
 		if (typeof tag !== 'string') break;
@@ -102,7 +105,6 @@ function describeError(data: DropboxError): string | undefined {
 
 function requestErrorOf(
 	response: RequestResponse,
-	context: string,
 ): Error & { status: number; tags: Array<string> } {
 	let data: DropboxError = {};
 	try {
@@ -110,9 +112,10 @@ function requestErrorOf(
 	} catch {
 		// Non-JSON error body.
 	}
-	const error = new Error(
-		describeError(data) ?? `${context}: HTTP ${response.status}`,
-	) as Error & { status: number; tags: Array<string> };
+	const error = new Error(describeError(data) ?? `HTTP ${response.status}`) as Error & {
+		status: number;
+		tags: Array<string>;
+	};
 	error.status = response.status;
 	error.tags = collectTags(data.error);
 	return error;
@@ -123,11 +126,10 @@ export async function request2xx(
 	request: Request,
 	url: string,
 	params: RequestParam,
-	context: string,
 ): Promise<RequestResponse> {
 	const response = await request(url, { ...params, throw: false });
 	if (response.status >= 200 && response.status < 300) return response;
-	throw requestErrorOf(response, context);
+	throw requestErrorOf(response);
 }
 
 /** Builds the error reported for one failed entry of a batch result. */

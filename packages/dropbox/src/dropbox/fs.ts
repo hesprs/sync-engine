@@ -30,7 +30,6 @@ import type {
 	FolderStat,
 	ListReporter,
 	Request,
-	RequestParam,
 	RequestResponse,
 	RootFs,
 	Stat,
@@ -122,17 +121,8 @@ export default class DropboxFs implements RootFs {
 		return `dropbox~${this.options.accountId}`;
 	}
 
-	private requestOrThrow(url: string, params: RequestParam = {}): Promise<RequestResponse> {
-		return request2xx(
-			this.request,
-			url,
-			params,
-			`Dropbox request failed: ${params.method} ${url}`,
-		);
-	}
-
 	private rpc(path: string, body: Record<string, unknown>): Promise<RequestResponse> {
-		return this.requestOrThrow(`${API_RPC}${path}`, {
+		return request2xx(this.request, `${API_RPC}${path}`, {
 			body: JSON.stringify(body),
 			headers: { 'Content-Type': 'application/json' },
 			method: 'POST',
@@ -176,7 +166,7 @@ export default class DropboxFs implements RootFs {
 	}
 
 	async read(key: string): Promise<Binary> {
-		const response = await this.requestOrThrow(`${API_CONTENT}/2/files/download`, {
+		const response = await request2xx(this.request, `${API_CONTENT}/2/files/download`, {
 			headers: { 'Dropbox-API-Arg': escapeHeaderJson({ path: keyToPath(key) }) },
 			method: 'POST',
 		});
@@ -190,7 +180,7 @@ export default class DropboxFs implements RootFs {
 			chunkSize,
 			concurrency,
 			requestRange: async (start, endInclusive) => {
-				const response = await this.requestOrThrow(url, {
+				const response = await request2xx(this.request, url, {
 					headers: {
 						'Dropbox-API-Arg': pathArg,
 						Range: `bytes=${start}-${endInclusive}`,

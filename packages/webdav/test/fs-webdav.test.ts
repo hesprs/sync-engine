@@ -588,7 +588,11 @@ test('stat meta reads se:meta from PROPFIND when fileMetadata is enabled', async
 	const webdav = createWebdavFs({ endpoint: 'https://dav.example.com/dav', fileMetadata: true });
 	const stat = await webdav.fs.stat('Notes/file.md');
 	if (stat.isDir) throw new Error('expected file stat');
-	expect(await stat.meta()).toStrictEqual({ ctime: '500', custom: 'value' });
+	expect(await stat.meta()).toStrictEqual({
+		ctime: '500',
+		custom: 'value',
+		mtime: '1704067200000',
+	});
 });
 
 test('chunked writeStream sends PROPPATCH when fileMetadata is enabled', async () => {

@@ -1,4 +1,4 @@
-import { getHeader, parseDriveError } from './api';
+import { parseDriveError } from './api';
 import { concatBinary, textToUint8Array } from '@repo/shared/binary';
 import type { DriveFile } from './api';
 import type { Binary, Request, RequestResponse, StringKV } from '@hesprs/sync-engine-sdk';
@@ -68,7 +68,7 @@ async function startSession({
 			parseDriveError(response) ??
 				`Google Drive upload session initiation failed: ${response.status}`,
 		);
-	const location = getHeader(response.headers, 'location');
+	const { location } = response.headers;
 	if (!location) throw new Error('Google Drive did not return an upload session URL!');
 	return { location, request };
 }

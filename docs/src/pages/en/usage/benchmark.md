@@ -38,7 +38,7 @@ All benchmark results are recorded here, see [deep dive: benchmarking](../deep-d
 
 [^11]: Only works on OneDrive.
 
-[^12]: Remove movements cannot me detected.
+[^12]: Remote movements cannot be detected.
 
 [^13]: Nutstore server and the SSO sign-on dependency are not transparent.
 

@@ -46,16 +46,6 @@ export function buildUrl(base: string, path: string, query: StringKV = {}): stri
 	return `${base}${path}${queryString ? `?${queryString}` : ''}`;
 }
 
-export function getHeader(
-	headers: Record<string, string | undefined>,
-	name: string,
-): string | undefined {
-	const entry = Object.entries(headers).find(
-		([headerName]) => headerName.toLowerCase() === name.toLowerCase(),
-	);
-	return entry?.[1];
-}
-
 export function parseDriveError(response: RequestResponse): string | undefined {
 	try {
 		const { error, error_description } = response.json<DriveError>();

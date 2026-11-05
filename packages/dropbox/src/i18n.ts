@@ -4,8 +4,7 @@ export const en: DropboxTranslations = {
 	accountConnected: 'Account connected',
 	authorizationFailed: (reason) => `Authorization failed: ${reason}`,
 	baseDirectory: 'Base directory',
-	baseDirectoryDescription:
-		'Set the folder inside the Dropbox app folder that holds this vault. Created automatically on the first sync and do not create it manually. Files added outside this plugin are invisible to sync.',
+	baseDirectoryDescription: 'Set the folder inside the Dropbox app folder that holds this vault.',
 	baseDirectoryPlaceholder: 'my-vault/',
 	connect: 'Connect',
 	connectAccount: 'Connect account',
@@ -35,7 +34,7 @@ export const ru: DropboxTranslations = {
 	authorizationFailed: (reason) => `Ошибка авторизации: ${reason}`,
 	baseDirectory: 'Базовый каталог',
 	baseDirectoryDescription:
-		'Укажите папку в папке приложения Dropbox, в которой будет храниться это хранилище. Она создаётся автоматически при первой синхронизации, не создавайте её вручную. Файлы, добавленные вне этого плагина, будут невидны для синхронизации.',
+		'Укажите папку в папке приложения Dropbox, в которой будет храниться это хранилище.',
 	baseDirectoryPlaceholder: 'my-vault/',
 	connect: 'Подключить',
 	connectAccount: 'Подключить аккаунт',
@@ -64,8 +63,7 @@ export const zhTW: DropboxTranslations = {
 	accountConnected: '帳號已連線',
 	authorizationFailed: (reason) => `驗證失敗：${reason}`,
 	baseDirectory: '基礎目錄',
-	baseDirectoryDescription:
-		'設定 Dropbox 應用程式資料夾中用來存放此儲存庫的資料夾。系統將於首次同步時自動建立，請勿手動建立。在此外掛程式之外新增的檔案將無法被同步讀取。',
+	baseDirectoryDescription: '設定 Dropbox 應用程式資料夾中用來存放此儲存庫的資料夾。',
 	baseDirectoryPlaceholder: 'my-vault/',
 	connect: '連線',
 	connectAccount: '連結帳號',
@@ -94,8 +92,7 @@ export const zh: DropboxTranslations = {
 	accountConnected: '账号已连接',
 	authorizationFailed: (reason) => `授权失败：${reason}`,
 	baseDirectory: '基础目录',
-	baseDirectoryDescription:
-		'设置 Dropbox 应用文件夹中存放此仓库的文件夹。该目录会在首次同步时自动创建，请勿手动创建。此插件之外添加的文件对同步不可见。',
+	baseDirectoryDescription: '设置 Dropbox 应用文件夹中存放此仓库的文件夹。',
 	baseDirectoryPlaceholder: 'my-vault/',
 	connect: '连接',
 	connectAccount: '连接账号',
