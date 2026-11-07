@@ -16,7 +16,7 @@ All commands should be executed at project root.
 - `obsidian plugin:reload id=sync-engine`: reload Sync Engine plugin
 - `obsidian command id=sync-engine:export-logs`: export Sync Engine logs, use this for inspecting real-time sync progress
 - `obsidian command id=sync-engine:start-non-interactive-sync`: start a Sync Engine sync run that doesn't need UI operations. This is the primary method to execute Sync Engine syncs via the CLI.
-- `obsidian eval code="<javascript>"`: execute code inside Obsidian instance.
+- `obsidian eval code="<javascript>"`: execute code inside Obsidian instance. The code is executed synchronously and outputs a literal `Promise` for async code, so always log the result to console or a file.
 - `obsidian dev:screenshot path=<path>`: take a screenshot of current Obsidian.
 
 ## Workflow

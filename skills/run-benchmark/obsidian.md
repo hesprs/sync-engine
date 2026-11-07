@@ -44,7 +44,7 @@ A vault created this way is empty, `.obsidian` included. Then per vault, in this
 obsidian vault=<name> eval code="(async()=>{const {session}=window.require('electron').remote;await session.defaultSession.clearCache();console.log('CACHE_CLEARED')})()"
 ```
 
-Secrets live in the app's secret store, keyed by a name: `obsidian vault=<name> eval code="window.app.secretStorage.setSecret('<key>', '<secret>')"`, and `deleteSecret('<key>')` removes one. **Each vault window has its own store: a secret set in one vault reads back as nothing in another.** So set it once per vault.
+Secrets live in the app's secret store, keyed by a name: `obsidian vault=<name> eval code="window.app.secretStorage.setSecret('<key>', '<secret>')"`, `deleteSecret('<key>')` removes one, and `getSecret('<key>')` obtains one. **Each vault window has its own store: a secret set in one vault reads back as nothing in another.** So set it once per vault. **When using `getSecret()`, you MUST chain it with code and not see the secret directly.**
 
 A configuration field that asks for a secret holds that name, not the value. The value stays out of your output; when the leader places a secret, they tell you only the name to put in the configuration.
 

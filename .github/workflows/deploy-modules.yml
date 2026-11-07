@@ -37,6 +37,7 @@ jobs:
         env:
           GDRIVE_CLIENT_ID: ${{ secrets.GDRIVE_CLIENT_ID }}
           GDRIVE_CLIENT_SECRET: ${{ secrets.GDRIVE_CLIENT_SECRET }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
 
       - name: Deploy modules
         run: bun scripts/deploy-modules.ts

@@ -38,7 +38,7 @@ All benchmark results are recorded here, see [deep dive: benchmarking](../deep-d
 
 [^11]: Only works on OneDrive.
 
-[^12]: Remove movements cannot me detected.
+[^12]: Remote movements cannot be detected.
 
 [^13]: Nutstore server and the SSO sign-on dependency are not transparent.
 
@@ -83,11 +83,11 @@ Although claimed to be optimized for Nextcloud, Nextcloud Sync still shows visib
 | Item | Sync Engine | Remotely Save[^14] |
 | --- | --- | --- |
 | Version | 3.3.4 + S3 module 0.2.3 | 0.5.25 |
-| 2000 files upload | **3.95 min** | 6.30 min |
+| 2000 files upload | **3.95 min** | 6.3 min |
 | 2000 files download | **2.42 min** | 3.87 min |
 | Daily simulation<br>(Original, 10 rounds) | Min: **0.37 s**<br>Median: **0.7 s**<br>Max: **7.63 s** | Min: 2.16 s<br>Median: 3.1 s<br>Max: 76.12 s |
 | Daily simulation<br>(Replica, 10 rounds) | Min: **1.4 s**<br>Median: **1.71 s**<br>Max: **6.17 s** | Min: 1.87 s<br>Median: 2.68 s<br>Max: 32.4 s |
 | Correctness validation | 0 errors | 0 errors |
-| Total S3 Cost | **$0.0585** | $0.0702 |
+| Total S3 cost | **$0.0585** | $0.0702 |
 
 [^14]: "Generate Folder Object" is enabled to match the benchmark's correctness first standard.

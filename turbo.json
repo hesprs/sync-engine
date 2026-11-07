@@ -7,7 +7,7 @@
 	"tasks": {
 		"compile": {
 			"dependsOn": ["^compile"],
-			"env": ["GDRIVE_CLIENT_ID", "GDRIVE_CLIENT_SECRET"],
+			"env": ["GDRIVE_CLIENT_ID", "GDRIVE_CLIENT_SECRET", "DROPBOX_APP_KEY"],
 			"outputs": ["dist/**"],
 			"cache": true
 		},

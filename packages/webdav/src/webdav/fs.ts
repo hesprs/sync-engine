@@ -1,12 +1,13 @@
 import writeNextcloudChunkedUpload from './chunked-upload';
 import { buildUrl, getFileUid, getHeader, parseWebDAVError } from './utils';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { concatBinary } from '@repo/shared/binary';
+import { collectStreamToBinary } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import parseXML from '@repo/shared/parse-xml';
 import { dirname, formatUrl, normalizeKey, parseUrl, stripEndSlash } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
+import parseTimestamp from '@repo/shared/timestamp';
 import type {
 	Binary,
 	FileStat,
@@ -18,6 +19,7 @@ import type {
 	RequestResponse,
 	RootFs,
 	Stat,
+	StringKV,
 } from '@hesprs/sync-engine-sdk';
 
 export type WebdavFsOptions = {
@@ -27,9 +29,12 @@ export type WebdavFsOptions = {
 	chunkedUpload: boolean;
 	depthInfinity: boolean;
 	fileMetadata: boolean;
+	timestampHeaders: boolean;
 };
 
 const WEBDAV_PAGE = 'https://sync.consensia.cc/deep-dive/modules/webdav';
+
+export type ResolvedMeta = { meta?: StringKV; headers?: StringKV };
 
 type WebDAVPropValue = string | { '#text'?: string } | undefined;
 
@@ -84,10 +89,13 @@ function getRecursiveKeys(key: string) {
 	return keys.reverse();
 }
 
-// Different WebDAV servers can return 3 different kinds of href:
-// 1. full URL
-// 2. absolute path relative to server root
-// 3. path relative to root folder
+/**
+ * Different WebDAV servers can return 3 different kinds of href:
+ *
+ * 1. Full URL
+ * 2. Absolute path relative to server root
+ * 3. Path relative to root folder
+ */
 function stripEndpoint(endpoint: string, href: string) {
 	href = parseUrl(href, true);
 	if (href.startsWith(endpoint)) href = href.slice(endpoint.length);
@@ -113,21 +121,6 @@ function isTargetItem(key: string, endpoint: string, { href }: WebDAVResponseIte
 	return stripEndSlash(stripEndpoint(endpoint, href)).normalize('NFC') === stripEndSlash(key);
 }
 
-async function collectStreamToBinary(source: ReadableStream<Binary>): Promise<Binary> {
-	const reader = source.getReader();
-	const chunks: Array<Binary> = [];
-	try {
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			chunks.push(value);
-		}
-		return concatBinary(...chunks);
-	} finally {
-		reader.releaseLock();
-	}
-}
-
 export default class WebdavFs implements RootFs {
 	private readonly endpoint: string;
 	private readonly propfindBody: string;
@@ -135,7 +128,6 @@ export default class WebdavFs implements RootFs {
 	constructor(private readonly options: WebdavFsOptions) {
 		const { endpoint, fileMetadata } = options;
 		this.endpoint = endpoint;
-		// WebDAV servers who support both headers all support creationdate in PROPFIND
 		this.propfindBody = `<?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:"${fileMetadata ? ` xmlns:se="${WEBDAV_PAGE}"` : ''}>
   <prop>
@@ -148,12 +140,22 @@ export default class WebdavFs implements RootFs {
 </propfind>`;
 	}
 
-	private async resolveMeta(
-		getMeta: () => MaybePromise<Dict<string>>,
-	): Promise<Dict<string> | undefined> {
-		if (!this.options.fileMetadata) return;
+	private async resolveMeta(getMeta: () => MaybePromise<StringKV>): Promise<ResolvedMeta> {
+		const { timestampHeaders, fileMetadata } = this.options;
+		if (!fileMetadata && !timestampHeaders) return {};
+		const result: ResolvedMeta = {};
 		const meta = await getMeta();
-		if (Object.keys(meta).length) return meta;
+		if (timestampHeaders) {
+			const cNum = parseTimestamp(meta.ctime);
+			const mNum = parseTimestamp(meta.mtime);
+			if (mNum || cNum) {
+				result.meta = {};
+				if (cNum) result.meta['x-oc-ctime'] = String(cNum / 1000);
+				if (mNum) result.meta['x-oc-mtime'] = String(mNum / 1000);
+			}
+		}
+		if (fileMetadata && Object.keys(meta).length) result.meta = meta;
+		return result;
 	}
 
 	private async propfind(
@@ -195,7 +197,7 @@ export default class WebdavFs implements RootFs {
 		const meta = () => {
 			if (this.options.fileMetadata) {
 				const metaJson = getDavText(metaText);
-				if (metaJson) return JSON.parse(metaJson) as Dict<string>;
+				if (metaJson) return JSON.parse(metaJson) as StringKV;
 			}
 			return {};
 		};
@@ -204,7 +206,14 @@ export default class WebdavFs implements RootFs {
 		const size = Number.parseInt(getDavText(getcontentlength) ?? '0', 10);
 		const etag = getDavText(getetag);
 		const uid = etag ? normalizeEtag(etag) : `${mtime}~${size}`;
-		return { isDir: false, key, meta, mtime, size, uid };
+		return {
+			isDir: false,
+			key,
+			meta: () => ({ mtime: String(mtime), ...meta() }),
+			mtime,
+			size,
+			uid,
+		};
 	}
 
 	private toDescendantStats(key: string, items: Array<WebDAVResponseItem>) {
@@ -254,7 +263,7 @@ export default class WebdavFs implements RootFs {
 		});
 	}
 
-	private async proppatch(key: string, meta: Dict<string>): Promise<void> {
+	private readonly proppatch = async (key: string, meta: StringKV): Promise<void> => {
 		const metaJson = JSON.stringify(meta)
 			.replaceAll('&', '&amp;')
 			.replaceAll('<', '&lt;')
@@ -272,14 +281,15 @@ export default class WebdavFs implements RootFs {
 			contentType: 'application/xml',
 			method: 'PROPPATCH',
 		});
-	}
+	};
 
-	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
-		const [{ headers }, meta] = await Promise.all([
-			this.requestOrThrow(buildUrl(this.endpoint, key), { body: value, method: 'PUT' }),
-			this.resolveMeta(stat.meta),
-		]);
-		const etag = getHeader(headers, 'etag');
+	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
+		const { headers, meta } = await this.resolveMeta(stat.meta);
+		const { headers: responseHeaders } = await this.requestOrThrow(
+			buildUrl(this.endpoint, key),
+			{ body: await value, headers, method: 'PUT' },
+		);
+		const etag = getHeader(responseHeaders, 'etag');
 		return Promise.all([
 			etag
 				? Promise.resolve(normalizeEtag(etag))
@@ -288,17 +298,16 @@ export default class WebdavFs implements RootFs {
 		]).then(([uid]) => uid);
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+	async writeStream(key: string, value: MaybePromise<ReadableStream<Binary>>, stat: FileStat) {
+		value = await value;
 		const { chunkedUpload, username } = this.options;
 		if (!chunkedUpload) return this.write(key, await collectStreamToBinary(value), stat);
 		return writeNextcloudChunkedUpload(
 			{
 				endpoint: this.endpoint,
-				patchMeta: async () => {
-					const meta = await this.resolveMeta(stat.meta);
-					if (meta) return this.proppatch(key, meta);
-				},
+				proppatch: this.proppatch,
 				request: this.requestOrThrow.bind(this),
+				resolveMeta: () => this.resolveMeta(stat.meta),
 				stat: (targetKey) => this.stat(targetKey),
 				username,
 			},
@@ -326,17 +335,16 @@ export default class WebdavFs implements RootFs {
 
 	async mkdir(key: string, stat: FolderStat, recursive?: boolean) {
 		const directoryKeys = recursive ? getRecursiveKeys(key) : [key];
-		const mkcols = async () => {
-			for (const directoryKey of directoryKeys)
-				try {
-					await this.requestOrThrow(buildUrl(this.endpoint, directoryKey), {
-						method: 'MKCOL',
-					});
-				} catch (error) {
-					if (getStatus(error) !== 405) throw error;
-				}
-		};
-		const [meta] = await Promise.all([this.resolveMeta(stat.meta), mkcols()]);
+		const { meta, headers } = await this.resolveMeta(stat.meta);
+		for (const directoryKey of directoryKeys)
+			try {
+				await this.requestOrThrow(buildUrl(this.endpoint, directoryKey), {
+					headers: directoryKey === key ? headers : undefined,
+					method: 'MKCOL',
+				});
+			} catch (error) {
+				if (getStatus(error) !== 405) throw error;
+			}
 		if (meta) await this.proppatch(key, meta);
 	}
 

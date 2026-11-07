@@ -55,13 +55,13 @@ class ContextFs<S extends string, M extends string> implements WrappedFs {
 		return this.original.readStream(key, stat);
 	}
 
-	async write(key: string, value: Binary, stat: FileStat) {
+	async write(key: string, value: MaybePromise<Binary>, stat: FileStat) {
 		const uid = await this.original.write(key, value, stat);
 		this.store.set(key, { ...stat, uid });
 		return uid;
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+	async writeStream(key: string, value: MaybePromise<ReadableStream<Binary>>, stat: FileStat) {
 		const uid = await this.original.writeStream(key, value, stat);
 		this.store.set(key, { ...stat, uid });
 		return uid;

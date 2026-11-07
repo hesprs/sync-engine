@@ -1,6 +1,5 @@
 import testKit from '$/test-kit';
 import { asymmetricStorageWrapper } from '@/fs';
-import { STORAGE_NAME } from '@/modules/Storage';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { Stat } from '@/types';
@@ -10,7 +9,7 @@ const { bytes, file, folder, fs } = testKit;
 const db = openMemoryDB<
 	{ remoteStatContext: Stat },
 	Record<'lastLocalContextUid' | 'lastRemoteContextUid', string>
->(STORAGE_NAME);
+>('asymmetric-test-db');
 
 const store = db.getStore('remoteStatContext');
 

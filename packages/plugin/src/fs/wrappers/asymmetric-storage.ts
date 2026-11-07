@@ -1,6 +1,6 @@
 import { basename, dirname, isFolder, isSub } from '@repo/shared/path';
 import type { Fs, ListReporter, WrappedFs } from '../interface';
-import type { Stat, Binary, FileStat, FolderStat } from '@/types';
+import type { Stat, Binary, FileStat, FolderStat, MaybePromise } from '@/types';
 import type { StoreSync } from 'uni-kv';
 
 const ROOT_KEY = '/';
@@ -66,11 +66,11 @@ class AsymmetricStorageFs implements WrappedFs {
 		return this.original.readStream(this.flattenFileKey(key), stat);
 	}
 
-	write(key: string, value: Binary, stat: FileStat) {
+	write(key: string, value: MaybePromise<Binary>, stat: FileStat) {
 		return this.original.write(this.flattenFileKey(key), value, stat);
 	}
 
-	writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+	writeStream(key: string, value: MaybePromise<ReadableStream<Binary>>, stat: FileStat) {
 		return this.original.writeStream(this.flattenFileKey(key), value, stat);
 	}
 

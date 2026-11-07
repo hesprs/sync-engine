@@ -30,6 +30,16 @@
 		"readme": "https://sync.consensia.cc/deep-dive/modules/gdrive"
 	},
 	{
+		"id": "dropbox",
+		"name": "Dropbox",
+		"version": "0.0.1",
+		"description": "Dropbox backend support.",
+		"icon": "server",
+		"main": "https://sync.consensia.cc/modules/dropbox.js",
+		"minPluginVersion": "3.3.5",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/dropbox"
+	},
+	{
 		"id": "encryption",
 		"name": "Encryption",
 		"version": "0.2.2",

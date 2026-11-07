@@ -104,6 +104,22 @@ export const en: WebdavTranslations = {
 	passwordDescription:
 		'Enter your account password. The password is stored in Obsidian keychain.',
 	pleaseConfigureAccount: 'Please configure WebDAV account!',
+	timestampHeaders: 'Timestamp headers',
+	timestampHeadersDescription: enCapabilityDesc({
+		defaulted: 'disabled',
+		description: () =>
+			createFragment((frag) => {
+				frag.appendText('Send ');
+				frag.createEl('code', { text: 'X-OC-Mtime' });
+				frag.appendText(' and ');
+				frag.createEl('code', { text: 'X-OC-Ctime' });
+				frag.appendText(
+					' headers when uploading files. Enabling this makes file creation and modification time displayed at server side.',
+				);
+			}),
+		supported: 'Nextcloud, ownCloud, Rclone WebDAV, Fastmail Files, and so on',
+		unsupported: 'most WebDAV servers',
+	}),
 	username: 'Username',
 	usernameDescription: 'Enter your WebDAV account username.',
 	usernamePlaceholder: 'Enter your username',
@@ -157,6 +173,20 @@ export const zh: WebdavTranslations = {
 	password: '密码',
 	passwordDescription: '请输入您的账户密码。密码将存储在 Obsidian 钥匙串中。',
 	pleaseConfigureAccount: '请配置 WebDAV 账户！',
+	timestampHeaders: '时间戳请求头',
+	timestampHeadersDescription: zhCapabilityDesc({
+		defaulted: '禁用',
+		description: () =>
+			createFragment((frag) => {
+				frag.appendText('在上传文件时发送 ');
+				frag.createEl('code', { text: 'X-OC-Mtime' });
+				frag.appendText(' 和 ');
+				frag.createEl('code', { text: 'X-OC-Ctime' });
+				frag.appendText(' 请求头。启用此功能可使服务器端显示文件的创建和修改时间。');
+			}),
+		supported: 'Nextcloud、ownCloud、Rclone WebDAV、Fastmail Files 等',
+		unsupported: '大多数 WebDAV 服务器',
+	}),
 	username: '用户名',
 	usernameDescription: '请输入您的 WebDAV 账户用户名。',
 	usernamePlaceholder: '请输入您的用户名',
@@ -213,6 +243,22 @@ export const ru: WebdavTranslations = {
 	passwordDescription:
 		'Введите пароль от вашего аккаунта. Пароль хранится в связке ключей Obsidian.',
 	pleaseConfigureAccount: 'Пожалуйста, настройте учётную запись WebDAV!',
+	timestampHeaders: 'Заголовки времени',
+	timestampHeadersDescription: ruCapabilityDesc({
+		defaulted: 'выключено',
+		description: () =>
+			createFragment((frag) => {
+				frag.appendText('Отправляйте заголовки ');
+				frag.createEl('code', { text: 'X-OC-Mtime' });
+				frag.appendText(' и ');
+				frag.createEl('code', { text: 'X-OC-Ctime' });
+				frag.appendText(
+					' при загрузке файлов. Включение этой функции отображает время создания и изменения файлов на стороне сервера.',
+				);
+			}),
+		supported: 'Nextcloud, ownCloud, Rclone WebDAV, Fastmail Files и другие',
+		unsupported: 'большинство серверов WebDAV',
+	}),
 	username: 'Имя пользователя',
 	usernameDescription: 'Введите имя пользователя вашей учётной записи WebDAV.',
 	usernamePlaceholder: 'Введите имя пользователя',
@@ -266,6 +312,20 @@ export const zhTW: WebdavTranslations = {
 	password: '密碼',
 	passwordDescription: '輸入您的帳號密碼。密碼將儲存於 Obsidian 金鑰圈中。',
 	pleaseConfigureAccount: '請設定 WebDAV 帳號！',
+	timestampHeaders: '時間戳標頭',
+	timestampHeadersDescription: zhTWCapsDesc({
+		defaulted: '停用',
+		description: () =>
+			createFragment((frag) => {
+				frag.appendText('在上傳檔案時發送 ');
+				frag.createEl('code', { text: 'X-OC-Mtime' });
+				frag.appendText(' 和 ');
+				frag.createEl('code', { text: 'X-OC-Ctime' });
+				frag.appendText(' 標頭。啟用此功能可使伺服器端顯示檔案的建立和修改時間。');
+			}),
+		supported: 'Nextcloud、ownCloud、Rclone WebDAV、Fastmail Files 等',
+		unsupported: '大多數 WebDAV 伺服器',
+	}),
 	username: '使用者名稱',
 	usernameDescription: '輸入您的 WebDAV 帳號使用者名稱。',
 	usernamePlaceholder: '輸入您的使用者名稱',

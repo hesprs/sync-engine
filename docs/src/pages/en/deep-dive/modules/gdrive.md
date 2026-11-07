@@ -79,7 +79,7 @@ Last updated on **August 23, 2026**.
 
 ### Introduction
 
-This Privacy Policy describes how the Sync Engine plugin for Obsidian with Google Drive module (“the Plugin”) handles your data when you connect a Google Drive account. The Plugin is open-source software licensed under the MIT License.
+This Privacy Policy describes how the Sync Engine plugin for Obsidian with Google Drive module ("the Plugin") handles your data when you connect a Google Drive account. The Plugin is open-source software licensed under the MIT License.
 
 ### Data We Collect
 
@@ -89,7 +89,7 @@ This Privacy Policy describes how the Sync Engine plugin for Obsidian with Googl
 
 **Google Account Connection**:
 
-When you click “Connect,” the Plugin initiates a Google Device Authorization flow directly between your device and Google’s servers. The Plugin requests only these scopes:
+When you click "Connect", the Plugin initiates a Google Device Authorization flow directly between your device and Google’s servers. The Plugin requests only these scopes:
 
 - `drive.file`: Access to files created by the Plugin. Files created outside the Plugin are not visible to it, even inside the configured base directory.
 - `openid`: Supplies a stable Google account subject identifier so the Plugin can identify and deduplicate connections
@@ -104,7 +104,7 @@ All sync operations are triggered or scheduled manually by you. File reads and w
 
 **Data Retention**:
 
-Your data exists only on your local device and in your own Google Drive account. When you click “Disconnect,” the Plugin:
+Your data exists only on your local device and in your own Google Drive account. When you click "Disconnect", the Plugin:
 
 1.  Revokes the OAuth token with Google
 2.  Deletes all stored tokens from Electron secret storage
@@ -120,7 +120,7 @@ The only third-party service involved is Google’s OAuth and Drive API, which y
 You have complete control:
 
 - All data is on your local device; inspect it anytime
-- Click “Disconnect” to erase all local credentials instantly
+- Click "Disconnect" to erase all local credentials instantly
 - Revoke access anytime at `https://myaccount.google.com/permissions`
 - Your files remain in your Google Drive regardless of Plugin status
 
@@ -138,7 +138,7 @@ Last updated on **August 23, 2026**.
 
 ### Acceptance
 
-By installing or using the Sync Engine plugin for Obsidian with Google Drive module (“the Plugin”), you agree to these Terms. If you disagree, uninstall the Plugin immediately.
+By installing or using the Sync Engine plugin for Obsidian with Google Drive module ("the Plugin"), you agree to these Terms. If you disagree, uninstall the Plugin immediately.
 
 ### License
 
@@ -146,7 +146,7 @@ The Plugin is provided under the MIT License. You may use, modify, and distribut
 
 ### No Warranty
 
-THE PLUGIN IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. THE AUTHORS AND COPYRIGHT HOLDERS SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM USE OF THE PLUGIN, INCLUDING DATA LOSS, SYNC FAILURES, OR GOOGLE DRIVE API CHANGES.
+THE PLUGIN IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. THE AUTHORS AND COPYRIGHT HOLDERS SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM USE OF THE PLUGIN, INCLUDING DATA LOSS, SYNC FAILURES, OR GOOGLE DRIVE API CHANGES.
 
 ### User Responsibilities
 
@@ -173,7 +173,7 @@ The Plugin interacts with Google’s OAuth and Drive APIs. These services are go
 
 ### Disconnection & Termination
 
-You may terminate your use at any time by clicking “Disconnect” in the Plugin settings or uninstalling the Plugin. We reserve the right to discontinue development or distribution of the Plugin at any time without notice.
+You may terminate your use at any time by clicking "Disconnect" in the Plugin settings or uninstalling the Plugin. We reserve the right to discontinue development or distribution of the Plugin at any time without notice.
 
 ### Limitation of Liability
 

@@ -35,11 +35,15 @@ class CancellationFs implements WrappedFs {
 		return this.guardCancellation('pre', () => this.original.readStream(key, stat));
 	}
 
-	write(key: string, value: Binary, stat: FileStat) {
+	write(key: string, value: MaybePromise<Binary>, stat: FileStat) {
 		return this.guardCancellation('post', () => this.original.write(key, value, stat));
 	}
 
-	writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): MaybePromise<string> {
+	writeStream(
+		key: string,
+		value: MaybePromise<ReadableStream<Binary>>,
+		stat: FileStat,
+	): MaybePromise<string> {
 		return this.guardCancellation('post', () => this.original.writeStream(key, value, stat));
 	}
 

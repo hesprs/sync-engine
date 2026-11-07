@@ -25,7 +25,7 @@ export type AugmentedSettingDefinitionItem<K extends string = string> =
 	| (SettingDefinition<K> & { labels?: Array<LabelDefinition> });
 export type LabelDefinition = { text: string; tooltip: string; color?: string; textColor?: string };
 
-export function s(
+export function settingEntry(
 	parent: (self: SettingTree) => AugmentedSettingDefinitionItem,
 	children?: CallableOrObjectTree,
 ): CallableOrObjectTree {

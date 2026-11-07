@@ -1,4 +1,4 @@
-import { s, setNeedMigration } from '@hesprs/sync-engine-sdk';
+import { settingEntry as s, setNeedMigration } from '@hesprs/sync-engine-sdk';
 import { ConfirmationModal, SecretComponent } from 'obsidian';
 import type { EncryptionSettings } from '@';
 import type {

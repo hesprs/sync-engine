@@ -1,4 +1,3 @@
-import man from '../../manifest.json' with { type: 'json' };
 import UnoCSS from '@unocss/postcss';
 import postcssMergeRules from 'postcss-merge-rules';
 import { defineConfig } from 'tsdown';
@@ -23,7 +22,6 @@ const pluginConfig = defineConfig({
 		postcss: { plugins: [UnoCSS(), postcssMergeRules()] },
 		transformer: 'postcss',
 	},
-	define: { 'Bun.env.VERSION': JSON.stringify(man.version) },
 	dts: false,
 	entry: { main: 'src/index.ts' },
 	format: 'cjs',

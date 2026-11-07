@@ -1,5 +1,10 @@
 import { gcmsiv } from '@noble/ciphers/aes.js';
-import { textToUint8Array, uint8ArrayToText } from '@repo/shared/binary';
+import {
+	decodeBase64Url,
+	encodeBase64Url,
+	textToUint8Array,
+	uint8ArrayToText,
+} from '@repo/shared/binary';
 import type { Binary, StoreSync } from '@hesprs/sync-engine-sdk';
 
 export type EncryptionStores = {
@@ -92,18 +97,4 @@ function normalizeBasename(basename: string) {
 	if (normalizedBasename.includes('/'))
 		throw new Error(`File name must not contain '/': ${basename}`);
 	return normalizedBasename;
-}
-
-function encodeBase64Url(bytes: Binary): string {
-	const binary = Array.from(bytes, (byte) => String.fromCodePoint(byte)).join('');
-	return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/[=]+$/u, '');
-}
-
-function decodeBase64Url(value: string): Binary {
-	const padding = value.length % 4;
-	const normalized =
-		value.replaceAll('-', '+').replaceAll('_', '/') +
-		(padding === 0 ? '' : '='.repeat(4 - padding));
-	const binary = atob(normalized);
-	return Uint8Array.from(binary, (char) => char.codePointAt(0) as number);
 }

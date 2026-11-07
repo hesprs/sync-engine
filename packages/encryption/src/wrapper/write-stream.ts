@@ -7,7 +7,7 @@ import {
 	getEncryptedFileSize,
 	importAesGcmKey,
 } from './shared';
-import { concatBinary } from '@repo/shared/binary';
+import { PartBuffer } from '@repo/shared/binary';
 import type { Binary } from '@hesprs/sync-engine-sdk';
 
 export default async function createEncryptedReadableStream(
@@ -21,7 +21,7 @@ export default async function createEncryptedReadableStream(
 		await deriveFileKey(rootFileKey, fileSalt, encryptedFileSize),
 	);
 
-	let pending = new Uint8Array(0);
+	const pending = new PartBuffer();
 	let consumedRawBytes = 0;
 	let chunkIndex = 0;
 
@@ -29,8 +29,10 @@ export default async function createEncryptedReadableStream(
 		new TransformStream<Binary, Binary>({
 			async flush(controller) {
 				if (consumedRawBytes !== rawFileSize) throw new Error(DECRYPTION_ERROR_MESSAGE);
-				if (pending.byteLength > 0)
-					controller.enqueue(await encryptContentChunk(fileKey, pending, chunkIndex));
+				if (pending.size > 0)
+					controller.enqueue(
+						await encryptContentChunk(fileKey, pending.slice(pending.size), chunkIndex),
+					);
 			},
 			start(controller) {
 				controller.enqueue(fileSalt);
@@ -38,11 +40,9 @@ export default async function createEncryptedReadableStream(
 			async transform(chunk, controller) {
 				consumedRawBytes += chunk.byteLength;
 				if (consumedRawBytes > rawFileSize) throw new Error(DECRYPTION_ERROR_MESSAGE);
-				pending = concatBinary(pending, chunk);
-
-				while (pending.byteLength >= CONTENT_CHUNK_SIZE) {
-					const plainChunk = pending.slice(0, CONTENT_CHUNK_SIZE);
-					pending = pending.slice(CONTENT_CHUNK_SIZE);
+				pending.push(chunk);
+				while (pending.size >= CONTENT_CHUNK_SIZE) {
+					const plainChunk = pending.slice(CONTENT_CHUNK_SIZE);
 					controller.enqueue(await encryptContentChunk(fileKey, plainChunk, chunkIndex));
 					chunkIndex += 1;
 				}

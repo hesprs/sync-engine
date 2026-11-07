@@ -38,11 +38,11 @@ class PrefixFs implements WrappedFs {
 		return this.original.readStream(joinKey(this.prefix, key), stat);
 	}
 
-	write(key: string, value: Binary, stat: FileStat) {
+	write(key: string, value: MaybePromise<Binary>, stat: FileStat) {
 		return this.original.write(joinKey(this.prefix, key), value, stat);
 	}
 
-	writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+	writeStream(key: string, value: MaybePromise<ReadableStream<Binary>>, stat: FileStat) {
 		return this.original.writeStream(joinKey(this.prefix, key), value, stat);
 	}
 
