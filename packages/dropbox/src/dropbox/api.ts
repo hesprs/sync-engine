@@ -57,6 +57,16 @@ export type CreateFolderBatchEntry =
 	| { '.tag': 'success'; metadata: FolderMetadata }
 	| { '.tag': 'failure'; failure: Record<string, unknown> };
 
+export type FinishBatchEntry =
+	| ({ '.tag': 'success' } & FileMetadata)
+	| { '.tag': 'failure'; failure: Record<string, unknown> };
+
+export type BatchEntry =
+	| DeleteBatchEntry
+	| RelocationBatchEntry
+	| CreateFolderBatchEntry
+	| FinishBatchEntry;
+
 /** Dropbox paths are relative to the app folder root and never end with a slash. */
 export function keyToPath(key: string): string {
 	if (key === '/') return '';
@@ -129,6 +139,37 @@ export async function request2xx(
 	const response = await request(url, { ...params, throw: false });
 	if (response.status >= 200 && response.status < 300) return response;
 	throw requestErrorOf(response);
+}
+
+/** Sends a JSON POST to the RPC host and returns its 2xx response. */
+export async function rpc(
+	request: Request,
+	path: string,
+	body: Record<string, unknown>,
+): Promise<RequestResponse> {
+	return request2xx(request, `${API_RPC}${path}`, {
+		body: JSON.stringify(body),
+		headers: { 'Content-Type': 'application/json' },
+		method: 'POST',
+	});
+}
+
+/** Dropbox batch endpoints accept at most 1000 entries per request (`files.stone`). */
+export const BATCH_LIMIT = 1000;
+
+export function chunksOf<T>(items: Array<T>, size: number): Array<Array<T>> {
+	const chunks: Array<Array<T>> = [];
+	for (let index = 0; index < items.length; index += size)
+		chunks.push(items.slice(index, index + size));
+	return chunks;
+}
+
+export function verifyEntries<T extends BatchEntry>(
+	entries: Array<T> | undefined,
+	expected: number,
+): Array<T> {
+	if (entries?.length !== expected) throw new Error('Dropbox batch returned a malformed result.');
+	return entries;
 }
 
 export function batchEntryError(failure: Record<string, unknown>): Error & { tags: Array<string> } {

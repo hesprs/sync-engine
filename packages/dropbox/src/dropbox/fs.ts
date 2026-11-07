@@ -1,29 +1,26 @@
 import {
 	API_CONTENT,
-	API_RPC,
+	BATCH_LIMIT,
 	batchEntryError,
+	chunksOf,
 	escapeHeaderJson,
 	keyToPath,
 	request2xx,
+	rpc,
 	tagsOf,
 	toStat,
 	uidOf,
+	verifyEntries,
 } from './api';
-import { SESSION_CHUNK_SIZE, concurrentUploadSession, read2xx } from './upload';
+import UploadSessions from './sessions';
+import { SESSION_CHUNK_SIZE, appendSession, concurrentUploadSession, read2xx } from './upload';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { collectStreamToBinary } from '@repo/shared/binary';
 import { toError } from '@repo/shared/error';
 import { dirname } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
 import parseTimestamp from '@repo/shared/timestamp';
-import type {
-	CreateFolderBatchEntry,
-	DeleteBatchEntry,
-	ListFolderResult,
-	Metadata,
-	RelocationBatchEntry,
-	UploadArg,
-} from './api';
+import type { BatchEntry, ListFolderResult, Metadata, UploadArg } from './api';
 import type {
 	Binary,
 	FileStat,
@@ -31,7 +28,6 @@ import type {
 	ListReporter,
 	MaybePromise,
 	Request,
-	RequestResponse,
 	RootFs,
 	Stat,
 	StringKV,
@@ -43,14 +39,10 @@ export type BatchMoves = Array<{ newKey: string; oldKey: string }>;
 
 type ListedEntry = Metadata & { path_lower: string };
 
-type BatchEntry = DeleteBatchEntry | RelocationBatchEntry | CreateFolderBatchEntry;
-
 type BatchLaunch = { '.tag'?: string; async_job_id?: string; entries?: Array<BatchEntry> };
 
 const POLL_INTERVAL = 500;
 const TEMP_PREFIX = '.sync-engine-rename-';
-/** Dropbox batch endpoints accept at most 1000 entries per request (`files.stone`). */
-const BATCH_LIMIT = 1000;
 /** The folder batch endpoint accepts ten times more paths than the other batch endpoints. */
 const FOLDER_BATCH_LIMIT = 10_000;
 
@@ -58,14 +50,6 @@ function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => {
 		setTimeout(resolve, ms);
 	});
-}
-
-function verifyEntries(
-	entries: Array<BatchEntry> | undefined,
-	expected: number,
-): Array<BatchEntry> {
-	if (entries?.length !== expected) throw new Error('Dropbox batch returned a malformed result.');
-	return entries;
 }
 
 function isCaseOnly(oldKey: string, newKey: string): boolean {
@@ -81,13 +65,6 @@ function uploadArg(key: string, { mtime }: StringKV): UploadArg {
 		mute: true,
 		path: keyToPath(key),
 	};
-}
-
-function chunksOf<T>(items: Array<T>, size: number): Array<Array<T>> {
-	const chunks: Array<Array<T>> = [];
-	for (let index = 0; index < items.length; index += size)
-		chunks.push(items.slice(index, index + size));
-	return chunks;
 }
 
 function mapBatchFailures<T>(
@@ -112,21 +89,17 @@ function mapBatchFailures<T>(
  * case-only renames go through a temporary path.
  */
 export default class DropboxFs implements RootFs {
+	private readonly uploadSessions: UploadSessions;
+
 	constructor(
 		private readonly request: Request,
 		private readonly options: DropboxFsOptions,
-	) {}
+	) {
+		this.uploadSessions = new UploadSessions(request);
+	}
 
 	getUid(): string {
 		return `dropbox~${this.options.accountId}`;
-	}
-
-	private rpc(path: string, body: Record<string, unknown>): Promise<RequestResponse> {
-		return request2xx(this.request, `${API_RPC}${path}`, {
-			body: JSON.stringify(body),
-			headers: { 'Content-Type': 'application/json' },
-			method: 'POST',
-		});
 	}
 
 	private async runBatch(
@@ -135,11 +108,11 @@ export default class DropboxFs implements RootFs {
 		launch: Record<string, unknown>,
 		expected: number,
 	): Promise<Array<BatchEntry>> {
-		const started = (await this.rpc(start, launch)).json<BatchLaunch>();
+		const started = (await rpc(this.request, start, launch)).json<BatchLaunch>();
 		if (started['.tag'] === 'complete') return verifyEntries(started.entries, expected);
 		while (true) {
 			const status = (
-				await this.rpc(check, { async_job_id: started.async_job_id })
+				await rpc(this.request, check, { async_job_id: started.async_job_id })
 			).json<BatchLaunch>();
 			if (status['.tag'] === 'failed') throw new Error('Dropbox batch operation failed.');
 			if (status['.tag'] === 'complete') return verifyEntries(status.entries, expected);
@@ -193,14 +166,30 @@ export default class DropboxFs implements RootFs {
 	}
 
 	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
-		const metadata = await read2xx(this.request, `${API_CONTENT}/2/files/upload`, {
-			body: await value,
+		const sessionId = this.uploadSessions.idOf(key);
+		const commit = uploadArg(key, await stat.meta());
+		const body = await value;
+		if (sessionId === undefined) {
+			const metadata = await read2xx(this.request, `${API_CONTENT}/2/files/upload`, {
+				body,
+				headers: {
+					'Content-Type': 'application/octet-stream',
+					'Dropbox-API-Arg': escapeHeaderJson(commit),
+				},
+			});
+			return uidOf(metadata);
+		}
+		await read2xx(this.request, `${API_CONTENT}/2/files/upload_session/append_v2`, {
+			body,
 			headers: {
 				'Content-Type': 'application/octet-stream',
-				'Dropbox-API-Arg': escapeHeaderJson(uploadArg(key, await stat.meta())),
+				'Dropbox-API-Arg': escapeHeaderJson({
+					close: true,
+					cursor: { offset: 0, session_id: sessionId },
+				}),
 			},
 		});
-		return uidOf(metadata);
+		return this.uploadSessions.markReady(key, sessionId, body.byteLength, commit);
 	}
 
 	async writeStream(
@@ -208,7 +197,17 @@ export default class DropboxFs implements RootFs {
 		value: MaybePromise<ReadableStream<Binary>>,
 		stat: FileStat,
 	): Promise<string> {
+		const sessionId = this.uploadSessions.idOf(key);
 		value = await value;
+		if (sessionId !== undefined && stat.size >= SESSION_CHUNK_SIZE) {
+			const total = await appendSession(this.request, sessionId, value);
+			return this.uploadSessions.markReady(
+				key,
+				sessionId,
+				total,
+				uploadArg(key, await stat.meta()),
+			);
+		}
 		if (stat.size < SESSION_CHUNK_SIZE)
 			return this.write(key, await collectStreamToBinary(value), stat);
 		const metadata = await concurrentUploadSession(
@@ -220,7 +219,8 @@ export default class DropboxFs implements RootFs {
 
 	async delete(key: string): Promise<void> {
 		try {
-			await this.rpc(
+			await rpc(
+				this.request,
 				`/2/files/${this.options.useTrash ? 'delete_v2' : 'permanently_delete'}`,
 				{ path: keyToPath(key) },
 			);
@@ -230,7 +230,7 @@ export default class DropboxFs implements RootFs {
 	}
 
 	private async rename(from: string, to: string): Promise<void> {
-		await this.rpc('/2/files/move_v2', {
+		await rpc(this.request, '/2/files/move_v2', {
 			autorename: false,
 			from_path: keyToPath(from),
 			to_path: keyToPath(to),
@@ -257,7 +257,7 @@ export default class DropboxFs implements RootFs {
 	async mkdir(key: string, _stat: FolderStat): Promise<void> {
 		if (key === '/') return;
 		try {
-			await this.rpc('/2/files/create_folder_v2', {
+			await rpc(this.request, '/2/files/create_folder_v2', {
 				autorename: false,
 				path: keyToPath(key),
 			});
@@ -269,7 +269,7 @@ export default class DropboxFs implements RootFs {
 
 	async stat(key: string): Promise<Stat> {
 		if (key === '/') return { isDir: true, key, meta: () => ({}) };
-		const response = await this.rpc('/2/files/get_metadata', { path: keyToPath(key) });
+		const response = await rpc(this.request, '/2/files/get_metadata', { path: keyToPath(key) });
 		return toStat(key, response.json<Metadata>());
 	}
 
@@ -290,12 +290,15 @@ export default class DropboxFs implements RootFs {
 	async list(key: string, reporter: ListReporter): Promise<Array<Stat>> {
 		const startPath = keyToPath(key);
 		const all: Array<Metadata> = [];
-		const first = await this.rpc('/2/files/list_folder', { path: startPath, recursive: true });
+		const first = await rpc(this.request, '/2/files/list_folder', {
+			path: startPath,
+			recursive: true,
+		});
 		const page = first.json<ListFolderResult>();
 		all.push(...page.entries);
 		let cursor = page.has_more ? page.cursor : undefined;
 		while (cursor !== undefined) {
-			const response = await this.rpc('/2/files/list_folder/continue', { cursor });
+			const response = await rpc(this.request, '/2/files/list_folder/continue', { cursor });
 			const next = response.json<ListFolderResult>();
 			all.push(...next.entries);
 			cursor = next.has_more ? next.cursor : undefined;
@@ -330,7 +333,7 @@ export default class DropboxFs implements RootFs {
 		return results;
 	}
 
-	/** Batch delete — optimizer extension; `not_found` counts as success (idempotent). */
+	/** Batch delete -- optimizer extension; `not_found` counts as success (idempotent). */
 	async batchDelete(keys: Array<string>): Promise<Record<string, Error>> {
 		const unique = [...new Set(keys)];
 		const entries = await this.runBatchConcurrently(
@@ -347,7 +350,7 @@ export default class DropboxFs implements RootFs {
 		);
 	}
 
-	/** Batch move — optimizer extension; case-only renames are performed individually. */
+	/** Batch move -- optimizer extension; case-only renames are performed individually. */
 	async batchMove(moves: BatchMoves): Promise<Record<string, Error>> {
 		const result: Record<string, Error> = {};
 		const batched: BatchMoves = [];
@@ -377,7 +380,7 @@ export default class DropboxFs implements RootFs {
 		);
 	}
 
-	/** Batch folder creation — optimizer extension; an existing folder counts as success. */
+	/** Batch folder creation -- optimizer extension; an existing folder counts as success. */
 	async batchMkdir(keys: Array<string>): Promise<Record<string, Error>> {
 		const requested = [...new Set(keys)];
 		const entries = await this.runBatchConcurrently(
@@ -392,5 +395,23 @@ export default class DropboxFs implements RootFs {
 			(key) => key,
 			(error) => tagsOf(error).includes('conflict') && tagsOf(error).includes('folder'),
 		);
+	}
+
+	/** Batch session start -- optimizer extension; see `UploadSessions.start`. */
+	startUploadSessions(keys: Array<string>) {
+		return this.uploadSessions.start(keys);
+	}
+
+	setCommitReadyCallback(callback: (key: string) => void) {
+		this.uploadSessions.setReadyCallback(callback);
+	}
+
+	clearCommitReadyCallback() {
+		this.uploadSessions.clearReadyCallback();
+	}
+
+	/** Batch session commit -- optimizer extension; see `UploadSessions.finish`. */
+	finishUploadSessions(keys?: Array<string>) {
+		return this.uploadSessions.finish(keys);
 	}
 }

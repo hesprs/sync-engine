@@ -124,6 +124,11 @@ class OptimizationFs implements WrappedFs {
 			executeAtom,
 			fs: this.original,
 		});
+		optimizedAtoms.forEach((atom) => {
+			if (atom.type !== 'custom') return;
+			const { execute } = atom;
+			atom.execute = memorizePromise(execute);
+		});
 		await Promise.all(optimizedAtoms.map(executeAtom));
 	}
 }
@@ -156,6 +161,16 @@ function createCachedPromise<T>(fn: () => MaybePromise<T>) {
 			promise = value;
 			resolve(value);
 		},
+	};
+}
+
+function memorizePromise<T>(fn: () => MaybePromise<T>) {
+	// oxlint-disable-next-line unicorn/no-null
+	let promise: MaybePromise<T> | null = null;
+	return () => {
+		if (promise !== null) return promise;
+		promise = fn();
+		return promise;
 	};
 }
 

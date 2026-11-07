@@ -1,42 +1,25 @@
-import { API_RPC } from '@/dropbox/api';
+import { argOf, bodyOf, json } from './helpers';
+import { API_CONTENT, API_RPC } from '@/dropbox/api';
 import DropboxFs from '@/dropbox/fs';
 import dropboxOptimizer from '@/optimizer';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
+import type { Control } from './helpers';
+import type { FileMetadata } from '@/dropbox/api';
 import type {
 	InputAtom,
-	MaybePromise,
 	RequestParam,
 	RequestResponse,
 	OutputAtom,
 	StringKV,
 } from '@hesprs/sync-engine-sdk';
 
-const { deferred, flush, request } = testKit;
-
-type Control = (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>;
+const { bytes, deferred, file, flush, request } = testKit;
 
 type AtomSpy = { executed: boolean; rejected?: string; resolved: boolean };
 
 function spy(): AtomSpy {
 	return { executed: false, resolved: false };
-}
-
-function json(value: unknown, status = 200): Partial<RequestResponse> {
-	return {
-		// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
-		json: <T extends object = object>() => value as T,
-		status,
-		text: () => JSON.stringify(value),
-	};
-}
-
-function bodyOf(params: RequestParam): Record<string, unknown> {
-	const body = params.body;
-	if (typeof body === 'string') return JSON.parse(body) as Record<string, unknown>;
-	return JSON.parse(
-		new TextDecoder().decode(body instanceof Uint8Array ? body : new Uint8Array(0)),
-	) as Record<string, unknown>;
 }
 
 function batchEntries(paths: Array<string>, failures: StringKV = {}) {
@@ -108,6 +91,28 @@ function writeAtom(key: string, status: AtomSpy): InputAtom {
 	};
 }
 
+function fileMeta(name: string): FileMetadata {
+	return {
+		client_modified: '2024-01-01T10:00:00Z',
+		content_hash: `hash-${name}`,
+		id: `id:${name}`,
+		name,
+		rev: `rev-${name}`,
+		server_modified: '2024-01-01T10:00:00Z',
+		size: 5,
+	};
+}
+
+function fsWriteAtom(key: string, fs: DropboxFs, status: AtomSpy): InputAtom {
+	return {
+		execute: () => fs.write(key, bytes(`data-${key}`), file(key, { size: 6 })),
+		key,
+		reject: (error) => (status.rejected = error.message),
+		resolve: () => (status.resolved = true),
+		type: 'write',
+	};
+}
+
 function createHarness(control: Control) {
 	const harness = request(control);
 	const fs = new DropboxFs(harness.request, { accountId: 'dbid:1', useTrash: true });
@@ -123,15 +128,42 @@ function createHarness(control: Control) {
 		const optimized = dropboxOptimizer({ atoms, executeAtom, fs }) ?? atoms;
 		return { executeAtom, optimized };
 	};
-	return { calls: harness.calls, run };
+	return { calls: harness.calls, fs, run };
 }
 
 const URLS = {
+	append: `${API_CONTENT}/2/files/upload_session/append_v2`,
 	createFolderBatch: `${API_RPC}/2/files/create_folder_batch`,
 	deleteBatch: `${API_RPC}/2/files/delete_batch`,
 	deleteV2: `${API_RPC}/2/files/delete_v2`,
+	finishBatch: `${API_RPC}/2/files/upload_session/finish_batch_v2`,
 	moveBatch: `${API_RPC}/2/files/move_batch_v2`,
+	startBatch: `${API_RPC}/2/files/upload_session/start_batch`,
+	upload: `${API_CONTENT}/2/files/upload`,
 };
+
+/**
+ * A control answering the session routes: one start_batch, instant appends, and per-entry commit
+ * success.
+ */
+function sessionRoutes(append?: (params: RequestParam) => Partial<RequestResponse>): Control {
+	return (url, params) => {
+		if (url === URLS.startBatch) {
+			const { num_sessions: count } = bodyOf(params) as { num_sessions: number };
+			return json({ session_ids: Array.from({ length: count }, (_, index) => `s${index}`) });
+		}
+		if (url === URLS.append) return append?.(params) ?? json({});
+		expect(url).toBe(URLS.finishBatch);
+		const { entries } = bodyOf(params) as {
+			entries: Array<{ cursor: { session_id: string } }>;
+		};
+		return json({
+			entries: entries.map(({ cursor }) =>
+				Object.assign(fileMeta(cursor.session_id), { '.tag': 'success' }),
+			),
+		});
+	};
+}
 
 test('returns undefined for other file systems', () => {
 	expect(
@@ -373,4 +405,156 @@ test('a batched deletion gates all dependents on the same single call', async ()
 	expect(writeStatus.executed).toBe(true);
 	expect(otherWrite.executed).toBe(true);
 	expect(batchCalls.length).toBe(1);
+});
+
+test('four writes upload through one session batch and commit together', async () => {
+	const { calls, fs, run } = createHarness(sessionRoutes());
+	const { executeAtom, optimized } = run(
+		['w0.md', 'w1.md', 'w2.md', 'w3.md'].map((key) => fsWriteAtom(key, fs, spy())),
+	);
+	const writes = optimized.filter((atom) => atom.type === 'write');
+	const uids = await Promise.all(writes.map((atom) => executeAtom(atom).then(String, String)));
+
+	expect(uids).toStrictEqual(['hash-s0', 'hash-s1', 'hash-s2', 'hash-s3']);
+	expect(calls.map(({ url }) => url)).toStrictEqual([
+		URLS.startBatch,
+		URLS.append,
+		URLS.append,
+		URLS.append,
+		URLS.append,
+		URLS.finishBatch,
+	]);
+	expect(
+		(
+			bodyOf(calls.at(-1) as RequestParam) as { entries: Array<{ commit: { path: string } }> }
+		).entries
+			.map(({ commit }) => commit.path)
+			.sort(),
+	).toStrictEqual(['/w0.md', '/w1.md', '/w2.md', '/w3.md']);
+});
+
+test('three writes stay individual without any session request', async () => {
+	const { calls, run } = createHarness(() => {
+		throw new Error('No request expected');
+	});
+	const { executeAtom, optimized } = run([
+		writeAtom('a.md', spy()),
+		writeAtom('b.md', spy()),
+		writeAtom('c.md', spy()),
+	]);
+
+	await Promise.all(optimized.map(executeAtom));
+
+	expect(calls.length).toBe(0);
+	expect(optimized.filter((atom) => atom.type === 'custom').length).toBe(0);
+});
+
+test('a failed append rejects only its write and the commit covers the rest', async () => {
+	const { calls, fs, run } = createHarness(
+		sessionRoutes((params) =>
+			(argOf(params).cursor as { session_id: string }).session_id === 's2'
+				? json(
+						{
+							error: {
+								'.tag': 'path',
+								path: { '.tag': 'conflict', conflict: { '.tag': 'folder' } },
+							},
+						},
+						409,
+					)
+				: json({}),
+		),
+	);
+	const statuses = [spy(), spy(), spy(), spy()];
+	const { executeAtom, optimized } = run([
+		fsWriteAtom('w0.md', fs, statuses[0]),
+		fsWriteAtom('w1.md', fs, statuses[1]),
+		fsWriteAtom('w2.md', fs, statuses[2]),
+		fsWriteAtom('w3.md', fs, statuses[3]),
+	]);
+	const writes = optimized.filter((atom) => atom.type === 'write');
+	const outcomes = await Promise.all(
+		writes.map((atom) => executeAtom(atom).then(String, String)),
+	);
+
+	expect(outcomes[0]).toBe('hash-s0');
+	expect(outcomes[1]).toBe('hash-s1');
+	expect(outcomes[2]).toContain('conflict');
+	expect(outcomes[3]).toBe('hash-s3');
+	expect(statuses[2].rejected).toContain('conflict');
+	expect(
+		(
+			bodyOf(calls.at(-1) as RequestParam) as {
+				entries: Array<{ cursor: { session_id: string } }>;
+			}
+		).entries
+			.map(({ cursor }) => cursor.session_id)
+			.sort(),
+	).toStrictEqual(['s0', 's1', 's3']);
+});
+
+test('a write gated by a failed folder creation never uploads and still counts', async () => {
+	const { calls, fs, run } = createHarness(sessionRoutes());
+	const gated = spy();
+	const { executeAtom, optimized } = run([
+		{
+			execute: () => {
+				throw new Error('folder creation failed');
+			},
+			key: 'd/',
+			reject: (error) => (gated.rejected = error.message),
+			resolve: () => (gated.resolved = true),
+			type: 'mkdir',
+		},
+		fsWriteAtom('d/x.md', fs, gated),
+		fsWriteAtom('a.md', fs, spy()),
+		fsWriteAtom('b.md', fs, spy()),
+		fsWriteAtom('c.md', fs, spy()),
+	]);
+	const writes = optimized.filter((atom) => atom.type === 'write');
+	const outcomes = await Promise.all(
+		writes.map((atom) => executeAtom(atom).then(String, String)),
+	);
+
+	expect(outcomes[0]).toContain('folder creation failed');
+	expect(calls.filter(({ url }) => url === URLS.append).length).toBe(3);
+	expect(
+		(
+			bodyOf(calls.at(-1) as RequestParam) as { entries: Array<{ commit: { path: string } }> }
+		).entries
+			.map(({ commit }) => commit.path)
+			.sort(),
+	).toStrictEqual(['/a.md', '/b.md', '/c.md']);
+});
+
+test('a failed session start rejects every write and skips the commit', async () => {
+	const { calls, fs, run } = createHarness((url) => {
+		expect(url).toBe(URLS.startBatch);
+		return json({ error: { '.tag': 'too_many_write_operations' } }, 429);
+	});
+	const { executeAtom, optimized } = run(
+		['w0.md', 'w1.md', 'w2.md', 'w3.md'].map((key) => fsWriteAtom(key, fs, spy())),
+	);
+	const writes = optimized.filter((atom) => atom.type === 'write');
+	const outcomes = await Promise.all(
+		writes.map((atom) => executeAtom(atom).then(String, String)),
+	);
+
+	expect(outcomes.every((outcome) => outcome.includes('too_many_write_operations'))).toBe(true);
+	expect(calls.map(({ url }) => url)).toStrictEqual([URLS.startBatch]);
+});
+
+test('ready writes commit in 50-entry chunks plus one key-less remainder', async () => {
+	const keys: Array<string> = [];
+	for (let index = 0; index < 60; index += 1) keys.push(`w${index}.md`);
+	const { calls, fs, run } = createHarness(sessionRoutes());
+	const { executeAtom, optimized } = run(keys.map((key) => fsWriteAtom(key, fs, spy())));
+	const writes = optimized.filter((atom) => atom.type === 'write');
+
+	await Promise.all(writes.map((atom) => executeAtom(atom).then(String, String)));
+
+	const finishes = calls.filter(({ url }) => url === URLS.finishBatch);
+	expect(
+		finishes.map((finish) => (bodyOf(finish) as { entries: Array<unknown> }).entries.length),
+	).toStrictEqual([50, 10]);
 });

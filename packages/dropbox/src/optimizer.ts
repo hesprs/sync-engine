@@ -11,6 +11,7 @@ import type {
 	OptimizerInput,
 	OptimizerOutput,
 	OutputAtom,
+	WriteAtom,
 } from '@hesprs/sync-engine-sdk';
 
 type Paths = { read?: string; write?: string };
@@ -32,11 +33,6 @@ function isSubsumable(atom: InputAtom): atom is Subsumable {
 	return atom.type === 'delete' || atom.type === 'move';
 }
 
-function memoize(run: () => Promise<void>): () => Promise<void> {
-	let started: Promise<void> | undefined;
-	return () => (started ??= run());
-}
-
 /** Whether two moves would collide inside one `move_batch_v2` call. */
 function movesConflict(first: MoveAtom, second: MoveAtom): boolean {
 	const paths = [first.oldKey.toLowerCase(), first.newKey.toLowerCase()];
@@ -44,6 +40,64 @@ function movesConflict(first: MoveAtom, second: MoveAtom): boolean {
 	return paths.some((path) =>
 		others.some((other) => isSub(path, other, true) || isSub(other, path, true)),
 	);
+}
+
+/** Minimum write count for a flush to upload through batched sessions. */
+const MIN_BATCHED_WRITES = 4;
+/** Ready sessions committed per finish_batch_v2 request. */
+const COMMIT_CHUNK = 50;
+
+/**
+ * Wires a flush of four or more writes into one session set: every write waits for the start atom
+ * first, and each write counts itself when its upload finishes (the fs callback) or when it settles
+ * (a failure). Commits run one at a time in COMMIT_CHUNK-sized requests, and one final key-less
+ * commit runs once every write is counted.
+ */
+function setupUploadSessions(
+	original: DropboxFs,
+	dependencies: Map<InputAtom, Set<OutputAtom>>,
+	writes: Array<WriteAtom>,
+): { notifyWriteSettled: (key: string) => void; startAtom: CustomAtom } | undefined {
+	if (writes.length < MIN_BATCHED_WRITES) return;
+	const startAtom: CustomAtom = {
+		execute: () => original.startUploadSessions(writes.map(({ key }) => key)),
+		type: 'custom',
+	};
+	for (const atom of writes) dependencies.get(atom)?.add(startAtom);
+
+	const counted = new Set<string>();
+	const ready: Array<string> = [];
+	let countedAll = false;
+	let committing = false;
+	const count = (key: string) => {
+		counted.add(key);
+		if (counted.size !== writes.length || countedAll) return;
+		countedAll = true;
+		original.clearCommitReadyCallback();
+	};
+	const commit = async () => {
+		if (committing) return;
+		committing = true;
+		try {
+			while (ready.length >= COMMIT_CHUNK)
+				await original.finishUploadSessions(ready.splice(0, COMMIT_CHUNK));
+			if (countedAll) await original.finishUploadSessions();
+		} finally {
+			committing = false;
+		}
+	};
+	original.setCommitReadyCallback((key) => {
+		count(key);
+		ready.push(key);
+		void commit();
+	});
+	return {
+		notifyWriteSettled: (key) => {
+			count(key);
+			void commit();
+		},
+		startAtom,
+	};
 }
 
 /**
@@ -63,7 +117,7 @@ export default function dropboxOptimizer({
 	const original = digOriginal(fs);
 	if (!(original instanceof DropboxFs)) return;
 
-	const dependencies = new Map(atoms.map((atom) => [atom, new Set<InputAtom>()]));
+	const dependencies = new Map(atoms.map((atom) => [atom, new Set<OutputAtom>()]));
 	const umbrellas = new Map<Subsumable, Subsumable>();
 
 	for (const atom of atoms)
@@ -134,7 +188,7 @@ export default function dropboxOptimizer({
 
 	const subsumed = new Set<Subsumable>(umbrellas.keys());
 	const groups: Array<BatchGroup> = [];
-	const memberToBatch = new Map<InputAtom, CustomAtom>();
+	const memberToBatch = new Map<OutputAtom, CustomAtom>();
 	const collect = (members: Array<BatchMember>, run: () => Promise<Record<string, Error>>) => {
 		if (members.length <= 1) return;
 		const atom: CustomAtom = { execute: () => Promise.resolve(), type: 'custom' };
@@ -158,15 +212,15 @@ export default function dropboxOptimizer({
 	const mkdirs = atoms.filter((atom): atom is MkdirAtom => atom.type === 'mkdir');
 	collect(mkdirs, () => original.batchMkdir(mkdirs.map(({ key }) => key)));
 
-	const translate = (atom: InputAtom): OutputAtom => memberToBatch.get(atom) ?? atom;
+	const translate = (atom: OutputAtom): OutputAtom => memberToBatch.get(atom) ?? atom;
 
 	for (const { atom, members, run } of groups) {
-		const groupSet = new Set<InputAtom>(members);
-		const batchDeps = new Set<InputAtom>();
+		const groupSet = new Set<OutputAtom>(members);
+		const batchDeps = new Set<OutputAtom>();
 		for (const member of members)
 			for (const dependency of dependencies.get(member) ?? [])
 				if (!groupSet.has(dependency)) batchDeps.add(dependency);
-		atom.execute = memoize(async () => {
+		atom.execute = async () => {
 			try {
 				await Promise.all(
 					[...batchDeps].map((dependency) => executeAtom(translate(dependency))),
@@ -182,8 +236,11 @@ export default function dropboxOptimizer({
 				for (const member of members) member.reject(reason);
 				throw error;
 			}
-		});
+		};
 	}
+
+	const writes = atoms.filter((atom): atom is WriteAtom => atom.type === 'write');
+	const batching = setupUploadSessions(original, dependencies, writes);
 
 	const output: OptimizerOutput = [];
 	for (const atom of atoms) {
@@ -200,7 +257,7 @@ export default function dropboxOptimizer({
 					}
 				}
 				await Promise.all(
-					[...(dependencies.get(atom) as Set<InputAtom>)].map((dependency) =>
+					[...(dependencies.get(atom) ?? [])].map((dependency) =>
 						executeAtom(translate(dependency)),
 					),
 				);
@@ -211,6 +268,19 @@ export default function dropboxOptimizer({
 			}
 		}) as never;
 		output.push(atom);
+	}
+	if (batching) {
+		for (const atom of writes) {
+			const wrapped = atom.execute;
+			atom.execute = async () => {
+				try {
+					return await wrapped();
+				} finally {
+					batching.notifyWriteSettled(atom.key);
+				}
+			};
+		}
+		output.push(batching.startAtom);
 	}
 	output.push(...groups.map(({ atom }) => atom));
 	return output;

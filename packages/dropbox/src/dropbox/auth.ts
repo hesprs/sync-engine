@@ -1,6 +1,7 @@
 import { API_RPC, OAUTH_AUTHORIZE_URL, OAUTH_TOKEN_URL } from './api';
-import { encodeBase64Url } from '@repo/shared/binary';
+import { encodeBase64Url, textToUint8Array } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
+import { compileQuery } from '@repo/shared/path';
 import { requestUrl } from 'obsidian';
 import type { Binary, Request, StringKV } from '@hesprs/sync-engine-sdk';
 import type { ObsidianProtocolData, SecretStorage } from 'obsidian';
@@ -38,23 +39,20 @@ function describeAuthError(data: TokenResponse, status: number): string {
 }
 
 async function sha256(text: string): Promise<Binary> {
-	return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
+	return new Uint8Array(await crypto.subtle.digest('SHA-256', textToUint8Array(text)));
 }
 
 export function buildAuthorizeUrl(state: string, codeChallenge: string): string {
-	const query: Array<[string, string]> = [
-		['client_id', APP_KEY],
-		['redirect_uri', REDIRECT_URI],
-		['response_type', 'code'],
-		['code_challenge', codeChallenge],
-		['code_challenge_method', 'S256'],
-		['token_access_type', 'offline'],
-		['scope', OAUTH_SCOPE],
-		['state', state],
-	];
-	return `${OAUTH_AUTHORIZE_URL}?${query
-		.map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-		.join('&')}`;
+	return `${OAUTH_AUTHORIZE_URL}?${compileQuery({
+		client_id: APP_KEY,
+		code_challenge: codeChallenge,
+		code_challenge_method: 'S256',
+		redirect_uri: REDIRECT_URI,
+		response_type: 'code',
+		scope: OAUTH_SCOPE,
+		state,
+		token_access_type: 'offline',
+	})}`;
 }
 
 export async function startAuthorization(): Promise<AuthorizationRequest> {

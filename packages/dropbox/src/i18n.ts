@@ -1,3 +1,4 @@
+import { OAUTH_AUTHORIZE_URL } from './dropbox/api';
 import type { DropboxTranslations } from './setting';
 
 export const en: DropboxTranslations = {
@@ -12,11 +13,13 @@ export const en: DropboxTranslations = {
 		'Click the button to connect to your Dropbox account. Approve access in your browser and Obsidian picks up the result automatically.',
 	connectInstruction: (url) =>
 		createFragment((frag) => {
+			frag.appendText('Please visit ');
+			frag.createEl('a', { attr: { href: url } }).createEl('code', {
+				text: OAUTH_AUTHORIZE_URL,
+			});
 			frag.appendText(
-				'Click "Open Dropbox" and approve access in your browser, then switch back to Obsidian. If your browser did not open, visit ',
+				' and approve access in your browser, switch back to Obsidian when finished.',
 			);
-			frag.createEl('a', { attr: { href: url } }).createEl('code', { text: url });
-			frag.appendText(' instead.');
 		}),
 	connectSuccess: 'Connected to Dropbox account.',
 	connectTitle: 'Connect Dropbox',
@@ -42,11 +45,11 @@ export const ru: DropboxTranslations = {
 		'Нажмите кнопку, чтобы подключиться к вашему аккаунту Dropbox. Подтвердите доступ в браузере, и Obsidian автоматически получит результат.',
 	connectInstruction: (url) =>
 		createFragment((frag) => {
-			frag.appendText(
-				'Нажмите «Открыть Dropbox» и подтвердите доступ в браузере, затем вернитесь в Obsidian. Если браузер не открылся, перейдите по ссылке ',
-			);
-			frag.createEl('a', { attr: { href: url } }).createEl('code', { text: url });
-			frag.appendText('.');
+			frag.appendText('Откройте ');
+			frag.createEl('a', { attr: { href: url } }).createEl('code', {
+				text: OAUTH_AUTHORIZE_URL,
+			});
+			frag.appendText(' и подтвердите доступ в браузере, затем вернитесь в Obsidian.');
 		}),
 	connectSuccess: 'Подключено к аккаунту Dropbox.',
 	connectTitle: 'Подключение Dropbox',
@@ -71,11 +74,11 @@ export const zhTW: DropboxTranslations = {
 		'點擊按鈕以連結您的 Dropbox 帳號。在瀏覽器中核准存取權限後，Obsidian 會自動接收結果。',
 	connectInstruction: (url) =>
 		createFragment((frag) => {
-			frag.appendText(
-				'點擊「開啟 Dropbox」並在瀏覽器中核准存取權限，然後切換回 Obsidian。若瀏覽器未開啟，請前往 ',
-			);
-			frag.createEl('a', { attr: { href: url } }).createEl('code', { text: url });
-			frag.appendText('。');
+			frag.appendText('請前往 ');
+			frag.createEl('a', { attr: { href: url } }).createEl('code', {
+				text: OAUTH_AUTHORIZE_URL,
+			});
+			frag.appendText('，並在瀏覽器中核准存取權限，完成後切換回 Obsidian。');
 		}),
 	connectSuccess: '已成功連線至 Dropbox 帳號。',
 	connectTitle: '連結 Dropbox',
@@ -100,11 +103,11 @@ export const zh: DropboxTranslations = {
 		'点击按钮连接到您的 Dropbox 账号。在浏览器中批准访问后，Obsidian 会自动接收结果。',
 	connectInstruction: (url) =>
 		createFragment((frag) => {
-			frag.appendText(
-				'点击“打开 Dropbox”并在浏览器中批准访问，然后切换回 Obsidian。如果浏览器没有打开，请访问 ',
-			);
-			frag.createEl('a', { attr: { href: url } }).createEl('code', { text: url });
-			frag.appendText('。');
+			frag.appendText('请访问 ');
+			frag.createEl('a', { attr: { href: url } }).createEl('code', {
+				text: OAUTH_AUTHORIZE_URL,
+			});
+			frag.appendText('，并在浏览器中批准访问，完成后切换回 Obsidian。');
 		}),
 	connectSuccess: '已连接至 Dropbox 账号。',
 	connectTitle: '连接 Dropbox',

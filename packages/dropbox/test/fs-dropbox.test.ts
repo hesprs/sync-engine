@@ -1,16 +1,17 @@
+import { argOf, bodyOf, json } from './helpers';
 import { API_CONTENT, API_RPC } from '@/dropbox/api';
 import checkConnection from '@/dropbox/check-connection';
 import DropboxFs from '@/dropbox/fs';
 import { SESSION_CHUNK_SIZE } from '@/dropbox/upload';
 import { chunkSize } from '@hesprs/sync-engine-sdk';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
+import { toError } from '@repo/shared/error';
 import { expect, test } from 'bun:test';
+import type { Control } from './helpers';
 import type { FileMetadata, Metadata } from '@/dropbox/api';
-import type { Binary, MaybePromise, RequestParam, RequestResponse } from '@hesprs/sync-engine-sdk';
+import type { Binary, RequestParam, RequestResponse } from '@hesprs/sync-engine-sdk';
 
 const { bytes, deferred, file, folder, flush, request } = testKit;
-
-type Control = (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>;
 
 function createFs(control: Control, useTrash = true) {
 	const harness = request(control);
@@ -21,29 +22,25 @@ function createFs(control: Control, useTrash = true) {
 	};
 }
 
-function json(value: unknown, status = 200): Partial<RequestResponse> {
-	return {
-		// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
-		json: <T extends object = object>() => value as T,
-		status,
-		text: () => JSON.stringify(value),
-	};
-}
-
 function binary(value: Binary, status = 200): Partial<RequestResponse> {
 	return { bytes: () => value, ...json({}, status) };
 }
 
-function argOf(params: RequestParam): Record<string, unknown> {
-	return JSON.parse(params.headers?.['Dropbox-API-Arg'] ?? '{}') as Record<string, unknown>;
+async function until(condition: () => boolean) {
+	while (!condition())
+		await new Promise<undefined>((resolve) => {
+			setTimeout(resolve, 0);
+		});
 }
 
-function bodyOf(params: RequestParam): Record<string, unknown> {
-	const body = params.body;
-	if (typeof body === 'string') return JSON.parse(body) as Record<string, unknown>;
-	return JSON.parse(
-		new TextDecoder().decode(body instanceof Uint8Array ? body : new Uint8Array(0)),
-	) as Record<string, unknown>;
+/** Answers a finish_batch_v2 request with per-entry flat success metadata named by session id. */
+function finishBatchSuccess(params: RequestParam): Partial<RequestResponse> {
+	const { entries } = bodyOf(params) as { entries: Array<{ cursor: { session_id: string } }> };
+	return json({
+		entries: entries.map(({ cursor }) =>
+			Object.assign(fileMeta(cursor.session_id, '/x'), { '.tag': 'success' }),
+		),
+	});
 }
 
 function fileMeta(name: string, path: string, overrides: Partial<FileMetadata> = {}): Metadata {
@@ -77,6 +74,8 @@ const DOWNLOAD_URL = `${API_CONTENT}/2/files/download`;
 const SESSION_START_URL = `${API_CONTENT}/2/files/upload_session/start`;
 const APPEND_URL = `${API_CONTENT}/2/files/upload_session/append_v2`;
 const FINISH_URL = `${API_CONTENT}/2/files/upload_session/finish`;
+const START_BATCH_URL = `${API_RPC}/2/files/upload_session/start_batch`;
+const FINISH_BATCH_URL = `${API_RPC}/2/files/upload_session/finish_batch_v2`;
 const NOT_FOUND_409 = {
 	error: { '.tag': 'path_lookup', path_lookup: { '.tag': 'not_found' } },
 	error_summary: 'path_lookup/not_found/.',
@@ -787,6 +786,344 @@ test('batchMkdir fires 10000-path chunks concurrently and maps results across ch
 	expect(result['d0/']).toBeUndefined();
 	expect(result['d10000/']).toBeUndefined();
 	expect(result['d10001/']?.message).toContain('insufficient_space');
+});
+
+test('batched writes append into started sessions and settle at finishUploadSessions', async () => {
+	const { calls, fs } = createFs((url, params) => {
+		if (url === START_BATCH_URL) {
+			expect(bodyOf(params)).toStrictEqual({
+				num_sessions: 2,
+				session_type: { '.tag': 'concurrent' },
+			});
+			return json({ session_ids: ['session-a', 'session-b'] });
+		}
+		if (url === APPEND_URL) return json({});
+		expect(url).toBe(FINISH_BATCH_URL);
+		return finishBatchSuccess(params);
+	});
+
+	await fs.startUploadSessions(['a.md', 'b.md']);
+	const statOf = (key: string, size: number) =>
+		file(key, { meta: () => ({ mtime: String(1_700_000_000_000) }), size });
+	const first = fs.write('a.md', bytes('hello'), statOf('a.md', 5));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 1);
+	const second = fs.write('b.md', bytes('world'), statOf('b.md', 5));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 2);
+
+	expect(calls.map(({ url }) => url)).toStrictEqual([START_BATCH_URL, APPEND_URL, APPEND_URL]);
+	expect(calls.slice(1).map((call) => argOf(call))).toStrictEqual([
+		{ close: true, cursor: { offset: 0, session_id: 'session-a' } },
+		{ close: true, cursor: { offset: 0, session_id: 'session-b' } },
+	]);
+	expect(calls[1]?.body).toStrictEqual(bytes('hello'));
+
+	await fs.finishUploadSessions();
+	expect(await first).toBe('hash-session-a');
+	expect(await second).toBe('hash-session-b');
+	expect(
+		(
+			bodyOf(calls[3] as RequestParam) as {
+				entries: Array<{
+					commit: Record<string, unknown>;
+					cursor: Record<string, unknown>;
+				}>;
+			}
+		).entries,
+	).toStrictEqual([
+		{
+			commit: {
+				autorename: false,
+				client_modified: '2023-11-14T22:13:20Z',
+				mode: 'overwrite',
+				mute: true,
+				path: '/a.md',
+			},
+			cursor: { offset: 5, session_id: 'session-a' },
+		},
+		{
+			commit: {
+				autorename: false,
+				client_modified: '2023-11-14T22:13:20Z',
+				mode: 'overwrite',
+				mute: true,
+				path: '/b.md',
+			},
+			cursor: { offset: 5, session_id: 'session-b' },
+		},
+	]);
+});
+
+test('a mapped large stream appends to the started session without starting its own', async () => {
+	const total = 8 * 1024 ** 2;
+	const payload = new Uint8Array(total);
+	const { calls, fs } = createFs((url, params) => {
+		if (url === START_BATCH_URL) return json({ session_ids: ['session-1'] });
+		if (url === APPEND_URL) return json({});
+		expect(url).toBe(FINISH_BATCH_URL);
+		return finishBatchSuccess(params);
+	});
+
+	await fs.startUploadSessions(['big.bin']);
+	const upload = fs.writeStream(
+		'big.bin',
+		new ReadableStream<Binary>({
+			start(controller) {
+				controller.enqueue(payload.slice(0, 4 * 1024 ** 2));
+				controller.enqueue(payload.slice(4 * 1024 ** 2));
+				controller.close();
+			},
+		}),
+		file('big.bin', { size: total }),
+	);
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 2);
+	await fs.finishUploadSessions();
+
+	expect(await upload).toBe('hash-session-1');
+	expect(calls.map(({ url }) => url)).toStrictEqual([
+		START_BATCH_URL,
+		APPEND_URL,
+		APPEND_URL,
+		FINISH_BATCH_URL,
+	]);
+	expect(calls.some(({ url }) => url === SESSION_START_URL)).toBe(false);
+	expect(calls.slice(1, 3).map((call) => argOf(call).close)).toStrictEqual([false, true]);
+	expect(
+		(
+			bodyOf(calls.at(-1) as RequestParam) as {
+				entries: Array<{
+					commit: Record<string, unknown>;
+					cursor: Record<string, unknown>;
+				}>;
+			}
+		).entries,
+	).toStrictEqual([
+		{
+			commit: { autorename: false, mode: 'overwrite', mute: true, path: '/big.bin' },
+			cursor: { offset: total, session_id: 'session-1' },
+		},
+	]);
+});
+
+test('a mapped small stream flows through the single-append write path', async () => {
+	const { calls, fs } = createFs((url, params) => {
+		if (url === START_BATCH_URL) return json({ session_ids: ['session-1'] });
+		if (url === APPEND_URL) return json({});
+		expect(url).toBe(FINISH_BATCH_URL);
+		return finishBatchSuccess(params);
+	});
+
+	await fs.startUploadSessions(['small.md']);
+	const upload = fs.writeStream(
+		'small.md',
+		new ReadableStream<Binary>({
+			start(controller) {
+				controller.enqueue(bytes('tiny'));
+				controller.close();
+			},
+		}),
+		file('small.md', { size: 4 }),
+	);
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 1);
+	await fs.finishUploadSessions();
+
+	expect(await upload).toBe('hash-session-1');
+	expect(calls.some(({ url }) => url === SESSION_START_URL || url === UPLOAD_URL)).toBe(false);
+	expect(calls.map(({ url }) => url)).toStrictEqual([
+		START_BATCH_URL,
+		APPEND_URL,
+		FINISH_BATCH_URL,
+	]);
+	expect(argOf(calls[1] as RequestParam)).toStrictEqual({
+		close: true,
+		cursor: { offset: 0, session_id: 'session-1' },
+	});
+});
+
+test('finishUploadSessions commits only the given keys and skips unknown ones', async () => {
+	const { calls, fs } = createFs((url, params) => {
+		if (url === START_BATCH_URL) return json({ session_ids: ['session-a', 'session-b'] });
+		if (url === APPEND_URL) return json({});
+		expect(url).toBe(FINISH_BATCH_URL);
+		return finishBatchSuccess(params);
+	});
+
+	await fs.startUploadSessions(['a.md', 'b.md']);
+	const first = fs.write('a.md', bytes('a'), file('a.md', { size: 1 }));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 1);
+	const second = fs.write('b.md', bytes('b'), file('b.md', { size: 1 }));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 2);
+
+	await fs.finishUploadSessions(['a.md', 'ghost.md']);
+	expect(await first).toBe('hash-session-a');
+	expect(
+		(
+			bodyOf(calls[3] as RequestParam) as {
+				entries: Array<{ commit: unknown; cursor: { offset: number; session_id: string } }>;
+			}
+		).entries,
+	).toStrictEqual([
+		{ commit: expect.anything(), cursor: { offset: 1, session_id: 'session-a' } },
+	]);
+
+	await fs.finishUploadSessions();
+	expect(await second).toBe('hash-session-b');
+	expect(
+		(
+			bodyOf(calls[4] as RequestParam) as {
+				entries: Array<{ commit: unknown; cursor: { offset: number; session_id: string } }>;
+			}
+		).entries,
+	).toStrictEqual([
+		{ commit: expect.anything(), cursor: { offset: 1, session_id: 'session-b' } },
+	]);
+});
+
+test('a failed entry rejects only its write and stays pending for the retry', async () => {
+	let finishCalls = 0;
+	const { calls, fs } = createFs((url, params) => {
+		if (url === START_BATCH_URL) return json({ session_ids: ['session-a', 'session-b'] });
+		if (url === APPEND_URL) return json({});
+		expect(url).toBe(FINISH_BATCH_URL);
+		finishCalls += 1;
+		if (finishCalls === 1)
+			return json({ entries: [{ '.tag': 'failure', failure: { '.tag': 'lookup_failed' } }] });
+		return finishBatchSuccess(params);
+	});
+
+	await fs.startUploadSessions(['a.md', 'b.md']);
+	let failed: Error | undefined;
+	const first = fs.write('a.md', bytes('a'), file('a.md', { size: 1 }));
+	void first.catch((error: unknown) => (failed = toError(error)));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 1);
+	const second = fs.write('b.md', bytes('b'), file('b.md', { size: 1 }));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 2);
+
+	await fs.finishUploadSessions(['a.md']);
+	await until(() => failed !== undefined);
+	expect((failed as Error).message).toContain('lookup_failed');
+
+	await fs.finishUploadSessions();
+	expect(await second).toBe('hash-session-b');
+	// The failed mapping stayed, so the key-less commit retries it alongside the other write.
+	expect(
+		(
+			bodyOf(calls.at(-1) as RequestParam) as {
+				entries: Array<{ cursor: { session_id: string } }>;
+			}
+		).entries
+			.map(({ cursor }) => cursor.session_id)
+			.sort(),
+	).toStrictEqual(['session-a', 'session-b']);
+});
+
+test('a failed commit request rejects every taken write and keeps them pending', async () => {
+	let failing = true;
+	const { calls, fs } = createFs((url, params) => {
+		if (url === START_BATCH_URL) return json({ session_ids: ['session-a', 'session-b'] });
+		if (url === APPEND_URL) return json({});
+		expect(url).toBe(FINISH_BATCH_URL);
+		if (failing) return json(NOT_FOUND_409, 409);
+		return finishBatchSuccess(params);
+	});
+
+	await fs.startUploadSessions(['a.md', 'b.md']);
+	const first = fs.write('a.md', bytes('a'), file('a.md', { size: 1 }));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 1);
+	const second = fs.write('b.md', bytes('b'), file('b.md', { size: 1 }));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 2);
+
+	await fs.finishUploadSessions();
+	expect(
+		await first.then(
+			() => 'ok',
+			(error: unknown) => toError(error).message,
+		),
+	).toContain('not_found');
+	expect(
+		await second.then(
+			() => 'ok',
+			(error: unknown) => toError(error).message,
+		),
+	).toContain('not_found');
+
+	failing = false;
+	await fs.finishUploadSessions();
+	expect(
+		(
+			bodyOf(calls.at(-1) as RequestParam) as {
+				entries: Array<{ cursor: { session_id: string } }>;
+			}
+		).entries
+			.map(({ cursor }) => cursor.session_id)
+			.sort(),
+	).toStrictEqual(['session-a', 'session-b']);
+});
+
+test('a duplicate startUploadSessions overrides the earlier mapping', async () => {
+	let starts = 0;
+	const { calls, fs } = createFs((url, params) => {
+		if (url === START_BATCH_URL) {
+			starts += 1;
+			return json({ session_ids: [`session-${starts}`] });
+		}
+		if (url === APPEND_URL) return json({});
+		expect(url).toBe(FINISH_BATCH_URL);
+		return finishBatchSuccess(params);
+	});
+
+	await fs.startUploadSessions(['a.md']);
+	await fs.startUploadSessions(['a.md']);
+	const upload = fs.write('a.md', bytes('a'), file('a.md', { size: 1 }));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 1);
+	await fs.finishUploadSessions();
+
+	expect(await upload).toBe('hash-session-2');
+	expect(argOf(calls[2] as RequestParam).cursor).toStrictEqual({
+		offset: 0,
+		session_id: 'session-2',
+	});
+});
+
+test('startUploadSessions starts at most 1000 sessions per request', async () => {
+	const sizes: Array<number> = [];
+	const { calls, fs } = createFs((url, params) => {
+		if (url === APPEND_URL) return json({});
+		expect(url).toBe(START_BATCH_URL);
+		const { num_sessions: count } = bodyOf(params) as { num_sessions: number };
+		sizes.push(count);
+		return json({
+			session_ids: Array.from({ length: count }, (_, index) => `s${count}-${index}`),
+		});
+	});
+	const keys: Array<string> = [];
+	for (let index = 0; index < 1002; index += 1) keys.push(`f${index}.md`);
+
+	await fs.startUploadSessions(keys);
+	expect(sizes).toStrictEqual([1000, 2]);
+
+	void fs.write('f1001.md', bytes('x'), file('f1001.md', { size: 1 }));
+	await until(() => calls.length === 3);
+	expect(argOf(calls[2] as RequestParam).cursor).toStrictEqual({ offset: 0, session_id: 's2-1' });
+});
+
+test('the commit-ready callback reports ready writes until cleared', async () => {
+	const { calls, fs } = createFs((url) => {
+		if (url === START_BATCH_URL) return json({ session_ids: ['s0', 's1', 's2'] });
+		if (url === APPEND_URL) return json({});
+		throw new Error(`Unexpected request: ${url}`);
+	});
+	const readyKeys: Array<string> = [];
+	fs.setCommitReadyCallback((key) => readyKeys.push(key));
+
+	await fs.startUploadSessions(['a.md', 'b.md', 'c.md']);
+	void fs.write('a.md', bytes('a'), file('a.md', { size: 1 }));
+	void fs.write('b.md', bytes('b'), file('b.md', { size: 1 }));
+	await until(() => readyKeys.length === 2);
+
+	fs.clearCommitReadyCallback();
+	void fs.write('c.md', bytes('c'), file('c.md', { size: 1 }));
+	await until(() => calls.filter(({ url }) => url === APPEND_URL).length === 3);
+	expect(readyKeys.sort()).toStrictEqual(['a.md', 'b.md']);
 });
 
 test('checkConnection validates the token through a root listing', async () => {

@@ -1,15 +1,15 @@
 import isMergeablePath from '@/utils/is-mergeable-path';
 import { uint8ArrayToText } from '@repo/shared/binary';
-import type { Binary, FileStat, Fs, StoreAsync } from '@hesprs/sync-engine-sdk';
+import type { Binary, FileStat, Fs, MaybePromise, StoreAsync } from '@hesprs/sync-engine-sdk';
 
 export default function smartMergeBaseTextWrapper(original: Fs, store: StoreAsync<string>): Fs {
 	const write = original.write.bind(original);
 	const move = original.move.bind(original);
 	const remove = original.delete.bind(original);
 
-	original.write = async (key: string, value: Binary, stat: FileStat) => {
+	original.write = async (key: string, value: MaybePromise<Binary>, stat: FileStat) => {
 		const uid = await write(key, value, stat);
-		if (isMergeablePath(key)) await store.set(key, uint8ArrayToText(value));
+		if (isMergeablePath(key)) await store.set(key, uint8ArrayToText(await value));
 		return uid;
 	};
 
