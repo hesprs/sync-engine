@@ -29,6 +29,7 @@ import type {
 	FileStat,
 	FolderStat,
 	ListReporter,
+	MaybePromise,
 	Request,
 	RequestResponse,
 	RootFs,
@@ -89,7 +90,6 @@ function chunksOf<T>(items: Array<T>, size: number): Array<Array<T>> {
 	return chunks;
 }
 
-/** Maps position-aligned batch entries to their per-item error, skipping tolerated failures. */
 function mapBatchFailures<T>(
 	entries: Array<BatchEntry>,
 	items: Array<T>,
@@ -129,7 +129,6 @@ export default class DropboxFs implements RootFs {
 		});
 	}
 
-	/** Posts a batch endpoint and polls its `/check` endpoint until the job completes. */
 	private async runBatch(
 		start: string,
 		check: string,
@@ -149,8 +148,8 @@ export default class DropboxFs implements RootFs {
 	}
 
 	/**
-	 * Runs one `runBatch` per chunk concurrently. The chunks are ordered, so the flattened entries
-	 * stay position-aligned with the concatenated chunks.
+	 * Runs one `runBatch` per chunk concurrently; chunks are ordered, so flattened entries stay
+	 * position-aligned.
 	 */
 	private async runBatchConcurrently<T>(
 		start: string,
@@ -193,9 +192,9 @@ export default class DropboxFs implements RootFs {
 		});
 	}
 
-	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
+	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
 		const metadata = await read2xx(this.request, `${API_CONTENT}/2/files/upload`, {
-			body: value,
+			body: await value,
 			headers: {
 				'Content-Type': 'application/octet-stream',
 				'Dropbox-API-Arg': escapeHeaderJson(uploadArg(key, await stat.meta())),
@@ -204,7 +203,12 @@ export default class DropboxFs implements RootFs {
 		return uidOf(metadata);
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
+	async writeStream(
+		key: string,
+		value: MaybePromise<ReadableStream<Binary>>,
+		stat: FileStat,
+	): Promise<string> {
+		value = await value;
 		if (stat.size < SESSION_CHUNK_SIZE)
 			return this.write(key, await collectStreamToBinary(value), stat);
 		const metadata = await concurrentUploadSession(
@@ -280,9 +284,8 @@ export default class DropboxFs implements RootFs {
 	}
 
 	/**
-	 * Fetches all descendants with one recursive listing, then walks the tree under the requested
-	 * key so the reporter can steer traversal. Keys are built from parent key plus entry name
-	 * because `path_display` may carry stale case in non-final components.
+	 * Keys are built from the parent key plus entry name because `path_display` may carry stale
+	 * case in non-final components.
 	 */
 	async list(key: string, reporter: ListReporter): Promise<Array<Stat>> {
 		const startPath = keyToPath(key);
@@ -327,11 +330,7 @@ export default class DropboxFs implements RootFs {
 		return results;
 	}
 
-	/**
-	 * Batch delete — Dropbox extension method accessed by the optimizer. Deleted keys map to their
-	 * per-entry error; `not_found` counts as success (idempotent delete). Batches above the
-	 * 1000-entry API limit are chunked and fired concurrently.
-	 */
+	/** Batch delete — optimizer extension; `not_found` counts as success (idempotent). */
 	async batchDelete(keys: Array<string>): Promise<Record<string, Error>> {
 		const unique = [...new Set(keys)];
 		const entries = await this.runBatchConcurrently(
@@ -348,11 +347,7 @@ export default class DropboxFs implements RootFs {
 		);
 	}
 
-	/**
-	 * Batch move — Dropbox extension method accessed by the optimizer. Moves map from their old key
-	 * to the per-entry error; case-only renames are performed individually. Batches above the
-	 * 1000-entry API limit are chunked and fired concurrently.
-	 */
+	/** Batch move — optimizer extension; case-only renames are performed individually. */
 	async batchMove(moves: BatchMoves): Promise<Record<string, Error>> {
 		const result: Record<string, Error> = {};
 		const batched: BatchMoves = [];
@@ -382,12 +377,7 @@ export default class DropboxFs implements RootFs {
 		);
 	}
 
-	/**
-	 * Batch folder creation — Dropbox extension method accessed by the optimizer. The server
-	 * creates the missing ancestors of every path; created keys map to their per-entry error, and
-	 * an existing folder counts as success. Batches above the 10,000-path API limit are chunked and
-	 * fired concurrently.
-	 */
+	/** Batch folder creation — optimizer extension; an existing folder counts as success. */
 	async batchMkdir(keys: Array<string>): Promise<Record<string, Error>> {
 		const requested = [...new Set(keys)];
 		const entries = await this.runBatchConcurrently(

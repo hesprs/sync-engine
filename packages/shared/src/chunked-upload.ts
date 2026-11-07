@@ -1,4 +1,4 @@
-import { concatBinary } from './binary';
+import { PartBuffer } from './binary';
 import type { Binary } from './binary';
 
 type ChunkedUploadOptions<Result> = {
@@ -35,7 +35,7 @@ export default async function chunkedUpload<Result>({
 	const results: Array<Result | undefined> = [];
 	let nextChunkIndex = 1;
 	let offset = 0;
-	let pending: Binary = new Uint8Array(0);
+	const pending = new PartBuffer();
 	let failure: { error: unknown } | undefined;
 
 	const trackUpload = (promise: Promise<void>) => {
@@ -72,21 +72,18 @@ export default async function chunkedUpload<Result>({
 		while (!done)
 			if (failure) break;
 			else if (inFlight.size >= concurrency) await Promise.race(inFlight);
-			else if (pending.byteLength > chunkSize) {
+			else if (pending.size > chunkSize)
 				// Strict `>`: exactly `chunkSize` buffered may be the stream's last chunk, and only the flush below may mark a chunk `isLast`.
-				const chunk = pending.slice(0, chunkSize);
-				pending = pending.slice(chunkSize);
-				enqueueChunk(chunk, false);
-			} else {
+				enqueueChunk(pending.slice(chunkSize), false);
+			else {
 				const read = await reader.read();
 				if (read.done) done = true;
-				else pending = concatBinary(pending, read.value);
+				else pending.push(read.value);
 			}
 
-		if (!failure && pending.byteLength > 0) {
+		if (!failure && pending.size > 0) {
 			await waitForSlot();
-			enqueueChunk(pending, true);
-			pending = new Uint8Array(0);
+			enqueueChunk(pending.slice(pending.size), true);
 		}
 		await Promise.all(inFlight);
 		if (failure) throw failure.error;

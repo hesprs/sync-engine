@@ -27,7 +27,16 @@ export function uint8ArrayToText(bytes: Binary): string {
 	return decoder.decode(bytes);
 }
 
+/**
+ * Concatenates the given binaries; a lone `Uint8Array` is returned as-is, so the result may alias
+ * the input.
+ */
 export function concatBinary(...arrays: Array<BufferSource>): Binary {
+	if (arrays.length === 1) {
+		const [only] = arrays;
+		if (only instanceof Uint8Array) return only as Binary;
+		if (only instanceof ArrayBuffer) return new Uint8Array(only);
+	}
 	const totalLength = arrays.reduce((sum, array) => sum + array.byteLength, 0);
 	const result = new Uint8Array(totalLength);
 	let offset = 0;
@@ -55,6 +64,36 @@ export async function collectStreamToBinary(source: ReadableStream<Binary>): Pro
 		return concatBinary(...chunks);
 	} finally {
 		reader.releaseLock();
+	}
+}
+
+/** Buffers stream chunks until enough bytes accumulate to slice fixed- or variable-size pieces. */
+export class PartBuffer {
+	/** Total buffered bytes. */
+	size = 0;
+	private readonly parts: Array<Binary> = [];
+
+	push(...parts: Array<Binary>): void {
+		this.parts.push(...parts);
+		this.size += parts.reduce((sum, part) => sum + part.byteLength, 0);
+	}
+
+	/**
+	 * Takes exactly `size` bytes off the front, merging only the chunks the request reaches; the
+	 * returned piece and the kept remainder are views into the merged chunks.
+	 */
+	slice(size: number): Binary {
+		if (size > this.size) throw new Error('PartBuffer slice underflow.');
+		let needed = size;
+		let count = 0;
+		while (needed > 0) {
+			needed -= this.parts[count].byteLength;
+			count += 1;
+		}
+		const merged = concatBinary(...this.parts.splice(0, count));
+		if (merged.byteLength > size) this.parts.unshift(merged.subarray(size));
+		this.size -= size;
+		return merged.subarray(0, size);
 	}
 }
 

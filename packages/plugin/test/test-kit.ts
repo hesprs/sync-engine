@@ -244,13 +244,19 @@ function fs(options: FsOptions = {}): FsHarness {
 			calls.stat.push(key);
 			return control.stat(key);
 		},
-		write: (key: string, value: Binary, stat: FileStat) => {
-			calls.write.push([key, value, stat]);
-			return control.write(key, value, stat);
+		write: async (key: string, value: MaybePromise<Binary>, stat: FileStat) => {
+			const resolved = await value;
+			calls.write.push([key, resolved, stat]);
+			return control.write(key, resolved, stat);
 		},
-		writeStream: (key: string, value: ReadableStream<Binary>, stat: FileStat) => {
+		writeStream: async (
+			key: string,
+			value: MaybePromise<ReadableStream<Binary>>,
+			stat: FileStat,
+		) => {
+			const resolved = await value;
 			calls.writeStream.push([key, stat]);
-			return control.writeStream(key, value, stat);
+			return control.writeStream(key, resolved, stat);
 		},
 	};
 

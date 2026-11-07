@@ -64,8 +64,8 @@ export function keyToPath(key: string): string {
 }
 
 /**
- * Serializes an argument for the `Dropbox-API-Arg` header. Non-ASCII characters and 0x7F must be
- * `\uXXXX`-escaped to stay HTTP-header-safe.
+ * Serializes an argument for the `Dropbox-API-Arg` header; non-ASCII and 0x7F are `\uXXXX`-escaped
+ * to stay HTTP-header-safe.
  */
 export function escapeHeaderJson(arg: Record<string, unknown>): string {
 	return JSON.stringify(arg).replaceAll(
@@ -90,7 +90,6 @@ function collectTags(error: unknown): Array<string> {
 	return tags;
 }
 
-/** Reads the structured error tags attached to a thrown Dropbox request error. */
 export function tagsOf(error: unknown): Array<string> {
 	return (error as { tags?: Array<string> }).tags ?? [];
 }
@@ -132,7 +131,6 @@ export async function request2xx(
 	throw requestErrorOf(response);
 }
 
-/** Builds the error reported for one failed entry of a batch result. */
 export function batchEntryError(failure: Record<string, unknown>): Error & { tags: Array<string> } {
 	const tags = collectTags(failure);
 	const error = new Error(

@@ -11,7 +11,6 @@ const CONCURRENT_APPENDS = 4;
 
 type UploadOptions = { request: Request; arg: UploadArg };
 
-/** Posts to a content endpoint and parses the metadata, throwing on a non-2xx response. */
 export async function read2xx(
 	request: Request,
 	url: string,
@@ -50,7 +49,6 @@ export async function concurrentUploadSession(
 		concurrency: CONCURRENT_APPENDS,
 		uploadChunk: async (chunk, _index, offset, isLast) => {
 			total = offset + chunk.byteLength;
-			// The closing append turns `close` on, so it must not overtake data appends still in flight: send it only once every earlier append is acknowledged.
 			if (isLast) await Promise.all(appends);
 			const append = read2xx(request, `${API_CONTENT}/2/files/upload_session/append_v2`, {
 				body: chunk,

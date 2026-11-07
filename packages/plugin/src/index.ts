@@ -61,10 +61,10 @@ export type Events = MergeSingleKey<InternalModules, 'events'>;
 export type Settings = MergeSingleKey<InternalModules, 'settings'>;
 export type Translations = MergeSingleKey<InternalModules, 'i18n'>;
 
-// TODO: after December 1, 2026:
+// TODO after December 15, 2026:
 // 1. Bump min Obsidian version to 1.15
 // 2. Remove the file chunking hack in packages/plugin/src/fs/vault/request.ts (Obsidian 1.15+ uses Capacitor 7)
-// 3. Remove "Connect account" / "Account connected" setting title hack in Google Drive module (Obsidian 1.14+ supports `id` for deduplication)
+// 3. Remove "Connect account" / "Account connected" setting title hack in Google Drive / Dropbox module (Obsidian 1.14+ supports `id` for deduplication)
 
 export default class SyncEngine extends Plugin {
 	context?: Context;
@@ -82,7 +82,8 @@ export default class SyncEngine extends Plugin {
 			exportLogsDirectory: 'Sync Engine Logs/',
 			focusSync: { enabled: false, value: 300_000 },
 			maxFileSize: { enabled: false, value: 31_457_280 },
-			maxMemoryConsumption: { enabled: true, value: 100 * 1024 ** 2 },
+			// See Bootstrap TODO
+			// maxMemoryConsumption: { enabled: true, value: 100 * 1024 ** 2 },
 			maxRequestConcurrency: { enabled: true, value: 50 },
 			minRequestInterval: { enabled: false, value: 0 },
 			moduleAutoUpdate: true,

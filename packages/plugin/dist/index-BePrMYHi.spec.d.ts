@@ -50,8 +50,8 @@ type RootFs = {
   getUid(): string;
   read(key: string, stat: FileStat): MaybePromise<Binary>;
   readStream(key: string, stat: FileStat): MaybePromise<ReadableStream<Binary>>;
-  write(key: string, value: Binary, stat: FileStat): MaybePromise<string>;
-  writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
+  write(key: string, value: MaybePromise<Binary>, stat: FileStat): MaybePromise<string>;
+  writeStream(key: string, value: MaybePromise<ReadableStream<Binary>>, stat: FileStat): MaybePromise<string>;
   delete(key: string): MaybePromise<void>;
   move(oldKey: string, newKey: string): MaybePromise<void>;
   mkdir(key: string, stat: FolderStat, recursive?: boolean): MaybePromise<void>;
@@ -695,15 +695,16 @@ type FeaturesSettingTranslations = {
   asymmetricStorageMigration: Fragment<boolean>;
 } & MigrationModalTranslations;
 declare function prefixWrapper(original: Fs, prefix: string): WrappedFs;
+declare const REGRET_ERROR_MESSAGE = "=== Sync Engine Operation Regretted ===";
 declare const chunkSize: number, concurrency: number;
 declare function pipe({ from, to, stat, key }: {
   from: Fs;
   to: Fs;
   key: string;
   stat: FileStat;
-}): Promise<string | undefined>;
-declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promise<Binary | ReadableStream<Binary> | undefined>;
-declare function writeWithValue(fs: Fs, key: string, value: Binary | ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
+}): MaybePromise<string>;
+declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promise<Binary | ReadableStream<Binary>>;
+declare function writeWithSize(fs: Fs, key: string, value: MaybePromise<Binary | ReadableStream<Binary>>, stat: FileStat): MaybePromise<string>;
 declare function digOriginal(wrapped: Fs): RootFs;
 type SelectFromContext<O extends object> = Context extends O ? O : never;
 type HeadSettingTranslations = {
@@ -827,12 +828,7 @@ type ExistingMemoryDB = DatabaseSync<{
 declare class Bootstrap {
   private readonly ctx;
   private readonly cleanupCallbacks;
-  private readonly memoryStates;
   private isCancelled?;
-  private readonly localPool;
-  private readonly remotePool;
-  private localFs?;
-  private remoteFs?;
   readonly i18n: {
     bidirectional: string;
     mirrorLocal: string;
@@ -845,7 +841,6 @@ declare class Bootstrap {
     dontSync: string;
   } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
-    maxMemoryConsumption: TogglableValue;
     maxRequestConcurrency: TogglableValue;
     minRequestInterval: TogglableValue;
     realtimeSyncFastMode: boolean;
@@ -1311,4 +1306,4 @@ type VaultRequest = <T extends VaultRequestParam = {
   method: 'GET';
 }>(key: string, params?: T) => Promise<VaultRequestResponseMap[T['method']]>;
 type TrashOption = 'local' | 'system' | 'permanent';
-export { Download as $, LabelDefinition as A, FileStat as At, TaskFactory as B, chunkSize as C, MoveAtom as Ct, writeWithValue as D, RootFs as Dt, readWithSize as E, OutputAtom as Et, SettingEntry as F, RecordStatsMap as Ft, TaskNames as G, ConflictResolver as H, AugmentedModuleMeta as I, Stat$1 as It, RemoveRemote as J, Upload as K, ModuleMeta as L, StatsMap as Lt, reactivelyValidate as M, MaybePromise as Mt, settingEntry as N, Progress as Nt, prefixWrapper as O, WrappedFs as Ot, CallableOrObjectTree as P, RecordStat as Pt, MoveLocal as Q, Decider as R, StringKV as Rt, digOriginal as S, MkdirAtom as St, pipe as T, OptimizerOutput as Tt, ConflictResolverPayload as U, AddRecord as V, Task as W, RemoveLocal as X, RemoveRecord as Y, MoveRemote as Z, Events as _, DeleteAtom as _t, LocalRequestMiddlewareEntry as a, Snippet as at, ExistingMemoryDB as b, ListOptions as bt, RemoteRequestMiddlewareEntry as c, Dispatch as ct, RequestResponse as d, DatabaseSync as dt, CreateRemoteDir as et, TriggerEntry as f, StoreAsync as ft, Context as g, CustomAtom as gt, SyncTerminateReason as h, BatchOptimizer as ht, FsWrapperEntry as i, ObsidianLanguageCode as it, generateEditableList as j, FolderStat as jt, setNeedMigration as k, WriteAtom as kt, Request as l, On as lt, SyncOptions as m, StoreSync as mt, ConflictResolverEntry as n, RecordStore as nt, OptimizerEntry as o, Translate as ot, RemoteLister as p, StoreOperations as pt, ResolveConflict as q, DeciderEntry as r, Fragment as rt, RemoteFsEntry as s, TranslationResource as st, VaultRequest as t, CreateLocalDir as tt, RequestParam as u, DatabaseAsync as ut, Settings as v, Fs as vt, concurrency as w, OptimizerInput as wt, SelectFromContext as x, ListReporter as xt, Translations as y, InputAtom as yt, DeciderInput as z, Binary as zt };
+export { MoveLocal as $, setNeedMigration as A, WriteAtom as At, DeciderInput as B, Binary as Bt, REGRET_ERROR_MESSAGE as C, MkdirAtom as Ct, readWithSize as D, OutputAtom as Dt, pipe as E, OptimizerOutput as Et, CallableOrObjectTree as F, RecordStat as Ft, Task as G, AddRecord as H, SettingEntry as I, RecordStatsMap as It, ResolveConflict as J, TaskNames as K, AugmentedModuleMeta as L, Stat$1 as Lt, generateEditableList as M, FolderStat as Mt, reactivelyValidate as N, MaybePromise as Nt, writeWithSize as O, RootFs as Ot, settingEntry as P, Progress as Pt, MoveRemote as Q, ModuleMeta as R, StatsMap as Rt, digOriginal as S, ListReporter as St, concurrency as T, OptimizerInput as Tt, ConflictResolver as U, TaskFactory as V, ConflictResolverPayload as W, RemoveRecord as X, RemoveRemote as Y, RemoveLocal as Z, Events as _, CustomAtom as _t, LocalRequestMiddlewareEntry as a, ObsidianLanguageCode as at, ExistingMemoryDB as b, InputAtom as bt, RemoteRequestMiddlewareEntry as c, TranslationResource as ct, RequestResponse as d, DatabaseAsync as dt, Download as et, TriggerEntry as f, DatabaseSync as ft, Context as g, BatchOptimizer as gt, SyncTerminateReason as h, StoreSync as ht, FsWrapperEntry as i, Fragment as it, LabelDefinition as j, FileStat as jt, prefixWrapper as k, WrappedFs as kt, Request as l, Dispatch as lt, SyncOptions as m, StoreOperations as mt, ConflictResolverEntry as n, CreateLocalDir as nt, OptimizerEntry as o, Snippet as ot, RemoteLister as p, StoreAsync as pt, Upload as q, DeciderEntry as r, RecordStore as rt, RemoteFsEntry as s, Translate as st, VaultRequest as t, CreateRemoteDir as tt, RequestParam as u, On as ut, Settings as v, DeleteAtom as vt, chunkSize as w, MoveAtom as wt, SelectFromContext as x, ListOptions as xt, Translations as y, Fs as yt, Decider as z, StringKV as zt };

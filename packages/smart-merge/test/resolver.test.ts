@@ -54,9 +54,9 @@ test('resolver should merge when base text exists', async () => {
 	});
 });
 
-test('resolver should fall back when base text is missing', async () => {
-	const local = fs({ control: { read: () => bytes('local wins') } });
-	const remote = fs();
+test('resolver merges with a synthetic base when base text is missing', async () => {
+	const local = fs({ control: { read: () => bytes('line1\nline2-local\nline3') } });
+	const remote = fs({ control: { read: () => bytes('line1\nline2-remote\nline3') } });
 	const resolver = smartMergeResolver(mergeOptions, db, () => 'namespace');
 
 	await resolver({
@@ -68,10 +68,16 @@ test('resolver should fall back when base text is missing', async () => {
 		remoteFs: remote.fs,
 	});
 
-	expect(uint8ArrayToText(remote.calls.write[0]?.[1])).toBe('local wins');
+	// Without an ancestor the merge unions both sides instead of discarding one.
+	const merged = uint8ArrayToText(remote.calls.write[0]?.[1]);
+	expect(merged).toContain('line1');
+	expect(merged).toContain('line2-local');
+	expect(merged).toContain('line2-remote');
+	expect(merged).toContain('line3');
+	expect(uint8ArrayToText(local.calls.write[0]?.[1])).toBe(merged);
 	expect(await record.get('note.md')).toStrictEqual({
 		isDir: false,
-		local: 'local-current',
+		local: 'write-uid',
 		remote: 'write-uid',
 	});
 });
@@ -92,10 +98,37 @@ test('resolver should stream remote fallback for large newer remote files', asyn
 	});
 
 	expect(remote.calls.readStream).toStrictEqual([['large.md', remoteStat]]);
-	expect(local.calls.writeStream).toStrictEqual([['large.md', remoteStat]]);
+	const [writeKey, writeStat] = local.calls.writeStream[0] ?? [];
+	expect(writeKey).toBe('large.md');
+	// The write routes by the latest side's size, so it must stay on the stream path.
+	expect(writeStat).toMatchObject({ key: 'large.md', size: 6 * 1024 ** 2 });
 	expect(await record.get('large.md')).toStrictEqual({
 		isDir: false,
 		local: 'stream-uid',
 		remote: 'remote-current',
+	});
+});
+
+test('resolver writes a small newer winner through the binary path when only the loser is large', async () => {
+	const local = fs({ control: { read: () => bytes('small local wins') } });
+	const remote = fs({ control: { readStream: () => stream(['remote large content']) } });
+	const resolver = smartMergeResolver(mergeOptions, db, () => 'namespace');
+
+	await resolver({
+		key: 'large.md',
+		local: file('large.md', { mtime: 10, uid: 'local-new' }),
+		localFs: local.fs,
+		record,
+		remote: file('large.md', { mtime: 3, size: 6 * 1024 ** 2, uid: 'remote-old' }),
+		remoteFs: remote.fs,
+	});
+
+	// The content is the small local binary, so the loser's write must not take the stream path.
+	expect(remote.calls.writeStream).toStrictEqual([]);
+	expect(uint8ArrayToText(remote.calls.write[0]?.[1])).toBe('small local wins');
+	expect(await record.get('large.md')).toStrictEqual({
+		isDir: false,
+		local: 'local-new',
+		remote: 'write-uid',
 	});
 });

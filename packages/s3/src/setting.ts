@@ -102,7 +102,6 @@ export default function s3Setting(
 						});
 					},
 				})),
-
 				2000: s(() => ({
 					desc: translate('regionDescription'),
 					name: translate('region'),

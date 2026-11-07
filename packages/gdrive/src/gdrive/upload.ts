@@ -1,5 +1,5 @@
 import { parseDriveError } from './api';
-import { concatBinary, textToUint8Array } from '@repo/shared/binary';
+import { concatBinary, PartBuffer, textToUint8Array } from '@repo/shared/binary';
 import type { DriveFile } from './api';
 import type { Binary, Request, RequestResponse, StringKV } from '@hesprs/sync-engine-sdk';
 
@@ -128,7 +128,7 @@ export async function resumableUpload(
 	const session = await startSession(options);
 	const { size: total } = options;
 	const reader = value.getReader();
-	let buffer: Binary = new Uint8Array(0);
+	const buffer = new PartBuffer();
 	let final: RequestResponse | undefined;
 	let offset = 0;
 	// Sequential by necessity: a Drive session rejects any chunk whose offset
@@ -142,14 +142,10 @@ export async function resumableUpload(
 		while (!done) {
 			const read = await reader.read();
 			if (read.done) done = true;
-			else buffer = concatBinary(buffer, read.value);
-			while (buffer.byteLength >= GDRIVE_CHUNK_SIZE) {
-				const chunk = buffer.slice(0, GDRIVE_CHUNK_SIZE);
-				buffer = buffer.slice(GDRIVE_CHUNK_SIZE);
-				await upload(chunk);
-			}
+			else buffer.push(read.value);
+			while (buffer.size >= GDRIVE_CHUNK_SIZE) await upload(buffer.slice(GDRIVE_CHUNK_SIZE));
 		}
-		if (buffer.byteLength > 0) await upload(buffer);
+		if (buffer.size > 0) await upload(buffer.slice(buffer.size));
 	} catch (error) {
 		// Best-effort session cancellation; Drive also expires sessions on its own.
 		void options

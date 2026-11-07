@@ -120,11 +120,11 @@ function createRemote(options: { uid?: string } = {}) {
 					uid: `${key}-uid`,
 				};
 			},
-			write(key, value) {
+			write(key: string, value: Binary) {
 				files.set(key, value);
 				return key;
 			},
-			async writeStream(key, value) {
+			async writeStream(key: string, value: ReadableStream<Binary>) {
 				const reader = value.getReader();
 				const chunks: Array<Binary> = [];
 				try {
@@ -542,8 +542,7 @@ test('wrong password passes undecryptable meta values through', async () => {
 	});
 	const stat = await wrongShim.stat('file.md');
 	if (stat.isDir) throw new Error('expected file');
-	// Backends inject plaintext values (e.g. mtime) into meta, so undecryptable values must pass
-	// through unchanged instead of rejecting the whole meta.
+	// Backends inject plaintext values (e.g. mtime) into meta, so undecryptable values must pass through unchanged instead of rejecting the whole meta.
 	expect(await stat.meta()).toStrictEqual({ secret: capturedMeta.secret });
 	expect(capturedMeta.secret).not.toBe('data');
 });

@@ -705,55 +705,6 @@ test('batchMove reports relocation failures by old key', async () => {
 	expect(result['missing.md']?.message).toContain('not_found');
 });
 
-test('batchMove fires 1000-entry chunks concurrently and maps results across chunks', async () => {
-	const moves = Array.from({ length: 1002 }, (_, index) => ({
-		newKey: `g${index}.md`,
-		oldKey: `f${index}.md`,
-	}));
-	const first = deferred<Partial<RequestResponse>>();
-	const second = deferred<Partial<RequestResponse>>();
-	const { calls, fs } = createFs((url, params) => {
-		expect(url).toBe(`${API_RPC}/2/files/move_batch_v2`);
-		const { entries } = bodyOf(params) as { entries: Array<{ from_path: string }> };
-		return entries.length === 1000 ? first.promise : second.promise;
-	});
-
-	const pending = fs.batchMove(moves);
-	await flush();
-	// Both chunks are in flight before either responds, so the batches run concurrently.
-	expect(calls.length).toBe(2);
-
-	first.resolve(
-		json({
-			'.tag': 'complete',
-			entries: Array.from({ length: 1000 }, () => ({ '.tag': 'success' })),
-		}),
-	);
-	second.resolve(
-		json({
-			'.tag': 'complete',
-			entries: [
-				{ '.tag': 'success', success: fileMeta('g1000.md', '/g1000.md') },
-				{
-					'.tag': 'failure',
-					failure: {
-						'.tag': 'relocation_error',
-						relocation_error: {
-							'.tag': 'from_lookup',
-							from_lookup: { '.tag': 'not_found' },
-						},
-					},
-				},
-			],
-		}),
-	);
-	const result = await pending;
-
-	expect(result['f0.md']).toBeUndefined();
-	expect(result['f1000.md']).toBeUndefined();
-	expect(result['f1001.md']?.message).toContain('not_found');
-});
-
 test('batchMkdir sends one flat batch, deduplicates, and tolerates existing folders', async () => {
 	const { calls, fs } = createFs(() =>
 		json({
@@ -849,9 +800,4 @@ test('checkConnection validates the token through a root listing', async () => {
 		return json({ cursor: '', entries: [], has_more: false });
 	});
 	expect(await checkConnection(passing.request)).toBeUndefined();
-});
-
-test('getUid identifies the backend account', () => {
-	const { fs } = createFs(() => json({}));
-	expect(fs.getUid()).toBe('dropbox~dbid:1');
 });

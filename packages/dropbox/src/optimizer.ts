@@ -132,7 +132,6 @@ export default function dropboxOptimizer({
 		}
 	}
 
-	// Groups: non-subsumed deletes, path-disjoint moves, and all mkdirs; each only when > 1.
 	const subsumed = new Set<Subsumable>(umbrellas.keys());
 	const groups: Array<BatchGroup> = [];
 	const memberToBatch = new Map<InputAtom, CustomAtom>();
@@ -161,7 +160,6 @@ export default function dropboxOptimizer({
 
 	const translate = (atom: InputAtom): OutputAtom => memberToBatch.get(atom) ?? atom;
 
-	// Wire batch atoms: await the union of member dependencies (never a member of the same group), then run one batch call and resolve or reject every member positionally.
 	for (const { atom, members, run } of groups) {
 		const groupSet = new Set<InputAtom>(members);
 		const batchDeps = new Set<InputAtom>();
@@ -187,7 +185,6 @@ export default function dropboxOptimizer({
 		});
 	}
 
-	// Wire remaining atoms exactly like the hierarchical optimizer, with dependency targets translated to their batch atoms.
 	const output: OptimizerOutput = [];
 	for (const atom of atoms) {
 		if (memberToBatch.has(atom)) continue;

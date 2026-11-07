@@ -8,7 +8,7 @@ import type { ObsidianProtocolData, SecretStorage } from 'obsidian';
 export const APP_KEY = atob(process.env.DROPBOX_APP_KEY ?? '');
 export const REDIRECT_URI = 'obsidian://sync-engine-dropbox-auth';
 export const OAUTH_SCOPE = 'files.content.read files.content.write files.metadata.read';
-const KEYCHAIN_SECRET_ID = 'sync-engine-dropbox-refresh-token'; // Secret storage id under which the Dropbox refresh token is stored.
+const KEYCHAIN_SECRET_ID = 'sync-engine-dropbox-refresh-token';
 const FORM_CONTENT_TYPE = 'application/x-www-form-urlencoded';
 const TOKEN_EXPIRY_MARGIN = 60_000;
 const TOKEN_EXPIRY_FALLBACK = 14_400;
@@ -57,7 +57,6 @@ export function buildAuthorizeUrl(state: string, codeChallenge: string): string 
 		.join('&')}`;
 }
 
-/** Creates the authorization request the user approves in their browser. */
 export async function startAuthorization(): Promise<AuthorizationRequest> {
 	const verifier = encodeBase64Url(crypto.getRandomValues(new Uint8Array(64)));
 	const state = encodeBase64Url(crypto.getRandomValues(new Uint8Array(16)));

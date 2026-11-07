@@ -2,7 +2,7 @@ import { TEMP_FOLDER } from './request';
 import parseTimestamp from '@repo/shared/timestamp';
 import type { ListReporter, RootFs } from '../interface';
 import type { VaultRequest } from './request';
-import type { Stat, Binary, FileStat, StringKV } from '@/types';
+import type { Stat, Binary, FileStat, StringKV, MaybePromise } from '@/types';
 import type { DataWriteOptions } from 'obsidian';
 
 const MAX_WRITE_TRIAL = 5;
@@ -46,9 +46,10 @@ export default class VaultFs implements RootFs {
 		return this.request(key, { method: 'GET_STREAM', size });
 	}
 
-	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
+	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
 		// https://github.com/hesprs/sync-engine/issues/178
 		// https://forum.obsidian.md/t/on-android-vault-create-intermittently-fails-to-write-file-content/102935
+		value = await value;
 		let uid: string | undefined;
 		let trial = 0;
 		do {
@@ -60,7 +61,12 @@ export default class VaultFs implements RootFs {
 		return uid;
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
+	async writeStream(
+		key: string,
+		value: MaybePromise<ReadableStream<Binary>>,
+		stat: FileStat,
+	): Promise<string> {
+		value = await value;
 		const tempPath = `${TEMP_FOLDER}/${crypto.randomUUID()}.part`;
 		const reader = value.getReader();
 		if (!(await this.exists(TEMP_FOLDER))) await this.mkdir(TEMP_FOLDER);

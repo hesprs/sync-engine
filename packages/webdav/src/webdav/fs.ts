@@ -283,11 +283,11 @@ export default class WebdavFs implements RootFs {
 		});
 	};
 
-	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
+	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
 		const { headers, meta } = await this.resolveMeta(stat.meta);
 		const { headers: responseHeaders } = await this.requestOrThrow(
 			buildUrl(this.endpoint, key),
-			{ body: value, headers, method: 'PUT' },
+			{ body: await value, headers, method: 'PUT' },
 		);
 		const etag = getHeader(responseHeaders, 'etag');
 		return Promise.all([
@@ -298,7 +298,8 @@ export default class WebdavFs implements RootFs {
 		]).then(([uid]) => uid);
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+	async writeStream(key: string, value: MaybePromise<ReadableStream<Binary>>, stat: FileStat) {
+		value = await value;
 		const { chunkedUpload, username } = this.options;
 		if (!chunkedUpload) return this.write(key, await collectStreamToBinary(value), stat);
 		return writeNextcloudChunkedUpload(

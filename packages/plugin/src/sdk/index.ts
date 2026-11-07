@@ -8,7 +8,14 @@ export function digOriginal(wrapped: Fs) {
 }
 export { default as setNeedMigration } from '@/components/MigrationModal';
 export { default as prefixWrapper } from './prefix';
-export { pipe, readWithSize, writeWithValue, chunkSize, concurrency } from '@/utils/pipe';
+export {
+	pipe,
+	readWithSize,
+	writeWithSize,
+	chunkSize,
+	concurrency,
+	REGRET_ERROR_MESSAGE,
+} from '@/utils/pipe';
 export { settingEntry, reactivelyValidate, generateEditableList } from '@/settings/utils';
 
 export type {

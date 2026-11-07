@@ -22,6 +22,7 @@ import type {
 	FileStat,
 	FolderStat,
 	ListReporter,
+	MaybePromise,
 	Request,
 	RequestParam,
 	RequestResponse,
@@ -187,27 +188,31 @@ export default class GdriveFs implements RootFs {
 		});
 	}
 
-	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
+	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
 		const file = await singleUpload(
 			{
 				...(await this.uploadTarget(key, stat, 'multipart')),
 				mimeType: guessMimeType(basename(key)),
 				request: this.request,
 			},
-			value,
+			await value,
 		);
 		if (file.id) this.ids.set(key, file.id);
 		return file.md5Checksum ?? `${stat.mtime}~${stat.size}`;
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
+	async writeStream(
+		key: string,
+		value: MaybePromise<ReadableStream<Binary>>,
+		stat: FileStat,
+	): Promise<string> {
 		const file = await resumableUpload(
 			{
 				...(await this.uploadTarget(key, stat, 'resumable')),
 				request: this.request,
 				size: stat.size,
 			},
-			value,
+			await value,
 		);
 		if (file.id) this.ids.set(key, file.id);
 		return file.md5Checksum ?? `${stat.mtime}~${stat.size}`;

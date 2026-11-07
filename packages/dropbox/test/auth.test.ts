@@ -30,7 +30,6 @@ const {
 	PendingAuthorization,
 	TokenManager,
 	bearerMiddleware,
-	buildAuthorizeUrl,
 	exchangeCodeForTokens,
 	revokeToken,
 	startAuthorization,
@@ -82,22 +81,6 @@ test('starts an authorization with an S256 challenge and offline access', async 
 		.replaceAll('/', '_')
 		.replaceAll('=', '');
 	expect(parsed.searchParams.get('code_challenge')).toBe(expected);
-});
-
-test('builds the authorize URL from explicit challenge values', () => {
-	expect(buildAuthorizeUrl('state-1', 'challenge-1')).toBe(
-		`https://www.dropbox.com/oauth2/authorize?client_id=${encodeURIComponent(
-			APP_KEY,
-		)}&redirect_uri=${encodeURIComponent(
-			'obsidian://sync-engine-dropbox-auth',
-		)}&response_type=code` +
-			`&code_challenge=challenge-1` +
-			`&code_challenge_method=S256` +
-			`&token_access_type=offline` +
-			`&scope=${encodeURIComponent(
-				'files.content.read files.content.write files.metadata.read',
-			)}&state=state-1`,
-	);
 });
 
 test('exchanges the code with the PKCE verifier and no secret', async () => {

@@ -21,6 +21,7 @@ import type {
 	FileStat,
 	FolderStat,
 	ListReporter,
+	MaybePromise,
 	Request,
 	RequestParam,
 	RequestResponse,
@@ -155,13 +156,13 @@ export default class S3Fs implements RootFs {
 		});
 	}
 
-	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
+	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
 		const headers = {
 			'Content-Type': 'application/octet-stream',
 			...toMetaHeaders(await stat.meta()),
 		};
 		const response = await this.requestOrThrow(this.buildUrl(key), {
-			body: value,
+			body: await value,
 			headers,
 			method: 'PUT',
 		});
@@ -169,7 +170,12 @@ export default class S3Fs implements RootFs {
 		return etag ? normalizeEtag(etag) : getFileUid(await this.stat(key), key);
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
+	async writeStream(
+		key: string,
+		value: MaybePromise<ReadableStream<Binary>>,
+		stat: FileStat,
+	): Promise<string> {
+		value = await value;
 		if (stat.size < PART_SIZE) return this.write(key, await collectStreamToBinary(value), stat);
 		return multipartUpload(
 			{

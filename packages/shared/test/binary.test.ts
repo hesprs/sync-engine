@@ -1,4 +1,4 @@
-import { collectStreamToBinary } from '@/binary';
+import { collectStreamToBinary, concatBinary, PartBuffer } from '@/binary';
 import { expect, test } from 'bun:test';
 import type { Binary } from '@/binary';
 
@@ -42,4 +42,35 @@ test('releases the reader lock when the stream errors mid-read', async () => {
 
 	expect(String(caught)).toContain('boom');
 	expect(stream.locked).toBe(false);
+});
+
+test('concatBinary returns a lone input unchanged', () => {
+	const chunk = new Uint8Array([1, 2, 3]);
+
+	expect(concatBinary(chunk)).toBe(chunk);
+});
+
+test('slice takes exact bytes off the front across chunk boundaries', () => {
+	const buffer = new PartBuffer();
+	buffer.push(new Uint8Array([1, 2, 3]), new Uint8Array([4, 5]));
+
+	expect(buffer.slice(4)).toStrictEqual(new Uint8Array([1, 2, 3, 4]));
+	expect(buffer.size).toBe(1);
+	expect(buffer.slice(buffer.size)).toStrictEqual(new Uint8Array([5]));
+	expect(buffer.size).toBe(0);
+});
+
+test('slice returns a lone chunk without copying it', () => {
+	const buffer = new PartBuffer();
+	const chunk = new Uint8Array([1, 2, 3]);
+	buffer.push(chunk);
+
+	expect(buffer.slice(2).buffer).toBe(chunk.buffer);
+});
+
+test('slice throws when fewer bytes are buffered than requested', () => {
+	const buffer = new PartBuffer();
+	buffer.push(new Uint8Array([1]));
+
+	expect(() => buffer.slice(2)).toThrow();
 });
