@@ -16,7 +16,7 @@ There are two kinds of wrappers:
 - Target: local and remote `Fs`
 - Priority: `1000` for both
 
-Applied on both local and remote. The wrapper receives a shared `MemoryControlSharedState` containing `memoryConsumption`, `hangingOperations`, and `maxMemory`.
+Currently disabled in Bootstrap because browser GC is unreliable. A `TODO` plans to re-enable it once Obsidian's minimum iOS is 16.4 and `ResizableArrayBuffer` can release memory manually. When enabled it applies to both local and remote, and receives a shared `MemoryControlSharedState` containing `memoryConsumption`, `hangingOperations`, and `maxMemory`.
 
 `hangingOperations` pool is kept sorted in descending order by transfer size (`stat.size`), so longer transfers resume before shorter ones. This front-loads large files across the whole sync instead of deferring them into an underutilized tail.
 
@@ -33,34 +33,19 @@ When resuming, the wrapper scans the whole pool and admits every operation that 
 - Priority: `2000` for both
 - Mechanism: `setTimeout(..., 0)`-scheduled atom queue
 
-### Optimization Companion Wrapper
-
-- Target: local and remote `Fs`
-- Priority: `21000` for both
-- Behavior: injects `read()` and `readStream()` methods that add keys to the opposite-side optimization pool and probe the opposite-side FS.
-
 ### Backend-Dependent Optimization
 
-Sync routines must remain backend-independent, but optimal execution strategies vary (e.g., WebDAV requires sequential parent directory creation; S3 allows concurrent uploads). This wrapper decouples logic from optimization by intercepting FS API calls at the root layer to reorder, batch, or schedule execution within promises.
+Sync routines must remain backend-independent, but optimal execution strategies vary (e.g., WebDAV requires sequential parent directory creation; S3 allows concurrent uploads; Dropbox collapses deletions and moves into batch endpoints). This wrapper decouples logic from optimization by intercepting FS API calls at the root layer to reorder, batch, or schedule execution within promises.
 
 Backends may extend `RootFs` with backend-specific methods. The batch optimizer can receive the FS via `instanceof` check and use those methods.
 
 ### Operation Coalescing
 
-Coalescing uses a zero-delay timer: mutations are queued synchronously, and the timer flush captures operations added before it runs. The optimization wrapper keeps separate `Set<string>` pools for local and remote keys.
-
-**Interception Rules**:
-
-1. Mutations (`delete`, `mkdir`, `move`): Enqueued as `InputAtom`s.
-2. Reads (`read`, `readStream`): The companion wrapper adds `stat.key` to the opposite-side `Set` and probes that FS with the same key and stat. The opposite-side optimization wrapper consumes a matching needle, records its transformed key, and terminates the probe.
-3. Writes (`write`, `writeStream`):
-   - Reuses deferred execution if a pending anticipated write exists for the delegated key.
-   - Passes through otherwise.
-4. Pass-through: ordinary `read` and `readStream` calls, plus `getUid`, `stat`, `exists`, and `list`, delegate to the original FS. Reads still intercept matching needle probes. `checkConnection` belongs to the remote backend entry, not `Fs`.
+Coalescing uses a zero-delay timer: mutation calls (`write`, `writeStream`, `delete`, `mkdir`, `move`) are enqueued as `InputAtom`s, and the timer flush passes the queued atoms to the injected `batchOptimizer`. Read-only calls (`read`, `readStream`, `getUid`, `stat`, `exists`, `list`) pass through to the original FS. `checkConnection` belongs to the remote backend entry, not `Fs`.
 
 **Execution**:
 
-On timer flush, the wrapper drains queued atoms and transformed keys into synthetic `write` atoms. Each anticipated write is stored in a key-based pending-write map; the later `write()` or `writeStream()` for that key supplies its real execution and reuses the deferred promise. These atoms are passed to the injected `batchOptimizer`. Single-atom queues execute directly without batching. Queued atoms share real execution and deferred promises via `createCachedPromise()`.
+A single-atom queue executes the atom directly without batching. Otherwise the wrapper passes the queued atoms to the injected `batchOptimizer`, which may reorder them, replace them with a `custom` atom, or resolve or reject them. Queued atoms share real execution and deferred promises via `createCachedPromise()`.
 
 Every input atom has `resolve` and `reject` callbacks. Optimizers must propagate operation failures by rejecting the affected atoms, including when a custom atom replaces them or a batch returns per-key failures. Removed atoms must always be settled, or their original promises remain pending.
 

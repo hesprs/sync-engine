@@ -90,7 +90,7 @@ import { pipe } from '@hesprs/sync-engine-sdk';
 
 // Simple resolver that writes remote content to local
 const resolver: ConflictResolver = async ({ key, localFs, remoteFs, remote }) => {
-  await pipe({ from: remoteFs, to: LocalFs, key, fileStat: remote });
+  await pipe({ from: remoteFs, to: localFs, key, stat: remote });
 };
 ```
 
@@ -107,10 +107,10 @@ Three helpers exported from `@hesprs/sync-engine-sdk` for copying file content b
 ```ts
 import { pipe } from '@hesprs/sync-engine-sdk';
 
-function pipe(options: { from: Fs; to: Fs; key: string; stat: FileStat }): Promise<void>;
+function pipe(options: { from: Fs; to: Fs; key: string; stat: FileStat }): MaybePromise<string>;
 ```
 
-Reads a file from `from` and writes it to `to` under the same `key`. Automatically selects buffered or streaming mode based on file size (device-adaptive). Silently succeeds if the source file does not exist (swallows TOCTOU 404 / `ENOENT` errors).
+Reads a file from `from` and writes it to `to` under the same `key`. Both the read and the write select buffered or streaming mode based on file size (device-adaptive). If the source file does not exist (TOCTOU 404 / `ENOENT`), the helpers throw `REGRET_ERROR`, whose message matches the `REGRET_ERROR_MESSAGE` export; the sync task executor treats that error as a completed task, so a vanished source skips the task instead of failing it.
 
 ```ts
 await pipe({ from: remoteFs, to: localFs, key: 'folder/note.md', stat });
@@ -123,23 +123,23 @@ function readWithSize(
   fs: Fs,
   key: string,
   stat: FileStat,
-): MaybePromise<Binary | ReadableStream<Binary> | undefined>;
+): Promise<Binary | ReadableStream<Binary>>;
 ```
 
-Reads a file, choosing `readStream` for files larger than 2.5 MiB and `read` otherwise. Returns `undefined` if the file does not exist. The `stat` parameter is forwarded to the chosen `Fs` method as required by the interface.
+Reads a file, choosing `readStream` for files at or above the stream threshold and `read` otherwise. The threshold is 5 MiB, halved on low-memory devices and on Android. Throws `REGRET_ERROR` if the file does not exist. The `stat` parameter is forwarded to the chosen `Fs` method as required by the interface.
 
-### `writeWithValue`
+### `writeWithSize`
 
 ```ts
-function writeWithValue(
+function writeWithSize(
   fs: Fs,
   key: string,
-  value: Binary | ReadableStream<Binary>,
+  value: MaybePromise<Binary | ReadableStream<Binary>>,
   stat: FileStat,
 ): MaybePromise<string>;
 ```
 
-Writes a value to `fs`, choosing `writeStream` for `ReadableStream` inputs and `write` for `Binary` inputs. Returns the uid from the underlying write call. The `stat` parameter is forwarded as required by the interface.
+Writes a value to `fs`, choosing `writeStream` when `stat.size` is at or above the stream threshold and `write` otherwise. The value may be a promise, which the underlying write call awaits. Returns the uid from the underlying write call. The `stat` parameter is forwarded as required by the interface.
 
 ## Task Types
 

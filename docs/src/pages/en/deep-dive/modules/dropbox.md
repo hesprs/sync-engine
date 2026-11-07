@@ -18,7 +18,7 @@ Connecting to a Dropbox account creates a **new secret in Obsidian keychain** na
 
 ### Base directory
 
-This defines the folder inside the Dropbox app folder that serves as the root directory for this vault. The value is normalized as a directory path. If left empty when the module starts, it defaults to `<vault name>/`. The specified folder is created automatically during the first synchronization.
+This defines the folder inside the Dropbox app folder that serves as the root directory for this vault. The value is normalized as a directory path. If left empty, it stays at `/`, the root of the app folder. The specified folder is created automatically during the first synchronization.
 
 ::: warning
 
