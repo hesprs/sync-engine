@@ -50,7 +50,7 @@
 
 Sync Engine is a vault syncing plugin to **synchronize vault files in multiple devices**, it supports:
 
-**Backends**: [S3](https://sync.consensia.cc/deep-dive/modules/s3), [WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav), [Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive)<br>
+**Backends**: [S3](https://sync.consensia.cc/deep-dive/modules/s3), [WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav), [Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive), and [Dropbox](https://sync.consensia.cc/deep-dive/modules/dropbox)<br>
 **Features**:
 
 - [Client-side encryption](https://sync.consensia.cc/deep-dive/modules/encryption)

@@ -146,10 +146,12 @@ export default class GdriveFs implements RootFs {
 				}),
 			};
 		const parentId = this.resolveId(dirname(key));
+		const parsedCtime = parseTimestamp(meta.ctime);
+		const parsedMtime = parseTimestamp(meta.mtime);
+		if (parsedCtime) metadata.createdTime = new Date(parsedCtime).toISOString();
+		if (parsedMtime) metadata.modifiedTime = new Date(parsedMtime).toISOString();
 		Object.assign(metadata, {
-			createdTime: parseTimestamp(meta.ctime),
 			mimeType: guessMimeType(basename(key)),
-			modifiedTime: parseTimestamp(meta.mtime),
 			name: basename(key),
 			parents: [parentId],
 		});

@@ -2,6 +2,53 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.4.0 - 2026-11-08
+
+### Core
+
+- Added the _Focus sync_ feature to initiate a sync when Obsidian regains focus or is switched back to foreground.
+- Made the operation confirmation file tree UI display move sources for move operations.
+- Made _Asymmetric storage_ off by default, doesn't affect existing users.
+- Fixed error entries in exported logs no showing the timestamp.
+- Fixed the sync hanging forever when the chosen conflict strategy is missing.
+- Optimized memory consumption during chunked upload.
+- Removed memory control options since it does not have real effect in current Obsidian environment.
+- Made internal operation optimization capturing more precise and simplified its implementation.
+- Improved syncing robustness when confronting server rate limits and network fluctuation.
+- Improved interval namespace isolation to support double instancing.
+- Improved internal sync operation construction flow.
+- Improved internal file tree rendering process.
+
+### Google Drive Module
+
+- Made file creation and modification time displayed in the Google Drive UI when available.
+- Fixed the wrong MIME type for Obsidian `.base` files.
+
+### Encryption Module
+
+- Improved metadata decryption to pass-through metadata values that doesn't appear encrypted.
+
+### WebDAV Module
+
+- Added new capability _Timestamp headers_ to send `X-OC-Mtime` and `X-OC-Ctime` to make file creation and modification time displayed correctly in the WebDAV's UI for supported servers like Nextcloud.
+
+### S3 Module
+
+- Optimized file movement handling to batch old object deletions generated from movements.
+
+### Smart Merge Module
+
+- Improved merging process to perform two-way merge when the file is previously untracked (base text missing) instead of falling back to latest survive.
+
+### Dropbox Module
+
+- Experimental Dropbox backend support, will be in testing phase until attracting 50+ users to apply for a Dropbox production review.
+- Implemented PKCE-based authorization flow and operation batching for create directory, move, delete, and upload file operations.
+
+### Contributors
+
+@vanpana, @hesprs
+
 ## Sync Engine v3.3.4 - 2026-10-27
 
 ### Core

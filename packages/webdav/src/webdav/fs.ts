@@ -145,14 +145,13 @@ export default class WebdavFs implements RootFs {
 		if (!fileMetadata && !timestampHeaders) return {};
 		const result: ResolvedMeta = {};
 		const meta = await getMeta();
+		const headers: StringKV = {};
 		if (timestampHeaders) {
 			const cNum = parseTimestamp(meta.ctime);
 			const mNum = parseTimestamp(meta.mtime);
-			if (mNum || cNum) {
-				result.meta = {};
-				if (cNum) result.meta['x-oc-ctime'] = String(cNum / 1000);
-				if (mNum) result.meta['x-oc-mtime'] = String(mNum / 1000);
-			}
+			if (cNum) headers['x-oc-ctime'] = String(Math.round(cNum / 1000));
+			if (mNum) headers['x-oc-mtime'] = String(Math.round(mNum / 1000));
+			if (cNum || mNum) result.headers = headers;
 		}
 		if (fileMetadata && Object.keys(meta).length) result.meta = meta;
 		return result;

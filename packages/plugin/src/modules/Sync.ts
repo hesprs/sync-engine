@@ -127,35 +127,6 @@ export default class Sync {
 		const { settings, ctx, postProcess, confirmDeletion, confirmTasks, convertDeleteToUpload } =
 			this;
 		const { on, dispatch, initializeSync, getConflictResolver, translate, decideTasks } = ctx;
-		const {
-			remoteLister = async ({ remoteFs, record, reporter, localFs }) => {
-				try {
-					return await remoteFs.list('/', reporter);
-				} catch (error) {
-					if (await remoteFs.exists('/')) throw error;
-					dispatch('logSync', 'Remote root deleted, recreating.');
-					await Promise.all([
-						remoteFs.mkdir(
-							'/',
-							{
-								isDir: true,
-								key: '/',
-								meta: async () => (await localFs.stat('/')).meta(),
-							},
-							true,
-						),
-						record.clear(),
-					]);
-					return [];
-				}
-			},
-			conflictResolver = getConflictResolver(),
-			detectMoves = true,
-			needConfirmDeletion = false,
-			needConfirmTasks = false,
-			syncStrategy = settings.syncStrategy,
-		} = options;
-
 		const isCancelled = ref(false);
 		let failedCount = 0;
 		let tasks: Array<Task>;
@@ -163,6 +134,35 @@ export default class Sync {
 		const cleanup = on('syncCanceled', () => isCancelled(true));
 		try {
 			dispatch('syncStarted', { isCancelled, trigger });
+
+			const {
+				remoteLister = async ({ remoteFs, record, reporter, localFs }) => {
+					try {
+						return await remoteFs.list('/', reporter);
+					} catch (error) {
+						if (await remoteFs.exists('/')) throw error;
+						dispatch('logSync', 'Remote root deleted, recreating.');
+						await Promise.all([
+							remoteFs.mkdir(
+								'/',
+								{
+									isDir: true,
+									key: '/',
+									meta: async () => (await localFs.stat('/')).meta(),
+								},
+								true,
+							),
+							record.clear(),
+						]);
+						return [];
+					}
+				},
+				conflictResolver = getConflictResolver(),
+				detectMoves = true,
+				needConfirmDeletion = false,
+				needConfirmTasks = false,
+				syncStrategy = settings.syncStrategy,
+			} = options;
 			if (isCancelled()) throw syncCancelledError;
 
 			const infras = initializeSync();

@@ -7,7 +7,7 @@ import type { Binary, Request, RequestResponse, StringKV } from '@hesprs/sync-en
 const GDRIVE_CHUNK_SIZE = 8 * 1024 ** 2;
 
 const MIME_BY_EXTENSION: Partial<StringKV> = {
-	base: 'application/json',
+	base: 'text/yaml',
 	canvas: 'application/json',
 	css: 'text/css',
 	gif: 'image/gif',
