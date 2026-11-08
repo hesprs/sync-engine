@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.4.1 - 2026-11-08
+
+### Core
+
+- Cleared Obsidian automated review warnings, changes include updating dependencies and tightening warning-prone code.
+
 ## Sync Engine v3.4.0 - 2026-11-08
 
 ### Core

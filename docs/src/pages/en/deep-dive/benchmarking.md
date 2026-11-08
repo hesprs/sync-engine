@@ -43,6 +43,8 @@ On the benchmarking machine, kill Obsidian Electron APP completely and restart f
 
 **Encryption**: Whether the plugin supports client-side encryption.
 
+**Conflict resolution**: The method used to resolve the conflict that a file is changed at both local and remote side.
+
 ### Test Cases
 
 **Upload speed**:
