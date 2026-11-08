@@ -19,13 +19,12 @@ export default function mount(
 	const data = createFileTreeData(tasks);
 	return createRoot((dispose) => {
 		const selection = createFileTreeSelection(data);
-		const { getState } = selection;
 		const unmount = render(
 			() => <App data={data} selection={selection} translate={translate} />,
 			el,
 		);
 		return {
-			getState,
+			getState: selection.getState,
 			unmount: () => {
 				unmount();
 				dispose();
