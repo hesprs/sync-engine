@@ -1,5 +1,5 @@
 import { compileQuery } from '@repo/shared/path';
-import type { RequestResponse, Stat } from '@hesprs/sync-engine-sdk';
+import type { RequestResponse, Stat, StringKV } from '@hesprs/sync-engine-sdk';
 
 export const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 export const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
@@ -19,7 +19,7 @@ export type DriveFile = {
 	modifiedTime: string;
 	size?: string;
 	parents: Array<string>;
-	appProperties?: Record<string, string>;
+	appProperties?: StringKV;
 };
 
 export type DriveFileList = { files?: Array<DriveFile>; nextPageToken?: string };
@@ -41,19 +41,9 @@ export function escapeQuery(value: string): string {
 	return value.replaceAll('\\', String.raw`\\`).replaceAll("'", String.raw`\'`);
 }
 
-export function buildUrl(base: string, path: string, query: Record<string, string> = {}): string {
+export function buildUrl(base: string, path: string, query: StringKV = {}): string {
 	const queryString = compileQuery(query);
 	return `${base}${path}${queryString ? `?${queryString}` : ''}`;
-}
-
-export function getHeader(
-	headers: Record<string, string | undefined>,
-	name: string,
-): string | undefined {
-	const entry = Object.entries(headers).find(
-		([headerName]) => headerName.toLowerCase() === name.toLowerCase(),
-	);
-	return entry?.[1];
 }
 
 export function parseDriveError(response: RequestResponse): string | undefined {
@@ -79,5 +69,12 @@ export function toStat(
 	if (mimeType === FOLDER_MIME) return { isDir: true, key, meta };
 	const size = fileSize === undefined ? 0 : Number(fileSize);
 	const mtime = new Date(modifiedTime).valueOf();
-	return { isDir: false, key, meta, mtime, size, uid: md5Checksum ?? `${mtime}~${size}` };
+	return {
+		isDir: false,
+		key,
+		meta: () => ({ mtime: String(mtime), ...appProperties }),
+		mtime,
+		size,
+		uid: md5Checksum ?? `${mtime}~${size}`,
+	};
 }

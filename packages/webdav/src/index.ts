@@ -32,6 +32,7 @@ export type WebdavSettings = {
 	chunkedUpload: boolean;
 	depthInfinity: boolean;
 	fileMetadata: boolean;
+	timestampHeaders: boolean;
 };
 
 export default class Webdav {
@@ -67,6 +68,7 @@ export default class Webdav {
 		endpoint: '',
 		fileMetadata: true,
 		password: '',
+		timestampHeaders: false,
 		username: '',
 	};
 

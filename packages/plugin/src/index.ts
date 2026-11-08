@@ -13,8 +13,7 @@ import Storage from '@/modules/Storage';
 import Sync from '@/modules/Sync';
 import { Plugin } from 'obsidian';
 import { createContext } from 'synthkernel';
-import type { AddRibbonIcon } from '@/modules/Observability';
-import type { Command, EventRef, App } from 'obsidian';
+import type { App, PluginManifest } from 'obsidian';
 import type { Context as KernelContext, MergeSingleKey } from 'synthkernel';
 
 const internalModules = [
@@ -38,16 +37,34 @@ export type Context = KernelContext<
 	MergeKeys,
 	{
 		app: App;
-		addCommand: (command: Command) => Command;
-		registerEvent: (ref: EventRef) => void;
-		addRibbonIcon: AddRibbonIcon;
-		addStatusBarItem: () => HTMLElement;
+		addCommand: Plugin['addCommand'];
+		removeCommand: Plugin['removeChild'];
+		registerEvent: Plugin['registerEvent'];
+		addRibbonIcon: Plugin['addRibbonIcon'];
+		manifest: PluginManifest;
+		addStatusBarItem: Plugin['addStatusBarItem'];
+		registerView: Plugin['registerView'];
+		registerHoverLinkSource: Plugin['registerHoverLinkSource'];
+		registerExtensions: Plugin['registerExtensions'];
+		registerMarkdownPostProcessor: Plugin['registerMarkdownPostProcessor'];
+		registerMarkdownCodeBlockProcessor: Plugin['registerMarkdownCodeBlockProcessor'];
+		registerBasesView: Plugin['registerBasesView'];
+		registerEditorExtension: Plugin['registerEditorExtension'];
+		registerEditorSuggest: Plugin['registerEditorSuggest'];
+		registerObsidianProtocolHandler: Plugin['registerObsidianProtocolHandler'];
+		registerCliHandler: Plugin['registerCliHandler'];
+		registerDomEvent: Plugin['registerDomEvent'];
 		saveSettings: () => Promise<void>;
 	}
 >;
 export type Events = MergeSingleKey<InternalModules, 'events'>;
 export type Settings = MergeSingleKey<InternalModules, 'settings'>;
 export type Translations = MergeSingleKey<InternalModules, 'i18n'>;
+
+// TODO after December 15, 2026:
+// 1. Bump min Obsidian version to 1.15
+// 2. Remove the file chunking hack in packages/plugin/src/fs/vault/request.ts (Obsidian 1.15+ uses Capacitor 7)
+// 3. Remove "Connect account" / "Account connected" setting title hack in Google Drive / Dropbox module (Obsidian 1.14+ supports `id` for deduplication)
 
 export default class SyncEngine extends Plugin {
 	context?: Context;
@@ -56,7 +73,7 @@ export default class SyncEngine extends Plugin {
 
 	async onload() {
 		const settings: Settings = {
-			asymmetricStorage: true,
+			asymmetricStorage: false,
 			avoidAutoSyncWhenOffline: true,
 			confirmDeleteInAutoSync: true,
 			confirmTasksInSync: true,
@@ -65,7 +82,8 @@ export default class SyncEngine extends Plugin {
 			exportLogsDirectory: 'Sync Engine Logs/',
 			focusSync: { enabled: false, value: 300_000 },
 			maxFileSize: { enabled: false, value: 31_457_280 },
-			maxMemoryConsumption: { enabled: true, value: 100 * 1024 ** 2 },
+			// See Bootstrap TODO
+			// maxMemoryConsumption: { enabled: true, value: 100 * 1024 ** 2 },
 			maxRequestConcurrency: { enabled: true, value: 50 },
 			minRequestInterval: { enabled: false, value: 0 },
 			moduleAutoUpdate: true,
@@ -91,7 +109,7 @@ export default class SyncEngine extends Plugin {
 					'.gitlab',
 					'.trash',
 					this.app.vault.configDir,
-					`${this.app.vault.configDir}/plugins/sync-engine/modules`,
+					`${this.manifest.dir}/modules`,
 				].map((expr) => ({ expr, strategy: NONE_STRATEGY })),
 			],
 			...((await this.loadData()) as object),
@@ -104,8 +122,21 @@ export default class SyncEngine extends Plugin {
 			addStatusBarItem: this.addStatusBarItem.bind(this),
 			allModules: this.allModules,
 			app: this.app,
+			manifest: this.manifest,
+			registerBasesView: this.registerBasesView.bind(this),
+			registerCliHandler: this.registerCliHandler.bind(this),
+			registerDomEvent: this.registerDomEvent.bind(this),
+			registerEditorExtension: this.registerEditorExtension.bind(this),
+			registerEditorSuggest: this.registerEditorSuggest.bind(this),
 			registerEvent: this.registerEvent.bind(this),
-			saveSettings: this.saveSettings,
+			registerExtensions: this.registerExtensions.bind(this),
+			registerHoverLinkSource: this.registerHoverLinkSource.bind(this),
+			registerMarkdownCodeBlockProcessor: this.registerMarkdownCodeBlockProcessor.bind(this),
+			registerMarkdownPostProcessor: this.registerMarkdownPostProcessor.bind(this),
+			registerObsidianProtocolHandler: this.registerObsidianProtocolHandler.bind(this),
+			registerView: this.registerView.bind(this),
+			removeCommand: this.removeCommand.bind(this),
+			saveSettings: this.saveSettings.bind(this),
 		};
 		this.context = createContext(internalModules, {
 			injectKeys: ['settings', 'i18n', 'root'],

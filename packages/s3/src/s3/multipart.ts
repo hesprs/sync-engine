@@ -4,7 +4,7 @@ import { textToUint8Array } from '@repo/shared/binary';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import type { UrlStyle } from './sigv4';
-import type { Binary, Request, Stat } from '@hesprs/sync-engine-sdk';
+import type { Binary, Request, Stat, StringKV } from '@hesprs/sync-engine-sdk';
 
 export const PART_SIZE = 5 * 1024 * 1024; // 5 MiB — S3 minimum part size
 const MAX_CONCURRENT = 3;
@@ -19,7 +19,7 @@ export type MultipartUploadOptions = {
 	key: string;
 	request: Request;
 	stat: (key: string) => Promise<Stat>;
-	meta: Dict<string>;
+	meta: StringKV;
 };
 
 function parseUploadId(xml: string): string {

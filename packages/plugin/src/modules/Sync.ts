@@ -9,6 +9,7 @@ import {
 	taskMap,
 } from '@/sync';
 import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
+import { REGRET_ERROR_MESSAGE } from '@/utils/pipe';
 import { toError } from '@repo/shared/error';
 import { isSub } from '@repo/shared/path';
 import { ref } from 'synthkernel';
@@ -126,35 +127,6 @@ export default class Sync {
 		const { settings, ctx, postProcess, confirmDeletion, confirmTasks, convertDeleteToUpload } =
 			this;
 		const { on, dispatch, initializeSync, getConflictResolver, translate, decideTasks } = ctx;
-		const {
-			remoteLister = async ({ remoteFs, record, reporter, localFs }) => {
-				try {
-					return await remoteFs.list('/', reporter);
-				} catch (error) {
-					if (await remoteFs.exists('/')) throw error;
-					dispatch('logSync', 'Remote root deleted, recreating.');
-					await Promise.all([
-						remoteFs.mkdir(
-							'/',
-							{
-								isDir: true,
-								key: '/',
-								meta: async () => (await localFs.stat('/')).meta(),
-							},
-							true,
-						),
-						record.clear(),
-					]);
-					return [];
-				}
-			},
-			conflictResolver = getConflictResolver(),
-			detectMoves = true,
-			needConfirmDeletion = false,
-			needConfirmTasks = false,
-			syncStrategy = settings.syncStrategy,
-		} = options;
-
 		const isCancelled = ref(false);
 		let failedCount = 0;
 		let tasks: Array<Task>;
@@ -162,6 +134,35 @@ export default class Sync {
 		const cleanup = on('syncCanceled', () => isCancelled(true));
 		try {
 			dispatch('syncStarted', { isCancelled, trigger });
+
+			const {
+				remoteLister = async ({ remoteFs, record, reporter, localFs }) => {
+					try {
+						return await remoteFs.list('/', reporter);
+					} catch (error) {
+						if (await remoteFs.exists('/')) throw error;
+						dispatch('logSync', 'Remote root deleted, recreating.');
+						await Promise.all([
+							remoteFs.mkdir(
+								'/',
+								{
+									isDir: true,
+									key: '/',
+									meta: async () => (await localFs.stat('/')).meta(),
+								},
+								true,
+							),
+							record.clear(),
+						]);
+						return [];
+					}
+				},
+				conflictResolver = getConflictResolver(),
+				detectMoves = true,
+				needConfirmDeletion = false,
+				needConfirmTasks = false,
+				syncStrategy = settings.syncStrategy,
+			} = options;
 			if (isCancelled()) throw syncCancelledError;
 
 			const infras = initializeSync();
@@ -233,13 +234,19 @@ export default class Sync {
 			dispatch('executionStarted', tasks);
 			await Promise.all(
 				tasks.map(async (task) => {
+					const complete = () => dispatch('taskCompleted', toTaskInfo(task));
 					try {
 						await task.exec();
-						dispatch('taskCompleted', toTaskInfo(task));
+						complete();
 					} catch (error) {
 						if (isCancelled()) return;
+						const err = toError(error);
+						if (err.message === REGRET_ERROR_MESSAGE) {
+							complete();
+							return;
+						}
 						failedCount++;
-						dispatch('taskFailed', { ...toTaskInfo(task), error: toError(error) });
+						dispatch('taskFailed', { ...toTaskInfo(task), error: err });
 					}
 				}),
 			);

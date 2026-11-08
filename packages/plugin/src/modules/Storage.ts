@@ -1,18 +1,33 @@
 import { deleteMemoryDB, openIndexedDB, openMemoryDB } from 'uni-kv';
 import type { General, MaybePromise, RecordStat } from '@/types';
+import type { PluginManifest } from 'obsidian';
 import type { DatabaseAsync, StoreAsync } from 'uni-kv';
 
 export type IndexedDBSchema = Record<string, RecordStat>;
 export type RecordStore = StoreAsync<RecordStat>;
 
 export const SYNC_STATE_STORE_NAME = 'sync-state';
-export const STORAGE_NAME = 'sync-engine';
 
 export default class Storage {
-	private readonly memoryDB = openMemoryDB<General, General>(STORAGE_NAME);
-	private readonly indexedDB = openIndexedDB<IndexedDBSchema>(STORAGE_NAME);
+	private readonly memoryDB;
+	private readonly indexedDB;
+	readonly root;
 
-	constructor(private readonly ctx: { getNamespace: () => string | Error }) {}
+	constructor(
+		private readonly ctx: { getNamespace: () => string | Error; manifest: PluginManifest },
+	) {
+		const { id } = ctx.manifest;
+		this.memoryDB = openMemoryDB<General, General>(id);
+		this.indexedDB = openIndexedDB<IndexedDBSchema>(id);
+		this.root = {
+			clearRecordStores: this.clearRecordStores,
+			deleteRecordStore: this.deleteRecordStore,
+			getRecordStore: this.getRecordStore,
+			indexedDB: this.indexedDB as DatabaseAsync<General, General>,
+			memoryDB: this.memoryDB,
+			recordStoreExists: this.recordStoreExists,
+		};
+	}
 
 	private readonly getRecordStore = <N extends string | undefined>(
 		namespace?: N,
@@ -35,17 +50,8 @@ export default class Storage {
 		return this.indexedDB.getStoreNames().then((names) => names.includes(ns));
 	};
 
-	readonly root = {
-		clearRecordStores: this.clearRecordStores,
-		deleteRecordStore: this.deleteRecordStore,
-		getRecordStore: this.getRecordStore,
-		indexedDB: this.indexedDB as DatabaseAsync<General, General>,
-		memoryDB: this.memoryDB,
-		recordStoreExists: this.recordStoreExists,
-	};
-
 	readonly dispose = () => {
-		deleteMemoryDB(STORAGE_NAME);
+		deleteMemoryDB(this.ctx.manifest.id);
 		void this.indexedDB.dispose();
 	};
 }

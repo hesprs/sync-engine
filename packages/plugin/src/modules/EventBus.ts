@@ -5,6 +5,7 @@ import { apiVersion, Platform } from 'obsidian';
 import { ref } from 'synthkernel';
 import type { Events } from '@';
 import type { General } from '@/types';
+import type { PluginManifest } from 'obsidian';
 
 // oxlint-disable-next-line sort-keys
 export const OS = {
@@ -17,7 +18,6 @@ export const OS = {
 	Windows: Platform.isWin,
 };
 const MAX_SYNC_LOGS = 100;
-export const VERSION = Bun.env.VERSION ?? '3.0.0';
 
 export type Dispatch<O extends object> = <K extends keyof O>(
 	...[key, payload]: undefined extends O[K] ? [K] : [K, O[K]]
@@ -49,7 +49,7 @@ export default class EventBus {
 	private readonly syncLogs: Array<SyncStats> = [];
 	private readonly generalLogs: Array<string> = [];
 
-	constructor() {
+	constructor(private readonly ctx: { manifest: PluginManifest }) {
 		const {
 			cleanupCallbacks,
 			on,
@@ -142,7 +142,7 @@ export default class EventBus {
 			Object.entries(OS).find(([, isActive]) => isActive)?.[0] ?? 'Unknown';
 		const lines: Array<string> = [
 			`Generated at: ${formatDateTime(Date.now())}`,
-			`Plugin version: ${VERSION}`,
+			`Plugin version: ${this.ctx.manifest.version}`,
 			`Obsidian API version: ${apiVersion}`,
 			`Operating system: ${operatingSystem}`,
 			'',
@@ -210,7 +210,7 @@ function printError({ cause, message, stack }: Error, time?: boolean): Array<str
 			causeString = String(cause);
 		}
 	const result = [addLevel('ERROR', message)];
-	if (time) addTime(result[0]);
+	if (time) result[0] = addTime(result[0]);
 	if (causeString || stack) {
 		result[0] += ':';
 		result.push('', '```');

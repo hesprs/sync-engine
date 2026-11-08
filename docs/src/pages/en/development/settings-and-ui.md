@@ -40,14 +40,14 @@ For example, core settings can register a Features group at `1000`:
 
 ```ts
 {
-  1000: s(
+  1000: settingEntry(
     (self) => ({
       heading: 'Features',
       items: Object.values(self).map((node) => node(node)),
       type: 'group',
     }),
     {
-      1000: s(() => ({ name: 'Realtime sync', control: { key: 'realtime', type: 'toggle' } })),
+      1000: settingEntry(() => ({ name: 'Realtime sync', control: { key: 'realtime', type: 'toggle' } })),
     },
   ),
 }
@@ -58,7 +58,7 @@ Encryption extends that group by returning another tree with the same path key a
 ```ts
 {
   1000: {
-    6037: s(() => ({
+    6037: settingEntry(() => ({
       name: 'Encryption',
       render: (setting) => {
         // Add encryption password and toggle controls here.
@@ -78,10 +78,10 @@ After merging, the existing `1000` group callback sees both children:
 
 The first `1000` identifies the group. The child `1000` and `6037` keys order settings inside that group. The module's registration `priority` controls when its root tree is merged with other registrations; it is separate from numeric keys inside the tree.
 
-Use the SDK `s()` helper when defining a parent and its children together. It attaches the child tree to the parent callback. The parent receives the complete node after all extensions have been merged:
+Use the SDK `settingEntry()` helper when defining a parent and its children together. It attaches the child tree to the parent callback. The parent receives the complete node after all extensions have been merged:
 
 ```ts
-import { s } from '@hesprs/sync-engine-sdk';
+import { settingEntry } from '@hesprs/sync-engine-sdk';
 import type { Context, CallableOrObjectTree } from '@hesprs/sync-engine-sdk';
 import type { SettingGroupItem } from 'obsidian';
 
@@ -90,14 +90,14 @@ export default function mySettings(
   settings: { enabled: boolean },
 ): CallableOrObjectTree {
   return {
-    2000: s(
+    2000: settingEntry(
       (self) => ({
         heading: ctx.translate('mySettings'),
         items: Object.values(self).map((node) => node(node) as SettingGroupItem),
         type: 'group',
       }),
       {
-        1000: s(() => ({
+        1000: settingEntry(() => ({
           control: { key: 'enabled', type: 'toggle' },
           name: ctx.translate('enabled'),
         })),
@@ -140,7 +140,7 @@ Core setting sections use these priorities:
 | --- | --: | --- |
 | Top configuration | `0` | Backend, module management, auto-update, sync strategy, conflict resolver. |
 | Features | `1000` | Realtime, startup, scheduled, focus sync; realtime fast mode; asymmetric storage. |
-| Controls | `2000` | File-size, request-concurrency, request-interval, memory limits. |
+| Controls | `2000` | File-size, request-concurrency, request-interval limits. |
 | Miscellaneous | `3000` | Custom headers, mobile notices, offline behavior, task and deletion confirmations. |
 | Development | `4000` | Record cleanup, log export, and module source pages. |
 
@@ -163,7 +163,7 @@ Add labels to a setting definition returned by a tree callback:
 ```ts
 const matchLabel = ctx.matchLabel();
 
-return s(() => ({
+return settingEntry(() => ({
   control: { key: 'baseDirectory', type: 'text' },
   labels: [matchLabel],
   name: 'Base directory',
@@ -175,7 +175,7 @@ Modules normally use the existing label factories from context so their text, co
 ```ts
 const { matchLabel, speedLabel } = ctx;
 
-return s(() => ({
+return settingEntry(() => ({
   labels: [matchLabel(), speedLabel()],
   name: 'Chunk size',
   render: (setting) => {

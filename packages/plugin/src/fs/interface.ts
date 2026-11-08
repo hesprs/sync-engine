@@ -12,8 +12,12 @@ export type RootFs = {
 	getUid(): string; // String whose inequality signifies the client is unique
 	read(key: string, stat: FileStat): MaybePromise<Binary>;
 	readStream(key: string, stat: FileStat): MaybePromise<ReadableStream<Binary>>;
-	write(key: string, value: Binary, stat: FileStat): MaybePromise<string>; // Returns uid
-	writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): MaybePromise<string>; // Returns uid, should only resolve when the stream is fully consumed
+	write(key: string, value: MaybePromise<Binary>, stat: FileStat): MaybePromise<string>; // Returns uid
+	writeStream(
+		key: string,
+		value: MaybePromise<ReadableStream<Binary>>,
+		stat: FileStat,
+	): MaybePromise<string>; // Returns uid, should only resolve when the stream is fully consumed
 	delete(key: string): MaybePromise<void>;
 	move(oldKey: string, newKey: string): MaybePromise<void>;
 	mkdir(key: string, stat: FolderStat, recursive?: boolean): MaybePromise<void>;

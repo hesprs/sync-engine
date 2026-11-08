@@ -1,5 +1,5 @@
 import ModuleManagement from './module-management';
-import { generateEditableList, reactivelyValidate, s } from './utils';
+import { generateEditableList, reactivelyValidate, settingEntry as s } from './utils';
 import { normalizeGlob } from '@/utils/glob-match';
 import { describeError, toError } from '@repo/shared/error';
 import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
@@ -10,7 +10,7 @@ import type { Fragment, Snippet, Translate } from '@/modules/I18n';
 import type { ConflictResolverEntry, DeciderEntry, RemoteFsEntry } from '@/modules/Registrar';
 import type { CallableOrObjectTree } from '@/modules/Setting';
 import type { Dispatch } from '@/sdk';
-import type { General, GlobStrategy, MaybePromise } from '@/types';
+import type { General, GlobStrategy, MaybePromise, StringKV } from '@/types';
 import type { DatabaseSync } from 'uni-kv';
 
 const CHECK_CONNECTION_INTERVAL = 10_000;
@@ -156,7 +156,7 @@ export default function headSettings(
 			}),
 			{
 				1000: s(() => {
-					const options: Record<string, string> = {};
+					const options: StringKV = {};
 					deciderRegistry.forEach(({ prettyName }, key) => {
 						const name = prettyName?.();
 						if (name) options[key] = name;
@@ -254,22 +254,21 @@ function setupCheckConnection({
 		'animate-spin',
 	];
 	const setChecking = () => {
-		button.setIcon('loader-circle');
-		const ele = button.extraSettingsEl.firstElementChild;
+		const ele = button.setIcon('loader-circle').setDisabled(true)
+			.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
 		ele.addClass('animate-spin', 'color-[-text-faint]');
 	};
 	const setSuccess = () => {
-		button.setIcon('check');
-		const ele = button.extraSettingsEl.firstElementChild;
+		const ele = button.setIcon('check').setDisabled(false).extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
 		ele.addClass('color-[--color-green]');
 	};
 	const setError = () => {
-		button.setIcon('cloud-off');
-		const ele = button.extraSettingsEl.firstElementChild;
+		const ele = button.setIcon('cloud-off').setDisabled(false)
+			.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
 		ele.addClass('color-[--color-red]');

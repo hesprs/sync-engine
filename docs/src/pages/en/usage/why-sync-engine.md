@@ -11,7 +11,7 @@ In practice, this means you pick a storage backend (your own WebDAV server, for 
 There are several ways to sync an Obsidian vault:
 
 - **[Obsidian Sync](https://obsidian.md/sync)** is the official, zero-setup option. If you want sync working in under a minute and don't mind a monthly fee, start there.
-- **[Remotely Save](https://github.com/remotely-save/remotely-save)** supports many backends (S3, Dropbox, OneDrive, WebDAV). But is optionally paid, development paused for years with stability issues
+- **[Remotely Save](https://github.com/remotely-save/remotely-save)** supports many backends (S3, Dropbox, OneDrive, WebDAV). But is optionally paid, development paused for years with stability issues.
 - **[Self-hosted LiveSync](https://github.com/vrtmrz/obsidian-livesync)** and **[Fast Note Sync](https://github.com/haierkeys/obsidian-fast-note-sync)** offer real-time, server-based sync. They work well if you are comfortable setting up your own server.
 - **[Relay](https://github.com/No-Instructions/Relay)** is a managed relay service. Convenient, but your notes pass through infrastructure you don't control.
 
@@ -53,9 +53,10 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 
 **Backends**:
 
-- [WebDAV](../deep-dive/modules/webdav): standard WebDAV protocol implementation with battle-tested compatibility regressions. Supports any backend providing WebDAV API.
+- [WebDAV](../deep-dive/modules/webdav): standard WebDAV protocol implementation with battle-tested compatibility. Supports any backend providing compliant WebDAV API.
 - [S3](../deep-dive/modules/s3): Amazon S3 and S3-compatible object storage with optimized batch deletions.
 - [Google Drive](../deep-dive/modules/gdrive): Google Drive storage with optimized authorization flow.
+- [Dropbox](../deep-dive/modules/dropbox): Dropbox storage with optimized authorization flow and batched remote operations.
 
 **Features**:
 
@@ -64,8 +65,10 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 
 **Translations**:
 
-- **Native English**
-- **I18n 简体中文**
+- Native English
+- I18n 简体中文
+- I18n 繁體中文
+- I18n Русский
 
 ## Usage
 

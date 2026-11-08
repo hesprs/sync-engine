@@ -50,7 +50,7 @@
 
 Sync Engine 是一款用于**多设备间同步 Vault 笔记文件**的插件，主要支持：
 
-**存储后端**：[S3](https://sync.consensia.cc/deep-dive/modules/s3)、[WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav)、[Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive)<br>
+**存储后端**：[S3](https://sync.consensia.cc/deep-dive/modules/s3)、[WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav)、[Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive) 及 [Dropbox](https://sync.consensia.cc/deep-dive/modules/dropbox)<br>
 **核心特性**：
 
 - [客户端端到端加密](https://sync.consensia.cc/deep-dive/modules/encryption)

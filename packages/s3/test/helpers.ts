@@ -1,5 +1,5 @@
 import { openMemoryDB } from 'uni-kv';
-import type { Binary } from '@hesprs/sync-engine-sdk';
+import type { Binary, StringKV } from '@hesprs/sync-engine-sdk';
 
 export const memoryDB = openMemoryDB<
 	Record<string, unknown>,
@@ -27,12 +27,7 @@ export const defaultCredentials = {
 } as const;
 
 export function response(
-	options: {
-		body?: Binary;
-		headers?: Record<string, string>;
-		status?: number;
-		text?: string;
-	} = {},
+	options: { body?: Binary; headers?: StringKV; status?: number; text?: string } = {},
 ) {
 	return {
 		bytes: () => options.body ?? emptyBinary,

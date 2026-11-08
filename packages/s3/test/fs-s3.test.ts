@@ -377,7 +377,7 @@ test('stat returns root, folder placeholders, and file metadata with ETag fallba
 		uid: `${new Date('Mon, 01 Jan 2024 00:00:00 GMT').valueOf()}~12`,
 	});
 	if (noteStat.isDir) throw new Error('expected file stat');
-	expect(await noteStat.meta()).toStrictEqual({ ctime: '500' });
+	expect(await noteStat.meta()).toStrictEqual({ ctime: '500', mtime: '1704067200000' });
 });
 
 test('list returns files and prefixes, excludes queried key, reports exclusions, and paginates', async () => {
@@ -482,7 +482,7 @@ test('list provides meta via lazy HEAD per object', async () => {
 	});
 	const [stat] = await s3.fs.list('/', () => 'include' as const);
 	if (stat.isDir) throw new Error('expected file stat');
-	expect(await stat.meta()).toStrictEqual({ ctime: '999' });
+	expect(await stat.meta()).toStrictEqual({ ctime: '999', mtime: '1704067200000' });
 });
 
 test('read populates meta cache so list stat meta() skips HEAD', async () => {

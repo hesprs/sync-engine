@@ -102,11 +102,11 @@ class MemoryControlRemoteFs implements WrappedFs {
 		return this.readThroughMemory(() => this.original.readStream(key, stat), stat);
 	}
 
-	write(key: string, value: Binary, stat: FileStat) {
+	write(key: string, value: MaybePromise<Binary>, stat: FileStat) {
 		return this.writeThroughMemory(() => this.original.write(key, value, stat), stat);
 	}
 
-	writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat) {
+	writeStream(key: string, value: MaybePromise<ReadableStream<Binary>>, stat: FileStat) {
 		return this.writeThroughMemory(() => this.original.writeStream(key, value, stat), stat);
 	}
 

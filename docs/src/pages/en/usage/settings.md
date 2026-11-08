@@ -93,7 +93,7 @@ Enabled by default.
 
 ## Controls
 
-These options limit sync resource use. They are useful for storage services with request limits or devices with limited memory.
+These options limit sync resource use. They are useful for storage services with request limits.
 
 ### Max File Size
 
@@ -112,12 +112,6 @@ Enabled by default with a limit of `50` requests.
 Require a minimum wait between remote requests. Use this when a service enforces a request-per-second limit. This works alongside **Max request concurrency**: one limits simultaneous work, while this one spaces requests out.
 
 Disabled by default. The default stored interval is `0`.
-
-### Max Memory Consumption
-
-Limit memory used while Sync Engine processes files. A lower limit can help on phones or other memory-constrained devices, but may reduce sync throughput.
-
-Enabled by default with a limit of `100MB`.
 
 ### Value Formats
 

@@ -190,7 +190,7 @@ test('stat returns meta with ctime and mtime from Drive file', async () => {
 	});
 	const stat = await fs.stat('note.md');
 	if (stat.isDir) throw new Error('expected file stat');
-	expect(await stat.meta()).toStrictEqual({ custom: 'value' });
+	expect(await stat.meta()).toStrictEqual({ custom: 'value', mtime: '1000' });
 });
 
 test('list returns meta for included files without extra requests', async () => {
@@ -212,6 +212,6 @@ test('list returns meta for included files without extra requests', async () => 
 	);
 	const [stat] = await fs.list('/', () => 'include' as const);
 	if (stat.isDir) throw new Error('expected file stat');
-	expect(await stat.meta()).toStrictEqual({ custom: 'value' });
+	expect(await stat.meta()).toStrictEqual({ custom: 'value', mtime: '1000' });
 	expect(calls.map(({ method }) => method)).toStrictEqual(['GET']);
 });

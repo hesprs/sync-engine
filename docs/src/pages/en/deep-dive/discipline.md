@@ -31,3 +31,10 @@ Special data are separated into the following categories that should be always n
 - Don't be overly verbose.
 - Avoid large blocks of code in `usage/` and `deep-dive/`, code should be the major content in `development/`
 - Documentation titles use title case.
+
+## Code Style
+
+- Only JSDoc comments are allowed to be hard-wrapped (line break in the middle of a sentence).
+- For other comments, single-line preferred. If multiple lines are needed, each line must be complete sentence(s).
+- Comment line can exceed print width limit.
+- Prefer destructuring if it improves conciseness.

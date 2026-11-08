@@ -8,7 +8,7 @@ import {
 } from './api';
 import { getStatus } from '@repo/shared/error';
 import { Platform, requestUrl, SecretStorage } from 'obsidian';
-import type { Request } from '@hesprs/sync-engine-sdk';
+import type { Request, StringKV } from '@hesprs/sync-engine-sdk';
 
 export const CLIENT_ID = atob(process.env.CLIENT_ID ?? '');
 export const CLIENT_SECRET = atob(process.env.CLIENT_SECRET ?? ''); // Not really a secret
@@ -66,7 +66,7 @@ export type DeviceTokenResult = {
 
 const FORM_CONTENT_TYPE = 'application/x-www-form-urlencoded';
 
-function formEncode(fields: Record<string, string>): string {
+function formEncode(fields: StringKV): string {
 	return new URLSearchParams(fields).toString();
 }
 

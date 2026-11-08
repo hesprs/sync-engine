@@ -1,4 +1,4 @@
-export { optimizationWrapper, optimizationCompanionWrapper } from './wrappers/optimization';
+export { default as optimizationWrapper } from './wrappers/optimization';
 export { default as asymmetricStorageWrapper } from './wrappers/asymmetric-storage';
 export { default as contextWrapper } from './wrappers/context';
 export { cancellationWrapper, cancellationMiddleware } from './wrappers/cancellation';

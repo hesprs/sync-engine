@@ -2,7 +2,7 @@ import { textToUint8Array } from '@repo/shared/binary';
 import { compileQuery } from '@repo/shared/path';
 import { md5 } from 'hash-wasm';
 import type { S3DB } from '..';
-import type { Binary, Request, RequestParam } from '@hesprs/sync-engine-sdk';
+import type { Binary, Request, RequestParam, StringKV } from '@hesprs/sync-engine-sdk';
 
 export type UrlStyle = 'virtualHosted' | 'path';
 
@@ -70,7 +70,7 @@ function canonicalizeUrl(url: string): { canonicalUri: string; canonicalQuery: s
 	return { canonicalQuery, canonicalUri };
 }
 
-function buildCanonicalHeaders(headers: Record<string, string>): {
+function buildCanonicalHeaders(headers: StringKV): {
 	canonicalHeaders: string;
 	signedHeaders: string;
 } {
@@ -89,14 +89,14 @@ export async function signRequest(
 		method,
 		url,
 		headers: rawHeaders,
-	}: RequestParam & { method: string; url: string; headers: Record<string, string> },
+	}: RequestParam & { method: string; url: string; headers: StringKV },
 	{ sessionToken, secretAccessKey, region, service, accessKeyId }: SigV4Options,
 	date: Date,
 	db: S3DB,
-): Promise<Record<string, string>> {
+): Promise<StringKV> {
 	const host = new URL(url).host;
 
-	const headers: Record<string, string> = { ...rawHeaders };
+	const headers: StringKV = { ...rawHeaders };
 	headers.host ??= host;
 	headers['x-amz-date'] = getAmzDate(date);
 	headers['x-amz-content-sha256'] = 'UNSIGNED-PAYLOAD';

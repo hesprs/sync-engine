@@ -4,13 +4,11 @@ import {
 	cancellationWrapper,
 	optimizationWrapper,
 	contextWrapper,
-	memoryControlWrapper,
 	retryMiddleware,
 	hierarchicalOptimizer,
 	asymmetricStorageWrapper,
 	customHeadersMiddleware,
 	cancellationMiddleware,
-	optimizationCompanionWrapper,
 } from '@/fs';
 import {
 	bidirectionalDecider,
@@ -38,14 +36,14 @@ import type {
 import type { Events, Translations } from '@';
 import type { FileTreeTranslations } from '@/components/file-tree';
 import type { UntrustedModuleTranslations } from '@/components/UntrustedModuleModal';
-import type { BatchOptimizer, Fs, MemoryControlSharedState } from '@/fs';
+import type { BatchOptimizer } from '@/fs';
 import type { ControlsSettingTranslations } from '@/settings/controls';
 import type { DevelopmentSettingTranslations } from '@/settings/development';
 import type { FeaturesSettingTranslations } from '@/settings/features';
 import type { HeadSettingTranslations } from '@/settings/head';
 import type { MiscellaneousSettingTranslations } from '@/settings/miscellaneous';
 import type { ModulesTranslations } from '@/settings/module-management';
-import type { Stat, TogglableValue } from '@/types';
+import type { Stat, StringKV, TogglableValue } from '@/types';
 import type { App, SecretStorage } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { DatabaseSync } from 'uni-kv';
@@ -60,23 +58,16 @@ export type ExistingMemoryDB = DatabaseSync<
 	}
 >;
 
-const MAX_VAULT_CONCURRENCY = 200;
-
 export default class Bootstrap {
 	private readonly cleanupCallbacks: Array<() => void> = [];
 
-	// MemoryControlWrapper
-	private readonly memoryStates: Omit<MemoryControlSharedState, 'maxMemory'> = {
-		hangingOperations: [],
-		memoryConsumption: 0,
-	};
+	// MemoryControlWrapper: see below
+	// private readonly memoryStates: Omit<MemoryControlSharedState, 'maxMemory'> = {
+	// 	hangingOperations: [],
+	// 	memoryConsumption: 0,
+	// };
 	// CancellationWrapper
 	private isCancelled?: Ref<boolean>;
-	// OptimizationWrapper
-	private readonly localPool = new Set<string>();
-	private readonly remotePool = new Set<string>();
-	private localFs?: Fs;
-	private remoteFs?: Fs;
 
 	declare readonly i18n: {
 		bidirectional: string;
@@ -97,7 +88,8 @@ export default class Bootstrap {
 		FileTreeTranslations &
 		ModulesTranslations;
 	declare readonly settings: {
-		maxMemoryConsumption: TogglableValue;
+		// See below
+		// maxMemoryConsumption: TogglableValue;
 		maxRequestConcurrency: TogglableValue;
 		minRequestInterval: TogglableValue;
 		realtimeSyncFastMode: boolean;
@@ -151,10 +143,8 @@ export default class Bootstrap {
 			optimizeLocal,
 			optimizeRemote,
 		} = this.ctx;
-		const { maxMemoryConsumption, maxRequestConcurrency, minRequestInterval } = this.settings;
+		const { maxRequestConcurrency, minRequestInterval } = this.settings;
 
-		const getMaxMemory = () =>
-			maxMemoryConsumption.enabled ? maxMemoryConsumption.value : Infinity;
 		const getMaxConcurrency = () =>
 			maxRequestConcurrency.enabled ? maxRequestConcurrency.value : Infinity;
 		const getMinInterval = () => (minRequestInterval.enabled ? minRequestInterval.value : 0);
@@ -208,20 +198,18 @@ export default class Bootstrap {
 
 		registerLocalOptimizer({ apply: hierarchicalOptimizer, priority: 10_000 });
 		registerRemoteOptimizer({ apply: hierarchicalOptimizer, priority: 10_000 });
+		// Memory control wrapper is completely useless currently since browser GC is unreliable.
+		// TODO: when Obsidian's min iOS version >= 16.4, use ResizableArrayBuffer to manually release memory and uncomment memory control wrapper
+		// registerLocalFsWrapper({
+		// 	apply: (fs) =>
+		// 		memoryControlWrapper(
+		// 			fs,
+		// 			Object.assign(this.memoryStates, { maxMemory: getMaxMemory() }),
+		// 		),
+		// 	priority: 1000,
+		// });
 		registerLocalFsWrapper({
-			apply: (fs) =>
-				memoryControlWrapper(
-					fs,
-					Object.assign(this.memoryStates, { maxMemory: getMaxMemory() }),
-				),
-			priority: 1000,
-		});
-		registerLocalFsWrapper({
-			apply: (fs) =>
-				optimizationWrapper(fs, {
-					batchOptimizer: optimizeLocal,
-					thisPool: this.localPool,
-				}),
+			apply: (fs) => optimizationWrapper(fs, optimizeLocal),
 			priority: 2000,
 		});
 		registerLocalFsWrapper({
@@ -239,35 +227,18 @@ export default class Bootstrap {
 				}),
 			priority: 20_000,
 		});
-		registerLocalFsWrapper({
-			apply: (fs) =>
-				optimizationCompanionWrapper(fs, {
-					getThatFs: () => {
-						if (!this.remoteFs)
-							throw new Error(
-								'RemoteFs not found for local optimization companion, this is probably a bug of Sync Engine.',
-							);
-						return this.remoteFs;
-					},
-					thatPool: this.remotePool,
-				}),
-			priority: 21_000,
-		});
 
+		// See above
+		// registerRemoteFsWrapper({
+		// 	apply: (fs) =>
+		// 		memoryControlWrapper(
+		// 			fs,
+		// 			Object.assign(this.memoryStates, { maxMemory: getMaxMemory() }),
+		// 		),
+		// 	priority: 1000,
+		// });
 		registerRemoteFsWrapper({
-			apply: (fs) =>
-				memoryControlWrapper(
-					fs,
-					Object.assign(this.memoryStates, { maxMemory: getMaxMemory() }),
-				),
-			priority: 1000,
-		});
-		registerRemoteFsWrapper({
-			apply: (fs) =>
-				optimizationWrapper(fs, {
-					batchOptimizer: optimizeRemote,
-					thisPool: this.remotePool,
-				}),
+			apply: (fs) => optimizationWrapper(fs, optimizeRemote),
 			priority: 2000,
 		});
 		registerRemoteFsWrapper({
@@ -307,30 +278,16 @@ export default class Bootstrap {
 				}),
 			priority: 20_000,
 		});
-		registerRemoteFsWrapper({
-			apply: (fs) =>
-				optimizationCompanionWrapper(fs, {
-					getThatFs: () => {
-						if (!this.localFs)
-							throw new Error(
-								'LocalFs not found for remote optimization companion, this is probably a bug of Sync Engine.',
-							);
-						return this.localFs;
-					},
-					thatPool: this.localPool,
-				}),
-			priority: 21_000,
-		});
 
-		registerRemoteRequestMiddleware({ apply: retryMiddleware, priority: 1000 });
 		registerRemoteRequestMiddleware({
 			apply: (request) =>
 				rateLimiterMiddleware(request, {
 					maxConcurrency: getMaxConcurrency(),
 					minInterval: getMinInterval(),
 				}),
-			priority: 2000,
+			priority: 1000,
 		});
+		registerRemoteRequestMiddleware({ apply: retryMiddleware, priority: 2000 });
 		registerRemoteRequestMiddleware({
 			apply: (fs) =>
 				customHeadersMiddleware(
@@ -347,18 +304,10 @@ export default class Bootstrap {
 		});
 
 		registerLocalRequestMiddleware({
-			apply: (request) =>
-				rateLimiterMiddleware(request, {
-					maxConcurrency: MAX_VAULT_CONCURRENCY,
-					minInterval: 0,
-				}),
-			priority: 1000,
-		});
-		registerLocalRequestMiddleware({
 			apply: (request) => {
 				if (this.isCancelled) return cancellationMiddleware(request, this.isCancelled);
 			},
-			priority: 2000,
+			priority: 1000,
 		});
 
 		registerDecider('bidirectional', {
@@ -399,28 +348,14 @@ export default class Bootstrap {
 
 		this.cleanupCallbacks.push(
 			on('syncStarted', ({ isCancelled }) => (this.isCancelled = isCancelled)),
-			on('syncInitialized', ({ localFs, remoteFs }) => {
-				this.localFs = localFs;
-				this.remoteFs = remoteFs;
-			}),
-			on('syncTerminated', () => {
-				this.isCancelled = undefined;
-				this.memoryStates.hangingOperations.length = 0;
-				this.localFs = undefined;
-				this.remoteFs = undefined;
-				this.localPool.clear();
-				this.remotePool.clear();
-			}),
+			on('syncTerminated', () => (this.isCancelled = undefined)),
 		);
 	};
 
-	readonly dispose = () => {
-		this.cleanupCallbacks.splice(0).forEach((cb) => cb());
-		this.memoryStates.hangingOperations.length = 0;
-	};
+	readonly dispose = () => this.cleanupCallbacks.splice(0).forEach((cb) => cb());
 }
 
-function synthesizeHeaders(headers: CustomHeaders, secret: SecretStorage): Record<string, string> {
+function synthesizeHeaders(headers: CustomHeaders, secret: SecretStorage): StringKV {
 	return Object.fromEntries(
 		headers.map(({ key, type, value }) => {
 			if (type === 'plaintext') return [key, value];

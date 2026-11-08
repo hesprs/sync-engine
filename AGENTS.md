@@ -40,6 +40,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - WebDAV module: `packages/webdav/`, package name `webdav`.
 - S3 module: `packages/s3/`, package name `s3`.
 - Google Drive module: `packages/gdrive/`, package name `gdrive`.
+- Dropbox module: `packages/dropbox/`, package name `dropbox`.
 - Encryption module: `packages/encryption/`, package name `encryption`.
 - Shared utils: `packages/shared/`, package name `@repo/shared`.
 - Documentation site: `docs/`, package name `docs`.
@@ -56,5 +57,5 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - When any function or class needs to use `Context` as argument, prefer structural typing instead of direct `Context`.
 - Excluding main plugin, shared utils and documentation site, all packages are Sync Engine modules, they use the SDK and follow unified module structure.
 - `null` forbidden, use `undefined` consistently.
-- Lint warnings in scope must be addressed, except conditional ones (TODO with date, upstream issue)
+- Lint warnings in scope must be addressed, except conditional ones (TODO with date, upstream issue, ...)
 - SDK types (`**/*.d.ts` in `packages/plugin/dist/`) are committed to satisfy Obsidian automated linting. Never edit, delete, restore, clean, or otherwise alter these files, even when builds or checks create uncommitted changes. Leave their existing worktree state unchanged.

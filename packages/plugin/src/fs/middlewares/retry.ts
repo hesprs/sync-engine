@@ -2,6 +2,8 @@ import { getStatus } from '@repo/shared/error';
 import type { Request } from '@/modules/Registrar';
 import type { ErrorLike } from '@repo/shared/error';
 
+const MAX_RETRY_AFTER = 180;
+
 type RetryOptions = {
 	maxRetry?: number;
 	isRetryable?: (error: unknown) => boolean;
@@ -20,7 +22,9 @@ export default function retryMiddleware(request: Request, options?: RetryOptions
 			try {
 				const response = await request(url, params);
 				if (RETRYABLE_STATUS_CODES.has(response.status) && i < maxRetry) {
-					await sleep(retryDelay(i));
+					const retryAfter = Number(response.headers['retry-after']);
+					if (retryAfter && retryAfter > MAX_RETRY_AFTER) return response;
+					await sleep(retryAfter || retryDelay(i));
 					continue;
 				}
 				return response;
@@ -32,7 +36,7 @@ export default function retryMiddleware(request: Request, options?: RetryOptions
 }
 
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504]);
-const RETRYABLE_URL_ERROR_CODES = new Set([-1001, -1003, -1004, -1005, -1006, -1009]); // IOS/macOS native URLSession errors
+const RETRYABLE_URL_ERROR_CODES = new Set([-1001, -1003, -1004, -1005, -1006, -1009]); // Apple product native URLSession errors
 const URL_ERROR_DOMAINS = new Set(['NSURLErrorDomain', 'kCFErrorDomainCFNetwork']);
 
 function isRetryableUrlError({ code, domain }: ErrorLike): boolean {
@@ -49,6 +53,15 @@ const RETRYABLE_MESSAGE_PATTERNS = [
 	/\bnet::ERR_CONNECTION_TIMED_OUT\b/iu,
 	/\bnet::ERR_NETWORK_CHANGED\b/iu,
 	/\bnet::ERR_INTERNET_DISCONNECTED\b/iu,
+	/\bnet::ERR_HTTP2_PING_FAILED\b/iu,
+	/\bnet::ERR_HTTP2_SERVER_REFUSED_STREAM\b/iu,
+	/\bnet::ERR_HTTP2_RST_STREAM_NO_ERROR_RECEIVED\b/iu,
+	/\bnet::ERR_HTTP2_STREAM_CLOSED\b/iu,
+	/\bnet::ERR_INCOMPLETE_HTTP2_HEADERS\b/iu,
+	/\bnet::ERR_HTTP2_PROTOCOL_ERROR\b/iu,
+	/\bnet::ERR_HTTP2_FLOW_CONTROL_ERROR\b/iu,
+	/\bnet::ERR_HTTP2_FRAME_SIZE_ERROR\b/iu,
+	/\bnet::ERR_HTTP2_COMPRESSION_ERROR\b/iu,
 	/\bECONNRESET\b/iu,
 	/\bECONNABORTED\b/iu,
 	/\bECONNREFUSED\b/iu,
@@ -67,8 +80,8 @@ function hasRetryableMessage(message: string): boolean {
 	return RETRYABLE_MESSAGE_PATTERNS.some((pattern) => pattern.test(message));
 }
 
-function isRetryableError(error: unknown): boolean {
-	const queue: Array<unknown> = [error];
+function isRetryableError(err: unknown): boolean {
+	const queue: Array<unknown> = [err];
 	const visited = new Set<object>();
 	while (queue.length > 0) {
 		const current = queue.shift();
@@ -80,14 +93,13 @@ function isRetryableError(error: unknown): boolean {
 		if (typeof current !== 'object') continue;
 		if (visited.has(current)) continue;
 		visited.add(current);
-		const errorLike = current as ErrorLike;
+		const statusCode = getStatus(current);
+		const { message, cause, error } = current as ErrorLike;
 		if (isRetryableUrlError(current)) return true;
-		const statusCode = getStatus(errorLike);
 		if (statusCode && RETRYABLE_STATUS_CODES.has(statusCode)) return true;
-		if (typeof errorLike.message === 'string' && hasRetryableMessage(errorLike.message))
-			return true;
-		if (errorLike.cause) queue.push(errorLike.cause);
-		if (errorLike.error) queue.push(errorLike.error);
+		if (typeof message === 'string' && hasRetryableMessage(message)) return true;
+		if (cause) queue.push(cause);
+		if (error) queue.push(error);
 	}
 	return false;
 }
