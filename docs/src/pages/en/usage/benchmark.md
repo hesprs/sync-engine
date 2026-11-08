@@ -4,17 +4,18 @@ All benchmark results are recorded here, see [deep dive: benchmarking](../deep-d
 
 ## Apparent Statistics
 
-| Metrics | Sync Engine | Remotely Save | Nextcloud Sync | Nutstore Sync | Google Drive Sync | Easy Sync |
-| --- | --- | --- | --- | --- | --- | --- |
-| Version | 3.3.4 | 0.5.25 | 1.0.13 | 1.6.0 | 3.1.1 | 1.6.5 |
-| Transparent[^1] | ✅ | ⚠️[^9] | ✅ | ⚠️[^13] | ✅ | ✅ |
-| Startup time[^2] | 27.2 ms[^8] | 251 ms | 20.2 ms | 298ms | 6.6ms | 60.8ms |
-| Plugin size | 158 KB | 4050 KB | 595 KB | 4230 KB | 31.3 KB | 1840 KB |
-| Sync hidden files[^3] | ✅ | ⚠️[^10] | ⚠️[^10] | ✅ | ⚠️[^10] | ⚠️[^10] |
-| Move detection[^4] | ✅ | ❌ | ⚠️[^12] | ❌ | ❌ | ✅ |
-| Chunked transfer[^5] | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Metadata syncing[^6] | ✅ | ⚠️[^11] | ✅ | ❌ | ❌ | ❌ |
-| Encryption[^7] | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Metrics | Sync Engine | Remotely Save | Nextcloud Sync | Nutstore Sync | Google Drive Sync | Easy Sync | OneDrive Sync |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Version | 3.3.4 | 0.5.25 | 1.0.13 | 1.6.0 | 3.1.1 | 1.6.5 | 2.1.1 |
+| Transparent[^1] | ✅ | ⚠️[^9] | ✅ | ⚠️[^13] | ✅ | ✅ | ✅ |
+| Startup time[^2] | 27.2 ms[^8] | 251 ms | 20.2 ms | 298 ms | 6.6 ms | 60.8 ms | 17.2ms |
+| Plugin size | 158 KB | 4050 KB | 595 KB | 4230 KB | 31.3 KB | 1840 KB | 482 KB |
+| Sync hidden files[^3] | ✅ | ⚠️[^10] | ⚠️[^10] | ✅ | ⚠️[^10] | ⚠️[^10] | ✅ |
+| Move detection[^4] | ✅ | ❌ | ⚠️[^12] | ❌ | ❌ | ✅ | ✅ |
+| Chunked transfer[^5] | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Metadata syncing[^6] | ✅ | ⚠️[^11] | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Encryption[^7] | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Conflict resolution | Merge +5 | Merge (PRO) +2 | Merge + latest survives | Merge +3 | None | Merge +3 | Latest survives +2 |
 
 [^1]: Whether the author has made every controllable component that affects the plugins functioning free and open-source.
 
