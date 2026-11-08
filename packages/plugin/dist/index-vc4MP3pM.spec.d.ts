@@ -935,10 +935,8 @@ type TaskCounts = {
 declare class ProgressModal extends Modal {
   private readonly ctx;
   private readonly moduleCleanupCallbacks;
-  private readonly t;
-  private opening;
   private readonly modalCleanupCallbacks;
-  private readonly dispatch;
+  private opening;
   private description?;
   private detailContainer?;
   private controls?;

@@ -158,7 +158,7 @@ export default class Extensibility {
 				throw new Error(translate('integrityCheckFailed'));
 			const moduleJs = await importCode<{ default?: GeneralCtor }>(file);
 			const ctor = moduleJs.default;
-			if (typeof ctor !== 'function') throw new Error(`Invalid module!`);
+			if (typeof ctor !== 'function') throw new TypeError(`Invalid module!`);
 			__addModule__(ctor);
 			const instance: ModuleInstance = __getModule__(ctor as never);
 			const modules = this.settings.modules;
@@ -253,7 +253,7 @@ export default class Extensibility {
 		const fetchSingleSource = async (url: string): Promise<Array<unknown>> => {
 			try {
 				const content: unknown = await requestUrl(url).json;
-				if (!Array.isArray(content)) throw new Error('Wrong source schema!');
+				if (!Array.isArray(content)) throw new TypeError('Wrong source schema!');
 				this.sourceCache.set(url, content);
 				return content as Array<unknown>;
 			} catch (error) {
