@@ -59,6 +59,6 @@ For example:
 
 ## Optimizer
 
-During execution, local and remote file systems use optimization wrappers. They batch mutation calls and invoke the first registered optimizer; batching, companion reads, and dependency handling are documented in the [optimization wrapper](./file-system-wrappers#optimization-wrapper).
+During execution, local and remote file systems use optimization wrappers. They batch mutation calls and invoke the first registered optimizer; batching and dependency handling are documented in the [optimization wrapper](./file-system-wrappers#optimization-wrapper).
 
 The routine sorts tasks into file removals, directory creation, moves, directory removals, and remaining operations. It then executes the optimized task list concurrently. The run reports `completed`, `failed`, `cancelled`, or `noop`.

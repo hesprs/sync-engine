@@ -40,6 +40,28 @@ test('slices fixed-size chunks with offsets and orders results by chunk index', 
 	expect(results).toStrictEqual([10, 20, 30]);
 });
 
+test('marks the final full chunk as last when the stream ends on a chunk boundary', async () => {
+	const uploads: Array<{ isLast: boolean; offset: number; size: number }> = [];
+	await chunkedUpload({
+		chunkSize: 4,
+		concurrency: 2,
+		uploadChunk: (chunk, _index, offset, isLast) => {
+			uploads.push({ isLast, offset, size: chunk.byteLength });
+			return Promise.resolve(chunk.byteLength);
+		},
+		value: streamOf([
+			new Uint8Array(4).fill(1),
+			new Uint8Array(2).fill(2),
+			new Uint8Array(2).fill(3),
+		]),
+	});
+
+	expect(uploads).toStrictEqual([
+		{ isLast: false, offset: 0, size: 4 },
+		{ isLast: true, offset: 4, size: 4 },
+	]);
+});
+
 test('limits concurrency to the configured maximum', async () => {
 	const resolvers: Array<ReturnType<typeof deferred<number>>> = [];
 	let inFlight = 0;
@@ -75,31 +97,27 @@ test('limits concurrency to the configured maximum', async () => {
 	await upload;
 });
 
-test('pauses reading so uploaded chunks stay within chunkSize plus one stream chunk', async () => {
+test('never enqueues a chunk above chunkSize and uploads every byte', async () => {
 	const chunkSize = 4;
 	const streamChunkSize = 3;
 	const streamChunks = 10;
-	let maxChunk = 0;
-	let readCount = 0;
-	const source = new ReadableStream<Binary>({
-		pull(controller) {
-			readCount += 1;
-			if (readCount > streamChunks) controller.close();
-			else controller.enqueue(new Uint8Array(streamChunkSize));
-		},
-	});
+	const uploads: Array<{ isLast: boolean; size: number }> = [];
 	const uploaded = await chunkedUpload({
 		chunkSize,
 		concurrency: 1,
-		uploadChunk: (chunk) => {
-			maxChunk = Math.max(maxChunk, chunk.byteLength);
+		uploadChunk: (chunk, _index, _offset, isLast) => {
+			uploads.push({ isLast, size: chunk.byteLength });
 			return Promise.resolve(chunk.byteLength);
 		},
-		value: source,
+		value: streamOf(
+			Array.from({ length: streamChunks }, () => new Uint8Array(streamChunkSize)),
+		),
 	});
 
-	// Each read can add up to one stream chunk to the buffer before it is Sliced, so a chunk never exceeds chunkSize + one stream chunk.
-	expect(maxChunk).toBeLessThanOrEqual(chunkSize + streamChunkSize);
+	expect(uploads).toStrictEqual([
+		...Array.from({ length: 7 }, () => ({ isLast: false, size: chunkSize })),
+		{ isLast: true, size: 2 },
+	]);
 	expect(uploaded.reduce((sum, size) => sum + size, 0)).toBe(streamChunks * streamChunkSize);
 });
 

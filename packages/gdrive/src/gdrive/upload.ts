@@ -1,13 +1,13 @@
-import { getHeader, parseDriveError } from './api';
-import { concatBinary, textToUint8Array } from '@repo/shared/binary';
+import { parseDriveError } from './api';
+import { concatBinary, PartBuffer, textToUint8Array } from '@repo/shared/binary';
 import type { DriveFile } from './api';
-import type { Binary, Request, RequestResponse } from '@hesprs/sync-engine-sdk';
+import type { Binary, Request, RequestResponse, StringKV } from '@hesprs/sync-engine-sdk';
 
 // Resumable uploads must be sequential (Drive rejects chunks that skip ahead of the uploaded size), so the SDK's memory-tuned chunk size does not apply here.
 const GDRIVE_CHUNK_SIZE = 8 * 1024 ** 2;
 
-const MIME_BY_EXTENSION: Record<string, string> = {
-	base: 'application/json',
+const MIME_BY_EXTENSION: Partial<StringKV> = {
+	base: 'text/yaml',
 	canvas: 'application/json',
 	css: 'text/css',
 	gif: 'image/gif',
@@ -68,7 +68,7 @@ async function startSession({
 			parseDriveError(response) ??
 				`Google Drive upload session initiation failed: ${response.status}`,
 		);
-	const location = getHeader(response.headers, 'location');
+	const { location } = response.headers;
 	if (!location) throw new Error('Google Drive did not return an upload session URL!');
 	return { location, request };
 }
@@ -96,19 +96,22 @@ async function putChunk(
 
 // Multipart upload sends metadata and content in a single request; no session needed.
 const createBoundary = () => `sync-engine-${crypto.randomUUID()}`;
-export async function singleUpload(options: MultipartOptions, value: Binary): Promise<DriveFile> {
+export async function singleUpload(
+	{ metadata, method, mimeType, request, url }: MultipartOptions,
+	value: Binary,
+): Promise<DriveFile> {
 	const boundary = createBoundary();
 	const body = concatBinary(
 		textToUint8Array(
-			`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(options.metadata)}\r\n--${boundary}\r\nContent-Type: ${options.mimeType}\r\n\r\n`,
+			`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`,
 		),
 		value,
 		textToUint8Array(`\r\n--${boundary}--`),
 	);
-	const response = await options.request(options.url, {
+	const response = await request(url, {
 		body,
 		headers: { 'Content-Type': `multipart/related; boundary=${boundary}` },
-		method: options.method,
+		method,
 		throw: false,
 	});
 	if (response.status < 200 || response.status >= 300)
@@ -125,7 +128,7 @@ export async function resumableUpload(
 	const session = await startSession(options);
 	const { size: total } = options;
 	const reader = value.getReader();
-	let buffer: Binary = new Uint8Array(0);
+	const buffer = new PartBuffer();
 	let final: RequestResponse | undefined;
 	let offset = 0;
 	// Sequential by necessity: a Drive session rejects any chunk whose offset
@@ -139,14 +142,10 @@ export async function resumableUpload(
 		while (!done) {
 			const read = await reader.read();
 			if (read.done) done = true;
-			else buffer = concatBinary(buffer, read.value);
-			while (buffer.byteLength >= GDRIVE_CHUNK_SIZE) {
-				const chunk = buffer.slice(0, GDRIVE_CHUNK_SIZE);
-				buffer = buffer.slice(GDRIVE_CHUNK_SIZE);
-				await upload(chunk);
-			}
+			else buffer.push(read.value);
+			while (buffer.size >= GDRIVE_CHUNK_SIZE) await upload(buffer.slice(GDRIVE_CHUNK_SIZE));
 		}
-		if (buffer.byteLength > 0) await upload(buffer);
+		if (buffer.size > 0) await upload(buffer.slice(buffer.size));
 	} catch (error) {
 		// Best-effort session cancellation; Drive also expires sessions on its own.
 		void options

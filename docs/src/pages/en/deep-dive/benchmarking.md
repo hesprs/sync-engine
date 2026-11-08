@@ -2,7 +2,11 @@
 
 ## Benchmark Standards
 
-The benchmark aims to obtain reliable and reproducible sync performance and algorithmic correctness statistics between Sync Engine and other syncing plugins. The Obsidian instance must have only the benchmarked plugin installed during a benchmark. And the benchmarked plugin must use the default settings except necessary account configuration.
+The benchmark aims to obtain reliable and reproducible sync performance and algorithmic correctness statistics between Sync Engine and other syncing plugins. The Obsidian instance must have only the benchmarked plugin installed during a benchmark. And the benchmarked plugin must use the default settings except:
+
+- account configuration
+- UI confirmations that prevents a sync from happening non-interactively
+- setting that would cause the final result have "errors" per the [Correctness Validator](#correctness-validator) (max size limits / don't sync specific files / ...)
 
 Each benchmark contains fixed routines and test cases as specified below, any special deviation from the test routine must be documented clearly.
 
@@ -19,29 +23,45 @@ To ensure reproducibility, each benchmark must contain following metadata:
 - Average ping delay to tested service in milliseconds (use [Ping Tester](#ping-tester))
 - Average upload and download speed of the tested service in MiB/s.
 
-### Test Cases
+### Apparent Statistics
 
 **Plugin size**: Obtained from the GitHub release page of the corresponding version.
+
+**Transparent**: Whether the author has made every controllable component transparent.
 
 **Startup speed**:
 
 On the benchmarking machine, kill Obsidian Electron APP completely and restart for 5 times, each time record down Obsidian settings -> General -> Advanced -> Notify if startup takes longer than expected -> Stopwatch icon -> benchmarked plugin startup time in milliseconds. Then take average over the 5 records.
 
+**Sync hidden files**: Whether the plugin can (be configured to) sync arbitrary files in folders starting with `.`. For example, the `.obsidian/` directory. (Obsidian `vault.*` API cannot see those files, only `vault.adapter.*` can)
+
+**Move detection**: Whether the plugin can properly identify local and remote file moves instead of making them delete + upload / download.
+
+**Chunked transfer**: Whether the plugin read / write / download / upload large files in stream or chunks, and does not buffer the whole file in memory. This feature determine whether it can transfer large files on mobile devices without crashing.
+
+**Metadata syncing**: Whether the plugin can preserve file last modified time / creation time when syncing across devices.
+
+**Encryption**: Whether the plugin supports client-side encryption.
+
+**Conflict resolution**: The method used to resolve the conflict that a file is changed at both local and remote side.
+
+### Test Cases
+
 **Upload speed**:
 
-Initiate a deterministic test vault using [Test Vault Bootstrapper](#test-vault-bootstrapper). Turn the limit off if the benchmarked plugin has large file size limits.
+Initiate a deterministic test vault using [Test Vault Bootstrapper](#test-vault-bootstrapper).
 
-Then start a non-interactive sync using the plugin, wait for it to finish, and access the plugin's built in logs / profiler to obtain total sync duration. If the plugin has no non-interactive option or profiler, take screen record and perform manual UI operations. Then trim the record to critical breakpoints and measure video length.
+Then start a non-interactive sync using the plugin, wait for it to finish, and obtain the plugin's total sync duration.
 
 **Download speed**:
 
-Reuse the already uploaded test vault above, create a new empty vault and configure the benchmarked plugin. Perform full sync to download those files from remote and record down duration.
+Reuse the already uploaded test vault above, create a new empty vault and configure the benchmarked plugin. Perform full sync to download those files from remote and record duration.
 
 **Daily sync speed**
 
 Now we should have two copies of the vault, one (original) is generated from [Test Vault Bootstrapper](#test-vault-bootstrapper), another one (replica) is newly downloaded from remote.
 
-Perform deterministic sync-on-change using [Operation Executor](#operation-executor) inside the original vault. The scripts contains 10 independent and sequential test cases covering create, modify, delete, and rename (move) operations to simulate small but frequent user edit. Each operation is gated with CLI command to continue. A sync is triggered every case in original vault first, then in replica vault. If the benchmarked plugin has "Sync on change" option, enabled it in original vault.
+Perform deterministic sync-on-change using [Operation Executor](#operation-executor) inside the original vault. The scripts contains 10 independent and sequential test cases covering create, modify, delete, and rename (move) operations to simulate small but frequent user edit. Each operation is gated with CLI command to continue. A sync is triggered every case in original vault first, then in replica vault. If the benchmarked plugin has "Sync on change" option, enabled it in original vault, otherwise trigger syncs in original manually.
 
 When all cases finish, calculate the max, min, and median duration of the above 10 syncs.
 

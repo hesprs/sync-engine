@@ -1,4 +1,4 @@
-import { At as FileStat, Dt as RootFs, Ft as RecordStatsMap, G as TaskNames, It as Stat, Lt as StatsMap, Mt as MaybePromise, Ot as WrappedFs, Pt as RecordStat, R as Decider, Rt as Binary, d as RequestResponse, jt as FolderStat, l as Request, u as RequestParam, vt as Fs } from "./index-ccyLicK1.spec.js";
+import { Bt as Binary, Ft as RecordStat, It as RecordStatsMap, K as TaskNames, Lt as Stat, Mt as FolderStat, Nt as MaybePromise, Ot as RootFs, Rt as StatsMap, d as RequestResponse, jt as FileStat, kt as WrappedFs, l as Request, u as RequestParam, yt as Fs, z as Decider, zt as StringKV } from "./index-BACLrb4_.spec.js";
 declare function debugWrapper(original: Fs, log: (content: string) => void): WrappedFs;
 type FsCalls = {
   delete: Array<string>;
@@ -39,9 +39,9 @@ declare function file(key: string, options?: {
   mtime?: number;
   size?: number;
   uid?: string;
-  meta?: () => Dict<string>;
+  meta?: () => StringKV;
 }): FileStat;
-declare function folder(key: string, meta?: () => Dict<string>): FolderStat;
+declare function folder(key: string, meta?: () => StringKV): FolderStat;
 declare function fileRecord(local: string, remote: string): RecordStat;
 declare function folderRecord(): RecordStat;
 declare function runDecider(decider: Decider, input: {

@@ -1,4 +1,3 @@
-plans
 test-files
 .ignore
 .obsidian
@@ -13,3 +12,4 @@ Sync Engine Logs
 **/.env
 !packages/plugin/dist
 packages/plugin/dist/**/*.js
+

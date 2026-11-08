@@ -23,6 +23,7 @@ import type {
 	FileStat,
 	ListReporter,
 	FolderStat,
+	MaybePromise,
 } from '@hesprs/sync-engine-sdk';
 
 export type DerivedKeys = { nameKey: Binary; rootFileKey: Binary; metaKey: Binary };
@@ -84,29 +85,38 @@ class EncryptionFs implements WrappedFs {
 		return createDecryptedReadableStream(source, rootFileKey, stat.size);
 	}
 
-	async write(key: string, value: Binary, stat: FileStat): Promise<string> {
+	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
 		const [encryptedKey, { rootFileKey, metaKey }] = await Promise.all([
 			this.encryptKey(key),
 			this.getKeys(),
 		]);
-		const encryptedContent = await encryptFileContent(rootFileKey, value);
 		const originalMeta = stat.meta;
 		stat.meta = async () => encryptMeta(metaKey, await originalMeta());
-		return this.original.write(encryptedKey, encryptedContent, stat);
+		return this.original.write(
+			encryptedKey,
+			Promise.resolve(value).then((result) => encryptFileContent(rootFileKey, result)),
+			stat,
+		);
 	}
 
-	async writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): Promise<string> {
+	async writeStream(
+		key: string,
+		value: MaybePromise<ReadableStream<Binary>>,
+		stat: FileStat,
+	): Promise<string> {
 		const [encryptedKey, { rootFileKey, metaKey }] = await Promise.all([
 			this.encryptKey(key),
 			this.getKeys(),
 		]);
-		const stream = await createEncryptedReadableStream(rootFileKey, value, stat.size);
 		const originalMeta = stat.meta;
 		stat.meta = async () => encryptMeta(metaKey, await originalMeta());
-		return this.original.writeStream(encryptedKey, stream, {
-			...stat,
-			size: getEncryptedFileSize(stat.size),
-		});
+		return this.original.writeStream(
+			encryptedKey,
+			Promise.resolve(value).then((result) =>
+				createEncryptedReadableStream(rootFileKey, result, stat.size),
+			),
+			{ ...stat, size: getEncryptedFileSize(stat.size) },
+		);
 	}
 
 	async delete(key: string) {

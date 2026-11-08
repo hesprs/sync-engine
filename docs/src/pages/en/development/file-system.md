@@ -7,6 +7,7 @@ Sync Engine uses a unified file system interface across all backends. Wrappers a
 ```ts
 type Binary = Uint8Array<ArrayBuffer>;
 type MaybePromise<T> = T | Promise<T>;
+type StringKV = Record<string, string>;
 
 type Progress<T = string> = { total: number; completed: number; current?: T };
 
@@ -17,9 +18,9 @@ type FileStat = {
   size: number;
   uid: string;
   // Meta fields; to some backends, getting meta fields may be expensive and slow
-  meta: () => MaybePromise<Dict<string>>;
+  meta: () => MaybePromise<StringKV>;
 };
-type FolderStat = { isDir: true; key: string };
+type FolderStat = { isDir: true; key: string; meta: () => MaybePromise<StringKV> };
 type Stat = FileStat | FolderStat;
 type StatsMap = Map<string, Stat>;
 
@@ -40,8 +41,12 @@ type RootFs = {
   getUid(): string;
   read(key: string, stat: FileStat): MaybePromise<Binary>;
   readStream(key: string, stat: FileStat): MaybePromise<ReadableStream<Binary>>;
-  write(key: string, value: Binary, stat: FileStat): MaybePromise<string>;
-  writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
+  write(key: string, value: MaybePromise<Binary>, stat: FileStat): MaybePromise<string>;
+  writeStream(
+    key: string,
+    value: MaybePromise<ReadableStream<Binary>>,
+    stat: FileStat,
+  ): MaybePromise<string>;
   delete(key: string): MaybePromise<void>;
   move(oldKey: string, newKey: string): MaybePromise<void>;
   mkdir(key: string, stat: FolderStat, recursive?: boolean): MaybePromise<void>;
@@ -63,7 +68,7 @@ type ListReporter = (progress: Required<Progress>) => MaybePromise<ListOptions>;
 
 - **`getUid()`** — Returns a stable unique identifier. Convention: `<type>~<distinguishing-data>~...` using `~` as delimiter. Example: `"webdav~https://example.com/dav~username"`.
 - **`read` / `readStream`** — The `stat` parameter provides the file's `FileStat` so backends can implement conditional requests or range-based streaming. Keep average memory consumption during streaming around 16 MiB.
-- **`write` / `writeStream`** — Returns a **uid** (ETag, MD5 hash, or equivalent) that uniquely identifies this version. `writeStream` should only resolve when the stream is fully consumed.
+- **`write` / `writeStream`** — Returns a **uid** (ETag, MD5 hash, or equivalent) that uniquely identifies this version. The `value` may be a promise; await it before writing. `writeStream` should only resolve when the stream is fully consumed.
 - **`delete`** — Should silently succeed if the key does not exist (idempotent).
 - **`move`** — Implement as copy + delete if the backend doesn't support native move.
 - **`mkdir`** — For backends with no real directories (like S3), create a zero-byte object. `recursive` creates parent directories first.

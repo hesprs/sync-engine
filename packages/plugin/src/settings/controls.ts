@@ -1,4 +1,4 @@
-import { renderTogglableValue, s } from './utils';
+import { renderTogglableValue, settingEntry as s } from './utils';
 import type { LabelDefinition } from './utils';
 import type { Settings } from '@';
 import type { Translate } from '@/modules/I18n';
@@ -74,18 +74,19 @@ export default function controlsSettings({
 						type: 'time',
 					}),
 				})),
-				4000: s(() => ({
-					desc: translate('maxMemoryConsumptionDescription'),
-					labels: [speedLabel()],
-					name: translate('maxMemoryConsumption'),
-					render: renderTogglableValue({
-						field: settings.maxMemoryConsumption,
-						placeholder: translate('maxMemoryConsumptionPlaceholder'),
-						rejectZero: true,
-						saveSettings,
-						type: 'fileSize',
-					}),
-				})),
+				// See bootstrap TODO
+				// 4000: s(() => ({
+				// 	desc: translate('maxMemoryConsumptionDescription'),
+				// 	labels: [speedLabel()],
+				// 	name: translate('maxMemoryConsumption'),
+				// 	render: renderTogglableValue({
+				// 		field: settings.maxMemoryConsumption,
+				// 		placeholder: translate('maxMemoryConsumptionPlaceholder'),
+				// 		rejectZero: true,
+				// 		saveSettings,
+				// 		type: 'fileSize',
+				// 	}),
+				// })),
 			},
 		),
 	};

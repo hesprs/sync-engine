@@ -1,4 +1,3 @@
-import { VERSION } from './EventBus';
 import UntrustedModuleModal from '@/components/UntrustedModuleModal';
 import sha256 from '@/utils/sha-256';
 import untilTrue from '@/utils/until-true';
@@ -12,7 +11,7 @@ import type { Dispatch } from './EventBus';
 import type { Snippet, Translate } from './I18n';
 import type { Context, Events, Translations } from '@';
 import type { General } from '@/types';
-import type { App } from 'obsidian';
+import type { App, PluginManifest } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
 
@@ -71,9 +70,10 @@ export default class Extensibility {
 			isIdle: Ref<boolean>;
 			saveSettings: () => Promise<void>;
 			indexedDB: DatabaseAsync<Record<string, AugmentedModuleMeta>>;
+			manifest: PluginManifest;
 		},
 	) {
-		this.moduleDir = `${ctx.app.vault.configDir}/plugins/sync-engine/modules`;
+		this.moduleDir = `${ctx.manifest.dir}/modules`;
 		(window as WindowAugmentation).syncEngineApiBridge = obsidian;
 		this.moduleStore = ctx.indexedDB.getStore(`modules-${hash(ctx.app.vault.getName())}`);
 	}
@@ -158,7 +158,7 @@ export default class Extensibility {
 				throw new Error(translate('integrityCheckFailed'));
 			const moduleJs = await importCode<{ default?: GeneralCtor }>(file);
 			const ctor = moduleJs.default;
-			if (typeof ctor !== 'function') throw new Error(`Invalid module!`);
+			if (typeof ctor !== 'function') throw new TypeError(`Invalid module!`);
 			__addModule__(ctor);
 			const instance: ModuleInstance = __getModule__(ctor as never);
 			const modules = this.settings.modules;
@@ -247,13 +247,13 @@ export default class Extensibility {
 	};
 
 	private readonly fetchSources = async (manual = false) => {
-		const { dispatch, translate } = this.ctx;
+		const { dispatch, translate, manifest } = this.ctx;
 		const { moduleSources } = this.settings;
 		const modules: Array<AugmentedModuleMeta> = [];
 		const fetchSingleSource = async (url: string): Promise<Array<unknown>> => {
 			try {
 				const content: unknown = await requestUrl(url).json;
-				if (!Array.isArray(content)) throw new Error('Wrong source schema!');
+				if (!Array.isArray(content)) throw new TypeError('Wrong source schema!');
 				this.sourceCache.set(url, content);
 				return content as Array<unknown>;
 			} catch (error) {
@@ -276,7 +276,7 @@ export default class Extensibility {
 				content.forEach((meta: unknown) => {
 					if (!isValidMeta(meta)) return;
 					const { id, minPluginVersion, icon, main } = meta;
-					if (minPluginVersion && compare(VERSION, minPluginVersion) === -1) {
+					if (minPluginVersion && compare(manifest.version, minPluginVersion) === -1) {
 						this.root.pluginOutdated = true;
 						return;
 					}

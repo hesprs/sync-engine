@@ -1,5 +1,5 @@
 import { pollDeviceToken, revokeToken, startDeviceAuthorization } from './gdrive/auth';
-import { s } from '@hesprs/sync-engine-sdk';
+import { settingEntry as s } from '@hesprs/sync-engine-sdk';
 import { describeError, toError } from '@repo/shared/error';
 import { normalizeBaseDir } from '@repo/shared/path';
 import { Modal, Notice, Setting } from 'obsidian';
@@ -21,7 +21,6 @@ export type GdriveTranslations = {
 	gdrive: string;
 	connectAccount: string;
 	accountConnected: string;
-	accountConnectedDescription: string;
 	connectAccountDescription: string;
 	connect: string;
 	disconnect: string;
@@ -125,20 +124,16 @@ export default function gdriveSetting(
 				verificationUrl: authorization.verificationUrl,
 			});
 			modal.open();
-			try {
-				const { refreshToken, userId, accessToken, expiresIn } = await pollDeviceToken({
-					authorization,
-					isCancelled: () => cancelled,
-				});
-				tokenManager.setRefreshToken(refreshToken);
-				settings.userId = userId;
-				tokenManager.setToken(accessToken, expiresIn);
-				void saveSettings();
-				new Notice(translate('connectSuccess'));
-				refreshSettingTab();
-			} finally {
-				modal.close();
-			}
+			const { refreshToken, userId, accessToken, expiresIn } = await pollDeviceToken({
+				authorization,
+				isCancelled: () => cancelled,
+			}).finally(() => modal.close());
+			tokenManager.setRefreshToken(refreshToken);
+			settings.userId = userId;
+			tokenManager.setToken(accessToken, expiresIn);
+			void saveSettings();
+			new Notice(translate('connectSuccess'));
+			refreshSettingTab();
 		} catch (error) {
 			if (cancelled) return;
 			const parsedError = toError(error);
@@ -176,7 +171,7 @@ export default function gdriveSetting(
 					visible: () => !tokenManager.getRefreshToken(),
 				})),
 				1100: s(() => ({
-					desc: translate('accountConnectedDescription'),
+					desc: translate('connectSuccess'),
 					name: translate('accountConnected'),
 					render: (setting) => {
 						setting.addButton((button) =>

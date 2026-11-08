@@ -1,4 +1,4 @@
-import { App, Command, DataWriteOptions, EventRef, ExtraButtonComponent, IconName, ListedFiles, Modal, Plugin, RequestUrlParam, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, Stat, TextComponent, ToggleComponent } from "obsidian";
+import { App, Command, DataWriteOptions, EventRef, ExtraButtonComponent, ListedFiles, Modal, ObsidianProtocolHandler, Plugin, PluginManifest, RequestUrlParam, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, Stat, TextComponent, ToggleComponent } from "obsidian";
 type General$1 = any;
 type Binary = Uint8Array<ArrayBuffer>;
 type MaybePromise<T> = Promise<T> | T;
@@ -6,18 +6,19 @@ type TogglableValue<T = number> = {
   enabled: boolean;
   value: T;
 };
+type StringKV = Record<string, string>;
 type FileStat = {
   isDir: false;
   key: string;
   mtime: number;
   size: number;
   uid: string;
-  meta: () => MaybePromise<Dict<string>>;
+  meta: () => MaybePromise<StringKV>;
 };
 type FolderStat = {
   isDir: true;
   key: string;
-  meta: () => MaybePromise<Dict<string>>;
+  meta: () => MaybePromise<StringKV>;
 };
 type Stat$1 = FileStat | FolderStat;
 type RecordStat = {
@@ -49,8 +50,8 @@ type RootFs = {
   getUid(): string;
   read(key: string, stat: FileStat): MaybePromise<Binary>;
   readStream(key: string, stat: FileStat): MaybePromise<ReadableStream<Binary>>;
-  write(key: string, value: Binary, stat: FileStat): MaybePromise<string>;
-  writeStream(key: string, value: ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
+  write(key: string, value: MaybePromise<Binary>, stat: FileStat): MaybePromise<string>;
+  writeStream(key: string, value: MaybePromise<ReadableStream<Binary>>, stat: FileStat): MaybePromise<string>;
   delete(key: string): MaybePromise<void>;
   move(oldKey: string, newKey: string): MaybePromise<void>;
   mkdir(key: string, stat: FolderStat, recursive?: boolean): MaybePromise<void>;
@@ -189,6 +190,7 @@ type Ref<T> = {
 type Dispatch<O extends object> = <K extends keyof O>(...[key, payload]: undefined extends O[K] ? [K] : [K, O[K]]) => void;
 type On<O extends object> = <K extends keyof O>(key: K, callback: (payload: O[K]) => void) => () => void;
 declare class EventBus {
+  private readonly ctx;
   readonly events: {
     logSync: string;
     logGeneral: string;
@@ -199,7 +201,9 @@ declare class EventBus {
   private readonly isIdle;
   private readonly syncLogs;
   private readonly generalLogs;
-  constructor();
+  constructor(ctx: {
+    manifest: PluginManifest;
+  });
   private readonly getThisSync;
   private readonly putSyncLog;
   private readonly putGeneralLog;
@@ -227,7 +231,7 @@ type TranslateParams<R extends TranslationTypes> = R extends Factory<infer A> ? 
 type Translate<O extends TranslationResource> = <K extends keyof O>(key: K, ...arg: TranslateParams<O[K]>) => O[K] extends string | Snippet<General$1> ? string : DocumentFragment;
 declare class I18n {
   private readonly targetLangs;
-  readonly i18n: {};
+  readonly i18n: TranslationResource;
   private readonly registerI18n;
   private readonly translate;
   root: {
@@ -240,13 +244,6 @@ declare class Storage {
   private readonly ctx;
   private readonly memoryDB;
   private readonly indexedDB;
-  constructor(ctx: {
-    getNamespace: () => string | Error;
-  });
-  private readonly getRecordStore;
-  private readonly deleteRecordStore;
-  private readonly clearRecordStores;
-  private readonly recordStoreExists;
   readonly root: {
     clearRecordStores: () => Promise<void>;
     deleteRecordStore: (namespace?: string) => MaybePromise<void>;
@@ -272,6 +269,14 @@ declare class Storage {
     };
     recordStoreExists: (namespace?: string) => MaybePromise<boolean>;
   };
+  constructor(ctx: {
+    getNamespace: () => string | Error;
+    manifest: PluginManifest;
+  });
+  private readonly getRecordStore;
+  private readonly deleteRecordStore;
+  private readonly clearRecordStores;
+  private readonly recordStoreExists;
   readonly dispose: () => void;
 }
 declare class CreateLocalDir extends BaseTask<WithRemoteFolderStat> {
@@ -475,6 +480,7 @@ declare class Extensibility {
     isIdle: Ref<boolean>;
     saveSettings: () => Promise<void>;
     indexedDB: DatabaseAsync<Record<string, AugmentedModuleMeta>>;
+    manifest: PluginManifest;
   });
   readonly start: () => void;
   private readonly createOperationFactory;
@@ -596,7 +602,7 @@ type LabelDefinition = {
   color?: string;
   textColor?: string;
 };
-declare function s(parent: (self: SettingTree) => AugmentedSettingDefinitionItem, children?: CallableOrObjectTree): CallableOrObjectTree;
+declare function settingEntry(parent: (self: SettingTree) => AugmentedSettingDefinitionItem, children?: CallableOrObjectTree): CallableOrObjectTree;
 declare function reactivelyValidate<T>({ text, parse, onSave, format, immediate }: {
   text: TextComponent;
   parse: (value: string) => T | undefined;
@@ -689,15 +695,16 @@ type FeaturesSettingTranslations = {
   asymmetricStorageMigration: Fragment<boolean>;
 } & MigrationModalTranslations;
 declare function prefixWrapper(original: Fs, prefix: string): WrappedFs;
+declare const REGRET_ERROR_MESSAGE = "=== Sync Engine Operation Regretted ===";
 declare const chunkSize: number, concurrency: number;
 declare function pipe({ from, to, stat, key }: {
   from: Fs;
   to: Fs;
   key: string;
   stat: FileStat;
-}): Promise<string | undefined>;
-declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promise<Binary | ReadableStream<Binary> | undefined>;
-declare function writeWithValue(fs: Fs, key: string, value: Binary | ReadableStream<Binary>, stat: FileStat): MaybePromise<string>;
+}): MaybePromise<string>;
+declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promise<Binary | ReadableStream<Binary>>;
+declare function writeWithSize(fs: Fs, key: string, value: MaybePromise<Binary | ReadableStream<Binary>>, stat: FileStat): MaybePromise<string>;
 declare function digOriginal(wrapped: Fs): RootFs;
 type SelectFromContext<O extends object> = Context extends O ? O : never;
 type HeadSettingTranslations = {
@@ -821,12 +828,7 @@ type ExistingMemoryDB = DatabaseSync<{
 declare class Bootstrap {
   private readonly ctx;
   private readonly cleanupCallbacks;
-  private readonly memoryStates;
   private isCancelled?;
-  private readonly localPool;
-  private readonly remotePool;
-  private localFs?;
-  private remoteFs?;
   readonly i18n: {
     bidirectional: string;
     mirrorLocal: string;
@@ -839,7 +841,6 @@ declare class Bootstrap {
     dontSync: string;
   } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
-    maxMemoryConsumption: TogglableValue;
     maxRequestConcurrency: TogglableValue;
     minRequestInterval: TogglableValue;
     realtimeSyncFastMode: boolean;
@@ -872,7 +873,6 @@ declare class Bootstrap {
   readonly dispose: () => void;
 }
 type SyncStage = 'none' | 'walkingRemote' | 'awaitingConfirmation' | 'executing' | 'completed' | 'completedNoop' | 'cancelled' | 'failed';
-type AddRibbonIcon = (icon: IconName, title: string, callback: (evt: MouseEvent) => void) => HTMLElement;
 declare class Observability {
   private readonly ctx;
   private lastSyncTime;
@@ -906,7 +906,7 @@ declare class Observability {
     requestSync: (trigger: string) => Promise<SyncTerminateReason>;
     showProgress: () => void;
     addCommand: (command: Command) => Command;
-    addRibbonIcon: AddRibbonIcon;
+    addRibbonIcon: Plugin['addRibbonIcon'];
     getLogs: () => string;
     app: App;
   });
@@ -935,10 +935,8 @@ type TaskCounts = {
 declare class ProgressModal extends Modal {
   private readonly ctx;
   private readonly moduleCleanupCallbacks;
-  private readonly t;
-  private opening;
   private readonly modalCleanupCallbacks;
-  private readonly dispatch;
+  private opening;
   private description?;
   private detailContainer?;
   private controls?;
@@ -1031,10 +1029,23 @@ type InternalModules = typeof internalModules;
 type MergeKeys = 'settings' | 'root' | 'events' | 'i18n';
 type Context = Context$1<InternalModules, MergeKeys, {
   app: App;
-  addCommand: (command: Command) => Command;
-  registerEvent: (ref: EventRef) => void;
-  addRibbonIcon: AddRibbonIcon;
-  addStatusBarItem: () => HTMLElement;
+  addCommand: Plugin['addCommand'];
+  removeCommand: Plugin['removeChild'];
+  registerEvent: Plugin['registerEvent'];
+  addRibbonIcon: Plugin['addRibbonIcon'];
+  manifest: PluginManifest;
+  addStatusBarItem: Plugin['addStatusBarItem'];
+  registerView: Plugin['registerView'];
+  registerHoverLinkSource: Plugin['registerHoverLinkSource'];
+  registerExtensions: Plugin['registerExtensions'];
+  registerMarkdownPostProcessor: Plugin['registerMarkdownPostProcessor'];
+  registerMarkdownCodeBlockProcessor: Plugin['registerMarkdownCodeBlockProcessor'];
+  registerBasesView: Plugin['registerBasesView'];
+  registerEditorExtension: Plugin['registerEditorExtension'];
+  registerEditorSuggest: Plugin['registerEditorSuggest'];
+  registerObsidianProtocolHandler: Plugin['registerObsidianProtocolHandler'];
+  registerCliHandler: Plugin['registerCliHandler'];
+  registerDomEvent: Plugin['registerDomEvent'];
   saveSettings: () => Promise<void>;
 }>;
 type Events = MergeSingleKey<InternalModules, 'events'>;
@@ -1166,52 +1177,13 @@ type RequestResponse = {
   text: () => string;
   bytes: () => Binary;
   json: <T extends object = object>() => T;
-  headers: Record<string, string>;
+  headers: StringKV;
   status: number;
 };
 type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
 declare class Registrar {
   private readonly ctx;
-  private readonly cleanupCallbacks;
-  private readonly localFsWrapperRegistry;
-  private readonly remoteFsWrapperRegistry;
-  private readonly localOptimizerRegistry;
-  private readonly remoteOptimizerRegistry;
-  private readonly remoteRequestMiddlewareRegistry;
-  private readonly localRequestMiddlewareRegistry;
-  private readonly remoteFsRegistry;
-  private readonly deciderRegistry;
-  private readonly triggerRegistry;
-  private readonly conflictResolverRegistry;
-  readonly settings: {
-    remoteFs: string;
-    conflictResolver: string;
-  };
-  readonly i18n: {
-    pleaseSetBackend: string;
-    backendNotInstalled: Snippet<string>;
-    syncStrategyNotInstalled: Snippet<string>;
-    conflictResolveStrategyNotInstalled: Snippet<string>;
-  };
-  constructor(ctx: {
-    app: App;
-    getRecordStore: (namespace: string) => RecordStore;
-    translate: Translate<Translations>;
-    dispatch: Dispatch<Events>;
-  });
-  private readonly getVaultRequest;
-  private readonly createLocalFs;
-  private readonly createRemoteFs;
-  private readonly getRequest;
-  private readonly getCheckConnection;
-  private readonly decideTasks;
-  private readonly optimizeLocal;
-  private readonly optimizeRemote;
-  private readonly reduceTriggers;
-  private readonly getConflictResolver;
-  private readonly getNamespace;
-  private readonly initializeSync;
-  root: {
+  readonly root: {
     conflictResolverRegistry: Map<string, ConflictResolverEntry>;
     createLocalFs: () => Fs;
     createRemoteFs: (remoteFs?: string) => Fs | Error;
@@ -1235,6 +1207,7 @@ declare class Registrar {
     registerLocalFsWrapper: (entry: FsWrapperEntry) => () => boolean;
     registerLocalOptimizer: (entry: OptimizerEntry) => () => boolean;
     registerLocalRequestMiddleware: (entry: LocalRequestMiddlewareEntry) => () => boolean;
+    registerObsidianProtocolHandler: (action: string, handler: ObsidianProtocolHandler) => () => Map<string, ObsidianProtocolHandler>;
     registerRemoteFs: (key: string, entry: RemoteFsEntry) => () => boolean;
     registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => boolean;
     registerRemoteOptimizer: (entry: OptimizerEntry) => () => boolean;
@@ -1242,6 +1215,47 @@ declare class Registrar {
     registerTrigger: (key: string, entry: TriggerEntry) => () => boolean;
     remoteFsRegistry: Map<string, RemoteFsEntry>;
   };
+  private readonly cleanupCallbacks;
+  private readonly localFsWrapperRegistry;
+  private readonly remoteFsWrapperRegistry;
+  private readonly localOptimizerRegistry;
+  private readonly remoteOptimizerRegistry;
+  private readonly remoteRequestMiddlewareRegistry;
+  private readonly localRequestMiddlewareRegistry;
+  private readonly remoteFsRegistry;
+  private readonly deciderRegistry;
+  private readonly triggerRegistry;
+  private readonly conflictResolverRegistry;
+  private readonly protocolHandlerRegistry;
+  readonly settings: {
+    remoteFs: string;
+    conflictResolver: string;
+  };
+  readonly i18n: {
+    pleaseSetBackend: string;
+    backendNotInstalled: Snippet<string>;
+    syncStrategyNotInstalled: Snippet<string>;
+    conflictResolveStrategyNotInstalled: Snippet<string>;
+  };
+  constructor(ctx: {
+    app: App;
+    getRecordStore: (namespace: string) => RecordStore;
+    translate: Translate<Translations>;
+    dispatch: Dispatch<Events>;
+    registerObsidianProtocolHandler: Plugin['registerObsidianProtocolHandler'];
+  });
+  private readonly getVaultRequest;
+  private readonly createLocalFs;
+  private readonly createRemoteFs;
+  private readonly getRequest;
+  private readonly getCheckConnection;
+  private readonly decideTasks;
+  private readonly optimizeLocal;
+  private readonly optimizeRemote;
+  private readonly reduceTriggers;
+  private readonly getConflictResolver;
+  private readonly getNamespace;
+  private readonly initializeSync;
   readonly dispose: () => void;
 }
 type VaultRequestParam = ({
@@ -1290,4 +1304,4 @@ type VaultRequest = <T extends VaultRequestParam = {
   method: 'GET';
 }>(key: string, params?: T) => Promise<VaultRequestResponseMap[T['method']]>;
 type TrashOption = 'local' | 'system' | 'permanent';
-export { Download as $, LabelDefinition as A, FileStat as At, TaskFactory as B, chunkSize as C, MoveAtom as Ct, writeWithValue as D, RootFs as Dt, readWithSize as E, OutputAtom as Et, SettingEntry as F, RecordStatsMap as Ft, TaskNames as G, ConflictResolver as H, AugmentedModuleMeta as I, Stat$1 as It, RemoveRemote as J, Upload as K, ModuleMeta as L, StatsMap as Lt, reactivelyValidate as M, MaybePromise as Mt, s as N, Progress as Nt, prefixWrapper as O, WrappedFs as Ot, CallableOrObjectTree as P, RecordStat as Pt, MoveLocal as Q, Decider as R, Binary as Rt, digOriginal as S, MkdirAtom as St, pipe as T, OptimizerOutput as Tt, ConflictResolverPayload as U, AddRecord as V, Task as W, RemoveLocal as X, RemoveRecord as Y, MoveRemote as Z, Events as _, DeleteAtom as _t, LocalRequestMiddlewareEntry as a, Snippet as at, ExistingMemoryDB as b, ListOptions as bt, RemoteRequestMiddlewareEntry as c, Dispatch as ct, RequestResponse as d, DatabaseSync as dt, CreateRemoteDir as et, TriggerEntry as f, StoreAsync as ft, Context as g, CustomAtom as gt, SyncTerminateReason as h, BatchOptimizer as ht, FsWrapperEntry as i, ObsidianLanguageCode as it, generateEditableList as j, FolderStat as jt, setNeedMigration as k, WriteAtom as kt, Request as l, On as lt, SyncOptions as m, StoreSync as mt, ConflictResolverEntry as n, RecordStore as nt, OptimizerEntry as o, Translate as ot, RemoteLister as p, StoreOperations as pt, ResolveConflict as q, DeciderEntry as r, Fragment as rt, RemoteFsEntry as s, TranslationResource as st, VaultRequest as t, CreateLocalDir as tt, RequestParam as u, DatabaseAsync as ut, Settings as v, Fs as vt, concurrency as w, OptimizerInput as wt, SelectFromContext as x, ListReporter as xt, Translations as y, InputAtom as yt, DeciderInput as z };
+export { MoveLocal as $, setNeedMigration as A, WriteAtom as At, DeciderInput as B, Binary as Bt, REGRET_ERROR_MESSAGE as C, MkdirAtom as Ct, readWithSize as D, OutputAtom as Dt, pipe as E, OptimizerOutput as Et, CallableOrObjectTree as F, RecordStat as Ft, Task as G, AddRecord as H, SettingEntry as I, RecordStatsMap as It, ResolveConflict as J, TaskNames as K, AugmentedModuleMeta as L, Stat$1 as Lt, generateEditableList as M, FolderStat as Mt, reactivelyValidate as N, MaybePromise as Nt, writeWithSize as O, RootFs as Ot, settingEntry as P, Progress as Pt, MoveRemote as Q, ModuleMeta as R, StatsMap as Rt, digOriginal as S, ListReporter as St, concurrency as T, OptimizerInput as Tt, ConflictResolver as U, TaskFactory as V, ConflictResolverPayload as W, RemoveRecord as X, RemoveRemote as Y, RemoveLocal as Z, Events as _, CustomAtom as _t, LocalRequestMiddlewareEntry as a, ObsidianLanguageCode as at, ExistingMemoryDB as b, InputAtom as bt, RemoteRequestMiddlewareEntry as c, TranslationResource as ct, RequestResponse as d, DatabaseAsync as dt, Download as et, TriggerEntry as f, DatabaseSync as ft, Context as g, BatchOptimizer as gt, SyncTerminateReason as h, StoreSync as ht, FsWrapperEntry as i, Fragment as it, LabelDefinition as j, FileStat as jt, prefixWrapper as k, WrappedFs as kt, Request as l, Dispatch as lt, SyncOptions as m, StoreOperations as mt, ConflictResolverEntry as n, CreateLocalDir as nt, OptimizerEntry as o, Snippet as ot, RemoteLister as p, StoreAsync as pt, Upload as q, DeciderEntry as r, RecordStore as rt, RemoteFsEntry as s, Translate as st, VaultRequest as t, CreateRemoteDir as tt, RequestParam as u, On as ut, Settings as v, DeleteAtom as vt, chunkSize as w, MoveAtom as wt, SelectFromContext as x, ListOptions as xt, Translations as y, Fs as yt, Decider as z, StringKV as zt };

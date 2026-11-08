@@ -1,4 +1,3 @@
-import man from '../../manifest.json' with { type: 'json' };
 import UnoCSS from '@unocss/postcss';
 import postcssMergeRules from 'postcss-merge-rules';
 import { defineConfig } from 'tsdown';
@@ -23,11 +22,11 @@ const pluginConfig = defineConfig({
 		postcss: { plugins: [UnoCSS(), postcssMergeRules()] },
 		transformer: 'postcss',
 	},
-	define: { 'Bun.env.VERSION': JSON.stringify(man.version) },
 	dts: false,
 	entry: { main: 'src/index.ts' },
 	format: 'cjs',
 	inputOptions: {
+		platform: 'browser',
 		resolve: {
 			aliasFields: [['browser']],
 			conditionNames: ['browser'],
@@ -36,7 +35,6 @@ const pluginConfig = defineConfig({
 	},
 	outDir: '../../dist',
 	outputOptions: { codeSplitting: false },
-	platform: 'browser',
 	// Fixes SolidJS cannot attach eventListeners to elements existing on another window
 	plugins: [solid({ solid: { delegateEvents: false } })],
 	target: 'es2024',

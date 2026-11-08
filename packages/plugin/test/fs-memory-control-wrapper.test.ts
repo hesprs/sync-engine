@@ -86,7 +86,7 @@ test('memory wrapper releases budget only after writeStream fully drains', async
 	const pendingRead = wrapper.read('later.md', laterStat);
 
 	local.control.writeStream = async (_key, source) => {
-		const reader = source.getReader();
+		const reader = (await source).getReader();
 		const firstChunk = await reader.read();
 		expect(firstChunk.done).toBe(false);
 		firstChunkRead.resolve();

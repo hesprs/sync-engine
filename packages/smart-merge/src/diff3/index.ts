@@ -260,9 +260,7 @@ export function diffMerge<T>(
 
 		if (x.o[1] === 0 && prefixLength === 0 && suffixLength === 0) {
 			if (aLength > 0) pushOk(x.a, [0, 0], [0, 0], a, x.a);
-
 			if (bLength > 0) pushOk([0, 0], [0, 0], x.b, b, x.b);
-
 			return;
 		}
 
@@ -299,5 +297,25 @@ export function diffMerge<T>(
 			pushOk(x.a, x.o, x.b, mergedFile, mergedSpan);
 		}
 
+	return result;
+}
+
+export function diffCommon<T>(
+	a: ReadonlyArray<T>,
+	b: ReadonlyArray<T>,
+): Array<DiffCommonResult<T>> {
+	const result: Array<DiffCommonResult<T>> = [];
+	let offset = 0;
+	for (const hunk of new Onp(a, b).compose()) {
+		if (hunk.file1[0] > offset)
+			result.push({ common: a.slice(offset, hunk.file1[0]), type: 'common' });
+		result.push({
+			a: a.slice(hunk.file1[0], spanEnd(hunk.file1)),
+			b: b.slice(hunk.file2[0], spanEnd(hunk.file2)),
+			type: 'diff',
+		});
+		offset = spanEnd(hunk.file1);
+	}
+	if (offset < a.length) result.push({ common: a.slice(offset), type: 'common' });
 	return result;
 }

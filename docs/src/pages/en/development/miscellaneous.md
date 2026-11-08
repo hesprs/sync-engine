@@ -9,10 +9,11 @@
 | `digOriginal` | Unwraps nested wrappers to root filesystem. See [file system](./file-system#digoriginal). |
 | `prefixWrapper` | Exposes a prefixed directory as an `Fs` root. See [file system](./file-system#prefixwrapper). |
 | `setNeedMigration` | Adds migration confirmation behavior to a setting toggle; see [Settings and UI](./settings-and-ui#migration-aware-toggles). |
-| `pipe` | Transfer a file between two filesystems with auto-streaming. See [file system](./file-system#pipe). |
-| `readWithSize` | Read a file with auto-streaming by size threshold. See [file system](./file-system#readwithsize). |
-| `writeWithValue` | Write a value with auto-streaming by input type. See [file system](./file-system#writewithvalue). |
-| `s` | Combines a parent setting definition with nested setting definitions. See [Settings and UI](./settings-and-ui#nested-setting-registration). |
+| `pipe` | Transfer a file between two filesystems with auto-streaming. See [sync](./sync#pipe). |
+| `readWithSize` | Read a file with auto-streaming by size threshold. See [sync](./sync#readwithsize). |
+| `writeWithSize` | Write a value with auto-streaming by file size. See [sync](./sync#writewithsize). |
+| `REGRET_ERROR_MESSAGE` | Message of `REGRET_ERROR`, the sentinel thrown to mark an operation as regretted rather than failed; the sync task executor completes such tasks instead of failing them. See [sync](./sync#pipe). |
+| `settingEntry` | Combines a parent setting definition with nested setting definitions. See [Settings and UI](./settings-and-ui#nested-setting-registration). |
 | `reactivelyValidate` | Attaches reactive validation to a setting text input. See [Settings and UI](./settings-and-ui#reactive-input-validation). |
 | `generateEditableList` | Generates an editable list setting definition backed by an ephemeral draft store. See [Settings and UI](./settings-and-ui#editable-lists). |
 
@@ -36,7 +37,7 @@
 | --- | --- |
 | Context | `Context`, `Settings`, `Events`, `Translations`, `SelectFromContext` |
 | Events | `Dispatch`, `On` |
-| Core data | `Binary`, `MaybePromise`, `Progress`, `FileStat`, `FolderStat`, `Stat`, `StatsMap`, `RecordStat`, `RecordStatsMap` |
+| Core data | `Binary`, `MaybePromise`, `StringKV`, `Progress`, `FileStat`, `FolderStat`, `Stat`, `StatsMap`, `RecordStat`, `RecordStatsMap` |
 | Filesystem | `RootFs`, `WrappedFs`, `Fs`, `WriteAtom`, `DeleteAtom`, `MoveAtom`, `MkdirAtom`, `InputAtom`, `CustomAtom`, `OutputAtom`, `ListOptions`, `ListReporter`, `OptimizerInput`, `OptimizerOutput`, `BatchOptimizer` |
 | Registration | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `TriggerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request` |
 | Sync | `TaskNames`, `Task`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `SyncOptions`, `RemoteLister`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
@@ -69,7 +70,6 @@ Internal supporting types can appear in exported signatures but are not standalo
 | `focusSync` | `TogglableValue` minimum gap between focus syncs in milliseconds |
 | `scheduledSync` | `TogglableValue` interval in milliseconds |
 | `realtimeSync` | `TogglableValue` debounce delay in milliseconds |
-| `maxMemoryConsumption` | `TogglableValue` in bytes |
 | `maxRequestConcurrency` | `TogglableValue` |
 | `minRequestInterval` | `TogglableValue` in milliseconds |
 | `realtimeSyncFastMode` | `boolean` |
@@ -145,10 +145,14 @@ These Context members are not commonly used by modules. Explore source code to o
 | `events` | Merged `Events` map. |
 | `i18n` | Merged `Translations` resource map. |
 | `app` | Obsidian `App` instance. |
+| `manifest` | Sync Engine's own Obsidian `PluginManifest`. |
 | `addCommand(cmd)` | Registers Obsidian command and returns it. |
+| `removeCommand(command)` | Removes a command registered through `addCommand`. |
 | `registerEvent(ref)` | Registers Obsidian `EventRef` for automatic cleanup. |
 | `addRibbonIcon(...)` | Adds ribbon icon and returns element. |
 | `addStatusBarItem()` | Adds and returns status-bar element. |
+| `registerObsidianProtocolHandler(action, handler)` | Registers an `obsidian://<action>` handler; returns an unregister function. Registering the same action again replaces the handler. |
+| `registerView` / `registerHoverLinkSource` / `registerExtensions` / `registerMarkdownPostProcessor` / `registerMarkdownCodeBlockProcessor` / `registerBasesView` / `registerEditorExtension` / `registerEditorSuggest` / `registerCliHandler` / `registerDomEvent` | Mirror the same-named Obsidian `Plugin` methods. |
 | `saveSettings()` | Persists current `settings`. |
 | `on(key, cb)` | Subscribes to typed SDK event. See [events](./events). |
 | `dispatch(key, payload?)` | Dispatches typed SDK event. See [events](./events). |

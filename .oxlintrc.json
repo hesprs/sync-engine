@@ -33,7 +33,6 @@
 		"typescript/no-unsafe-type-assertion": "off",
 		"typescript/consistent-type-definitions": ["warn", "type"],
 		"typescript/parameter-properties": ["warn", { "prefer": "parameter-property" }],
-		"typescript/unbound-method": "off",
 		"eslint/prefer-destructuring": [
 			"warn",
 			{ "AssignmentExpression": { "array": false, "object": false } }
@@ -124,13 +123,10 @@
 		"eslint/one-var": ["warn", "never"],
 		"unicorn/max-nested-calls": ["warn", { "max": 5 }],
 		"eslint/require-await": "off", // overlaps with typescript
-		"typescript/ban-types": "off"
+		"typescript/ban-types": "off",
+		"eslint/capitalized-comments": ["warn", "always", { "ignoreConsecutiveComments": true }]
 	},
-	"env": {
-		"builtin": true,
-		"browser": true,
-		"vue": true
-	},
+	"env": { "builtin": true, "browser": true, "vue": true },
 	"globals": {
 		"activeDocument": "readonly",
 		"Bun": "readonly",
@@ -171,8 +167,5 @@
 		}
 	],
 	"ignorePatterns": ["**/node_modules/**", "**/dist/**", "*.js"],
-	"options": {
-		"typeAware": true,
-		"typeCheck": true
-	}
+	"options": { "typeAware": true, "typeCheck": true }
 }

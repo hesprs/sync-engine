@@ -1,10 +1,10 @@
 {
 	"id": "sync-engine",
 	"name": "Sync Engine",
-	"version": "3.3.4",
+	"version": "3.4.1",
 	"minAppVersion": "1.13.0",
 	"authorUrl": "https://hesprs.github.io",
-	"description": "The extensible vault synchronization engine: Fast · Free · Reliable. Supports WebDAV, S3, and Google Drive.",
+	"description": "The extensible vault synchronization engine: Fast · Free · Reliable. Supports WebDAV, S3, Google Drive, and Dropbox.",
 	"author": "Hēsperus",
 	"isDesktopOnly": false
 }

@@ -7,7 +7,7 @@ import {
 	getEncryptedChunkSize,
 	importAesGcmKey,
 } from './shared';
-import { concatBinary } from '@repo/shared/binary';
+import { PartBuffer } from '@repo/shared/binary';
 import type { Binary } from '@hesprs/sync-engine-sdk';
 
 export default function createDecryptedReadableStream(
@@ -15,7 +15,7 @@ export default function createDecryptedReadableStream(
 	rootFileKey: Binary,
 	encryptedFileSize: number,
 ): ReadableStream<Binary> {
-	let pending = new Uint8Array(0);
+	const pending = new PartBuffer();
 	let fileKeyPromise: Promise<CryptoKey> | undefined;
 	let chunkIndex = 0;
 
@@ -26,36 +26,37 @@ export default function createDecryptedReadableStream(
 		isFinal: boolean,
 		controller: TransformStreamDefaultController<Binary>,
 	): Promise<void> => {
-		pending = concatBinary(pending, chunk);
+		pending.push(chunk);
 
 		const totalChunkCount = getEncryptedChunkCount(encryptedFileSize);
 
 		if (!fileKeyPromise) {
-			if (pending.byteLength < FILE_SALT_LENGTH) {
+			if (pending.size < FILE_SALT_LENGTH) {
 				if (isFinal) throw new Error(DECRYPTION_ERROR_MESSAGE);
 				return;
 			}
 
-			const fileSalt = pending.slice(0, FILE_SALT_LENGTH);
-			pending = pending.slice(FILE_SALT_LENGTH);
 			fileKeyPromise = importAesGcmKey(
-				await deriveFileKey(rootFileKey, fileSalt, encryptedFileSize),
+				await deriveFileKey(
+					rootFileKey,
+					pending.slice(FILE_SALT_LENGTH),
+					encryptedFileSize,
+				),
 			);
 		}
 
 		while (chunkIndex < totalChunkCount) {
 			const expectedSize = getEncryptedChunkSize(chunkIndex, encryptedFileSize);
-			if (pending.byteLength < expectedSize) break;
+			if (pending.size < expectedSize) break;
 
-			const encryptedChunk = pending.slice(0, expectedSize);
-			pending = pending.slice(expectedSize);
+			const encryptedChunk = pending.slice(expectedSize);
 			controller.enqueue(
 				await decryptContentChunk(await fileKeyPromise, encryptedChunk, chunkIndex),
 			);
 			chunkIndex += 1;
 		}
 
-		if (isFinal && (chunkIndex !== totalChunkCount || pending.byteLength > 0))
+		if (isFinal && (chunkIndex !== totalChunkCount || pending.size > 0))
 			throw new Error(DECRYPTION_ERROR_MESSAGE);
 	};
 

@@ -1,4 +1,4 @@
-import { diffMerge } from '@/diff3';
+import { diffCommon, diffMerge } from '@/diff3';
 import { expect, test } from 'bun:test';
 
 test('diffMerge returns ok and conflict chunks with source spans', () => {
@@ -118,4 +118,43 @@ test('diffMerge preserves source spans after same-offset insertion and deletion'
 	expect(result.flatMap((chunk) => chunk.a)).toStrictEqual(a);
 	expect(result.flatMap((chunk) => chunk.o)).toStrictEqual(o);
 	expect(result.flatMap((chunk) => chunk.b)).toStrictEqual(b);
+});
+
+test('diffCommon marks identical sequences as one common segment', () => {
+	expect(diffCommon(['a', 'b'], ['a', 'b'])).toStrictEqual([
+		{ common: ['a', 'b'], type: 'common' },
+	]);
+});
+
+test('diffCommon walks insertions, modifications, and deletions between common runs', () => {
+	expect(diffCommon(['a', 'c', 'e'], ['a', 'b', 'c', 'd', 'e'])).toStrictEqual([
+		{ common: ['a'], type: 'common' },
+		{ a: [], b: ['b'], type: 'diff' },
+		{ common: ['c'], type: 'common' },
+		{ a: [], b: ['d'], type: 'diff' },
+		{ common: ['e'], type: 'common' },
+	]);
+	expect(diffCommon(['a', 'x', 'c'], ['a', 'y', 'c'])).toStrictEqual([
+		{ common: ['a'], type: 'common' },
+		{ a: ['x'], b: ['y'], type: 'diff' },
+		{ common: ['c'], type: 'common' },
+	]);
+	expect(diffCommon(['a', 'drop', 'b'], ['a', 'b'])).toStrictEqual([
+		{ common: ['a'], type: 'common' },
+		{ a: ['drop'], b: [], type: 'diff' },
+		{ common: ['b'], type: 'common' },
+	]);
+});
+
+test('diffCommon segments reconstruct both sequences', () => {
+	const a = ['keep', 'drop', 'keep2', 'tail'];
+	const b = ['keep', 'added', 'keep2', 'changed', 'tail'];
+	const segments = diffCommon(a, b);
+
+	expect(
+		segments.flatMap((segment) => (segment.type === 'common' ? segment.common : segment.a)),
+	).toStrictEqual(a);
+	expect(
+		segments.flatMap((segment) => (segment.type === 'common' ? segment.common : segment.b)),
+	).toStrictEqual(b);
 });

@@ -10,8 +10,8 @@ import type { StrategyMapping, SyncOptions } from './Sync';
 import type { Events, Translations } from '@';
 import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
 import type { Task, ConflictResolver, Decider, TaskFactory } from '@/sync';
-import type { General, MaybePromise, Binary } from '@/types';
-import type { App, RequestUrlParam } from 'obsidian';
+import type { General, MaybePromise, Binary, StringKV } from '@/types';
+import type { App, RequestUrlParam, Plugin, ObsidianProtocolHandler } from 'obsidian';
 
 type RejectableWrapper<T> = (value: T) => T | undefined;
 type OrderedWrapperEntry<T> = { priority: number; apply: RejectableWrapper<T> };
@@ -46,7 +46,7 @@ export type RequestResponse = {
 	bytes: () => Binary;
 	// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 	json: <T extends object = object>() => T;
-	headers: Record<string, string>;
+	headers: StringKV;
 	status: number;
 };
 export type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
@@ -67,6 +67,7 @@ const request: Request = async (url: string, params?: RequestParam) => {
 };
 
 export default class Registrar {
+	readonly root;
 	private readonly cleanupCallbacks: Array<() => void> = [];
 	private readonly localFsWrapperRegistry = new Set<FsWrapperEntry>();
 	private readonly remoteFsWrapperRegistry = new Set<FsWrapperEntry>();
@@ -78,6 +79,7 @@ export default class Registrar {
 	private readonly deciderRegistry = new Map<string, DeciderEntry>();
 	private readonly triggerRegistry = new Map<string, TriggerEntry>();
 	private readonly conflictResolverRegistry = new Map<string, ConflictResolverEntry>();
+	private readonly protocolHandlerRegistry = new Map<string, ObsidianProtocolHandler>();
 
 	declare readonly settings: { remoteFs: string; conflictResolver: string };
 	declare readonly i18n: {
@@ -93,8 +95,52 @@ export default class Registrar {
 			getRecordStore: (namespace: string) => RecordStore;
 			translate: Translate<Translations>;
 			dispatch: Dispatch<Events>;
+			registerObsidianProtocolHandler: Plugin['registerObsidianProtocolHandler'];
 		},
-	) {}
+	) {
+		const originalRgProtocol = ctx.registerObsidianProtocolHandler;
+		this.root = {
+			conflictResolverRegistry: this.conflictResolverRegistry,
+			createLocalFs: this.createLocalFs,
+			createRemoteFs: this.createRemoteFs,
+			decideTasks: this.decideTasks,
+			deciderRegistry: this.deciderRegistry,
+			getCheckConnection: this.getCheckConnection,
+			getConflictResolver: this.getConflictResolver,
+			getNamespace: this.getNamespace,
+			getRequest: this.getRequest,
+			getVaultRequest: this.getVaultRequest,
+			initializeSync: this.initializeSync,
+			optimizeLocal: this.optimizeLocal,
+			optimizeRemote: this.optimizeRemote,
+			reduceTriggers: this.reduceTriggers,
+			registerConflictResolver: mapRegister(this.conflictResolverRegistry),
+			registerCss: (css: string) => {
+				const style = createEl('style', { text: css, type: 'text/css' });
+				document.head.append(style);
+				return () => style.remove();
+			},
+			registerDecider: mapRegister(this.deciderRegistry),
+			registerLocalFsWrapper: setRegister(this.localFsWrapperRegistry),
+			registerLocalOptimizer: setRegister(this.localOptimizerRegistry),
+			registerLocalRequestMiddleware: setRegister(this.localRequestMiddlewareRegistry),
+			registerObsidianProtocolHandler: (action: string, handler: ObsidianProtocolHandler) => {
+				const registry = this.protocolHandlerRegistry;
+				if (!registry.get(action))
+					originalRgProtocol(action, (...args) => {
+						registry.get(action)?.(...args);
+					});
+				registry.set(action, handler);
+				return () => registry.set(action, () => {});
+			},
+			registerRemoteFs: mapRegister(this.remoteFsRegistry),
+			registerRemoteFsWrapper: setRegister(this.remoteFsWrapperRegistry),
+			registerRemoteOptimizer: setRegister(this.remoteOptimizerRegistry),
+			registerRemoteRequestMiddleware: setRegister(this.remoteRequestMiddlewareRegistry),
+			registerTrigger: mapRegister(this.triggerRegistry),
+			remoteFsRegistry: this.remoteFsRegistry,
+		};
+	}
 
 	private readonly getVaultRequest = () =>
 		wrapInOrder(createVaultRequest(this.ctx.app), this.localRequestMiddlewareRegistry);
@@ -195,39 +241,6 @@ export default class Registrar {
 		const namespace = this.getNamespace(localFs, remoteFs);
 		const record = this.ctx.getRecordStore(namespace);
 		return { localFs, record, remoteFs };
-	};
-
-	root = {
-		conflictResolverRegistry: this.conflictResolverRegistry,
-		createLocalFs: this.createLocalFs,
-		createRemoteFs: this.createRemoteFs,
-		decideTasks: this.decideTasks,
-		deciderRegistry: this.deciderRegistry,
-		getCheckConnection: this.getCheckConnection,
-		getConflictResolver: this.getConflictResolver,
-		getNamespace: this.getNamespace,
-		getRequest: this.getRequest,
-		getVaultRequest: this.getVaultRequest,
-		initializeSync: this.initializeSync,
-		optimizeLocal: this.optimizeLocal,
-		optimizeRemote: this.optimizeRemote,
-		reduceTriggers: this.reduceTriggers,
-		registerConflictResolver: mapRegister(this.conflictResolverRegistry),
-		registerCss: (css: string) => {
-			const style = createEl('style', { text: css, type: 'text/css' });
-			document.head.append(style);
-			return () => style.remove();
-		},
-		registerDecider: mapRegister(this.deciderRegistry),
-		registerLocalFsWrapper: setRegister(this.localFsWrapperRegistry),
-		registerLocalOptimizer: setRegister(this.localOptimizerRegistry),
-		registerLocalRequestMiddleware: setRegister(this.localRequestMiddlewareRegistry),
-		registerRemoteFs: mapRegister(this.remoteFsRegistry),
-		registerRemoteFsWrapper: setRegister(this.remoteFsWrapperRegistry),
-		registerRemoteOptimizer: setRegister(this.remoteOptimizerRegistry),
-		registerRemoteRequestMiddleware: setRegister(this.remoteRequestMiddlewareRegistry),
-		registerTrigger: mapRegister(this.triggerRegistry),
-		remoteFsRegistry: this.remoteFsRegistry,
 	};
 
 	readonly dispose = () => this.cleanupCallbacks.splice(0).forEach((fn) => fn());

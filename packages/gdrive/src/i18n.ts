@@ -2,7 +2,6 @@ import type { GdriveTranslations } from './setting';
 
 export const en: GdriveTranslations = {
 	accountConnected: 'Account connected',
-	accountConnectedDescription: 'Connected to Google Drive account.',
 	authorizationFailed: (reason) => `Authorization failed: ${reason}`,
 	baseDirectory: 'Base directory',
 	baseDirectoryDescription:
@@ -12,7 +11,7 @@ export const en: GdriveTranslations = {
 	connect: 'Connect',
 	connectAccount: 'Connect account',
 	connectAccountDescription: 'Click the button to connect to your Google Drive account.',
-	connectSuccess: 'Connected to Google Drive.',
+	connectSuccess: 'Connected to Google Drive account.',
 	copyAndOpenGoogle: 'Copy and open Google',
 	deviceCodeInstruction: (url) =>
 		createFragment((frag) => {
@@ -33,7 +32,6 @@ export const en: GdriveTranslations = {
 
 export const ru: GdriveTranslations = {
 	accountConnected: 'Аккаунт подключён',
-	accountConnectedDescription: 'Подключено к аккаунту Google Drive.',
 	authorizationFailed: (reason) => `Ошибка авторизации: ${reason}`,
 	baseDirectory: 'Базовый каталог',
 	baseDirectoryDescription:
@@ -43,7 +41,7 @@ export const ru: GdriveTranslations = {
 	connect: 'Подключить',
 	connectAccount: 'Подключить аккаунт',
 	connectAccountDescription: 'Нажмите кнопку, чтобы подключиться к вашему аккаунту Google Drive.',
-	connectSuccess: 'Успешно подключено к Google Drive.',
+	connectSuccess: 'Подключено к аккаунту Google Drive.',
 	copyAndOpenGoogle: 'Скопировать и открыть Google',
 	deviceCodeInstruction: (url) =>
 		createFragment((frag) => {
@@ -64,7 +62,6 @@ export const ru: GdriveTranslations = {
 
 export const zhTW: GdriveTranslations = {
 	accountConnected: '帳號已連線',
-	accountConnectedDescription: '已成功連線至 Google Drive 帳號。',
 	authorizationFailed: (reason) => `驗證失敗：${reason}`,
 	baseDirectory: '基礎目錄',
 	baseDirectoryDescription:
@@ -74,7 +71,7 @@ export const zhTW: GdriveTranslations = {
 	connect: '連線',
 	connectAccount: '連結帳號',
 	connectAccountDescription: '點擊按鈕以連結您的 Google Drive 帳號。',
-	connectSuccess: '已成功連線至 Google Drive。',
+	connectSuccess: '已成功連線至 Google Drive 帳號。',
 	copyAndOpenGoogle: '複製並前往 Google 頁面',
 	deviceCodeInstruction: (url) =>
 		createFragment((frag) => {
@@ -95,7 +92,6 @@ export const zhTW: GdriveTranslations = {
 
 export const zh: GdriveTranslations = {
 	accountConnected: '账号已连接',
-	accountConnectedDescription: '已连接至 Google Drive 账号。',
 	authorizationFailed: (reason) => `授权失败：${reason}`,
 	baseDirectory: '基础目录',
 	baseDirectoryDescription:
@@ -105,7 +101,7 @@ export const zh: GdriveTranslations = {
 	connect: '连接',
 	connectAccount: '连接账号',
 	connectAccountDescription: '点击按钮连接到您的 Google Drive 账号。',
-	connectSuccess: '已连接至 Google Drive。',
+	connectSuccess: '已连接至 Google Drive 账号。',
 	copyAndOpenGoogle: '复制并打开 Google',
 	deviceCodeInstruction: (url) =>
 		createFragment((frag) => {
