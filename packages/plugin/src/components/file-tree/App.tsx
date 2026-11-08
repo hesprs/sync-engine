@@ -54,7 +54,7 @@ export default function App(props: {
 						node={props.data.nodes[nodeId]}
 						nodeId={nodeId}
 						task={props.selection.getTask(nodeId)}
-						toggle={(id, next) => props.selection.toggle(id, next)}
+						toggle={props.selection.toggle}
 						translate={props.translate}
 					/>
 				)}

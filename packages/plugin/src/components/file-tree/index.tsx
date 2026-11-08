@@ -26,7 +26,7 @@ export default function mount(
 		);
 		return {
 			getState,
-			unmount() {
+			unmount: () => {
 				unmount();
 				dispose();
 			},
