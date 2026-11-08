@@ -67,7 +67,7 @@ export default function createFileTreeSelection(data: FileTreeData) {
 	}
 
 	return {
-		getState() {
+		getState: () => {
 			const selectedTasks: Array<Task> = [];
 			const deselected: Array<Task> = [];
 			for (const taskNodeId of data.taskNodeIds) {
@@ -80,7 +80,7 @@ export default function createFileTreeSelection(data: FileTreeData) {
 		},
 		getTask,
 		isSelected,
-		toggle(nodeId: string, nextSelected: boolean) {
+		toggle: (nodeId: string, nextSelected: boolean) => {
 			const node = data.nodes[nodeId];
 			if (!node?.task) return;
 

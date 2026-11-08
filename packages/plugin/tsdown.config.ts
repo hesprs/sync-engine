@@ -26,6 +26,7 @@ const pluginConfig = defineConfig({
 	entry: { main: 'src/index.ts' },
 	format: 'cjs',
 	inputOptions: {
+		platform: 'browser',
 		resolve: {
 			aliasFields: [['browser']],
 			conditionNames: ['browser'],
@@ -34,7 +35,6 @@ const pluginConfig = defineConfig({
 	},
 	outDir: '../../dist',
 	outputOptions: { codeSplitting: false },
-	platform: 'browser',
 	// Fixes SolidJS cannot attach eventListeners to elements existing on another window
 	plugins: [solid({ solid: { delegateEvents: false } })],
 	target: 'es2024',

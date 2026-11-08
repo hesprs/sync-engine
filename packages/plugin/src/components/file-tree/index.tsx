@@ -25,7 +25,7 @@ export default function mount(
 		);
 		return {
 			getState: selection.getState,
-			unmount() {
+			unmount: () => {
 				unmount();
 				dispose();
 			},

@@ -46,12 +46,6 @@ const TEMP_PREFIX = '.sync-engine-rename-';
 /** The folder batch endpoint accepts ten times more paths than the other batch endpoints. */
 const FOLDER_BATCH_LIMIT = 10_000;
 
-function sleep(ms: number): Promise<void> {
-	return new Promise((resolve) => {
-		setTimeout(resolve, ms);
-	});
-}
-
 function isCaseOnly(oldKey: string, newKey: string): boolean {
 	return oldKey !== newKey && oldKey.toLowerCase() === newKey.toLowerCase();
 }

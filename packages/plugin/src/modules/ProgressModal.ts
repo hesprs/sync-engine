@@ -20,10 +20,8 @@ type TaskCounts = { total: number; deleteLocal: number; deleteRemote: number; co
 
 export default class ProgressModal extends Modal {
 	private readonly moduleCleanupCallbacks: Array<() => void> = [];
-	private readonly t: Translate<Translations>;
-	private opening = false;
 	private readonly modalCleanupCallbacks = hook();
-	private readonly dispatch: Dispatch<Events>;
+	private opening = false;
 	private description?: HTMLParagraphElement;
 	private detailContainer?: HTMLDivElement;
 	private controls?: HTMLElement;
@@ -40,8 +38,7 @@ export default class ProgressModal extends Modal {
 		},
 	) {
 		super(ctx.app);
-		this.t = ctx.translate;
-		this.dispatch = ctx.dispatch;
+		const { translate, dispatch } = ctx;
 		const failedTasks: Array<FailedTaskInfo> = [];
 		this.moduleCleanupCallbacks.push(
 			ctx.on('syncStarted', ({ trigger }) => {
@@ -57,8 +54,8 @@ export default class ProgressModal extends Modal {
 					this.open();
 					this.renderDone();
 				}
-				this.description?.setText(this.t('failedTasksDescription', failedTasks.length));
-				renderFailedTasks(this.detailContainer as HTMLDivElement, failedTasks, this.t);
+				this.description?.setText(translate('failedTasksDescription', failedTasks.length));
+				renderFailedTasks(this.detailContainer as HTMLDivElement, failedTasks, translate);
 				this.showDetails();
 				failedTasks.length = 0;
 			}),
@@ -71,17 +68,17 @@ export default class ProgressModal extends Modal {
 				const { unmount, getState } = mountFileTree(
 					this.detailContainer as HTMLDivElement,
 					tasks,
-					this.t,
+					translate,
 				);
 				const cleanupUnmount = this.modalCleanupCallbacks.subscribe(unmount);
-				this.description?.setText(this.t('confirmDeleteDescription', tasks.length));
+				this.description?.setText(translate('confirmDeleteDescription', tasks.length));
 				this.showDetails();
 				this.renderConfirmCancel(() => {
 					const { selected, deselected } = getState();
 					this.hideDetails();
 					unmount();
 					cleanupUnmount();
-					this.dispatch('deleteConfirmed', {
+					dispatch('deleteConfirmed', {
 						delete: selected as Array<RemoveLocal>,
 						reupload: deselected as Array<RemoveLocal>,
 					});
@@ -93,7 +90,7 @@ export default class ProgressModal extends Modal {
 				const { unmount, getState } = mountFileTree(
 					this.detailContainer as HTMLDivElement,
 					tasks,
-					this.t,
+					translate,
 				);
 				const cleanupUnmount = this.modalCleanupCallbacks.subscribe(unmount);
 				const taskCounts: TaskCounts = {
@@ -106,14 +103,14 @@ export default class ProgressModal extends Modal {
 					if (name === 'removeLocal') taskCounts.deleteLocal++;
 					else if (name === 'removeRemote') taskCounts.deleteRemote++;
 					else if (name === 'resolveConflict') taskCounts.conflict++;
-				this.description?.setText(this.t('confirmTasksDescription', taskCounts));
+				this.description?.setText(translate('confirmTasksDescription', taskCounts));
 				this.showDetails();
 				this.renderConfirmCancel(() => {
 					const { selected } = getState();
 					this.hideDetails();
 					unmount();
 					cleanupUnmount();
-					this.dispatch('tasksConfirmed', selected);
+					dispatch('tasksConfirmed', selected);
 				});
 			}),
 		);
@@ -136,14 +133,15 @@ export default class ProgressModal extends Modal {
 
 	private readonly renderHideStop = () => {
 		if (!this.opening) return;
+		const { translate, dispatch } = this.ctx;
 		this.controls?.remove();
 		this.controls = new Setting(this.contentEl)
 			.addButton((button) => {
 				button
-					.setButtonText(this.t('stopSync'))
+					.setButtonText(translate('stopSync'))
 					.setDestructive()
 					.onClick(() => {
-						this.dispatch('syncCanceled');
+						dispatch('syncCanceled');
 						return new Promise<void>((resolve) => {
 							const unsub = this.ctx.on('syncTerminated', () => {
 								resolve();
@@ -153,22 +151,23 @@ export default class ProgressModal extends Modal {
 					});
 			})
 			.addButton((button) =>
-				button.setButtonText(this.t('hide')).onClick(() => this.close()),
+				button.setButtonText(translate('hide')).onClick(() => this.close()),
 			).settingEl;
 	};
 	private readonly renderConfirmCancel = (confirmCallback: () => void) => {
 		if (!this.opening) return;
+		const { translate, dispatch } = this.ctx;
 		this.controls?.remove();
 		this.controls = new Setting(this.contentEl)
 			.addButton((button) => {
 				button
-					.setButtonText(this.t('cancel'))
+					.setButtonText(translate('cancel'))
 					.setDestructive()
 					.onClick(() => this.close());
 			})
 			.addButton((button) =>
 				button
-					.setButtonText(this.t('confirm'))
+					.setButtonText(translate('confirm'))
 					.setCta()
 					.onClick(() => {
 						cleanup();
@@ -176,14 +175,14 @@ export default class ProgressModal extends Modal {
 					})
 					.buttonEl.focus(),
 			).settingEl;
-		const cleanup = this.modalCleanupCallbacks.subscribe(() => this.dispatch('syncCanceled'));
+		const cleanup = this.modalCleanupCallbacks.subscribe(() => dispatch('syncCanceled'));
 	};
 	private readonly renderDone = () => {
 		if (!this.opening) return;
 		this.controls?.remove();
 		this.controls = new Setting(this.contentEl).addButton((button) =>
 			button
-				.setButtonText(this.t('done'))
+				.setButtonText(this.ctx.translate('done'))
 				.setCta()
 				.onClick(() => this.close())
 				.buttonEl.focus(),
@@ -200,8 +199,12 @@ export default class ProgressModal extends Modal {
 	};
 
 	onOpen() {
-		const { contentEl } = this;
-		this.setTitle(this.t('syncProgress'));
+		const {
+			contentEl,
+			modalCleanupCallbacks,
+			ctx: { translate, syncStage, walkProgress, executionProgress },
+		} = this;
+		this.setTitle(translate('syncProgress'));
 
 		const progress = computed<{
 			completed?: number;
@@ -210,47 +213,47 @@ export default class ProgressModal extends Modal {
 			current?: string;
 		}>(
 			() => {
-				const stage = this.ctx.syncStage();
+				const stage = syncStage();
 				if (stage === 'walkingRemote') {
-					const { completed, current, total } = this.ctx.walkProgress();
+					const { completed, current, total } = walkProgress();
 					return {
 						completed,
 						current: current
-							? `${this.t('walkingRemote')} ${current}`
-							: this.t('walkingRemote'),
+							? `${translate('walkingRemote')} ${current}`
+							: translate('walkingRemote'),
 						percent: roundPercent(completed, total),
 						total,
 					};
 				} else if (stage === 'executing') {
-					const { completed, current, total } = this.ctx.executionProgress();
+					const { completed, current, total } = executionProgress();
 					return {
 						completed,
 						current: current
-							? `${this.t(current.name)} ${current.key}`
-							: this.t('executing'),
+							? `${translate(current.name)} ${current.key}`
+							: translate('executing'),
 						percent: roundPercent(completed, total),
 						total,
 					};
 				} else if (stage === 'awaitingConfirmation')
 					return {
 						completed: 0,
-						current: this.t('awaitingConfirmation'),
+						current: translate('awaitingConfirmation'),
 						percent: 0,
 						total: 1,
 					};
 				else if (stage === 'none') return {};
-				else if (stage === 'cancelled') return { current: this.t('cancelled') };
-				else if (stage === 'completed') return { current: this.t('completed') };
+				else if (stage === 'cancelled') return { current: translate('cancelled') };
+				else if (stage === 'completed') return { current: translate('completed') };
 				else if (stage === 'completedNoop')
 					return {
 						completed: 0,
-						current: this.t('completedNoop'),
+						current: translate('completedNoop'),
 						percent: 100,
 						total: 0,
 					};
-				return { current: this.t('failed') };
+				return { current: translate('failed') };
 			},
-			{ deps: [this.ctx.walkProgress, this.ctx.syncStage, this.ctx.executionProgress] },
+			{ deps: [walkProgress, syncStage, executionProgress] },
 		);
 
 		const container = contentEl.createDiv('flex flex-col gap-4 max-h-75vh py-3');
@@ -260,18 +263,18 @@ export default class ProgressModal extends Modal {
 			'max-h-50vh overflow-y-auto rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] p-3 hidden',
 		);
 
-		this.modalCleanupCallbacks.subscribe(
+		modalCleanupCallbacks.subscribe(
 			progress.subscribe(
 				({ completed, current, percent, total }) => {
 					if (completed !== undefined && total !== undefined)
-						right.setText(`${completed}/${total} ${this.t('completed')}`);
+						right.setText(`${completed}/${total} ${translate('completed')}`);
 					if (current !== undefined) left.setText(current);
 					if (percent !== undefined) bar.setValue(percent);
 				},
 				{ immediate: true },
 			),
 		);
-		this.modalCleanupCallbacks.subscribe(() => progress.dispose());
+		modalCleanupCallbacks.subscribe(() => progress.dispose());
 		this.opening = true;
 	}
 

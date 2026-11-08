@@ -60,7 +60,7 @@
 		"@repo/shared": "workspace:*",
 		"@unocss/postcss": "^66.12.0",
 		"postcss-merge-rules": "^9.1.5",
-		"solid-js": "^1.9.17",
+		"solid-js": "^1.9.18",
 		"synthkernel": "catalog:",
 		"uni-kv": "catalog:",
 		"unocss": "^66.12.0",
