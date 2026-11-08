@@ -4,16 +4,14 @@ The S3 rclone module preserves file modification times when Sync Engine uses the
 
 ## Modification Time
 
-Sync Engine stores `mtime` in milliseconds, while rclone interprets `x-amz-meta-mtime` as Unix seconds. The module converts the value at the file-system boundary, in both directions: uploads convert milliseconds to seconds (for example, `1700000123456` to `1700000123.456`), and listings convert seconds back to milliseconds.
+Sync Engine stores `mtime` in milliseconds, while rclone interprets `x-amz-meta-mtime` as Unix seconds. The module converts the header on the wire, in both directions: uploads convert milliseconds to seconds (for example, `1700000123456` to `1700000123.456`), and downloads convert seconds back to milliseconds.
 
-Conversion applies only to present, numeric values: non-numeric values pass through unchanged, so encrypted metadata remains intact, and missing `mtime` metadata stays missing on upload. On read, a missing `mtime` is refilled from the listing's own time — `rclone serve s3` keeps object metadata in memory only, so it disappears on server restarts, while the disk modification time it set at upload survives.
+Conversion applies only to parsable values: uploads convert only values shaped like Sync Engine timestamps (13-digit milliseconds); downloads convert only numeric values. When `rclone serve s3` loses its in-memory metadata after a server restart and omits `x-amz-meta-mtime`, the S3 backend recovers the time from `Last-Modified` on its own.
 
 ## Encryption
 
-When [encryption](./encryption) is enabled, its wrapper (priority 7919) encrypts metadata before the rclone wrapper (priority 500) sees it. The encrypted `mtime` is non-numeric, so this module leaves it unchanged; encryption restores the millisecond value on read.
+When [encryption](./encryption) is enabled, its wrapper (priority 7919) encrypts metadata before the S3 backend turns it into `x-amz-meta-*` headers. The encrypted `mtime` is non-numeric, so this module leaves it unchanged; encryption restores the millisecond value on read.
 
 ## Implementation
 
-The module registers a remote file-system wrapper at priority `500`, between the S3 file system and the [memory control wrapper](../file-system-wrappers#memory-control-wrapper). It applies only when S3 is selected and the underlying file-system UID starts with `s3~`.
-
-The wrapper adapts `write()`, `writeStream()`, and `list()` for modification time.
+The module registers a remote request middleware at priority `307`, outside the S3 SigV4 middleware (`304`) so request signatures cover the converted value, and inside the retry middleware (`2000`) so every attempt converts from the original parameters. The middleware rebuilds requests and responses instead of mutating them, leaving every other header untouched.

@@ -1,84 +1,107 @@
-import RcloneFs from '@/remote';
+import RcloneS3Compat from '@/index';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
-import type { Fs, Stat } from '@hesprs/sync-engine-sdk';
+import type { RemoteRequestMiddlewareEntry, Request } from '@hesprs/sync-engine-sdk';
 
-const { bytes, file, fs: testFs, stream } = testKit;
-const MS = 1_700_000_123_456;
+const MS = '1700000123456';
 const SECONDS = '1700000123.456';
 const CTIME = '1600000123456';
 const ENCRYPTED = 'dGVzdC1lbmNyeXB0ZWQtbXRpbWU=';
 
-function adapter(original: Fs) {
-	return new RcloneFs(original);
-}
-
-function listing(stats: Array<Stat>) {
-	return testFs({ control: { list: () => stats } });
-}
-
-test.each(['write', 'writeStream'] as const)(
-	'%s converts mtime milliseconds to rclone seconds',
-	async (method) => {
-		const meta = { ctime: CTIME, custom: 'value', mtime: String(MS) };
-		const source = file('note.md', { meta: () => meta, mtime: MS });
-		const backend = testFs({
-			control: {
-				write: async (_key, _value, stat) => {
-					expect(await stat.meta()).toEqual({ ...meta, mtime: SECONDS });
-					return 'written';
-				},
-				writeStream: async (_key, _value, stat) => {
-					expect(await stat.meta()).toEqual({ ...meta, mtime: SECONDS });
-					return 'written';
-				},
-			},
-		});
-		const fs = adapter(backend.fs);
-		const uid =
-			method === 'write'
-				? await fs.write(source.key, bytes('note'), source)
-				: await fs.writeStream(source.key, stream(['note']), source);
-		expect(uid).toBe('written');
-		expect(await source.meta()).toEqual(meta);
-	},
-);
-
-test('write preserves non-numeric mtime (encrypted meta) unchanged', async () => {
-	const meta = { mtime: ENCRYPTED };
-	const source = file('note.md', { meta: () => meta });
-	const backend = testFs({
-		control: {
-			write: async (_key, _value, stat) => {
-				expect(await stat.meta()).toEqual({ mtime: ENCRYPTED });
-				return 'written';
-			},
+function registeredApply(remoteFs: string) {
+	let entry: RemoteRequestMiddlewareEntry | undefined;
+	new RcloneS3Compat({
+		registerRemoteRequestMiddleware: (registered) => {
+			entry = registered;
+			return () => {};
 		},
+		settings: { remoteFs },
+	}).start();
+	return entry?.apply;
+}
+
+function wrap(base: Request): Request {
+	const apply = registeredApply('s3');
+	if (!apply) throw new Error('Expected middleware for the s3 remote');
+	const wrapped = apply(base);
+	if (!wrapped) throw new Error('Expected the middleware to wrap the request');
+	return wrapped;
+}
+
+test('middleware converts mtime milliseconds to rclone seconds on upload', async () => {
+	const { calls, request } = testKit.request(() => ({}));
+	const params = {
+		headers: {
+			'x-amz-meta-ctime': CTIME,
+			'x-amz-meta-custom': 'value',
+			'x-amz-meta-mtime': MS,
+		},
+		method: 'PUT',
+	};
+
+	await wrap(request)('https://rclone.example.com/vault/note.md', params);
+
+	const call = calls[0];
+	if (!call) throw new Error('Expected transport request');
+	expect(call.headers).toEqual({
+		'x-amz-meta-ctime': CTIME,
+		'x-amz-meta-custom': 'value',
+		'x-amz-meta-mtime': SECONDS,
 	});
-	const fs = adapter(backend.fs);
-	await fs.write(source.key, bytes('note'), source);
+	expect(params.headers?.['x-amz-meta-mtime']).toBe(MS);
 });
 
-test('list preserves non-numeric mtime (encrypted meta) unchanged', async () => {
-	const source = file('note.md', { meta: () => ({ mtime: ENCRYPTED }), mtime: MS });
-	const fs = adapter(listing([source]).fs);
-	const [stat] = await fs.list('/', () => 'include');
-	expect(await stat.meta()).toEqual({ mtime: ENCRYPTED });
+test('middleware preserves non-timestamp mtime (encrypted meta) on upload', async () => {
+	const { calls, request } = testKit.request(() => ({}));
+
+	await wrap(request)('https://rclone.example.com/vault/note.md', {
+		headers: { 'x-amz-meta-mtime': ENCRYPTED },
+		method: 'PUT',
+	});
+
+	expect(calls[0]?.headers?.['x-amz-meta-mtime']).toBe(ENCRYPTED);
 });
 
-test('list converts rclone seconds back to milliseconds', async () => {
-	// Stat.mtime differs from the converted meta, so a substitution would fail this test.
-	const source = file('note.md', { meta: () => ({ mtime: SECONDS }), mtime: 1_234_567_890_123 });
-	const fs = adapter(listing([source]).fs);
-	const [stat] = await fs.list('/', () => 'include');
-	expect(await stat.meta()).toEqual({ mtime: String(MS) });
+test('middleware leaves uploads without mtime metadata untouched', async () => {
+	const { calls, request } = testKit.request(() => ({}));
+
+	await wrap(request)('https://rclone.example.com/vault/note.md', {
+		headers: { 'x-amz-meta-ctime': CTIME },
+		method: 'PUT',
+	});
+
+	expect(calls[0]?.headers).toEqual({ 'x-amz-meta-ctime': CTIME });
 });
 
-test('list refills missing mtime meta from the listing time', async () => {
-	// Rclone serve s3 keeps object metadata in memory only, so x-amz-meta-mtime disappears on
-	// Server restarts while the listing's mtime (disk modtime) survives.
-	const source = file('note.md', { mtime: MS });
-	const fs = adapter(listing([source]).fs);
-	const [stat] = await fs.list('/', () => 'include');
-	expect(await stat.meta()).toEqual({ mtime: String(MS) });
+test('middleware converts rclone seconds back to milliseconds on download', async () => {
+	const { request } = testKit.request(() => ({
+		headers: {
+			'X-Amz-Meta-Mtime': SECONDS,
+			etag: '"d41d8cd98f00b204e9800998ecf8427e"',
+			'x-amz-meta-ctime': CTIME,
+		},
+	}));
+
+	const response = await wrap(request)('https://rclone.example.com/vault/note.md');
+
+	expect(response.headers['X-Amz-Meta-Mtime']).toBe(MS);
+	expect(response.headers['x-amz-meta-ctime']).toBe(CTIME);
+	expect(response.headers.etag).toBe('"d41d8cd98f00b204e9800998ecf8427e"');
+	expect(response.status).toBe(200);
+	expect(response.text()).toBe('ok');
+});
+
+test('middleware preserves non-numeric mtime (encrypted meta) on download', async () => {
+	const { request } = testKit.request(() => ({ headers: { 'x-amz-meta-mtime': ENCRYPTED } }));
+
+	const response = await wrap(request)('https://rclone.example.com/vault/note.md');
+
+	expect(response.headers['x-amz-meta-mtime']).toBe(ENCRYPTED);
+});
+
+test('middleware does not wrap when the remote backend is not S3', () => {
+	const apply = registeredApply('webdav');
+	if (!apply) throw new Error('Expected registered middleware entry');
+	const { request } = testKit.request(() => ({}));
+	expect(apply(request)).toBeUndefined();
 });
