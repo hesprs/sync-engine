@@ -16,7 +16,7 @@
 		"description": "S3 and S3-compatible backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/s3.js",
-		"minPluginVersion": "3.3.0",
+		"minPluginVersion": "3.4.0",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/s3"
 	},
 	{
