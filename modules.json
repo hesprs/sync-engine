@@ -95,5 +95,15 @@
 		"main": "https://sync.consensia.cc/modules/rclone-s3-timestamp.js",
 		"minPluginVersion": "3.3.0",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/rclone-s3-timestamp"
+	},
+	{
+		"id": "collaboration",
+		"name": "Collaboration",
+		"version": "0.1.0",
+		"description": "Zero-cost realtime collaboration over encrypted MQTT messages.",
+		"icon": "users",
+		"main": "https://sync.consensia.cc/modules/collaboration.js",
+		"minPluginVersion": "3.4.0",
+		"readme": "https://sync.consensia.cc/deep-dive/modules/collaboration"
 	}
 ]

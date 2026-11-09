@@ -3,7 +3,16 @@ export async function requestUrl() {
 	return { headers: {}, status: 200, text: '' };
 }
 
-export const Platform = { isAndroidApp: false, isDesktop: true, isMobile: false };
+export const Platform = {
+	isAndroidApp: false,
+	isDesktop: true,
+	isIosApp: false,
+	isLinux: false,
+	isMacOS: false,
+	isMobile: false,
+	isTablet: false,
+	isWin: false,
+};
 
 export function normalizePath(path: string) {
 	return path.replaceAll('\\', '/').replaceAll(/\/+/gu, '/');

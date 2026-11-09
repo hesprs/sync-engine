@@ -54,6 +54,7 @@ Sync Engine is a vault syncing plugin to **synchronize vault files in multiple d
 **Features**:
 
 - [Client-side encryption](https://sync.consensia.cc/deep-dive/modules/encryption)
+- [Realtime collaboration](https://sync.consensia.cc/deep-dive/modules/collaboration) over encrypted MQTT notifications
 - Granular sync strategy configuration (bidirectional / mirror remote / mirror local / don't sync) using Glob rules.
 - Startup / periodic / sync-on-focus / save-on-change syncing.
 - Conflict resolve strategies ([smart merge](https://sync.consensia.cc/deep-dive/modules/smart-merge) / keep both / latest survive / keep remote / keep local / skip).

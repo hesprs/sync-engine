@@ -9,6 +9,7 @@ const en = {
 	benchmarking: 'Benchmarking',
 	claims: 'Claims',
 	code: 'en-US',
+	collaboration: 'Collaboration',
 	contributing: 'Contributing',
 	copyright: 'Copyright',
 	debugAndTesting: 'Debug & Testing',

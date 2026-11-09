@@ -1,0 +1,26 @@
+{
+	"name": "collaboration",
+	"version": "0.1.0",
+	"private": true,
+	"license": "MIT",
+	"contributors": [
+		{
+			"name": "Hēsperus",
+			"github": "hesprs"
+		}
+	],
+	"type": "module",
+	"scripts": {
+		"dev": "MODE=dev bun --bun tsdown",
+		"compile": "bun --bun tsdown",
+		"fix": "oxlint --silent --fix && oxfmt",
+		"check": "oxlint && oxfmt --check",
+		"tests": "bun --preload=./test/mocks test"
+	},
+	"devDependencies": {
+		"@hesprs/sync-engine-sdk": "workspace:*",
+		"@repo/shared": "workspace:*",
+		"mqtt": "^5.16.1",
+		"uni-kv": "catalog:"
+	}
+}
