@@ -1,4 +1,4 @@
-import { buildUrl, getFileUid, getHeader } from './utils';
+import { buildUrl, getFileUid } from './utils';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import { encodeUrlPart } from '@repo/shared/path';
@@ -64,7 +64,7 @@ export default async function writeNextcloudChunkedUpload(
 			headers: { Destination, ...metaHeaders },
 			method: 'MOVE',
 		});
-		const etag = getHeader(headers, 'etag') ?? getHeader(headers, 'oc-etag');
+		const etag = headers.etag ?? headers['oc-etag'];
 		const [uid] = await Promise.all([
 			etag
 				? Promise.resolve(normalizeEtag(etag))

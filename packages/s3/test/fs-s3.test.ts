@@ -86,7 +86,7 @@ test('write sends binary PUT with meta headers and uses ETag or HEAD metadata fa
 		expect(params.headers?.['x-amz-meta-ctime']).toBe('100');
 		expect(params.headers?.['x-amz-meta-mtime']).toBe('200');
 		expect(params.body).toStrictEqual(bytes('hello'));
-		return response({ headers: { ETag: '"write-etag"' } });
+		return response({ headers: { etag: '"write-etag"' } });
 	});
 	expect(await s3.fs.write('Notes/file.md', bytes('hello'), destination)).toBe('write-etag');
 

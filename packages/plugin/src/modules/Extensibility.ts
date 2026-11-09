@@ -34,7 +34,7 @@ export type ModuleMeta = {
 };
 export type AugmentedModuleMeta = ModuleMeta & { enabled: boolean; source: string; icon: string };
 
-const AUTO_UPDATE_DELAY = 200;
+const AUTO_UPDATE_DELAY = 500;
 export const MODULE_EXTENSION = '.js';
 export const OFFICIAL_SOURCE = 'https://sync.consensia.cc/modules.json';
 

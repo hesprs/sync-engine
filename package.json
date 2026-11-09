@@ -27,7 +27,7 @@
 		"@tsdown/css": "^0.23.7",
 		"@types/bun": "^1.4.4",
 		"obsidian": "catalog:",
-		"oxfmt": "^0.77.0",
+		"oxfmt": "^0.78.0",
 		"oxlint": "^1.92.0",
 		"oxlint-tsgolint": "^7.0.2006",
 		"tsdown": "^0.23.7",

@@ -12,13 +12,6 @@ export function parseWebDAVError(xml: string): string | undefined {
 	}
 }
 
-export function getHeader(headers: Record<string, string | undefined>, name: string) {
-	const entry = Object.entries(headers).find(
-		([headerName]) => headerName.toLowerCase() === name.toLowerCase(),
-	);
-	return entry?.[1];
-}
-
 export function getFileUid(stat: Stat, key: string) {
 	if (stat.isDir) throw new Error(`WebDAV write returned a folder stat for ${key}.`);
 	return stat.uid;

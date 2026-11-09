@@ -1,6 +1,6 @@
 import { PART_SIZE, multipartUpload } from './multipart';
 import { md5Base64 } from './sigv4';
-import { buildUrl, buildUrlWithQuery, getHeader } from './url';
+import { buildUrl, buildUrlWithQuery } from './url';
 import {
 	formatS3Error,
 	getFileUid,
@@ -161,12 +161,13 @@ export default class S3Fs implements RootFs {
 			'Content-Type': 'application/octet-stream',
 			...toMetaHeaders(await stat.meta()),
 		};
-		const response = await this.requestOrThrow(this.buildUrl(key), {
+		const {
+			headers: { etag },
+		} = await this.requestOrThrow(this.buildUrl(key), {
 			body: await value,
 			headers,
 			method: 'PUT',
 		});
-		const etag = getHeader(response.headers, 'etag');
 		return etag ? normalizeEtag(etag) : getFileUid(await this.stat(key), key);
 	}
 
@@ -311,9 +312,7 @@ export default class S3Fs implements RootFs {
 		const { headers } = await this.requestOrThrow(this.buildUrl(key), { method: 'HEAD' });
 		const meta = extractMetaHeaders(headers);
 		this.metaCache.set(key, meta);
-		const etag = getHeader(headers, 'etag');
-		const contentLength = getHeader(headers, 'content-length');
-		const lastModified = getHeader(headers, 'last-modified');
+		const { etag, 'content-length': contentLength, 'last-modified': lastModified } = headers;
 		if (!lastModified) throw mtimeMissing;
 		if (!contentLength) throw sizeMissing;
 		const mtime = new Date(lastModified).valueOf();
