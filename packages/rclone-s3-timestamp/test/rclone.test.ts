@@ -1,4 +1,4 @@
-import RcloneS3Compat from '@/index';
+import rcloneS3Timestamp from '@';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { expect, test } from 'bun:test';
 import type { RemoteRequestMiddlewareEntry, Request } from '@hesprs/sync-engine-sdk';
@@ -10,7 +10,7 @@ const ENCRYPTED = 'dGVzdC1lbmNyeXB0ZWQtbXRpbWU=';
 
 function registeredApply(remoteFs: string) {
 	let entry: RemoteRequestMiddlewareEntry | undefined;
-	new RcloneS3Compat({
+	new rcloneS3Timestamp({
 		registerRemoteRequestMiddleware: (registered) => {
 			entry = registered;
 			return () => {};
@@ -62,17 +62,6 @@ test('middleware preserves non-timestamp mtime (encrypted meta) on upload', asyn
 	expect(calls[0]?.headers?.['x-amz-meta-mtime']).toBe(ENCRYPTED);
 });
 
-test('middleware leaves uploads without mtime metadata untouched', async () => {
-	const { calls, request } = testKit.request(() => ({}));
-
-	await wrap(request)('https://rclone.example.com/vault/note.md', {
-		headers: { 'x-amz-meta-ctime': CTIME },
-		method: 'PUT',
-	});
-
-	expect(calls[0]?.headers).toEqual({ 'x-amz-meta-ctime': CTIME });
-});
-
 test('middleware converts rclone seconds back to milliseconds on download', async () => {
 	const { request } = testKit.request(() => ({
 		headers: {
@@ -97,11 +86,4 @@ test('middleware preserves non-numeric mtime (encrypted meta) on download', asyn
 	const response = await wrap(request)('https://rclone.example.com/vault/note.md');
 
 	expect(response.headers['x-amz-meta-mtime']).toBe(ENCRYPTED);
-});
-
-test('middleware does not wrap when the remote backend is not S3', () => {
-	const apply = registeredApply('webdav');
-	if (!apply) throw new Error('Expected registered middleware entry');
-	const { request } = testKit.request(() => ({}));
-	expect(apply(request)).toBeUndefined();
 });

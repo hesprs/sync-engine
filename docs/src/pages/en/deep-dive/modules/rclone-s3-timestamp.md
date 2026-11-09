@@ -1,6 +1,6 @@
-# S3 rclone Module
+# Rclone S3 Timestamp Module
 
-The S3 rclone module preserves file modification times when Sync Engine uses the S3 backend with [`rclone serve s3`](https://rclone.org/commands/rclone_serve_s3/). It applies automatically when the S3 backend is selected.
+This module preserves file modification times when Sync Engine uses the S3 backend with [`rclone serve s3`](https://rclone.org/commands/rclone_serve_s3/). It applies automatically when the S3 backend is selected.
 
 ## Modification Time
 

@@ -16,8 +16,7 @@ rclone serve webdav ~/Desktop/DAV --addr :5005
 ### RustFS
 
 ```sh
-mkdir $HOME/Desktop/S3
-
+mkdir ~/Desktop/S3
 RUSTFS_ADDRESS=":5005" \
 RUSTFS_VOLUMES="$HOME/Desktop/S3" \
 RUSTFS_ACCESS_KEY="syncengine2026" \
@@ -27,13 +26,13 @@ rustfs
 
 ### Rclone
 
-Rclone S3 is strongly not recommended as it is not S3 spec-compliant.
+Rclone serve S3 needs the `--directory-markers` flag to work properly.
 
 ```sh
-mkdir $HOME/Desktop/S3-Rclone
+mkdir ~/Desktop/S3-Rclone
 rclone serve s3 $HOME/Desktop/S3-Rclone --addr :5005 \
-  --s3-access-key-id "syncengine2026" \
-  --s3-secret-access-key "rustfs-test-secret"
+  --auth-key syncengine2026,rustfs-test-secret
+  --directory-markers
 ```
 
 ### Create the bucket

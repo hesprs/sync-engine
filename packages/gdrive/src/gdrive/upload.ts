@@ -68,7 +68,7 @@ async function startSession({
 			parseDriveError(response) ??
 				`Google Drive upload session initiation failed: ${response.status}`,
 		);
-	const { location } = response.headers;
+	const location = getHeader(response.headers, 'location');
 	if (!location) throw new Error('Google Drive did not return an upload session URL!');
 	return { location, request };
 }
@@ -156,4 +156,11 @@ export async function resumableUpload(
 	final ??= await putChunk(session, new Uint8Array(0), total, total);
 	if (!final) throw new Error('Google Drive upload finished incomplete.');
 	return final.json<DriveFile>();
+}
+
+function getHeader(headers: Dict<string>, name: string): string | undefined {
+	const entry = Object.entries(headers).find(
+		([headerName]) => headerName.toLowerCase() === name.toLowerCase(),
+	);
+	return entry?.[1];
 }

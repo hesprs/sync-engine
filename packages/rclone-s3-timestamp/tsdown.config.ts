@@ -5,7 +5,7 @@ import { defineConfig } from 'tsdown';
 export default defineConfig({
 	clean: process.env.MODE !== 'dev',
 	dts: false,
-	entry: { 'rclone-s3-compat': 'src/index.ts' },
+	entry: { 'rclone-s3-timestamp': 'src/index.ts' },
 	minify: true,
 	outExtensions: () => ({ js: '.js' }),
 	outputOptions: { codeSplitting: false },

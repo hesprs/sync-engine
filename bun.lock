@@ -86,8 +86,8 @@
         "verkit": "^0.5.0",
       },
     },
-    "packages/rclone-s3-compat": {
-      "name": "rclone-s3-compat",
+    "packages/rclone-s3-timestamp": {
+      "name": "rclone-s3-timestamp",
       "version": "0.0.1",
       "devDependencies": {
         "@hesprs/sync-engine-sdk": "workspace:*",
@@ -1054,7 +1054,7 @@
 
     "quickjs-wasi": ["quickjs-wasi@3.6.2", "", {}, "sha512-FCqGtGOrMgzUiIrMNMA2YnsOxCNwo31dzqXvclXUC6xeT35NJLKXQJsvbeCTjvoFAwZgEAPg8U6+KAPDGXn8Mg=="],
 
-    "rclone-s3-compat": ["rclone-s3-compat@workspace:packages/rclone-s3-compat"],
+    "rclone-s3-timestamp": ["rclone-s3-timestamp@workspace:packages/rclone-s3-timestamp"],
 
     "readdirp": ["readdirp@5.1.1", "https://registry.npmmirror.com/readdirp/-/readdirp-5.1.1.tgz", {}, "sha512-Kko+Y5XQ6fM+Ce3dq3m9YGxnacYZYl9cA1wZjaF3Vbry2L3i1qVg8+CAgNPsXRArPMUMCaOR7oa9Nqntc43JKA=="],
 

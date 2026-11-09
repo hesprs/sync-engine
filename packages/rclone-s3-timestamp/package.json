@@ -1,5 +1,5 @@
 {
-	"name": "rclone-s3-compat",
+	"name": "rclone-s3-timestamp",
 	"version": "0.0.1",
 	"private": true,
 	"license": "MIT",

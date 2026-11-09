@@ -21,7 +21,7 @@ import type {
  */
 const MTIME = 'x-amz-meta-mtime';
 
-export default class RcloneS3Compat {
+export default class rcloneS3Timestamp {
 	private readonly cleanup: Array<() => void> = [];
 
 	constructor(
@@ -31,27 +31,25 @@ export default class RcloneS3Compat {
 		}>,
 	) {}
 
-	readonly start = () => {
-		this.cleanup.push(
-			this.ctx.registerRemoteRequestMiddleware({
-				apply: (request) => {
-					if (this.ctx.settings.remoteFs !== 's3') return;
-					return async (url, params = {}) => {
-						const response = await request(url, rewriteOutbound(params));
-						return { ...response, headers: rewriteInbound(response.headers) };
-					};
-				},
-				priority: 307,
-			}),
-		);
-	};
+	readonly start = () =>
+		(this.dispose = this.ctx.registerRemoteRequestMiddleware({
+			apply: (request) => {
+				if (this.ctx.settings.remoteFs === 's3')
+					return (url, params = {}) =>
+						request(url, rewriteOutbound(params)).then((response) => ({
+							...response,
+							headers: rewriteInbound(response.headers),
+						}));
+			},
+			priority: 307,
+		}));
 
-	readonly dispose = () => this.cleanup.splice(0).forEach((fn) => fn());
+	dispose?: () => void;
 }
 
 function rewriteOutbound(params: RequestParam): RequestParam {
 	const ms = parseTimestamp(params.headers?.[MTIME]);
-	if (ms === undefined) return params;
+	if (!ms) return params;
 	return { ...params, headers: { ...params.headers, [MTIME]: String(ms / 1000) } };
 }
 
@@ -59,9 +57,10 @@ function rewriteInbound(headers: StringKV): StringKV {
 	for (const [name, value] of Object.entries(headers)) {
 		if (name.toLowerCase() !== MTIME) continue;
 		const seconds = Number(value);
-		if (!value || !Number.isFinite(seconds)) return headers;
+		if (!seconds || !Number.isFinite(seconds)) return headers;
 		// Math.round absorbs float-multiply artifacts (e.g. 1700000123.456 * 1000).
-		return { ...headers, [name]: String(Math.round(seconds * 1000)) };
+		headers[name] = String(Math.round(seconds * 1000));
+		break;
 	}
 	return headers;
 }
