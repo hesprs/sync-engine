@@ -160,6 +160,10 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 								{ link: `${deepDive}/modules/dropbox`, text: t('dropbox') },
 								{ link: `${deepDive}/modules/encryption`, text: t('encryption') },
 								{ link: `${deepDive}/modules/smart-merge`, text: t('smartMerge') },
+								{
+									link: `${deepDive}/modules/rclone-s3-timestamp`,
+									text: t('rcloneS3Timestamp'),
+								},
 							],
 							text: t('modules'),
 						},

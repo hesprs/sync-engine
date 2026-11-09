@@ -4,7 +4,7 @@ import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { Fs } from '@/fs';
 import type { FileStat, Stat } from '@/types';
-import type { DatabaseSync } from 'uni-kv';
+import type { DatabaseSync, StoreSync } from 'uni-kv';
 
 const { bytes, file, folder, fs, stream } = testKit;
 type ContextMemoryDB = DatabaseSync<
@@ -33,7 +33,7 @@ function getRemoteStore() {
 	return db.getStore('remoteStatContext');
 }
 
-function getStoreSnapshot(store: ReturnType<typeof getLocalStore>) {
+function getStoreSnapshot(store: StoreSync<Stat>) {
 	const result: Record<string, Stat> = {};
 	for (const key of store.keys()) {
 		const value = store.get(key);
