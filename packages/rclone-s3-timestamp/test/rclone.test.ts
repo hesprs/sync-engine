@@ -65,15 +65,15 @@ test('middleware preserves non-timestamp mtime (encrypted meta) on upload', asyn
 test('middleware converts rclone seconds back to milliseconds on download', async () => {
 	const { request } = testKit.request(() => ({
 		headers: {
-			'X-Amz-Meta-Mtime': SECONDS,
 			etag: '"d41d8cd98f00b204e9800998ecf8427e"',
 			'x-amz-meta-ctime': CTIME,
+			'x-amz-meta-mtime': SECONDS,
 		},
 	}));
 
 	const response = await wrap(request)('https://rclone.example.com/vault/note.md');
 
-	expect(response.headers['X-Amz-Meta-Mtime']).toBe(MS);
+	expect(response.headers['x-amz-meta-mtime']).toBe(MS);
 	expect(response.headers['x-amz-meta-ctime']).toBe(CTIME);
 	expect(response.headers.etag).toBe('"d41d8cd98f00b204e9800998ecf8427e"');
 	expect(response.status).toBe(200);

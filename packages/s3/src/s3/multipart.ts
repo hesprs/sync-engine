@@ -1,4 +1,4 @@
-import { buildUrlWithQuery, getHeader } from './url';
+import { buildUrlWithQuery } from './url';
 import { getFileUid, rootValue, toMetaHeaders } from './utils';
 import { textToUint8Array } from '@repo/shared/binary';
 import chunkedUpload from '@repo/shared/chunked-upload';
@@ -42,12 +42,13 @@ async function uploadPart(
 	chunk: Binary,
 ): Promise<{ partNumber: number; etag: string }> {
 	const url = buildUrlWithQuery(options, { partNumber: String(partNumber), uploadId });
-	const response = await options.request(url, {
+	const {
+		headers: { etag },
+	} = await options.request(url, {
 		body: chunk,
 		headers: { 'Content-Type': 'application/octet-stream' },
 		method: 'PUT',
 	});
-	const etag = getHeader(response.headers, 'etag');
 	if (!etag) throw new Error(`S3 multipart: no ETag for part ${partNumber}`);
 	return { etag, partNumber };
 }

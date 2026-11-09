@@ -32,9 +32,7 @@ export function toMetaHeaders(meta: StringKV): StringKV {
 
 export function extractMetaHeaders(headers: StringKV): StringKV {
 	const meta: StringKV = {};
-	for (const [name, value] of Object.entries(headers)) {
-		const lower = name.toLowerCase();
-		if (lower.startsWith('x-amz-meta-')) meta[lower.slice(11)] = value;
-	}
+	for (const [name, value] of Object.entries(headers))
+		if (name.startsWith('x-amz-meta-')) meta[name.slice(11)] = value;
 	return meta;
 }

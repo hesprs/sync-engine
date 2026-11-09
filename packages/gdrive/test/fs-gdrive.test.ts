@@ -4,7 +4,13 @@ import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { GdriveDB } from '@/gdrive/fs';
-import type { Binary, MaybePromise, RequestParam, RequestResponse } from '@hesprs/sync-engine-sdk';
+import type {
+	Binary,
+	MaybePromise,
+	RequestParam,
+	RequestResponse,
+	StringKV,
+} from '@hesprs/sync-engine-sdk';
 
 const { bytes, file, folder, request } = testKit;
 const db: GdriveDB = openMemoryDB<{ gdriveIds: string }, { gdriveIdsMarker?: string }>(
@@ -13,7 +19,7 @@ const db: GdriveDB = openMemoryDB<{ gdriveIds: string }, { gdriveIdsMarker?: str
 
 type Control = (url: string, params: RequestParam) => MaybePromise<Partial<RequestResponse>>;
 
-function response(value: unknown = {}, status = 200, headers: Record<string, string> = {}) {
+function response(value: unknown = {}, status = 200, headers: StringKV = {}) {
 	const body = new TextEncoder().encode(JSON.stringify(value));
 	return {
 		bytes: () => body,

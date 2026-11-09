@@ -1,5 +1,5 @@
 import writeNextcloudChunkedUpload from './chunked-upload';
-import { buildUrl, getFileUid, getHeader, parseWebDAVError } from './utils';
+import { buildUrl, getFileUid, parseWebDAVError } from './utils';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { collectStreamToBinary } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
@@ -284,11 +284,13 @@ export default class WebdavFs implements RootFs {
 
 	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
 		const { headers, meta } = await this.resolveMeta(stat.meta);
-		const { headers: responseHeaders } = await this.requestOrThrow(
-			buildUrl(this.endpoint, key),
-			{ body: await value, headers, method: 'PUT' },
-		);
-		const etag = getHeader(responseHeaders, 'etag');
+		const {
+			headers: { etag },
+		} = await this.requestOrThrow(buildUrl(this.endpoint, key), {
+			body: await value,
+			headers,
+			method: 'PUT',
+		});
 		return Promise.all([
 			etag
 				? Promise.resolve(normalizeEtag(etag))

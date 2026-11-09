@@ -56,12 +56,19 @@ const request: Request = async (url: string, params?: RequestParam) => {
 	const response = await requestUrl(
 		params ? (Object.assign(params, { url }) as RequestUrlParam) : url,
 	);
+	const { arrayBuffer, headers, status } = response; // Those three properties are static while the rest two are getters
+	for (const [key, value] of Object.entries(headers)) {
+		const lower = key.toLowerCase();
+		if (key === lower) continue;
+		headers[lower] = value;
+		delete headers[key];
+	}
 	return {
-		bytes: () => toUint8Array(response.arrayBuffer),
-		headers: response.headers,
+		bytes: () => toUint8Array(arrayBuffer),
+		headers,
 		// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 		json: <T extends object = object>() => response.json as T,
-		status: response.status,
+		status,
 		text: () => response.text,
 	};
 };

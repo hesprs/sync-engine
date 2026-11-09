@@ -13,6 +13,7 @@ Special data are separated into the following categories that should be always n
 - Time duration: integer Unix timestamp specified to milliseconds. User-friendly display uses number + space + lower case unit, such as `1 s`, `24 h`, `2.3 d`, max 2 decimal places.
 - File path (key): follow [unified key](./file-system#unified-key-schema) - `folder/file.ext`, folder - `folder/nested/`, root: `/`. Normalize to Unicode NFC.
 - URL: all URLs' path name, query parameters, and fragment are percent-encoded according to RFC 3986; ASCII latin characters in protocol and hostname converted to lower case. For user-friendly display, decode the pathname, query parameters, and fragment.
+- Request / response header keys: all kebab-case when possible. For user-defined keys, preserve the casing.
 - ETag: strip the `W/` weak ETag marker and surrounding quotes.
 
 ## Documentation

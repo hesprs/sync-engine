@@ -18,13 +18,3 @@ export function buildUrlWithQuery(options: UrlOptions, query: StringKV): string 
 	const baseUrl = buildUrl(options);
 	return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
-
-export function getHeader(
-	headers: Record<string, string | undefined>,
-	name: string,
-): string | undefined {
-	const entry = Object.entries(headers).find(
-		([headerName]) => headerName.toLowerCase() === name.toLowerCase(),
-	);
-	return entry?.[1];
-}

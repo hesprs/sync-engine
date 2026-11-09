@@ -53,7 +53,7 @@ function rewriteOutbound(params: RequestParam): RequestParam {
 
 function rewriteInbound(headers: StringKV): StringKV {
 	for (const [name, value] of Object.entries(headers)) {
-		if (name.toLowerCase() !== MTIME) continue;
+		if (name !== MTIME) continue;
 		const seconds = Number(value);
 		if (!seconds || !Number.isFinite(seconds)) return headers;
 		// Math.round absorbs float-multiply artifacts (e.g. 1700000123.456 * 1000).
