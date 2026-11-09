@@ -1,4 +1,4 @@
-import { App, Command, DataWriteOptions, EventRef, ExtraButtonComponent, ListedFiles, Modal, ObsidianProtocolHandler, Plugin, PluginManifest, RequestUrlParam, Setting, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, Stat, TextComponent, ToggleComponent } from "obsidian";
+import { App, Command, DataWriteOptions, EventRef, ExtraButtonComponent, ListedFiles, Modal, ObsidianProtocolHandler, Plugin, PluginManifest, RequestUrlParam, Setting as Setting$1, SettingDefinition, SettingDefinitionGroup, SettingDefinitionItem, SettingDefinitionList, SettingDefinitionPage, Stat as Stat$1, TextComponent, ToggleComponent } from "obsidian";
 type General$1 = any;
 type Binary = Uint8Array<ArrayBuffer>;
 type MaybePromise<T> = Promise<T> | T;
@@ -20,7 +20,7 @@ type FolderStat = {
   key: string;
   meta: () => MaybePromise<StringKV>;
 };
-type Stat$1 = FileStat | FolderStat;
+type Stat = FileStat | FolderStat;
 type RecordStat = {
   isDir: false;
   local: string;
@@ -28,7 +28,7 @@ type RecordStat = {
 } | {
   isDir: true;
 };
-type StatsMap = Map<string, Stat$1>;
+type StatsMap = Map<string, Stat>;
 type RecordStatsMap = Map<string, RecordStat>;
 type GlobStrategy = {
   expr: string;
@@ -55,9 +55,9 @@ type RootFs = {
   delete(key: string): MaybePromise<void>;
   move(oldKey: string, newKey: string): MaybePromise<void>;
   mkdir(key: string, stat: FolderStat, recursive?: boolean): MaybePromise<void>;
-  stat(key: string): MaybePromise<Stat$1>;
+  stat(key: string): MaybePromise<Stat>;
   exists(key: string): MaybePromise<boolean>;
-  list(key: string, reporter: ListReporter): MaybePromise<Array<Stat$1>>;
+  list(key: string, reporter: ListReporter): MaybePromise<Array<Stat>>;
 };
 type ListOptions = 'include' | 'exclude' | 'advance';
 type ListReporter = (progress: Required<Progress>) => MaybePromise<ListOptions>;
@@ -328,8 +328,8 @@ type BaseTaskOptions = {
 };
 type GenericOptions = {
   key: string;
-  local?: Stat$1;
-  remote?: Stat$1;
+  local?: Stat;
+  remote?: Stat;
 };
 type WithRemoteFileStat = {
   remote: FileStat;
@@ -344,14 +344,14 @@ type WithLocalFolderStat = {
   local: FolderStat;
 } & GenericOptions;
 type WithLocalStat = {
-  local: Stat$1;
+  local: Stat;
 } & GenericOptions;
 type WithRemoteStat = {
-  remote: Stat$1;
+  remote: Stat;
 } & GenericOptions;
 type WithBothStats = {
-  local: Stat$1;
-  remote: Stat$1;
+  local: Stat;
+  remote: Stat;
 } & GenericOptions;
 type WithBothFileStats = {
   local: FileStat;
@@ -543,7 +543,7 @@ type SettingEntry = {
   priority: number;
   apply: CallableOrObjectTree;
 };
-declare class Setting$1 {
+declare class Setting {
   private readonly ctx;
   private readonly cleanupCallbacks;
   private settingTab?;
@@ -617,7 +617,7 @@ declare function generateEditableList<T>({ memoryDB, items, identifier, saveSett
   saveSettings: () => Promise<void>;
   rerenderSettingTab: () => void;
   defaultValue: T;
-  render: (setting: Setting, item: EphemeralEditableItem<T>, save: () => void) => void | (() => void);
+  render: (setting: Setting$1, item: EphemeralEditableItem<T>, save: () => void) => void | (() => void);
   translations: {
     add: string;
     empty: string;
@@ -817,9 +817,9 @@ type CustomHeaders = Array<{
   key: string;
 }>;
 type ExistingMemoryDB = DatabaseSync<{
-  localContext20000: Stat$1;
-  remoteContext10000: Stat$1;
-  remoteContext20000: Stat$1;
+  localContext20000: Stat;
+  remoteContext10000: Stat;
+  remoteContext20000: Stat;
 }, {
   localContext20000Marker: string;
   remoteContext10000Marker?: string;
@@ -1024,7 +1024,7 @@ declare class Scheduler {
     stopScheduledSync: () => void;
   };
 }
-declare const internalModules: readonly [typeof EventBus, typeof I18n, typeof Storage, typeof Extensibility, typeof Setting$1, typeof Registrar, typeof Sync, typeof Observability, typeof Scheduler, typeof ProgressModal, typeof Bootstrap];
+declare const internalModules: readonly [typeof EventBus, typeof I18n, typeof Storage, typeof Extensibility, typeof Setting, typeof Registrar, typeof Sync, typeof Observability, typeof Scheduler, typeof ProgressModal, typeof Bootstrap];
 type InternalModules = typeof internalModules;
 type MergeKeys = 'settings' | 'root' | 'events' | 'i18n';
 type Context = Context$1<InternalModules, MergeKeys, {
@@ -1075,7 +1075,7 @@ type FailedTaskInfo = TaskInfo & {
 };
 type RemoteLister = (info: Infras & {
   reporter: ListReporter;
-}) => MaybePromise<Array<Stat$1>>;
+}) => MaybePromise<Array<Stat>>;
 type SyncOptions = {
   remoteLister?: RemoteLister;
   conflictResolver?: ConflictResolver;
@@ -1297,11 +1297,11 @@ type VaultRequestResponseMap = {
   MOVE: void;
   MKDIR: void;
   EXISTS: boolean;
-  STAT: Stat;
+  STAT: Stat$1;
   LIST: ListedFiles;
 };
 type VaultRequest = <T extends VaultRequestParam = {
   method: 'GET';
 }>(key: string, params?: T) => Promise<VaultRequestResponseMap[T['method']]>;
 type TrashOption = 'local' | 'system' | 'permanent';
-export { MoveLocal as $, setNeedMigration as A, WriteAtom as At, DeciderInput as B, Binary as Bt, REGRET_ERROR_MESSAGE as C, MkdirAtom as Ct, readWithSize as D, OutputAtom as Dt, pipe as E, OptimizerOutput as Et, CallableOrObjectTree as F, RecordStat as Ft, Task as G, AddRecord as H, SettingEntry as I, RecordStatsMap as It, ResolveConflict as J, TaskNames as K, AugmentedModuleMeta as L, Stat$1 as Lt, generateEditableList as M, FolderStat as Mt, reactivelyValidate as N, MaybePromise as Nt, writeWithSize as O, RootFs as Ot, settingEntry as P, Progress as Pt, MoveRemote as Q, ModuleMeta as R, StatsMap as Rt, digOriginal as S, ListReporter as St, concurrency as T, OptimizerInput as Tt, ConflictResolver as U, TaskFactory as V, ConflictResolverPayload as W, RemoveRecord as X, RemoveRemote as Y, RemoveLocal as Z, Events as _, CustomAtom as _t, LocalRequestMiddlewareEntry as a, ObsidianLanguageCode as at, ExistingMemoryDB as b, InputAtom as bt, RemoteRequestMiddlewareEntry as c, TranslationResource as ct, RequestResponse as d, DatabaseAsync as dt, Download as et, TriggerEntry as f, DatabaseSync as ft, Context as g, BatchOptimizer as gt, SyncTerminateReason as h, StoreSync as ht, FsWrapperEntry as i, Fragment as it, LabelDefinition as j, FileStat as jt, prefixWrapper as k, WrappedFs as kt, Request as l, Dispatch as lt, SyncOptions as m, StoreOperations as mt, ConflictResolverEntry as n, CreateLocalDir as nt, OptimizerEntry as o, Snippet as ot, RemoteLister as p, StoreAsync as pt, Upload as q, DeciderEntry as r, RecordStore as rt, RemoteFsEntry as s, Translate as st, VaultRequest as t, CreateRemoteDir as tt, RequestParam as u, On as ut, Settings as v, DeleteAtom as vt, chunkSize as w, MoveAtom as wt, SelectFromContext as x, ListOptions as xt, Translations as y, Fs as yt, Decider as z, StringKV as zt };
+export { MoveLocal as $, setNeedMigration as A, WriteAtom as At, DeciderInput as B, Binary as Bt, REGRET_ERROR_MESSAGE as C, MkdirAtom as Ct, readWithSize as D, OutputAtom as Dt, pipe as E, OptimizerOutput as Et, CallableOrObjectTree as F, RecordStat as Ft, Task as G, AddRecord as H, SettingEntry as I, RecordStatsMap as It, ResolveConflict as J, TaskNames as K, AugmentedModuleMeta as L, Stat as Lt, generateEditableList as M, FolderStat as Mt, reactivelyValidate as N, MaybePromise as Nt, writeWithSize as O, RootFs as Ot, settingEntry as P, Progress as Pt, MoveRemote as Q, ModuleMeta as R, StatsMap as Rt, digOriginal as S, ListReporter as St, concurrency as T, OptimizerInput as Tt, ConflictResolver as U, TaskFactory as V, ConflictResolverPayload as W, RemoveRecord as X, RemoveRemote as Y, RemoveLocal as Z, Events as _, CustomAtom as _t, LocalRequestMiddlewareEntry as a, ObsidianLanguageCode as at, ExistingMemoryDB as b, InputAtom as bt, RemoteRequestMiddlewareEntry as c, TranslationResource as ct, RequestResponse as d, DatabaseAsync as dt, Download as et, TriggerEntry as f, DatabaseSync as ft, Context as g, BatchOptimizer as gt, SyncTerminateReason as h, StoreSync as ht, FsWrapperEntry as i, Fragment as it, LabelDefinition as j, FileStat as jt, prefixWrapper as k, WrappedFs as kt, Request as l, Dispatch as lt, SyncOptions as m, StoreOperations as mt, ConflictResolverEntry as n, CreateLocalDir as nt, OptimizerEntry as o, Snippet as ot, RemoteLister as p, StoreAsync as pt, Upload as q, DeciderEntry as r, RecordStore as rt, RemoteFsEntry as s, Translate as st, VaultRequest as t, CreateRemoteDir as tt, RequestParam as u, On as ut, Settings as v, DeleteAtom as vt, chunkSize as w, MoveAtom as wt, SelectFromContext as x, ListOptions as xt, Translations as y, Fs as yt, Decider as z, StringKV as zt };
