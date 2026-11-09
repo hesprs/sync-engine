@@ -22,8 +22,6 @@ import type {
 const MTIME = 'x-amz-meta-mtime';
 
 export default class rcloneS3Timestamp {
-	private readonly cleanup: Array<() => void> = [];
-
 	constructor(
 		private readonly ctx: SelectFromContext<{
 			settings: { remoteFs: string };
