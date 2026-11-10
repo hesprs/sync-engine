@@ -23,8 +23,8 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-import Onp from './onp';
-import type { DiffHunk } from './onp';
+import Onp from '@repo/shared/onp';
+import type { DiffHunk } from '@repo/shared/onp';
 
 export type Conflict<T> = { a: Array<T>; o: Array<T>; b: Array<T> };
 

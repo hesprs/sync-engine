@@ -1,0 +1,26 @@
+{
+	"name": "history",
+	"version": "0.0.1",
+	"private": true,
+	"license": "MIT",
+	"contributors": [
+		{
+			"name": "Hēsperus",
+			"github": "hesprs"
+		}
+	],
+	"type": "module",
+	"scripts": {
+		"dev": "MODE=dev bun --bun tsdown",
+		"compile": "bun --bun tsdown",
+		"fix": "oxlint --silent --fix && oxfmt",
+		"check": "oxlint && oxfmt --check",
+		"tests": "bun --preload=./test/mocks test"
+	},
+	"devDependencies": {
+		"@hesprs/sync-engine-sdk": "workspace:*",
+		"@repo/shared": "workspace:*",
+		"fflate": "^0.8.2",
+		"uni-kv": "catalog:"
+	}
+}

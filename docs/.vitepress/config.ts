@@ -168,6 +168,7 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 									link: `${deepDive}/modules/collaboration`,
 									text: t('collaboration'),
 								},
+								{ link: `${deepDive}/modules/history`, text: t('history') },
 							],
 							text: t('modules'),
 						},
