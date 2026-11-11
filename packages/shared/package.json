@@ -13,6 +13,6 @@
 	"scripts": {
 		"fix": "oxlint --silent --fix && oxfmt",
 		"check": "oxlint && oxfmt --check",
-		"tests": "bun test ./test"
+		"tests": "bun --preload=./test/mocks test"
 	}
 }
