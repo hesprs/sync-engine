@@ -35,7 +35,6 @@ export default function collaborationSetting(
 		rerenderSettingTab: () => void;
 		saveSettings: () => MaybePromise<void>;
 		translate: Translate<CollaborationTranslations>;
-		updateMobileHeaderIcons?: () => void;
 	},
 	settings: CollaborationSettings,
 ): CallableOrObjectTree {
@@ -235,21 +234,6 @@ export default function collaborationSetting(
 										});
 								}),
 							);
-					},
-				})),
-				5100: s(() => ({
-					desc: translate('mobileStatusIconDescription'),
-					name: translate('mobileStatusIcon'),
-					render: (setting) => {
-						setting.addToggle((toggle) =>
-							toggle
-								.setValue(settings.showMobileStatusIcon !== false)
-								.onChange((value) => {
-									settings.showMobileStatusIcon = value;
-									void ctx.saveSettings();
-									ctx.updateMobileHeaderIcons?.();
-								}),
-						);
 					},
 				})),
 			},

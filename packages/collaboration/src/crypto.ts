@@ -1,5 +1,7 @@
-import { toArrayBuffer } from '@repo/shared/binary';
+import { decodeBase64Url, encodeBase64Url, toArrayBuffer } from '@repo/shared/binary';
 import type { Binary } from '@hesprs/sync-engine-sdk';
+
+export { decodeBase64, decodeBase64Url, encodeBase64, encodeBase64Url } from '@repo/shared/binary';
 
 export const ROOM_CODE_PREFIX = 'sec1';
 export const ROOM_ID_BYTES = 16;
@@ -34,33 +36,6 @@ export function parseRoomCode(value: string): RoomCode {
 	if (roomId.byteLength !== ROOM_ID_BYTES || secret.byteLength !== ROOM_SECRET_BYTES)
 		throw new Error('Invalid collaboration room code');
 	return { roomId, secret };
-}
-
-export function encodeBase64Url(value: BufferSource): string {
-	return encodeBase64(value).replaceAll('+', '-').replaceAll('/', '_').replace(/[=]+$/u, '');
-}
-
-export function decodeBase64Url(value: string): Binary {
-	if (!/^[A-Za-z0-9_-]*$/u.test(value)) throw new Error('Invalid base64url value');
-	const base64 = value.replaceAll('-', '+').replaceAll('_', '/');
-	return decodeBase64(base64.padEnd(Math.ceil(base64.length / 4) * 4, '='));
-}
-
-export function encodeBase64(value: BufferSource): string {
-	const bytes =
-		value instanceof ArrayBuffer
-			? new Uint8Array(value)
-			: new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-	let binary = '';
-	const chunkSize = 0x80_00;
-	for (let offset = 0; offset < bytes.length; offset += chunkSize)
-		binary += String.fromCodePoint(...bytes.subarray(offset, offset + chunkSize));
-	return btoa(binary);
-}
-
-export function decodeBase64(value: string): Binary {
-	const binary = atob(value);
-	return Uint8Array.from(binary, (character) => character.codePointAt(0) as number);
 }
 
 export function createChunkAAD({ batchId, clientId, sentAt, topic }: ChunkAAD): Binary {

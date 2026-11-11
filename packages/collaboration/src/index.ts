@@ -7,7 +7,7 @@ import {
 	parseRoomCode,
 } from '@/crypto';
 import { en, ru, zh, zhTW } from '@/i18n';
-import { cleanupMobileHeaderIcons, updateMobileHeaderIcons } from '@/mobile-status';
+import { cleanupMobileHeaderIcons } from '@/mobile-status';
 import { openPulse, parseEnvelope, preparePulse, SEEN_TTL, sealPulse } from '@/protocol';
 import { RaceJournal } from '@/race';
 import captureRemoteState from '@/remote-wrapper';
@@ -27,6 +27,7 @@ import type {
 	Events,
 	ExistingMemoryDB,
 	FsWrapperEntry,
+	ModuleStatus,
 	ObsidianLanguageCode,
 	On,
 	SelectFromContext,
@@ -57,6 +58,7 @@ type CollaborationContext = SelectFromContext<{
 	registerTrigger: (key: string, entry: TriggerEntry) => () => boolean;
 	requestSync: (trigger: string) => Promise<SyncTerminateReason>;
 	saveSettings: () => Promise<void>;
+	setModuleStatus: (id: string, status?: ModuleStatus) => () => void;
 	settings: { syncStrategy: Array<GlobStrategy> };
 	translate: Translate<CollaborationTranslations>;
 }>;
@@ -67,7 +69,6 @@ export default class Collaboration {
 	private readonly journal = new RaceJournal();
 	private readonly seen = new Map<string, number>();
 	private readonly stateCache = new RemoteStateCache();
-	private statusExtraEl?: HTMLElement;
 	private bridge?: SyncBridge;
 	private clientId = '';
 	private connectionGeneration = 0;
@@ -151,7 +152,6 @@ export default class Collaboration {
 						rerenderSettingTab: ctx.rerenderSettingTab,
 						saveSettings: ctx.saveSettings,
 						translate: ctx.translate,
-						updateMobileHeaderIcons: () => this.updateMobileHeaderIcons(),
 					},
 					this.moduleSettings,
 				),
@@ -164,7 +164,6 @@ export default class Collaboration {
 				void this.publishPulse();
 			}),
 		);
-		this.updateStatusExtra();
 		if (typeof window !== 'undefined') {
 			const onOnline = () => {
 				if (this.moduleSettings.enabled && this.status !== 'connected')
@@ -180,20 +179,13 @@ export default class Collaboration {
 			};
 			window.addEventListener('online', onOnline);
 			document.addEventListener('visibilitychange', onVisibility);
-			const onLeafChange = () => {
-				this.updateMobileHeaderIcons();
-			};
-			const leafRef = this.ctx.app.workspace?.on?.('active-leaf-change', onLeafChange);
-			const layoutRef = this.ctx.app.workspace?.on?.('layout-change', onLeafChange);
 			this.cleanup.push(() => {
 				window.removeEventListener('online', onOnline);
 				document.removeEventListener('visibilitychange', onVisibility);
-				if (leafRef) this.ctx.app.workspace?.offref?.(leafRef);
-				if (layoutRef) this.ctx.app.workspace?.offref?.(layoutRef);
-				cleanupMobileHeaderIcons();
 			});
 		}
-		this.updateMobileHeaderIcons();
+		cleanupMobileHeaderIcons();
+		this.updateModuleStatus();
 		void this.reconnect();
 	};
 
@@ -212,11 +204,7 @@ export default class Collaboration {
 		this.roomTopic = undefined;
 		this.publishQueued = false;
 		this.status = 'disabled';
-		this.updateStatusExtra();
-		if (this.statusExtraEl) {
-			this.statusExtraEl.remove();
-			this.statusExtraEl = undefined;
-		}
+		this.updateModuleStatus();
 		cleanupMobileHeaderIcons();
 	};
 
@@ -225,48 +213,33 @@ export default class Collaboration {
 	private readonly setStatus = (status: CollaborationStatus, error?: Error) => {
 		this.status = status;
 		this.statusError = error;
-		this.updateStatusExtra();
-		this.updateMobileHeaderIcons();
+		this.updateModuleStatus();
 		this.ctx.rerenderSettingTab();
 	};
 
-	private updateMobileHeaderIcons(): void {
-		updateMobileHeaderIcons({
-			app: this.ctx.app,
-			enabled:
-				this.moduleSettings.enabled && this.moduleSettings.showMobileStatusIcon !== false,
-			error: this.statusError,
-			status: this.status,
-			translate: this.ctx.translate,
-		});
-	}
-
-	private updateStatusExtra(): void {
-		if (typeof document === 'undefined') return;
-		const isAbnormal = this.moduleSettings.enabled && this.status === 'error';
-		const existingStatusSpan =
-			document.querySelector('.status-bar-item.plugin-sync-engine span.ml-1.max-w-250px') ??
-			document.querySelector('.status-bar-item span.ml-1.max-w-250px');
-		const parentEl = existingStatusSpan?.parentElement;
-
-		if (!isAbnormal || !parentEl) {
-			if (this.statusExtraEl) {
-				this.statusExtraEl.remove();
-				this.statusExtraEl = undefined;
-			}
+	private updateModuleStatus(): void {
+		if (!this.moduleSettings.enabled || this.status === 'disabled') {
+			this.ctx.setModuleStatus('collaboration');
 			return;
 		}
-
-		if (!this.statusExtraEl) {
-			this.statusExtraEl = parentEl.createSpan({ cls: 'sync-engine-collab-extra' });
-			this.statusExtraEl.style.color = 'var(--text-error, #f87171)';
-			this.statusExtraEl.style.marginLeft = '4px';
-			this.statusExtraEl.style.fontWeight = '500';
+		if (this.status === 'connected') this.ctx.setModuleStatus('collaboration', { level: 'ok' });
+		else if (this.status === 'error')
+			this.ctx.setModuleStatus('collaboration', {
+				level: 'error',
+				message: `MQTT: ${this.statusError?.message ?? text(this.ctx.translate('statusError'))}`,
+			});
+		else {
+			const msgKey =
+				this.status === 'reconnecting'
+					? 'statusReconnecting'
+					: this.status === 'connecting'
+						? 'statusConnecting'
+						: 'statusMissingRoomCode';
+			this.ctx.setModuleStatus('collaboration', {
+				level: 'warning',
+				message: `MQTT: ${text(this.ctx.translate(msgKey))}`,
+			});
 		}
-		this.statusExtraEl.setText(text(this.ctx.translate('mqttErrorSuffix')));
-		if (this.statusError?.message)
-			this.statusExtraEl.setAttribute('title', `MQTT: ${this.statusError.message}`);
-		else this.statusExtraEl.removeAttribute('title');
 	}
 
 	private readonly resetRoomState = () => {
