@@ -9,8 +9,9 @@ import { listVersions, restoreVersion } from '@/restore';
 import historySetting from '@/setting';
 import { openHistoryStores } from '@/store';
 import { ingestDeletion, ingestEdit } from '@/wal';
+import { NONE_STRATEGY, prepareGlobMatch } from '@repo/shared/glob-match';
 import { sha256Bytes } from '@repo/shared/sha256-bytes';
-import { Notice } from 'obsidian';
+import { Notice, TFile } from 'obsidian';
 import type { HistoryCipher } from '@/crypto';
 import type { HistoryTranslations } from '@/i18n';
 import type { RemoteHistory } from '@/remote';
@@ -28,21 +29,21 @@ import type {
 	Translate,
 	TranslationResource,
 } from '@hesprs/sync-engine-sdk';
-import type { App, Command, EventRef, Menu, TAbstractFile, TFile } from 'obsidian';
+import type { GlobStrategy } from '@repo/shared/glob-match';
+import type { App, Command, EventRef, Menu, TAbstractFile } from 'obsidian';
 
 const DEBOUNCE_MS = 15_000;
 const MAX_WAIT_MS = 60_000;
 const DAY_MS = 86_400_000;
 
-function isSupportedHistoryFile(path: string): boolean {
-	const lower = path.toLowerCase();
-	return (
-		lower.endsWith('.md') ||
-		lower.endsWith('.canvas') ||
-		lower.endsWith('.txt') ||
-		lower.endsWith('.json')
-	);
-}
+const SUPPORTED_EXTS = ['.md', '.canvas', '.txt', '.json'];
+const isSupportedHistoryFile = (path: string) =>
+	SUPPORTED_EXTS.some((ext) => path.toLowerCase().endsWith(ext));
+const isRemoteWriteTask = (name: string) =>
+	name === 'download' ||
+	name === 'resolveConflict' ||
+	name === 'moveLocal' ||
+	name === 'removeLocal';
 
 type HistoryContext = SelectFromContext<{
 	addCommand: (command: Command) => Command;
@@ -55,7 +56,7 @@ type HistoryContext = SelectFromContext<{
 	registerSetting: (entry: SettingEntry) => () => boolean;
 	requestSync: (trigger: string) => Promise<SyncTerminateReason>;
 	saveSettings: () => Promise<void>;
-	settings: { modules: Record<string, object> };
+	settings: { modules: Record<string, object>; syncStrategy?: Array<GlobStrategy> };
 	translate: Translate<HistoryTranslations>;
 }>;
 
@@ -69,8 +70,13 @@ export default class HistoryModule {
 	private readonly cleanup: Array<() => void> = [];
 	private readonly pendingDebounces = new Map<string, PendingDebounce>();
 	private readonly lastIngestedHash = new Map<string, string>();
+	private readonly syncWrittenFiles = new Set<string>();
+	private commitQueue = Promise.resolve();
+	private cachedRulesKey = '';
+	private compiledMatcher?: (path: string) => { strategy: string };
 	private stores?: HistoryStores;
 	private remote?: RemoteHistory;
+	private remoteFsUid?: string;
 	private scheduler?: FlushScheduler;
 	private cipher?: HistoryCipher;
 	private deviceId = '';
@@ -98,6 +104,7 @@ export default class HistoryModule {
 		this.deviceId = this.moduleSettings.deviceId;
 		const stores = openHistoryStores(ctx.indexedDB, namespaceOf(ctx));
 		this.stores = stores;
+		ctx.registerEvent(ctx.app.vault.on('create', this.onVaultCreate));
 		ctx.registerEvent(ctx.app.vault.on('modify', this.onVaultModify));
 		ctx.registerEvent(ctx.app.vault.on('delete', this.onVaultDelete));
 		ctx.registerEvent(ctx.app.vault.on('rename', this.onVaultRename));
@@ -108,10 +115,29 @@ export default class HistoryModule {
 			name: ctx.translate('recoverDeleted'),
 		});
 		this.cleanup.push(
+			ctx.on('syncStarted', () => {
+				this.syncWrittenFiles.clear();
+				void this.flushPendingDebounces();
+			}),
+			ctx.on('executionStarted', (tasks) => {
+				this.syncWrittenFiles.clear();
+				for (const task of tasks)
+					if (!task.local?.isDir && isRemoteWriteTask(task.name))
+						this.syncWrittenFiles.add(task.key);
+			}),
 			ctx.on('syncInitialized', ({ remoteFs }) => {
 				void this.initializeRemote(remoteFs, stores);
 			}),
 			ctx.on('syncTerminated', () => {
+				const hadRemoteWrites = this.syncWrittenFiles.size > 0;
+				this.syncWrittenFiles.clear();
+				if (hadRemoteWrites && this.remote && this.stores)
+					void reconcile({
+						remote: this.remote,
+						requestSync: () => {},
+						stores: this.stores,
+					});
+
 				void this.checkAutoGc();
 			}),
 			ctx.registerSetting({
@@ -129,9 +155,7 @@ export default class HistoryModule {
 		};
 		if (typeof window !== 'undefined') {
 			window.addEventListener('visibilitychange', onVisibility);
-			const onBeforeUnload = () => {
-				void this.flushPendingDebounces();
-			};
+			const onBeforeUnload = () => void this.flushPendingDebounces();
 			window.addEventListener('beforeunload', onBeforeUnload);
 			this.cleanup.push(() => {
 				window.removeEventListener('visibilitychange', onVisibility);
@@ -146,6 +170,8 @@ export default class HistoryModule {
 	 * `this.remote` unset so no plaintext history can be written.
 	 */
 	private async initializeRemote(remoteFs: Fs, stores: HistoryStores): Promise<void> {
+		const fsUid = remoteFs.getUid();
+		if (this.remote && this.remoteFsUid === fsUid) return;
 		const { ctx } = this;
 		let cipher: HistoryCipher | undefined;
 		try {
@@ -163,6 +189,8 @@ export default class HistoryModule {
 		);
 		if (!remote) return;
 		this.remote = remote;
+		this.remoteFsUid = fsUid;
+		this.scheduler?.dispose();
 		this.scheduler = new FlushScheduler({
 			remote,
 			requestSync: (trigger) => void ctx.requestSync(trigger),
@@ -172,9 +200,21 @@ export default class HistoryModule {
 		void this.checkAutoGc();
 	}
 
+	private isIgnored(filePath: string): boolean {
+		const syncStrategy = this.ctx.settings.syncStrategy;
+		if (!syncStrategy || syncStrategy.length === 0) return false;
+		const rulesKey = syncStrategy.map((rule) => `${rule.expr}:${rule.strategy}`).join('|');
+		if (this.cachedRulesKey !== rulesKey || !this.compiledMatcher) {
+			this.cachedRulesKey = rulesKey;
+			this.compiledMatcher = prepareGlobMatch(syncStrategy);
+		}
+		return this.compiledMatcher(filePath).strategy === NONE_STRATEGY;
+	}
+
 	/** Adds a per-file "Show history" item to the file explorer context menu. */
 	private readonly onFileMenu = (menu: Menu, file: TAbstractFile) => {
-		if ('children' in file || !isSupportedHistoryFile(file.path)) return;
+		if ('children' in file || !isSupportedHistoryFile(file.path) || this.isIgnored(file.path))
+			return;
 		menu.addItem((item) => {
 			item.setTitle(this.ctx.translate('showHistory'))
 				.setIcon('history')
@@ -183,9 +223,11 @@ export default class HistoryModule {
 	};
 
 	private async openHistoryForPath(filePath: string): Promise<void> {
-		if (!this.remote || !this.stores) return;
-		await this.flushPendingDebounces();
-		const ctx = { remote: this.remote, stores: this.stores };
+		if (!this.remote || !this.stores || this.isIgnored(filePath)) return;
+		await this.flushPendingForPath(filePath);
+		await this.scheduler?.trigger('openHistory');
+		const ctx = { remote: this.remote, requestSync: () => {}, stores: this.stores };
+		await reconcile(ctx);
 		let versions;
 		try {
 			versions = await listVersions(ctx, filePath);
@@ -193,19 +235,29 @@ export default class HistoryModule {
 			new Notice(text(this.ctx.translate('loadFailed', String(error))));
 			return;
 		}
+		const existing = this.ctx.app.vault.getAbstractFileByPath(filePath);
+		let currentText = '';
+		if (existing instanceof TFile)
+			try {
+				currentText = await this.ctx.app.vault.read(existing);
+			} catch {
+				// Keep empty if read fails.
+			}
+
 		new HistoryModal(
 			{ app: this.ctx.app, translate: this.ctx.translate },
 			{ path: filePath },
 			versions,
 			{
+				currentText,
 				load: async (key, lamport) => {
 					const result = await restoreVersion(ctx, { key, lamport });
 					return result.text;
 				},
 				restore: async (content) => {
-					const existing = this.ctx.app.vault.getAbstractFileByPath(filePath);
-					await (existing && 'read' in existing
-						? this.ctx.app.vault.modify(existing as unknown as TFile, content)
+					const target = this.ctx.app.vault.getAbstractFileByPath(filePath);
+					await (target instanceof TFile
+						? this.ctx.app.vault.modify(target, content)
 						: this.ctx.app.vault.create(filePath, content));
 				},
 			},
@@ -215,12 +267,16 @@ export default class HistoryModule {
 	private async openRecoverDeletedModal(): Promise<void> {
 		if (!this.stores || !this.remote) return;
 		await this.flushPendingDebounces();
+		await reconcile({ remote: this.remote, requestSync: () => {}, stores: this.stores });
 		const locations = await allCommitLocations(this.stores);
 		const deletedKeys = [
 			...new Set(
 				locations
 					.map(([key]) => key.split('@')[0])
-					.filter((key) => !this.ctx.app.vault.getAbstractFileByPath(key)),
+					.filter(
+						(key) =>
+							!this.ctx.app.vault.getAbstractFileByPath(key) && !this.isIgnored(key),
+					),
 			),
 		];
 		new RecoverDeletedModal(
@@ -232,67 +288,139 @@ export default class HistoryModule {
 		).open();
 	}
 
-	private async commitEdit(key: string, data: Uint8Array, hash: string): Promise<void> {
-		if (!this.stores) return;
-		this.lastIngestedHash.set(key, hash);
-		const entry = await ingestEdit(this.stores, key, data);
-		this.scheduler?.onEdit(entry.text?.length ?? entry.newChunks?.length ?? 0);
+	private commitEdit(key: string, data: Uint8Array, hash: string): Promise<void> {
+		const next = this.commitQueue
+			.then(async () => {
+				if (!this.stores) return;
+				this.lastIngestedHash.set(key, hash);
+				await this.stores.hashes.set(key, hash);
+				const entry = await ingestEdit(this.stores, key, data);
+				this.scheduler?.onEdit(entry.text?.length ?? entry.newChunks?.length ?? 0);
+			})
+			.catch(() => {});
+		this.commitQueue = next;
+		return next;
+	}
+
+	private async flushPendingForPath(filePath: string): Promise<void> {
+		if (!this.stores || this.isIgnored(filePath)) return;
+		const pending = this.pendingDebounces.get(filePath);
+		if (!pending) return;
+		clearTimeout(pending.timer);
+		this.pendingDebounces.delete(filePath);
+		const hash = await sha256Bytes(pending.data);
+		await this.commitEdit(filePath, pending.data, hash);
 	}
 
 	private async flushPendingDebounces(): Promise<void> {
 		if (!this.stores || this.pendingDebounces.size === 0) return;
 		const entries = [...this.pendingDebounces.entries()];
 		this.pendingDebounces.clear();
-		for (const [key, pending] of entries) {
+		for (const [index, [key, pending]] of entries.entries()) {
 			clearTimeout(pending.timer);
+			if (this.isIgnored(key)) continue;
 			const hash = await sha256Bytes(pending.data);
-			await this.commitEdit(key, pending.data, hash);
+			void this.commitEdit(key, pending.data, hash);
+			if ((index + 1) % 10 === 0)
+				await new Promise<void>((resolve) => {
+					setTimeout(resolve, 0);
+				});
 		}
+		await this.commitQueue;
 	}
 
-	private readonly onVaultModify = (file: TAbstractFile) => {
-		if (!this.stores || 'children' in file || !isSupportedHistoryFile(file.path)) return;
+	private queueIngest(filePath: string, content: string): void {
+		if (!this.stores || this.isIgnored(filePath)) return;
+		const data = new TextEncoder().encode(content);
+		void sha256Bytes(data).then(async (hash) => {
+			if (!this.stores) return;
+			let lastHash = this.lastIngestedHash.get(filePath);
+			if (lastHash === undefined) {
+				lastHash = await this.stores.hashes.get(filePath);
+				if (lastHash !== undefined) this.lastIngestedHash.set(filePath, lastHash);
+			}
+			if (lastHash === hash) return;
+			const now = Date.now();
+			const existing = this.pendingDebounces.get(filePath);
+			if (existing) {
+				clearTimeout(existing.timer);
+				if (now - existing.firstScheduledAt >= MAX_WAIT_MS) {
+					this.pendingDebounces.delete(filePath);
+					void this.commitEdit(filePath, data, hash);
+					return;
+				}
+				const timer = setTimeout(() => {
+					this.pendingDebounces.delete(filePath);
+					void this.commitEdit(filePath, data, hash);
+				}, DEBOUNCE_MS);
+				this.pendingDebounces.set(filePath, {
+					data,
+					firstScheduledAt: existing.firstScheduledAt,
+					timer,
+				});
+			} else {
+				const timer = setTimeout(() => {
+					this.pendingDebounces.delete(filePath);
+					void this.commitEdit(filePath, data, hash);
+				}, DEBOUNCE_MS);
+				this.pendingDebounces.set(filePath, { data, firstScheduledAt: now, timer });
+			}
+		});
+	}
+
+	private readonly onVaultCreate = (file: TAbstractFile) => {
+		if (
+			!this.stores ||
+			'children' in file ||
+			!isSupportedHistoryFile(file.path) ||
+			this.isIgnored(file.path) ||
+			this.syncWrittenFiles.has(file.path)
+		) {
+			this.syncWrittenFiles.delete(file.path);
+			return;
+		}
 		const filePath = file.path;
 		void this.ctx.app.vault.read(file as TFile).then(
 			(content) => {
-				const stores = this.stores;
-				if (!stores) return;
-				const data = new TextEncoder().encode(content);
-				void sha256Bytes(data).then((hash) => {
-					if (this.lastIngestedHash.get(filePath) === hash) return;
-					const now = Date.now();
-					const existing = this.pendingDebounces.get(filePath);
-					if (existing) {
-						clearTimeout(existing.timer);
-						if (now - existing.firstScheduledAt >= MAX_WAIT_MS) {
-							this.pendingDebounces.delete(filePath);
-							void this.commitEdit(filePath, data, hash);
-							return;
-						}
-						const timer = setTimeout(() => {
-							this.pendingDebounces.delete(filePath);
-							void this.commitEdit(filePath, data, hash);
-						}, DEBOUNCE_MS);
-						this.pendingDebounces.set(filePath, {
-							data,
-							firstScheduledAt: existing.firstScheduledAt,
-							timer,
-						});
-					} else {
-						const timer = setTimeout(() => {
-							this.pendingDebounces.delete(filePath);
-							void this.commitEdit(filePath, data, hash);
-						}, DEBOUNCE_MS);
-						this.pendingDebounces.set(filePath, { data, firstScheduledAt: now, timer });
-					}
-				});
+				if (!this.stores || content.length === 0) return;
+				this.queueIngest(filePath, content);
+			},
+			() => {},
+		);
+	};
+
+	private readonly onVaultModify = (file: TAbstractFile) => {
+		if (
+			!this.stores ||
+			'children' in file ||
+			!isSupportedHistoryFile(file.path) ||
+			this.isIgnored(file.path) ||
+			this.syncWrittenFiles.has(file.path)
+		) {
+			this.syncWrittenFiles.delete(file.path);
+			return;
+		}
+		const filePath = file.path;
+		void this.ctx.app.vault.read(file as TFile).then(
+			(content) => {
+				if (!this.stores) return;
+				this.queueIngest(filePath, content);
 			},
 			() => {},
 		);
 	};
 
 	private readonly onVaultDelete = (file: TAbstractFile) => {
-		if (!this.stores || 'children' in file || !isSupportedHistoryFile(file.path)) return;
+		if (
+			!this.stores ||
+			'children' in file ||
+			!isSupportedHistoryFile(file.path) ||
+			this.isIgnored(file.path) ||
+			this.syncWrittenFiles.has(file.path)
+		) {
+			this.syncWrittenFiles.delete(file.path);
+			return;
+		}
 		const filePath = file.path;
 		const pending = this.pendingDebounces.get(filePath);
 		if (pending) {
@@ -300,6 +428,7 @@ export default class HistoryModule {
 			this.pendingDebounces.delete(filePath);
 		}
 		this.lastIngestedHash.delete(filePath);
+		void this.stores.hashes.delete(filePath);
 		void ingestDeletion(this.stores, filePath).then(() => {
 			this.scheduler?.onEdit(0);
 		});
@@ -307,13 +436,19 @@ export default class HistoryModule {
 
 	private readonly onVaultRename = (file: TAbstractFile, oldPath: string) => {
 		if (!this.stores || 'children' in file) return;
+		if (this.syncWrittenFiles.has(file.path)) {
+			this.syncWrittenFiles.delete(file.path);
+			return;
+		}
 		const pendingOld = this.pendingDebounces.get(oldPath);
 		if (pendingOld) {
 			clearTimeout(pendingOld.timer);
 			this.pendingDebounces.delete(oldPath);
 		}
 		this.lastIngestedHash.delete(oldPath);
-		if (isSupportedHistoryFile(file.path)) this.onVaultModify(file);
+		void this.stores.hashes.delete(oldPath);
+		if (isSupportedHistoryFile(file.path) && !this.isIgnored(file.path))
+			this.onVaultModify(file);
 	};
 
 	private async checkAutoGc(): Promise<void> {
@@ -346,19 +481,19 @@ export default class HistoryModule {
 		void this.scheduler?.onUnload();
 		for (const pending of this.pendingDebounces.values()) clearTimeout(pending.timer);
 		this.pendingDebounces.clear();
+		this.syncWrittenFiles.clear();
 		this.cleanup.splice(0).forEach((fn) => fn());
 		this.scheduler?.dispose();
 		this.stores = undefined;
 		this.remote = undefined;
+		this.remoteFsUid = undefined;
 	};
 }
 
-function namespaceOf(ctx: HistoryContext): string {
+const namespaceOf = (ctx: HistoryContext): string => {
 	const ns = ctx.getNamespace();
 	return ns instanceof Error ? '' : ns;
-}
+};
 
 /** Translate types function-valued keys as DocumentFragment; our translations return strings. */
-function text(value: unknown): string {
-	return typeof value === 'string' ? value : String(value);
-}
+const text = (value: unknown): string => (typeof value === 'string' ? value : String(value));

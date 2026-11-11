@@ -11,6 +11,7 @@ export type HistoryStores = {
 	heads: StoreAsync<CommitLog>;
 	blobs: StoreAsync<BlobRef>;
 	lamport: StoreAsync<number>;
+	hashes: StoreAsync<string>;
 };
 
 function store<S extends keyof HistoryStores>(
@@ -20,11 +21,12 @@ function store<S extends keyof HistoryStores>(
 	return db.getStore(name) as HistoryStores[S];
 }
 
-/** Opens the six namespaced WAL/CAS/head stores. All keys are namespaced by the vault/remote pair. */
+/** Opens the namespaced WAL/CAS/head stores. All keys are namespaced by the vault/remote pair. */
 export function openHistoryStores(db: HistoryDatabase, namespace: string): HistoryStores {
 	return {
 		blobs: store(db, `history-blobs-${namespace}`),
 		chunks: store(db, `history-chunks-${namespace}`),
+		hashes: store(db, `history-hashes-${namespace}`),
 		heads: store(db, `history-heads-${namespace}`),
 		index: store(db, `history-index-${namespace}`),
 		lamport: store(db, `history-lamport-${namespace}`),

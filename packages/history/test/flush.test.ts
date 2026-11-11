@@ -42,10 +42,12 @@ function fakeRemote() {
 		listHeads() {
 			return Promise.resolve([...heads.keys()]);
 		},
-		listPacks() {
+		listPacks(deviceId = 'device-a') {
 			return Promise.resolve(
 				[...objects.keys()]
-					.filter((key) => key.startsWith('ns/packs/device-a/') && key.endsWith('.pack'))
+					.filter(
+						(key) => key.startsWith(`ns/packs/${deviceId}/`) && key.endsWith('.pack'),
+					)
 					.map((key) => key.split('/').at(-1) ?? key),
 			);
 		},
@@ -206,4 +208,185 @@ test('reconcile folds a remote head peak Lamport into the local clock', async ()
 	await reconcile(ctx);
 	const next = await ingestEdit(stores, 'note.md', encoder.encode('after'));
 	expect(next.lamport).toBeGreaterThan(42);
+});
+
+test('reconcile skips downloading packs when cached head generation is up to date', async () => {
+	const { ctx, objects, remote } = setup();
+	const { encodePack, packFileName } = await import('@/pack');
+	const { keyHash } = await import('@/chunker');
+	const { buildCommitLog } = await import('@/head-log');
+
+	const encoded = await encodePack(
+		{ baseLamport: 1, createdAt: 1000, deviceId: 'device-b', ns: 'ns', peakLamport: 1, seq: 1 },
+		[
+			{
+				at: 1000,
+				blobs: [],
+				chunks: [],
+				deviceId: 'device-b',
+				flags: 1,
+				inlineLength: 4,
+				inlineOffset: 0,
+				key: 'test.md',
+				keyHash: await keyHash('test.md'),
+				lamport: 1,
+				parents: [],
+			},
+		],
+		encoder.encode('test'),
+	);
+	const fileName = packFileName('device-b', 1, encoded.header.hash);
+	objects.set(`ns/packs/device-b/${fileName}`, encoded.bytes);
+
+	const log = await buildCommitLog({
+		chunkIndex: {},
+		deviceId: 'device-b',
+		generation: 1,
+		heads: [],
+		ns: 'ns',
+		packs: [
+			{
+				deviceId: 'device-b',
+				fromLamport: 1,
+				hash: encoded.header.hash,
+				seq: 1,
+				toLamport: 1,
+			},
+		],
+		peakLamport: 1,
+		seq: 1,
+		updatedAt: 1000,
+	});
+	await remote.writeHead(log);
+
+	let getObjectCalls = 0;
+	const origGetObject = remote.getObject;
+	remote.getObject = (key: string) => {
+		getObjectCalls++;
+		return origGetObject(key);
+	};
+
+	// First reconcile: indexes pack 1
+	await reconcile(ctx);
+	expect(getObjectCalls).toBe(1);
+
+	// Second reconcile with same generation: must NOT download pack again
+	await reconcile(ctx);
+	expect(getObjectCalls).toBe(1);
+});
+
+test('reconcile downloads only newly added packs when generation advances', async () => {
+	const { ctx, objects, remote } = setup();
+	const { encodePack, packFileName } = await import('@/pack');
+	const { keyHash } = await import('@/chunker');
+	const { buildCommitLog } = await import('@/head-log');
+
+	const pack1 = await encodePack(
+		{ baseLamport: 1, createdAt: 1000, deviceId: 'device-b', ns: 'ns', peakLamport: 1, seq: 1 },
+		[
+			{
+				at: 1000,
+				blobs: [],
+				chunks: [],
+				deviceId: 'device-b',
+				flags: 1,
+				inlineLength: 4,
+				inlineOffset: 0,
+				key: 'test.md',
+				keyHash: await keyHash('test.md'),
+				lamport: 1,
+				parents: [],
+			},
+		],
+		encoder.encode('one'),
+	);
+	const fileName1 = packFileName('device-b', 1, pack1.header.hash);
+	objects.set(`ns/packs/device-b/${fileName1}`, pack1.bytes);
+
+	const pack2 = await encodePack(
+		{ baseLamport: 2, createdAt: 2000, deviceId: 'device-b', ns: 'ns', peakLamport: 2, seq: 2 },
+		[
+			{
+				at: 2000,
+				blobs: [],
+				chunks: [],
+				deviceId: 'device-b',
+				flags: 1,
+				inlineLength: 4,
+				inlineOffset: 0,
+				key: 'test.md',
+				keyHash: await keyHash('test.md'),
+				lamport: 2,
+				parents: [],
+			},
+		],
+		encoder.encode('two'),
+	);
+	const fileName2 = packFileName('device-b', 2, pack2.header.hash);
+
+	const log1 = await buildCommitLog({
+		chunkIndex: {},
+		deviceId: 'device-b',
+		generation: 1,
+		heads: [],
+		ns: 'ns',
+		packs: [
+			{ deviceId: 'device-b', fromLamport: 1, hash: pack1.header.hash, seq: 1, toLamport: 1 },
+		],
+		peakLamport: 1,
+		seq: 1,
+		updatedAt: 1000,
+	});
+	await remote.writeHead(log1);
+
+	const downloadedKeys: Array<string> = [];
+	const origGetObject = remote.getObject;
+	remote.getObject = (key: string) => {
+		downloadedKeys.push(key);
+		return origGetObject(key);
+	};
+
+	await reconcile(ctx);
+	expect(downloadedKeys).toHaveLength(1);
+	expect(downloadedKeys[0]).toContain(fileName1);
+
+	// Now remote writes pack 2 and advances generation to 2
+	objects.set(`ns/packs/device-b/${fileName2}`, pack2.bytes);
+	const log2 = await buildCommitLog({
+		chunkIndex: {},
+		deviceId: 'device-b',
+		generation: 2,
+		heads: [],
+		ns: 'ns',
+		packs: [
+			{ deviceId: 'device-b', fromLamport: 1, hash: pack1.header.hash, seq: 1, toLamport: 1 },
+			{ deviceId: 'device-b', fromLamport: 2, hash: pack2.header.hash, seq: 2, toLamport: 2 },
+		],
+		peakLamport: 2,
+		seq: 2,
+		updatedAt: 2000,
+	});
+	await remote.writeHead(log2);
+
+	downloadedKeys.length = 0;
+	await reconcile(ctx);
+	// Should only download pack 2, NOT pack 1!
+	expect(downloadedKeys).toHaveLength(1);
+	expect(downloadedKeys[0]).toContain(fileName2);
+});
+
+test('reconcile deduplicates concurrent calls', async () => {
+	const { ctx, remote } = setup();
+	let listHeadsCalls = 0;
+	const origListHeads = remote.listHeads;
+	remote.listHeads = async () => {
+		listHeadsCalls++;
+		await new Promise<void>((resolve) => {
+			setTimeout(resolve, 10);
+		});
+		return origListHeads();
+	};
+
+	await Promise.all([reconcile(ctx), reconcile(ctx)]);
+	expect(listHeadsCalls).toBe(1);
 });

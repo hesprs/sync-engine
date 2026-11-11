@@ -38,18 +38,24 @@ export async function captureContent(
 	if (data.byteLength < SMALL_FILE_LIMIT) return { text: decoder.decode(data) };
 
 	const spans = fastCdc(data);
-	const chunkHashes: Array<string> = [];
+	const rawChunks = await Promise.all(
+		spans.map(async (span) => {
+			const bytes = data.subarray(span.offset, span.offset + span.length);
+			return { bytes, hash: await sha256Bytes(bytes) };
+		}),
+	);
+	const chunkHashes = rawChunks.map((c) => c.hash);
+	const uniqueChunks = new Map<string, Uint8Array>();
+	for (const { bytes, hash } of rawChunks)
+		if (!uniqueChunks.has(hash)) uniqueChunks.set(hash, bytes);
+
 	const newChunks: Array<{ hash: string; bytes: Uint8Array }> = [];
-	const seen = new Set<string>();
-	for (const span of spans) {
-		const bytes = data.subarray(span.offset, span.offset + span.length);
-		const hash = await sha256Bytes(bytes);
-		chunkHashes.push(hash);
-		if (seen.has(hash)) continue;
-		seen.add(hash);
-		const existing = await stores.chunks.get(hash);
-		if (existing === undefined) newChunks.push({ bytes: new Uint8Array(bytes), hash });
-	}
+	await Promise.all(
+		[...uniqueChunks.entries()].map(async ([hash, bytes]) => {
+			const existing = await stores.chunks.get(hash);
+			if (existing === undefined) newChunks.push({ bytes: new Uint8Array(bytes), hash });
+		}),
+	);
 	return { chunkHashes, newChunks };
 }
 

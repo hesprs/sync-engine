@@ -94,11 +94,58 @@ test('restoreVersion reads the pack and returns the exact text', async () => {
 });
 
 test('listVersions returns the captured lamports for a key', async () => {
-	const { remote, stores } = await seedVersion('one', 1);
-	const location = await stores.index.get('note.md@1');
-	if (location) await stores.index.set('note.md@2', location);
+	const db = openMemoryDB(`history-list-${crypto.randomUUID()}`) as never as HistoryDatabase;
+	const stores = openHistoryStores(db, 'ns');
+	const { remote } = fakeRemote();
+	const ctx = { remote, requestSync: () => {}, stores };
+	await ingestEdit(stores, 'note.md', encoder.encode('one'));
+	await ingestEdit(stores, 'note.md', encoder.encode('two'));
+	await flushPending(ctx, 'count');
 	const versions = await listVersions({ remote, stores }, 'note.md');
 	expect(versions.map((version) => version.lamport)).toStrictEqual([2, 1]);
+});
+
+test('listVersions prunes dead index entries on 404 pack and does not return unknown time versions', async () => {
+	const { remote, stores } = await seedVersion('one', 1);
+	// Point note.md@2 at a non-existent pack
+	await stores.index.set('note.md@2', {
+		indexLength: 10,
+		indexOffset: 10,
+		pack: {
+			deviceId: 'device-missing',
+			fromLamport: 2,
+			hash: 'deadbeef',
+			seq: 99,
+			toLamport: 2,
+		},
+	});
+	const versions = await listVersions({ remote, stores }, 'note.md');
+	// Only the valid version 1 should be returned, no dummy versions with at: 0 ("时间未知")
+	expect(versions).toHaveLength(1);
+	expect(versions[0].lamport).toBe(1);
+	expect(versions[0].at).toBeGreaterThan(0);
+	// The dead reference should be auto-pruned from index
+	expect(await stores.index.get('note.md@2')).toBeUndefined();
+});
+
+test('consecutive unmodified versions are collapsed into a single version', async () => {
+	const db = openMemoryDB(`history-dedup-${crypto.randomUUID()}`) as never as HistoryDatabase;
+	const stores = openHistoryStores(db, 'ns');
+	const { remote } = fakeRemote();
+	const ctx = { remote, requestSync: () => {}, stores };
+	// Three versions: 'version A', 'version B', 'version B' (duplicate of B)
+	await ingestEdit(stores, 'note.md', encoder.encode('version A'));
+	await flushPending(ctx, 'count');
+	await ingestEdit(stores, 'note.md', encoder.encode('version B'));
+	await flushPending(ctx, 'count');
+	await ingestEdit(stores, 'note.md', encoder.encode('version B'));
+	await flushPending(ctx, 'count');
+
+	const versions = await listVersions({ remote, stores }, 'note.md');
+	// The duplicate 'version B' should be collapsed; only 2 distinct versions displayed
+	expect(versions).toHaveLength(2);
+	expect(versions.map((v) => v.index)).toStrictEqual([1, 2]);
+	expect(versions.map((v) => v.lamport)).toStrictEqual([3, 1]);
 });
 
 test('restoreVersion refreshes heads on an index miss before giving up', async () => {

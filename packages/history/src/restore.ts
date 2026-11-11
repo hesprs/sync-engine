@@ -1,10 +1,11 @@
 import { assembleChunks, captureContent } from '@/chunker';
 import { mergeTextLines } from '@/dag';
 import { reconcile } from '@/flush';
-import { chunkLocation, lookupCommit } from '@/index-store';
+import { chunkLocation, lookupCommit, versionKey } from '@/index-store';
 import { decodePack, readIndexOnly } from '@/pack';
 import { appendWal, blobPresent } from '@/store';
-import { FLAG_SMALL_FILE } from '@/types';
+import { FLAG_DELETION, FLAG_SMALL_FILE } from '@/types';
+import { sha256Bytes } from '@repo/shared/sha256-bytes';
 import type { RemoteHistory } from '@/remote';
 import type { HistoryStores } from '@/store';
 import type { ChunkRef, IndexEntry, RestoreResult, VersionRef, VersionSummary } from '@/types';
@@ -67,14 +68,23 @@ async function lookupWithRepair(ctx: RestoreContext, ref: VersionRef) {
 /** Restores one version with a bounded number of remote reads. */
 export async function restoreVersion(ctx: RestoreContext, ref: VersionRef): Promise<RestoreResult> {
 	const location = await lookupWithRepair(ctx, ref);
-	const bytes = await fetchPack(ctx, location.pack);
+	let bytes: Uint8Array;
+	try {
+		bytes = await fetchPack(ctx, location.pack);
+	} catch (error) {
+		await ctx.stores.index.delete(versionKey(ref));
+		throw error;
+	}
 	const { entries } = await readIndexOnly(bytes);
 	const entry = entries.find(
 		(candidate) => candidate.key === ref.key && candidate.lamport === ref.lamport,
 	);
 	// Never fall back to another commit in the pack: a pack batches edits from many files, so
 	// returning entries[0] would silently restore a different file's content.
-	if (!entry) throw new Error(`Version ${ref.key}@${ref.lamport} is missing from its pack`);
+	if (!entry) {
+		await ctx.stores.index.delete(versionKey(ref));
+		throw new Error(`Version ${ref.key}@${ref.lamport} is missing from its pack`);
+	}
 
 	const decoded = await decodePack(bytes);
 	let text: string;
@@ -169,6 +179,26 @@ async function readEntryText(ctx: RestoreContext, entry?: IndexEntry): Promise<s
 	return assembleChunks(parts);
 }
 
+async function resolveFingerprint(
+	entry: IndexEntry,
+	getPayload: () => Promise<Uint8Array>,
+): Promise<string | undefined> {
+	if (entry.hash) return entry.hash;
+	if (entry.flags & FLAG_DELETION) return '<deleted>';
+	if (entry.chunks.length > 0) return entry.chunks.map((c) => c.hash).join(',');
+	if (entry.blobs.length > 0) return entry.blobs.map((b) => b.hash).join(',');
+	if (
+		entry.flags & FLAG_SMALL_FILE &&
+		entry.inlineOffset !== undefined &&
+		entry.inlineLength !== undefined
+	) {
+		const payload = await getPayload();
+		const slice = payload.subarray(entry.inlineOffset, entry.inlineOffset + entry.inlineLength);
+		return sha256Bytes(slice);
+	}
+	return undefined;
+}
+
 /** Lists a file's versions with their timestamps, reading each pack's index at most once. */
 export async function listVersions(
 	ctx: RestoreContext,
@@ -190,28 +220,50 @@ export async function listVersions(
 		}
 		group.lamports.push(Number(ref.slice(prefix.length)));
 	}
-	const summaries: Array<VersionSummary> = [];
+	type VersionWithFingerprint = VersionSummary & { fingerprint?: string };
+	const summaries: Array<VersionWithFingerprint> = [];
 	for (const group of byPack.values()) {
 		let bytes: Uint8Array;
 		try {
 			bytes = await fetchPack(ctx, group);
 		} catch {
-			for (const lamport of group.lamports) summaries.push({ at: 0, index: 0, key, lamport });
+			for (const lamport of group.lamports)
+				await ctx.stores.index.delete(`${key}@${lamport}`);
 			continue;
 		}
 		const { entries } = await readIndexOnly(bytes);
+		let decodedPayload: Uint8Array | undefined;
+		const getPayload = async () => {
+			if (!decodedPayload) {
+				const decoded = await decodePack(bytes);
+				decodedPayload = decoded.payload;
+			}
+			return decodedPayload;
+		};
 		for (const lamport of group.lamports) {
 			const entry = entries.find(
 				(candidate) => candidate.lamport === lamport && candidate.key === key,
 			);
-			summaries.push({ at: entry?.at ?? 0, index: 0, key, lamport });
+			if (!entry) {
+				await ctx.stores.index.delete(`${key}@${lamport}`);
+				continue;
+			}
+			const fp = await resolveFingerprint(entry, getPayload);
+			summaries.push({ at: entry.at, fingerprint: fp, index: 0, key, lamport });
 		}
 	}
 	// Versions are per file: number them 1..N newest-first so the UI never exposes the global
 	// Lamport clock (which is shared across every file and therefore has gaps).
 	summaries.sort((a, b) => b.lamport - a.lamport);
+	const distinct: Array<VersionWithFingerprint> = [];
+	let lastFp: string | undefined;
+	for (const summary of summaries) {
+		if (summary.fingerprint !== undefined && summary.fingerprint === lastFp) continue;
+		lastFp = summary.fingerprint;
+		distinct.push(summary);
+	}
 	const numbered: Array<VersionSummary> = [];
-	for (const [position, summary] of summaries.entries())
+	for (const [position, summary] of distinct.entries())
 		numbered.push({
 			at: summary.at,
 			index: position + 1,

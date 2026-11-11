@@ -1,3 +1,4 @@
+import { readSecret } from '@repo/shared/secret';
 import type { App } from 'obsidian';
 
 /** Prefix marking an encrypted history object. */
@@ -94,9 +95,7 @@ export async function createHistoryCipher(
 ): Promise<HistoryCipher | undefined> {
 	const encryption = modules.encryption as { enabled?: boolean; password?: string } | undefined;
 	if (!encryption?.enabled) return undefined;
-	const password = encryption.password
-		? (app.secretStorage.getSecret(encryption.password) ?? undefined)
-		: undefined;
+	const password = readSecret(app, encryption.password);
 	if (!password) throw new Error('Encryption is enabled but its password is not set.');
 	return createCipher(password);
 }

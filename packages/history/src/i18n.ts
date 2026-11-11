@@ -16,6 +16,7 @@ export type HistoryTranslations = {
 	noDeletedNotes: string;
 	noVersions: string;
 	previewHint: string;
+	previewHintMobile: string;
 	recoverDeleted: string;
 	recoverDeletedTitle: string;
 	restore: string;
@@ -27,7 +28,9 @@ export type HistoryTranslations = {
 	showHistory: string;
 	version: (args: { at: number }) => string;
 	viewDiff: string;
+	viewDiffShort: string;
 	viewFull: string;
+	viewFullShort: string;
 };
 
 const en: HistoryTranslations = {
@@ -52,6 +55,7 @@ const en: HistoryTranslations = {
 	noDeletedNotes: 'No deleted notes with historical versions found.',
 	noVersions: 'No versions captured for this file yet.',
 	previewHint: 'Select a version on the left to preview its content.',
+	previewHintMobile: 'Select a version above to preview its content.',
 	recoverDeleted: 'Recover deleted note',
 	recoverDeletedTitle: 'Recover deleted notes',
 	restore: 'Restore this version',
@@ -64,7 +68,9 @@ const en: HistoryTranslations = {
 	showHistory: 'Sync Engine: Show history',
 	version: ({ at }) => (at > 0 ? new Date(at).toLocaleString() : 'Time unknown'),
 	viewDiff: 'Diff with current',
+	viewDiffShort: 'Diff',
 	viewFull: 'Full text',
+	viewFullShort: 'Full',
 };
 
 const zh: HistoryTranslations = {
@@ -85,6 +91,7 @@ const zh: HistoryTranslations = {
 	noDeletedNotes: '未找到含有历史版本的已删除笔记。',
 	noVersions: '该文件尚未捕获任何版本。',
 	previewHint: '在左侧选择一个版本以预览内容。',
+	previewHintMobile: '在上方选择一个版本以预览内容。',
 	recoverDeleted: '恢复已删除笔记',
 	recoverDeletedTitle: '恢复已删除笔记',
 	restore: '恢复此版本',
@@ -96,7 +103,9 @@ const zh: HistoryTranslations = {
 	showHistory: 'Sync Engine：查看历史',
 	version: ({ at }) => (at > 0 ? new Date(at).toLocaleString() : '时间未知'),
 	viewDiff: '对比当前版本',
+	viewDiffShort: '对比',
 	viewFull: '查看全文',
+	viewFullShort: '全文',
 };
 
 const zhTW: HistoryTranslations = {
@@ -117,6 +126,7 @@ const zhTW: HistoryTranslations = {
 	noDeletedNotes: '未找到含有歷史版本的已刪除筆記。',
 	noVersions: '該檔案尚未擷取任何版本。',
 	previewHint: '在左側選擇一個版本以預覽內容。',
+	previewHintMobile: '在上方選擇一個版本以預覽內容。',
 	recoverDeleted: '還原已刪除筆記',
 	recoverDeletedTitle: '還原已刪除筆記',
 	restore: '還原此版本',
@@ -128,7 +138,9 @@ const zhTW: HistoryTranslations = {
 	showHistory: 'Sync Engine：查看歷史',
 	version: ({ at }) => (at > 0 ? new Date(at).toLocaleString() : '時間未知'),
 	viewDiff: '對比目前版本',
+	viewDiffShort: '對比',
 	viewFull: '檢視全文',
+	viewFullShort: '全文',
 };
 
 const ru: HistoryTranslations = {
@@ -152,6 +164,7 @@ const ru: HistoryTranslations = {
 	noDeletedNotes: 'Удаленных заметок с историей версий не найдено.',
 	noVersions: 'Для этого файла ещё нет версий.',
 	previewHint: 'Выберите версию слева, чтобы просмотреть содержимое.',
+	previewHintMobile: 'Выберите версию выше, чтобы просмотреть содержимое.',
 	recoverDeleted: 'Восстановить удаленную заметку',
 	recoverDeletedTitle: 'Восстановление удаленных заметок',
 	restore: 'Восстановить эту версию',
@@ -163,7 +176,9 @@ const ru: HistoryTranslations = {
 	showHistory: 'Sync Engine: показать историю',
 	version: ({ at }) => (at > 0 ? new Date(at).toLocaleString() : 'Время неизвестно'),
 	viewDiff: 'Сравнить с текущей',
+	viewDiffShort: 'Дифф',
 	viewFull: 'Полный текст',
+	viewFullShort: 'Текст',
 };
 
 export { en, ru, zh, zhTW };

@@ -52,6 +52,7 @@ export type IndexEntry = {
 	inlineOffset?: number; // Set when the note is stored as whole text
 	inlineLength?: number;
 	flags: number; // Bit 0 small-file, bit 1 deletion, bit 2 checkpoint
+	hash?: string; // Content fingerprint for fast zero-cost version deduplication
 };
 
 /** Per-device head log. Single writer; `generation` detects stale mirrors. */

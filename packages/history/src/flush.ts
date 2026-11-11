@@ -3,7 +3,8 @@ import { buildCommitLog } from '@/head-log';
 import { markChunks, packRefKey, putCommitLocation } from '@/index-store';
 import { decodePack, encodePack, packFileName, textBytes } from '@/pack';
 import { blobPresent, bumpLamport, clearPending, markBlobs, readPending } from '@/store';
-import { FLAG_SMALL_FILE } from '@/types';
+import { FLAG_DELETION, FLAG_SMALL_FILE } from '@/types';
+import { sha256Bytes, sha256Text } from '@repo/shared/sha256-bytes';
 import type { RemoteHistory } from '@/remote';
 import type { HistoryStores } from '@/store';
 import type { BlobRef, ChunkLocation, CommitLog, IndexEntry, PackRef, WalEntry } from '@/types';
@@ -72,8 +73,10 @@ async function assemble(ctx: FlushContext, wal: Array<WalEntry>, seq: number): P
 			indexEntry.inlineOffset = offset;
 			indexEntry.inlineLength = bytes.byteLength;
 			indexEntry.flags |= FLAG_SMALL_FILE;
+			indexEntry.hash = await sha256Bytes(bytes);
 			offset += bytes.byteLength;
 		} else if (entry.chunkHashes) {
+			indexEntry.hash = await sha256Text(entry.chunkHashes.join(','));
 			const newByHash = new Map((entry.newChunks ?? []).map((c) => [c.hash, c.bytes]));
 			for (const hash of entry.chunkHashes) {
 				const bytes = newByHash.get(hash);
@@ -89,7 +92,9 @@ async function assemble(ctx: FlushContext, wal: Array<WalEntry>, seq: number): P
 					// Already present remotely; restore resolves it through the chunk index by hash.
 					indexEntry.chunks.push({ hash, length: 0, offset: -1 });
 			}
-		}
+		} else if (entry.blobs && entry.blobs.length > 0)
+			indexEntry.hash = await sha256Text(entry.blobs.map((b) => b.hash).join(','));
+		else if ((entry.flags ?? 0) & FLAG_DELETION) indexEntry.hash = '<deleted>';
 		for (const blob of entry.blobData ?? []) blobBytes.push(blob);
 		for (const blob of entry.blobs ?? []) blobRefs.push(blob);
 		entries.push(indexEntry);
@@ -257,26 +262,46 @@ async function indexPackByRef(ctx: FlushContext, ref: PackRef): Promise<void> {
  * 1. Replay any pending WAL.
  * 2. LIST heads/ once, read each head log, mirror it locally, and fold its peak Lamport into the local
  *    clock so future edits are ordered after every observed remote commit.
- * 3. For each device, LIST packs/<deviceId>/ once and promote orphan packs (written but never recorded
- *    in the head log) using the self-certifying seq+hash in the filename.
- * 4. Rebuild history-index and history-chunks from every pack referenced by the head logs.
+ * 3. For each device with newer commits, LIST packs/<deviceId>/ once and promote orphan packs (written
+ *    but never recorded in the head log) using the self-certifying seq+hash in the filename.
+ * 4. Rebuild history-index and history-chunks only from newly observed packs, skipping packs that were
+ *    already indexed under previous generations.
  */
+const inFlightReconciles = new Map<string, Promise<void>>();
+
 export async function reconcile(ctx: FlushContext): Promise<void> {
+	const key = `${ctx.remote.ns}:${ctx.remote.deviceId}`;
+	const active = inFlightReconciles.get(key);
+	if (active) return active;
+	const promise = runReconcile(ctx).finally(() => inFlightReconciles.delete(key));
+	inFlightReconciles.set(key, promise);
+	return promise;
+}
+
+async function runReconcile(ctx: FlushContext): Promise<void> {
 	await flushPending(ctx, 'cold-start');
 	const headIds = await ctx.remote.listHeads();
 	let seenLamport = 0;
-	const logs: Array<CommitLog> = [];
+	const logsToReconcile: Array<{ cached?: CommitLog; log: CommitLog }> = [];
 	for (const headId of headIds) {
+		const cached = await ctx.stores.heads.get(headId);
+		if (headId === ctx.remote.deviceId && cached) {
+			seenLamport = Math.max(seenLamport, cached.peakLamport);
+			continue;
+		}
 		const log = await ctx.remote.readHead(headId);
 		if (!log) continue;
-		const cached = await ctx.stores.heads.get(headId);
-		if (!cached || cached.generation < log.generation) await ctx.stores.heads.set(headId, log);
 		seenLamport = Math.max(seenLamport, log.peakLamport);
-		logs.push(log);
+		if (cached && cached.generation >= log.generation) continue;
+
+		logsToReconcile.push({ cached, log });
 	}
 	if (seenLamport > 0) await bumpLamport(ctx.stores, seenLamport);
 
-	for (const log of logs) {
+	for (const { cached, log } of logsToReconcile) {
+		const cachedPackKeys = new Set(
+			cached?.packs.map((pack) => `${pack.deviceId}:${pack.seq}:${pack.hash}`),
+		);
 		const known = new Set(
 			log.packs.map((pack) => packFileName(pack.deviceId, pack.seq, pack.hash)),
 		);
@@ -296,7 +321,11 @@ export async function reconcile(ctx: FlushContext): Promise<void> {
 			};
 			await indexPack(ctx, orphanRef, decoded.header, decoded.entries);
 		}
-		for (const ref of log.packs) await indexPackByRef(ctx, ref);
+		for (const ref of log.packs) {
+			if (cachedPackKeys.has(`${ref.deviceId}:${ref.seq}:${ref.hash}`)) continue;
+			await indexPackByRef(ctx, ref);
+		}
+		await ctx.stores.heads.set(log.deviceId, log);
 	}
 }
 
@@ -317,7 +346,7 @@ export class FlushScheduler {
 		this.pendingRevisions += 1;
 		// Fast channel: a thin 1s debounce that only asks the sync core to upload the live note.
 		if (this.fastTimer) clearTimeout(this.fastTimer);
-		this.fastTimer = setTimeout(() => this.ctx.requestSync('history'), FAST_DEBOUNCE_MS);
+		this.fastTimer = setTimeout(() => this.ctx.requestSync('realtime'), FAST_DEBOUNCE_MS);
 		if (this.idleTimer) clearTimeout(this.idleTimer);
 		this.idleTimer = setTimeout(() => void this.trigger('idle'), IDLE_MS);
 		if (this.pendingRevisions >= MAX_REVISIONS || this.pendingBytes >= MAX_BYTES)
