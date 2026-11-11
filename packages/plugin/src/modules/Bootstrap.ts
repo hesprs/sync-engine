@@ -177,6 +177,32 @@ export default class Bootstrap {
 			}),
 			priority: 1000,
 		});
+		registerTrigger('collaboration', {
+			options: () => ({
+				needConfirmDeletion: getDeletionConfirm(),
+				remoteLister:
+					this.settings.realtimeSyncFastMode && context20000.keys().length
+						? ({ reporter }) => {
+								const entries = context20000.values();
+								const filtered: Array<Stat> = [];
+								return Promise.all(
+									entries.map(async (stat, index) => {
+										if (
+											(await reporter({
+												completed: index + 1,
+												current: stat.key,
+												total: entries.length,
+											})) === 'exclude'
+										)
+											return;
+										filtered.push(stat);
+									}),
+								).then(() => filtered);
+							}
+						: undefined,
+			}),
+			priority: 1500,
+		});
 		registerTrigger('interval', {
 			options: () => ({ needConfirmDeletion: getDeletionConfirm() }),
 			priority: 2000,
