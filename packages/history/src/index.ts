@@ -9,6 +9,7 @@ import { listVersions, restoreVersion } from '@/restore';
 import historySetting from '@/setting';
 import { openHistoryStores } from '@/store';
 import { ingestDeletion, ingestEdit } from '@/wal';
+import { getOrCreateDeviceId } from '@repo/shared/device-id';
 import { NONE_STRATEGY, prepareGlobMatch } from '@repo/shared/glob-match';
 import { sha256Bytes } from '@repo/shared/sha256-bytes';
 import { Notice, TFile } from 'obsidian';
@@ -81,12 +82,7 @@ export default class HistoryModule {
 	private cipher?: HistoryCipher;
 	private deviceId = '';
 
-	moduleSettings: HistorySettings = {
-		autoGc: true,
-		deviceId: '',
-		maxVersions: 100,
-		retentionDays: 90,
-	};
+	moduleSettings: HistorySettings = { autoGc: true, maxVersions: 100, retentionDays: 90 };
 
 	constructor(private readonly ctx: HistoryContext) {
 		ctx.registerI18n('en', en);
@@ -97,11 +93,11 @@ export default class HistoryModule {
 
 	readonly start = () => {
 		const { ctx } = this;
-		if (!this.moduleSettings.deviceId) {
-			this.moduleSettings.deviceId = crypto.randomUUID();
+		this.deviceId = getOrCreateDeviceId(ctx.app, this.moduleSettings.deviceId);
+		if (this.moduleSettings.deviceId !== undefined) {
+			delete this.moduleSettings.deviceId;
 			void ctx.saveSettings();
 		}
-		this.deviceId = this.moduleSettings.deviceId;
 		const stores = openHistoryStores(ctx.indexedDB, namespaceOf(ctx));
 		this.stores = stores;
 		ctx.registerEvent(ctx.app.vault.on('create', this.onVaultCreate));

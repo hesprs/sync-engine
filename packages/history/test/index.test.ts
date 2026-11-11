@@ -17,6 +17,7 @@ function fakeContext() {
 	const listeners = new Map<string, Array<(payload?: unknown) => void>>();
 	const menuHandlers: Array<(menu: unknown, file: unknown) => void> = [];
 	const vaultHandlers = new Map<string, (file: unknown, oldPath?: string) => void>();
+	const localStorageMap = new Map<string, unknown>();
 	const files = new Map<string, string>();
 	const memDb = openMemoryDB(`history-${crypto.randomUUID()}`);
 	const ctx = {
@@ -25,6 +26,11 @@ function fakeContext() {
 			return command;
 		},
 		app: {
+			loadLocalStorage: (key: string) => localStorageMap.get(key),
+			saveLocalStorage: (key: string, data: unknown) => {
+				if (data === undefined) localStorageMap.delete(key);
+				else localStorageMap.set(key, data);
+			},
 			vault: {
 				getAbstractFileByPath: (path: string) => (files.has(path) ? { path } : undefined),
 				on: (event: string, handler: (file: unknown, oldPath?: string) => void) => {
@@ -80,7 +86,17 @@ test('the constructor registers all four locales', () => {
 	const { ctx, i18n } = fakeContext();
 	const module = new HistoryModule(ctx as never);
 	expect(i18n).toStrictEqual(['en', 'zh', 'zh-TW', 'ru']);
-	expect(module.moduleSettings.deviceId).toBe('');
+	expect(module.moduleSettings.deviceId).toBeUndefined();
+});
+
+test('start initializes deviceId in local storage and removes legacy deviceId from moduleSettings', () => {
+	const { ctx } = fakeContext();
+	const module = new HistoryModule(ctx as never);
+	module.moduleSettings.deviceId = 'legacy-device-id-99';
+	module.start();
+	expect(module.moduleSettings.deviceId).toBeUndefined();
+	expect(ctx.app.loadLocalStorage('sync-engine-history-device-id')).toBe('legacy-device-id-99');
+	module.dispose();
 });
 
 test('start registers a setting, a vault listener and a file-menu handler', () => {

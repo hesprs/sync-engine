@@ -6,7 +6,7 @@ import type { SettingGroupItem } from 'obsidian';
 
 export type HistorySettings = {
 	autoGc?: boolean;
-	deviceId: string;
+	deviceId?: string;
 	lastGcTime?: number;
 	maxVersions: number;
 	retentionDays: number;
