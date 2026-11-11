@@ -28,4 +28,12 @@ export { default as keepRemoteResolver } from './conflict-resolve/keep-remote';
 export { default as keepLocalResolver } from './conflict-resolve/keep-local';
 export { default as latestSurviveResolver } from './conflict-resolve/latest-survive';
 export { default as renameAndKeepBothResolver } from './conflict-resolve/rename-and-keep-both';
+export {
+	executeTasks,
+	getTaskRegion,
+	getTaskTransferSize,
+	FAST_LANE_THRESHOLD,
+	getDefaultMaxMemory,
+} from './executor';
+export type { TaskExecutorOptions } from './executor';
 export const syncCancelledError = new Error('Sync cancelled by user.');

@@ -1,5 +1,5 @@
-import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import untilTrue from '@/utils/until-true';
+import { NONE_STRATEGY, prepareGlobMatch } from '@repo/shared/glob-match';
 import type { Dispatch } from './EventBus';
 import type { SyncStage } from './Observability';
 import type { SyncOptions, SyncTerminateReason } from './Sync';

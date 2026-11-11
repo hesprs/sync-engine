@@ -1,10 +1,10 @@
 import UntrustedModuleModal from '@/components/UntrustedModuleModal';
-import sha256 from '@/utils/sha-256';
 import untilTrue from '@/utils/until-true';
 import hash from '@repo/shared/crypto';
 import { importCode } from '@repo/shared/e2e-utils.spec';
 import { describeError, toError } from '@repo/shared/error';
 import { parseUrl } from '@repo/shared/path';
+import { sha256 } from '@repo/shared/sha256-bytes';
 import obsidian, { Notice, requestUrl } from 'obsidian';
 import { compare } from 'verkit';
 import type { Dispatch } from './EventBus';

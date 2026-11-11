@@ -79,6 +79,7 @@ export type { RecordStore } from '@/modules/Storage';
 export type { ModuleMeta, AugmentedModuleMeta } from '@/modules/Extensibility';
 export type { SyncTerminateReason, SyncOptions, RemoteLister } from '@/modules/Sync';
 export type { ExistingMemoryDB } from '@/modules/Bootstrap';
+export type { ModuleStatus, StatusLevel } from '@/modules/Observability';
 export type * from '@/fs/interface';
 export type { VaultRequest } from '@/fs';
 export type SelectFromContext<O extends object> = Context extends O ? O : never;

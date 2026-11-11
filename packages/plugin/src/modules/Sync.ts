@@ -5,12 +5,13 @@ import {
 	AddRecord,
 	RemoveRecord,
 	convertMoves,
+	executeTasks,
+	getTaskRegion,
 	syncCancelledError,
 	taskMap,
 } from '@/sync';
-import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
-import { REGRET_ERROR_MESSAGE } from '@/utils/pipe';
 import { toError } from '@repo/shared/error';
+import { NONE_STRATEGY, prepareGlobMatch } from '@repo/shared/glob-match';
 import { isSub } from '@repo/shared/path';
 import { ref } from 'synthkernel';
 import type { Dispatch, On } from './EventBus';
@@ -30,7 +31,7 @@ import type {
 	StatsMap,
 	TogglableValue,
 } from '@/types';
-import type { GlobMatchResult } from '@/utils/glob-match';
+import type { GlobMatchResult } from '@repo/shared/glob-match';
 import type { Ref } from 'synthkernel';
 
 export type SyncTerminateReason =
@@ -75,7 +76,11 @@ export default class Sync {
 		taskFailed: FailedTaskInfo;
 		executionStarted: Array<Task>;
 	};
-	declare readonly settings: { maxFileSize: TogglableValue; syncStrategy: Array<GlobStrategy> };
+	declare readonly settings: {
+		maxFileSize: TogglableValue;
+		maxMemoryConsumption?: TogglableValue;
+		syncStrategy: Array<GlobStrategy>;
+	};
 	declare readonly i18n: { xOperationsFailed: Snippet<number> };
 
 	private readonly postProcess = (stats: Array<Stat>) => {
@@ -128,7 +133,6 @@ export default class Sync {
 			this;
 		const { on, dispatch, initializeSync, getConflictResolver, translate, decideTasks } = ctx;
 		const isCancelled = ref(false);
-		let failedCount = 0;
 		let tasks: Array<Task>;
 		let terminateReason!: SyncTerminateReason;
 		const cleanup = on('syncCanceled', () => isCancelled(true));
@@ -232,24 +236,17 @@ export default class Sync {
 
 			if (isCancelled()) throw syncCancelledError;
 			dispatch('executionStarted', tasks);
-			await Promise.all(
-				tasks.map(async (task) => {
-					const complete = () => dispatch('taskCompleted', toTaskInfo(task));
-					try {
-						await task.exec();
-						complete();
-					} catch (error) {
-						if (isCancelled()) return;
-						const err = toError(error);
-						if (err.message === REGRET_ERROR_MESSAGE) {
-							complete();
-							return;
-						}
-						failedCount++;
-						dispatch('taskFailed', { ...toTaskInfo(task), error: err });
-					}
-				}),
-			);
+			const userMemoryBudget = this.settings.maxMemoryConsumption?.enabled
+				? this.settings.maxMemoryConsumption.value
+				: undefined;
+			const { failedCount } = await executeTasks(tasks, {
+				isCancelled,
+				maxMemory: userMemoryBudget,
+				onTaskComplete: (task) => dispatch('taskCompleted', toTaskInfo(task)),
+				onTaskFailed: (task, error) => {
+					dispatch('taskFailed', { ...toTaskInfo(task), error });
+				},
+			});
 
 			terminateReason = isCancelled()
 				? { result: 'cancelled' }
@@ -325,15 +322,9 @@ function toTaskInfo({ key, name, local, remote }: Task): TaskInfo {
 }
 
 function sortTasks(tasks: Array<Task>) {
-	const region = (task: Task) => {
-		const isFolder = task.local?.isDir === true || task.remote?.isDir === true;
-		if (task.name === 'removeLocal' || task.name === 'removeRemote') return isFolder ? 3 : 0;
-		if (task.name === 'createLocalDir' || task.name === 'createRemoteDir') return 1;
-		return task.name === 'moveLocal' || task.name === 'moveRemote' ? 2 : 4;
-	};
 	tasks.sort((a, b) => {
-		const aRegion = region(a);
-		const bRegion = region(b);
+		const aRegion = getTaskRegion(a);
+		const bRegion = getTaskRegion(b);
 		if (aRegion !== bRegion) return aRegion - bRegion;
 		if (aRegion === 3) return b.key.length - a.key.length;
 		if (aRegion === 1 || aRegion === 2) return a.key.length - b.key.length;

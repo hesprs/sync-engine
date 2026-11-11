@@ -1,9 +1,8 @@
 import { STREAM_RESERVATION_SIZE } from '@/fs/wrappers/memory-control';
-import { getStatus } from '@repo/shared/error';
+import { isNotFound } from '@repo/shared/error';
 import { Platform } from 'obsidian';
 import type { Fs } from '@/fs';
 import type { Binary, FileStat, MaybePromise } from '@/types';
-import type { ErrorLike } from '@repo/shared/error';
 
 export const REGRET_ERROR_MESSAGE = '=== Sync Engine Operation Regretted ===';
 export const REGRET_ERROR = new Error(REGRET_ERROR_MESSAGE);
@@ -34,7 +33,7 @@ export async function readWithSize(fs: Fs, key: string, stat: FileStat) {
 		if (stat.size >= streamThreshold) return await fs.readStream(key, stat);
 		return await fs.read(key, stat);
 	} catch (error) {
-		if (isNonExistent(error)) throw REGRET_ERROR;
+		if (isNotFound(error)) throw REGRET_ERROR;
 		throw error;
 	}
 }
@@ -48,12 +47,4 @@ export function writeWithSize(
 	if (stat.size >= streamThreshold)
 		return fs.writeStream(key, value as MaybePromise<ReadableStream<Binary>>, stat);
 	return fs.write(key, value as MaybePromise<Binary>, stat);
-}
-
-// Swallow TOCTOU
-function isNonExistent(error: unknown) {
-	return (
-		getStatus(error) === 404 ||
-		(((error as ErrorLike).message as string) ?? String(error)).toUpperCase().includes('ENOENT')
-	);
 }

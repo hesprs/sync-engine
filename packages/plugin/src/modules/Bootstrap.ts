@@ -20,7 +20,7 @@ import {
 	renameAndKeepBothResolver,
 	pholderDecider,
 } from '@/sync';
-import { NONE_STRATEGY } from '@/utils/glob-match';
+import { NONE_STRATEGY } from '@repo/shared/glob-match';
 import type { Dispatch, On } from './EventBus';
 import type { ObsidianLanguageCode, Translate, TranslationResource } from './I18n';
 import type {
@@ -88,8 +88,7 @@ export default class Bootstrap {
 		FileTreeTranslations &
 		ModulesTranslations;
 	declare readonly settings: {
-		// See below
-		// maxMemoryConsumption: TogglableValue;
+		maxMemoryConsumption: TogglableValue;
 		maxRequestConcurrency: TogglableValue;
 		minRequestInterval: TogglableValue;
 		realtimeSyncFastMode: boolean;
