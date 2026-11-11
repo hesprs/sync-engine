@@ -99,6 +99,32 @@ test('a keyless pulse falls back to the full remote walk', () => {
 	bridge.dispose();
 });
 
+test('a keyless pulse with fastMode enabled uses the cached snapshot instead of a full walk', () => {
+	const { memoryDB, registry } = setup();
+	memoryDB.getStore('remoteContext20000').set('cached.md', file('cached.md'));
+	const bridge = new SyncBridge(
+		{
+			deciderRegistry: registry,
+			dispatch: () => {},
+			getConflictResolver: () => () => {},
+			memoryDB,
+			on: () => () => {},
+			registerDecider: () => () => true,
+			requestSync: () => Promise.resolve({ result: 'noop' }),
+			translate: ((key: string) => key) as never,
+		},
+		{
+			fastMode: () => true,
+			journal: new RaceJournal(),
+			rules: () => [{ expr: '*', strategy: 'bidirectional' }],
+		},
+	);
+	bridge.accept(pulse());
+	const options = bridge.triggerOptions();
+	expect(options?.remoteLister).toBeDefined();
+	bridge.dispose();
+});
+
 test('changed keys with an empty snapshot fall back to the full remote walk', () => {
 	const { bridge } = setup();
 	bridge.accept(pulse({ keys: ['note.md'] }));

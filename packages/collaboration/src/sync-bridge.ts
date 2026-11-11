@@ -38,10 +38,31 @@ type BridgeContext = {
 function makeIncrementalLister(
 	keys: Array<string> | undefined,
 	memoryDB: ExistingMemoryDB,
+	fastModeFallback = false,
 ): NonNullable<SyncOptions['remoteLister']> | undefined {
-	if (!keys || keys.length === 0) return undefined;
 	const store = memoryDB.getStore('remoteContext20000');
 	if (store.keys().length === 0) return undefined;
+	if (!keys || keys.length === 0) {
+		if (!fastModeFallback) return undefined;
+		return async ({ reporter }) => {
+			const entries = store.values();
+			const filtered: Array<Stat> = [];
+			await Promise.all(
+				entries.map(async (stat, index) => {
+					if (
+						(await reporter({
+							completed: index + 1,
+							current: stat.key,
+							total: entries.length,
+						})) === 'exclude'
+					)
+						return;
+					filtered.push(stat);
+				}),
+			);
+			return filtered;
+		};
+	}
 	return async ({ remoteFs, reporter }) => {
 		try {
 			await patchChangedStats(remoteFs, store, keys);
@@ -100,7 +121,11 @@ export default class SyncBridge {
 
 	constructor(
 		private readonly ctx: BridgeContext,
-		private readonly options: { journal: RaceJournal; rules: () => Array<GlobStrategy> },
+		private readonly options: {
+			fastMode?: () => boolean;
+			journal: RaceJournal;
+			rules: () => Array<GlobStrategy>;
+		},
 	) {
 		this.cleanupCallbacks.push(
 			ctx.on('syncStarted', () => {
@@ -148,11 +173,26 @@ export default class SyncBridge {
 	}
 
 	private buildOptions(): SyncOptions | undefined {
-		if (!this.pending) return;
+		const fastMode = Boolean(this.options.fastMode?.());
+		if (!this.pending) {
+			const remoteLister = fastMode
+				? makeIncrementalLister(undefined, this.ctx.memoryDB, true)
+				: undefined;
+			if (!remoteLister) return;
+			const rules = this.options.rules();
+			const syncStrategy = rules.map((rule) => ({
+				expr: rule.expr,
+				strategy: this.wrappedStrategy(rule.strategy),
+			}));
+			const conflictResolver = createRaceAwareResolver({
+				getConfiguredResolver: this.ctx.getConflictResolver,
+			});
+			return { conflictResolver, remoteLister, syncStrategy };
+		}
 		const { keys } = this.pending;
 		this.pending = undefined;
 		this.activeCandidates.clear();
-		const remoteLister = makeIncrementalLister(keys, this.ctx.memoryDB);
+		const remoteLister = makeIncrementalLister(keys, this.ctx.memoryDB, fastMode);
 		const options: SyncOptions = remoteLister ? { remoteLister } : {};
 		const rules = this.options.rules();
 		const syncStrategy = rules.map((rule) => ({

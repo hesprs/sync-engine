@@ -59,7 +59,11 @@ type CollaborationContext = SelectFromContext<{
 	requestSync: (trigger: string) => Promise<SyncTerminateReason>;
 	saveSettings: () => Promise<void>;
 	setModuleStatus: (id: string, status?: ModuleStatus) => () => void;
-	settings: { syncStrategy: Array<GlobStrategy> };
+	settings: {
+		confirmDeleteInAutoSync?: boolean;
+		realtimeSyncFastMode?: boolean;
+		syncStrategy: Array<GlobStrategy>;
+	};
 	translate: Translate<CollaborationTranslations>;
 }>;
 
@@ -119,7 +123,11 @@ export default class Collaboration {
 				requestSync: ctx.requestSync,
 				translate: ctx.translate,
 			},
-			{ journal: this.journal, rules: () => this.ctx.settings.syncStrategy },
+			{
+				fastMode: () => Boolean(this.ctx.settings.realtimeSyncFastMode),
+				journal: this.journal,
+				rules: () => this.ctx.settings.syncStrategy,
+			},
 		);
 		this.cleanup.push(
 			ctx.registerRemoteFsWrapper({
@@ -135,7 +143,10 @@ export default class Collaboration {
 				priority: 30_100,
 			}),
 			ctx.registerTrigger('collaboration', {
-				options: () => this.bridge?.triggerOptions() ?? {},
+				options: () => ({
+					needConfirmDeletion: this.ctx.settings.confirmDeleteInAutoSync,
+					...this.bridge?.triggerOptions(),
+				}),
 				priority: 1500,
 			}),
 			ctx.registerSetting({
