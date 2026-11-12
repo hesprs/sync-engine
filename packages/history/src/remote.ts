@@ -1,6 +1,8 @@
 import { decodeHeadLog, encodeHeadLog } from '@/head-log';
 import { packFileName } from '@/pack';
-import { digOriginal, prefixWrapper, writeWithSize } from '@hesprs/sync-engine-sdk';
+import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
+import { getStatus, isNotFound } from '@repo/shared/error';
+import { dirname } from '@repo/shared/path';
 import type { HistoryCipher } from '@/crypto';
 import type { CommitLog } from '@/types';
 import type { Binary, FileStat, Fs, ListOptions, Stat } from '@hesprs/sync-engine-sdk';
@@ -62,18 +64,29 @@ export function openRemoteHistory(
 	/** Writes bytes, encrypting at rest when a cipher is active. */
 	async function put(key: string, bytes: Uint8Array): Promise<void> {
 		const payload = cipher ? await cipher.encrypt(bytes) : bytes;
-		await writeWithSize(fs, key, payload as Binary, fileStat(key, payload.byteLength));
+		const stat = fileStat(key, payload.byteLength);
+		try {
+			await fs.write(key, payload as Binary, stat);
+		} catch (error) {
+			const status = getStatus(error);
+			if (status === 409 || status === 404) {
+				const dir = dirname(key);
+				if (dir && dir !== '/') {
+					await fs.mkdir(dir, { isDir: true, key: dir, meta: () => ({}) }, true);
+					await fs.write(key, payload as Binary, stat);
+					return;
+				}
+			}
+			throw error;
+		}
 	}
 
 	/**
 	 * Reads raw (possibly encrypted) bytes, without decrypting. History always decodes a whole
-	 * object in memory, so a single full read is used instead of the size-based streaming path:
-	 * ranged streams are unreliable on Android and would only be buffered here anyway.
+	 * object in memory, so a single full read is used instead of the size-based streaming path.
 	 */
 	async function readBytes(key: string): Promise<Uint8Array> {
-		const stat = await fs.stat(key);
-		if (stat.isDir) throw new Error(`Expected a file at ${key}`);
-		return fs.read(key, stat);
+		return fs.read(key, fileStat(key, 0));
 	}
 
 	async function get(key: string): Promise<Uint8Array> {
@@ -82,7 +95,12 @@ export function openRemoteHistory(
 	}
 
 	async function listHeadIds(): Promise<Array<string>> {
-		const stats: Array<Stat> = await fs.list(remotePath(ns, 'heads'), includeAll);
+		let stats: Array<Stat>;
+		try {
+			stats = await fs.list(remotePath(ns, 'heads'), includeAll);
+		} catch {
+			return [];
+		}
 		return stats
 			.filter((stat) => !stat.isDir && stat.key.endsWith('.log'))
 			.map((stat) => (stat.key.split('/').at(-1) ?? stat.key).slice(0, -4));
@@ -120,8 +138,14 @@ export function openRemoteHistory(
 		},
 		async readHead(headDeviceId) {
 			const key = headKey(ns, headDeviceId);
-			if (!(await fs.exists(key))) return;
-			return decodeHeadLog(await get(key));
+			try {
+				const bytes = await get(key);
+				if (!bytes || bytes.byteLength === 0) return;
+				return await decodeHeadLog(bytes);
+			} catch (error) {
+				if (isNotFound(error) || String(error).toLowerCase().includes('missing')) return;
+				throw error;
+			}
 		},
 		async writeHead(log) {
 			await put(headKey(ns, log.deviceId), encodeHeadLog(log));

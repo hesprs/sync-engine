@@ -5,6 +5,7 @@ import { chunkLocation, lookupCommit, versionKey } from '@/index-store';
 import { decodePack, readIndexOnly } from '@/pack';
 import { appendWal, blobPresent } from '@/store';
 import { FLAG_DELETION, FLAG_SMALL_FILE } from '@/types';
+import { isNotFound } from '@repo/shared/error';
 import { sha256Bytes } from '@repo/shared/sha256-bytes';
 import type { RemoteHistory } from '@/remote';
 import type { HistoryStores } from '@/store';
@@ -72,7 +73,8 @@ export async function restoreVersion(ctx: RestoreContext, ref: VersionRef): Prom
 	try {
 		bytes = await fetchPack(ctx, location.pack);
 	} catch (error) {
-		await ctx.stores.index.delete(versionKey(ref));
+		if (isNotFound(error) || String(error).toLowerCase().includes('missing'))
+			await ctx.stores.index.delete(versionKey(ref));
 		throw error;
 	}
 	const { entries } = await readIndexOnly(bytes);
@@ -226,9 +228,10 @@ export async function listVersions(
 		let bytes: Uint8Array;
 		try {
 			bytes = await fetchPack(ctx, group);
-		} catch {
-			for (const lamport of group.lamports)
-				await ctx.stores.index.delete(`${key}@${lamport}`);
+		} catch (error) {
+			if (isNotFound(error) || String(error).toLowerCase().includes('missing'))
+				for (const lamport of group.lamports)
+					await ctx.stores.index.delete(`${key}@${lamport}`);
 			continue;
 		}
 		const { entries } = await readIndexOnly(bytes);
