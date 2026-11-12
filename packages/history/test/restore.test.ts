@@ -254,3 +254,23 @@ test('a missing version throws instead of falling back to another commit in the 
 	}
 	expect(threw).toBe(true);
 });
+
+test('restoreVersion restores standalone blob for attachment files without decoding text', async () => {
+	const db = openMemoryDB(`history-blob-${crypto.randomUUID()}`) as never as HistoryDatabase;
+	const stores = openHistoryStores(db, 'ns');
+	const { remote } = fakeRemote();
+	const ctx = { remote, requestSync: () => {}, stores };
+	const rawBytes = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+	await ingestEdit(stores, 'image.png', rawBytes);
+	await flushPending(ctx, 'count');
+
+	const versions = await listVersions(ctx, 'image.png');
+	expect(versions).toHaveLength(1);
+
+	const restored = await restoreVersion(ctx, { key: 'image.png', lamport: versions[0].lamport });
+	expect(restored.key).toBe('image.png');
+	expect(restored.binary).toBeDefined();
+	expect(restored.binary).toStrictEqual(rawBytes);
+	expect(restored.text).toBe('');
+	expect(restored.merged).toBe(false);
+});

@@ -152,7 +152,10 @@ export async function flushPendingBatch(
 	const wal: Array<WalEntry> = [];
 	let bytes = 0;
 	for (const entry of all) {
-		const size = (entry.text?.length ?? 0) + (entry.newChunks?.length ?? 0);
+		const size =
+			(entry.text?.length ?? 0) +
+			(entry.newChunks?.length ?? 0) +
+			(entry.blobData?.reduce((acc, b) => acc + b.bytes.byteLength, 0) ?? 0);
 		if (wal.length > 0 && bytes + size > maxBytes) break;
 		wal.push(entry);
 		bytes += size;

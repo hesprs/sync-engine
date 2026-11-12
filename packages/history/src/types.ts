@@ -92,11 +92,12 @@ export type ChunkLocation = { pack: PackRef; offset: number; length: number };
 export type FlushReason = 'idle' | 'count' | 'volume' | 'lifecycle';
 export type VersionRef = { key: string; lamport?: number; commitHash?: string };
 export type RestoreResult = {
-	key: string;
-	text: string;
-	lamport: number;
 	at: number;
+	binary?: Uint8Array;
+	key: string;
+	lamport: number;
 	merged: boolean;
+	text: string;
 };
 
 /**

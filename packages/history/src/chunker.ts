@@ -13,6 +13,10 @@ export type ChunkedContent = {
 	blobData?: Array<{ hash: string; bytes: Uint8Array }>;
 };
 
+export const TEXT_EXTS = ['.md', '.canvas', '.txt', '.json', '.base'];
+export const isTextFile = (path: string): boolean =>
+	TEXT_EXTS.some((ext) => path.toLowerCase().endsWith(ext));
+
 /** Hashes a unified key for `IndexEntry.keyHash`, normalized to NFC. */
 export function keyHash(key: string): Promise<string> {
 	return sha256Text(key.normalize('NFC'));
@@ -20,7 +24,7 @@ export function keyHash(key: string): Promise<string> {
 
 /**
  * Routes content at WAL ingestion. Small notes are stored inline; larger notes are split by FastCDC
- * and only unseen chunk bytes are kept; big attachments become standalone blobs.
+ * and only unseen chunk bytes are kept; attachments and big notes become standalone blobs.
  */
 export async function captureContent(
 	stores: HistoryStores,
@@ -28,7 +32,7 @@ export async function captureContent(
 	data: Uint8Array,
 ): Promise<ChunkedContent> {
 	const normalizedKey = key.normalize('NFC');
-	if (data.byteLength >= BIG_BLOB_LIMIT) {
+	if (!isTextFile(normalizedKey) || data.byteLength >= BIG_BLOB_LIMIT) {
 		const hash = await sha256Bytes(data);
 		return {
 			blobData: [{ bytes: new Uint8Array(data), hash }],

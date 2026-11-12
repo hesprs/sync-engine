@@ -12,9 +12,16 @@ export { default as RecoverDeletedModal } from './recover-deleted-modal';
 
 export type HistoryModalActions = {
 	currentText?: string;
-	load: (key: string, lamport: number) => Promise<string>;
-	restore: (text: string) => Promise<void>;
+	isBinary?: boolean;
+	load: (key: string, lamport: number) => Promise<{ binary?: Uint8Array; text: string }>;
+	restore: (text: string, binary?: Uint8Array) => Promise<void>;
 };
+
+function formatBytes(bytes: number): string {
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
 
 /** Translate returns DocumentFragment for function-valued keys; our translations yield strings. */
 function text(value: unknown): string {
@@ -25,6 +32,8 @@ function text(value: unknown): string {
 export default class HistoryModal extends Modal {
 	private selected?: VersionSummary;
 	private selectedText = '';
+	private selectedBinary?: Uint8Array;
+	private objectUrl?: string;
 	private currentText = '';
 	private viewMode: 'diff' | 'full' = 'diff';
 	private previewEl?: HTMLElement;
@@ -46,6 +55,7 @@ export default class HistoryModal extends Modal {
 		super(ctx.app);
 		this.setTitle(text(ctx.translate('historyTitle', file.path)));
 		if (actions.currentText !== undefined) this.currentText = actions.currentText;
+		if (actions.isBinary) this.viewMode = 'full';
 	}
 
 	onOpen(): void {
@@ -148,40 +158,42 @@ export default class HistoryModal extends Modal {
 				versions: this.versions,
 			});
 
-		const btnGroup = isMobile ? toolbar.createEl('div') : toolbar;
-		if (isMobile) {
-			btnGroup.style.display = 'flex';
-			btnGroup.style.borderRadius = '6px';
-			btnGroup.style.overflow = 'hidden';
-			btnGroup.style.border = '1px solid var(--background-modifier-border)';
-			btnGroup.style.flexShrink = '0';
+		if (!this.actions.isBinary) {
+			const btnGroup = isMobile ? toolbar.createEl('div') : toolbar;
+			if (isMobile) {
+				btnGroup.style.display = 'flex';
+				btnGroup.style.borderRadius = '6px';
+				btnGroup.style.overflow = 'hidden';
+				btnGroup.style.border = '1px solid var(--background-modifier-border)';
+				btnGroup.style.flexShrink = '0';
+			}
+
+			this.diffBtn = btnGroup.createEl('button', {
+				text: text(this.ctx.translate(isMobile ? 'viewDiffShort' : 'viewDiff')),
+			});
+			this.fullBtn = btnGroup.createEl('button', {
+				text: text(this.ctx.translate(isMobile ? 'viewFullShort' : 'viewFull')),
+			});
+
+			this.diffStatsEl = toolbar.createEl('div');
+			this.diffStatsEl.style.fontSize = '12px';
+			this.diffStatsEl.style.marginLeft = isMobile ? '0' : 'auto';
+			this.diffStatsEl.style.fontFamily = 'var(--font-monospace, monospace)';
+			this.diffStatsEl.style.flexShrink = '0';
+
+			this.updateToolbarButtons();
+
+			this.diffBtn.addEventListener('click', () => {
+				this.viewMode = 'diff';
+				this.updateToolbarButtons();
+				this.renderPreview();
+			});
+			this.fullBtn.addEventListener('click', () => {
+				this.viewMode = 'full';
+				this.updateToolbarButtons();
+				this.renderPreview();
+			});
 		}
-
-		this.diffBtn = btnGroup.createEl('button', {
-			text: text(this.ctx.translate(isMobile ? 'viewDiffShort' : 'viewDiff')),
-		});
-		this.fullBtn = btnGroup.createEl('button', {
-			text: text(this.ctx.translate(isMobile ? 'viewFullShort' : 'viewFull')),
-		});
-
-		this.diffStatsEl = toolbar.createEl('div');
-		this.diffStatsEl.style.fontSize = '12px';
-		this.diffStatsEl.style.marginLeft = isMobile ? '0' : 'auto';
-		this.diffStatsEl.style.fontFamily = 'var(--font-monospace, monospace)';
-		this.diffStatsEl.style.flexShrink = '0';
-
-		this.updateToolbarButtons();
-
-		this.diffBtn.addEventListener('click', () => {
-			this.viewMode = 'diff';
-			this.updateToolbarButtons();
-			this.renderPreview();
-		});
-		this.fullBtn.addEventListener('click', () => {
-			this.viewMode = 'full';
-			this.updateToolbarButtons();
-			this.renderPreview();
-		});
 
 		this.previewEl = previewWrap.createEl('div');
 		this.previewEl.style.flex = '1';
@@ -254,16 +266,71 @@ export default class HistoryModal extends Modal {
 		return text(this.ctx.translate('version', { at: version.at }));
 	}
 
+	onClose(): void {
+		if (this.objectUrl) {
+			URL.revokeObjectURL(this.objectUrl);
+			this.objectUrl = undefined;
+		}
+	}
+
 	private renderPreview(): void {
 		if (!this.previewEl) return;
 		this.previewEl.empty();
-		if (!this.selectedText && !this.selected) {
+		if (this.objectUrl) {
+			URL.revokeObjectURL(this.objectUrl);
+			this.objectUrl = undefined;
+		}
+		if (!this.selectedText && !this.selectedBinary && !this.selected) {
 			if (this.diffStatsEl) this.diffStatsEl.empty();
 			this.previewEl.setText(
 				text(this.ctx.translate(Platform.isMobile ? 'previewHintMobile' : 'previewHint')),
 			);
 			return;
 		}
+
+		if (this.selectedBinary) {
+			if (this.diffStatsEl) this.diffStatsEl.empty();
+			const wrap = this.previewEl.createEl('div');
+			wrap.style.display = 'flex';
+			wrap.style.flexDirection = 'column';
+			wrap.style.alignItems = 'center';
+			wrap.style.justifyContent = 'center';
+			wrap.style.padding = '16px';
+			wrap.style.gap = '12px';
+
+			const ext = this.file.path.split('.').pop()?.toLowerCase() ?? '';
+			const imageExts = new Set(['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp', 'bmp', 'ico']);
+			const audioExts = new Set(['mp3', 'wav', 'm4a', 'ogg']);
+
+			const sizeLabel = formatBytes(this.selectedBinary.byteLength);
+			const info = wrap.createEl('div');
+			info.style.fontSize = '12px';
+			info.style.color = 'var(--text-muted)';
+			info.style.fontFamily = 'var(--font-monospace, monospace)';
+			info.setText(`${ext ? `.${ext.toUpperCase()}` : 'Binary'} • ${sizeLabel}`);
+
+			if (imageExts.has(ext)) {
+				const mime =
+					ext === 'svg' ? 'image/svg+xml' : `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+				const blob = new Blob([this.selectedBinary.buffer as ArrayBuffer], { type: mime });
+				this.objectUrl = URL.createObjectURL(blob);
+				const img = wrap.createEl('img');
+				img.src = this.objectUrl;
+				img.style.maxWidth = '100%';
+				img.style.maxHeight = '40vh';
+				img.style.objectFit = 'contain';
+				img.style.borderRadius = '4px';
+				img.style.border = '1px solid var(--background-modifier-border)';
+			} else if (audioExts.has(ext)) {
+				const blob = new Blob([this.selectedBinary.buffer as ArrayBuffer]);
+				this.objectUrl = URL.createObjectURL(blob);
+				const audio = wrap.createEl('audio');
+				audio.src = this.objectUrl;
+				audio.controls = true;
+			}
+			return;
+		}
+
 		if (this.viewMode === 'full') {
 			if (this.diffStatsEl) this.diffStatsEl.empty();
 			const pre = this.previewEl.createEl('pre');
@@ -304,8 +371,13 @@ export default class HistoryModal extends Modal {
 		item?: HTMLButtonElement,
 		list?: HTMLElement,
 	): Promise<void> {
+		if (this.objectUrl) {
+			URL.revokeObjectURL(this.objectUrl);
+			this.objectUrl = undefined;
+		}
 		this.selected = version;
 		this.selectedText = '';
+		this.selectedBinary = undefined;
 		this.resetConfirmation();
 		const listContainer = list ?? this.listEl;
 		const index = this.versions.findIndex((v) => v.lamport === version.lamport);
@@ -338,7 +410,8 @@ export default class HistoryModal extends Modal {
 		if (this.restoreButton) this.restoreButton.setDisabled(true);
 		try {
 			const loaded = await this.actions.load(this.file.path, version.lamport);
-			this.selectedText = loaded;
+			this.selectedText = loaded.text;
+			this.selectedBinary = loaded.binary;
 			this.renderPreview();
 			if (this.restoreButton) this.restoreButton.setDisabled(false);
 		} catch (error) {
@@ -374,7 +447,7 @@ export default class HistoryModal extends Modal {
 			return;
 		}
 		try {
-			await this.actions.restore(this.selectedText);
+			await this.actions.restore(this.selectedText, this.selectedBinary);
 			new Notice(text(this.ctx.translate('restored', label)));
 			this.close();
 		} catch (error) {

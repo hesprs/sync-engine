@@ -155,6 +155,7 @@ test('the file-menu handler adds a Show history item only for supported files', 
 			cb(item);
 		},
 	};
+	// By default (trackAttachments: false), only supported text files show history
 	handler(menu, { path: 'note.md' });
 	handler(menu, { path: 'board.canvas' });
 	handler(menu, { children: [], path: 'folder' });
@@ -162,10 +163,16 @@ test('the file-menu handler adds a Show history item only for supported files', 
 	expect(added).toHaveLength(2);
 	expect(added[0]).toBe('showHistory');
 	expect(added[1]).toBe('showHistory');
+
+	// When trackAttachments is true, attachments also show history
+	module.moduleSettings.trackAttachments = true;
+	handler(menu, { path: 'image.png' });
+	expect(added).toHaveLength(3);
+	expect(added[2]).toBe('showHistory');
 	module.dispose();
 });
 
-test('onVaultCreate queues non-empty supported files with debounce and ignores empty or unsupported files', async () => {
+test('onVaultCreate queues non-empty files with debounce, captures attachments only when trackAttachments is true', async () => {
 	const { ctx, files, listeners, memDb, vaultHandlers } = fakeContext();
 	const module = new HistoryModule(ctx as never);
 	module.start();
@@ -180,36 +187,48 @@ test('onVaultCreate queues non-empty supported files with debounce and ignores e
 	const pendingEmpty = memDb.getStore('ns-history-pending').values();
 	expect(pendingEmpty).toHaveLength(0);
 
-	// 2. Unsupported file should be ignored
-	files.set('photo.png', 'binary-data');
-	onCreate?.({ path: 'photo.png' });
-	await sleep(50);
-	const pendingUnsupported = memDb.getStore('ns-history-pending').values();
-	expect(pendingUnsupported).toHaveLength(0);
-
-	// 3. Folder should be ignored
+	// 2. Folder should be ignored
 	onCreate?.({ children: [], path: 'my-folder' });
 	await sleep(50);
 	const pendingFolder = memDb.getStore('ns-history-pending').values();
 	expect(pendingFolder).toHaveLength(0);
 
-	// 4. Non-empty markdown file is debounced and ingested upon flush/sync
-	files.set('note.md', '# Initial Created Content');
-	onCreate?.({ path: 'note.md' });
+	// 3. By default (trackAttachments: false), attachments are ignored
+	files.set('photo-ignored.png', 'binary-data');
+	onCreate?.({ path: 'photo-ignored.png' });
 	await sleep(50);
-	// In debounce queue, not committed yet
+	const syncStartedListeners = listeners.get('syncStarted') ?? [];
+	for (const fn of syncStartedListeners) fn();
+	await sleep(50);
 	let pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	expect(pending).toHaveLength(0);
 
-	// Trigger flush via syncStarted
-	const syncStartedListeners = listeners.get('syncStarted') ?? [];
+	// 4. When trackAttachments is enabled, attachments are captured as standalone blobs
+	module.moduleSettings.trackAttachments = true;
+	files.set('photo.png', 'binary-data');
+	onCreate?.({ path: 'photo.png' });
+	await sleep(50);
+	for (const fn of syncStartedListeners) fn();
+	await sleep(50);
+	pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
+	expect(pending).toHaveLength(1);
+	expect(pending[0].key).toBe('photo.png');
+	expect(pending[0].blobs).toBeDefined();
+	expect(pending[0].blobs?.[0].key).toBe('photo.png');
+	expect(pending[0].blobData).toBeDefined();
+
+	// 5. Non-empty markdown file is debounced and ingested upon flush/sync
+	files.set('note.md', '# Initial Created Content');
+	onCreate?.({ path: 'note.md' });
+	await sleep(50);
+
 	for (const fn of syncStartedListeners) fn();
 	await sleep(50);
 
 	pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
-	expect(pending).toHaveLength(1);
-	expect(pending[0].key).toBe('note.md');
-	expect(pending[0].text).toBe('# Initial Created Content');
+	expect(pending).toHaveLength(2);
+	expect(pending[1].key).toBe('note.md');
+	expect(pending[1].text).toBe('# Initial Created Content');
 
 	module.dispose();
 });
@@ -395,6 +414,59 @@ test('checkAutoGc persists lastGcTime in store and does not modify moduleSetting
 	expect(stored).toBeGreaterThan(0);
 	expect((module.moduleSettings as Record<string, unknown>).lastGcTime).toBeUndefined();
 	expect(saveSettingsCalled).toBe(false);
+
+	module.dispose();
+});
+
+test('protectExcludedNotes allows excluded text files to be tracked while attachments remain ignored', async () => {
+	const { ctx, files, listeners, memDb, menuHandlers, vaultHandlers } = fakeContext();
+	ctx.settings.syncStrategy = [
+		{ expr: '*', strategy: 'bidirectional' },
+		{ expr: 'excluded/**', strategy: 'none' },
+	];
+
+	const module = new HistoryModule(ctx as never);
+	module.moduleSettings.protectExcludedNotes = true;
+	module.start();
+
+	const menuHandler = menuHandlers[0];
+	const added: Array<string> = [];
+	const menu = {
+		addItem: (cb: (item: unknown) => void) => {
+			const item = {
+				onClick: () => item,
+				setIcon: () => item,
+				setTitle: (title: string) => {
+					added.push(title);
+					return item;
+				},
+			};
+			cb(item);
+		},
+	};
+
+	// Context menu: excluded note should have showHistory, excluded attachment should not
+	menuHandler(menu, { path: 'excluded/note.md' });
+	menuHandler(menu, { path: 'excluded/image.png' });
+	expect(added).toHaveLength(1);
+	expect(added[0]).toBe('showHistory');
+
+	// Vault create: excluded note is captured into pending WAL, excluded attachment is ignored
+	const onCreate = vaultHandlers.get('create');
+	files.set('excluded/note.md', '# Protected Note Content');
+	files.set('excluded/image.png', 'binary-content');
+	onCreate?.({ path: 'excluded/note.md' });
+	onCreate?.({ path: 'excluded/image.png' });
+
+	await sleep(50);
+	const syncStartedListeners = listeners.get('syncStarted') ?? [];
+	for (const fn of syncStartedListeners) fn();
+	await sleep(50);
+
+	const pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
+	expect(pending).toHaveLength(1);
+	expect(pending[0].key).toBe('excluded/note.md');
+	expect(pending[0].text).toBe('# Protected Note Content');
 
 	module.dispose();
 });

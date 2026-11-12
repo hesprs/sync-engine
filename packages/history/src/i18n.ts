@@ -17,6 +17,8 @@ export type HistoryTranslations = {
 	noVersions: string;
 	previewHint: string;
 	previewHintMobile: string;
+	protectExcludedNotes: string;
+	protectExcludedNotesDescription: string;
 	recoverDeleted: string;
 	recoverDeletedTitle: string;
 	restore: string;
@@ -26,6 +28,8 @@ export type HistoryTranslations = {
 	retentionDaysDescription: string;
 	runGc: string;
 	showHistory: string;
+	trackAttachments: string;
+	trackAttachmentsDescription: string;
 	version: (args: { at: number }) => string;
 	viewDiff: string;
 	viewDiffShort: string;
@@ -56,6 +60,9 @@ const en: HistoryTranslations = {
 	noVersions: 'No versions captured for this file yet.',
 	previewHint: 'Select a version on the left to preview its content.',
 	previewHintMobile: 'Select a version above to preview its content.',
+	protectExcludedNotes: 'Protect excluded notes',
+	protectExcludedNotesDescription:
+		'Track history versions for notes excluded from sync by sync rules (does not apply to attachments).',
 	recoverDeleted: 'Recover deleted note',
 	recoverDeletedTitle: 'Recover deleted notes',
 	restore: 'Restore this version',
@@ -66,6 +73,9 @@ const en: HistoryTranslations = {
 		'Versions older than this many days are dropped during garbage collection.',
 	runGc: 'Run garbage collection',
 	showHistory: 'Sync Engine: Show history',
+	trackAttachments: 'Track attachment history',
+	trackAttachmentsDescription:
+		'Save historical versions for synced attachments and binary files (increases remote storage usage).',
 	version: ({ at }) => (at > 0 ? new Date(at).toLocaleString() : 'Time unknown'),
 	viewDiff: 'Diff with current',
 	viewDiffShort: 'Diff',
@@ -92,6 +102,8 @@ const zh: HistoryTranslations = {
 	noVersions: '该文件尚未捕获任何版本。',
 	previewHint: '在左侧选择一个版本以预览内容。',
 	previewHintMobile: '在上方选择一个版本以预览内容。',
+	protectExcludedNotes: '保护被排除同步的笔记',
+	protectExcludedNotesDescription: '为被同步规则排除的文本笔记保留历史版本（不包含附件）。',
 	recoverDeleted: '恢复已删除笔记',
 	recoverDeletedTitle: '恢复已删除笔记',
 	restore: '恢复此版本',
@@ -101,6 +113,9 @@ const zh: HistoryTranslations = {
 	retentionDaysDescription: '垃圾回收会丢弃超过该天数的旧版本。',
 	runGc: '运行垃圾回收',
 	showHistory: 'Sync Engine：查看历史',
+	trackAttachments: '记录附件历史版本',
+	trackAttachmentsDescription:
+		'为库内正常同步的附件及二进制文件保存历史版本（会增加云端存储占用）。',
 	version: ({ at }) => (at > 0 ? new Date(at).toLocaleString() : '时间未知'),
 	viewDiff: '对比当前版本',
 	viewDiffShort: '对比',
@@ -127,6 +142,8 @@ const zhTW: HistoryTranslations = {
 	noVersions: '該檔案尚未擷取任何版本。',
 	previewHint: '在左側選擇一個版本以預覽內容。',
 	previewHintMobile: '在上方選擇一個版本以預覽內容。',
+	protectExcludedNotes: '保護被排除同步的筆記',
+	protectExcludedNotesDescription: '為被同步規則排除的文字筆記保留歷史版本（不包含附件）。',
 	recoverDeleted: '還原已刪除筆記',
 	recoverDeletedTitle: '還原已刪除筆記',
 	restore: '還原此版本',
@@ -136,6 +153,9 @@ const zhTW: HistoryTranslations = {
 	retentionDaysDescription: '垃圾回收會捨棄超過此天數的舊版本。',
 	runGc: '執行垃圾回收',
 	showHistory: 'Sync Engine：查看歷史',
+	trackAttachments: '記錄附件歷史版本',
+	trackAttachmentsDescription:
+		'為庫內正常同步的附件及二進位檔案儲存歷史版本（會增加雲端儲存空間佔用）。',
 	version: ({ at }) => (at > 0 ? new Date(at).toLocaleString() : '時間未知'),
 	viewDiff: '對比目前版本',
 	viewDiffShort: '對比',
@@ -165,6 +185,9 @@ const ru: HistoryTranslations = {
 	noVersions: 'Для этого файла ещё нет версий.',
 	previewHint: 'Выберите версию слева, чтобы просмотреть содержимое.',
 	previewHintMobile: 'Выберите версию выше, чтобы просмотреть содержимое.',
+	protectExcludedNotes: 'Защита исключенных заметок',
+	protectExcludedNotesDescription:
+		'Сохранять историю версий для текстовых заметок, исключенных из синхронизации (не распространяется на вложения).',
 	recoverDeleted: 'Восстановить удаленную заметку',
 	recoverDeletedTitle: 'Восстановление удаленных заметок',
 	restore: 'Восстановить эту версию',
@@ -174,6 +197,9 @@ const ru: HistoryTranslations = {
 	retentionDaysDescription: 'Версии старше этого числа дней удаляются при сборке мусора.',
 	runGc: 'Запустить сборку мусора',
 	showHistory: 'Sync Engine: показать историю',
+	trackAttachments: 'История версий для вложений',
+	trackAttachmentsDescription:
+		'Сохранять историю версий для синхронизируемых вложений и бинарных файлов (увеличивает объем используемого хранилища).',
 	version: ({ at }) => (at > 0 ? new Date(at).toLocaleString() : 'Время неизвестно'),
 	viewDiff: 'Сравнить с текущей',
 	viewDiffShort: 'Дифф',

@@ -9,7 +9,9 @@ export type HistorySettings = {
 	deviceId?: string;
 	lastGcTime?: number;
 	maxVersions: number;
+	protectExcludedNotes?: boolean;
 	retentionDays: number;
+	trackAttachments?: boolean;
 };
 
 export type HistorySettingActions = { runGc: () => Promise<number> };
@@ -67,6 +69,34 @@ export default function historySetting(
 								settings.autoGc = value;
 								void saveSettings();
 							});
+						});
+					},
+				})),
+				2600: s(() => ({
+					desc: translate('protectExcludedNotesDescription'),
+					name: translate('protectExcludedNotes'),
+					render: (setting) => {
+						setting.addToggle((toggle) => {
+							toggle
+								.setValue(settings.protectExcludedNotes === true)
+								.onChange((value) => {
+									settings.protectExcludedNotes = value;
+									void saveSettings();
+								});
+						});
+					},
+				})),
+				2700: s(() => ({
+					desc: translate('trackAttachmentsDescription'),
+					name: translate('trackAttachments'),
+					render: (setting) => {
+						setting.addToggle((toggle) => {
+							toggle
+								.setValue(settings.trackAttachments === true)
+								.onChange((value) => {
+									settings.trackAttachments = value;
+									void saveSettings();
+								});
 						});
 					},
 				})),

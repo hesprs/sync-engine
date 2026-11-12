@@ -1,3 +1,4 @@
+import { isTextFile } from '@/chunker';
 import { createHistoryCipher } from '@/crypto';
 import { FlushScheduler, reconcile } from '@/flush';
 import { compact } from '@/gc';
@@ -8,10 +9,19 @@ import { openRemoteHistory } from '@/remote';
 import { listVersions, restoreVersion } from '@/restore';
 import historySetting from '@/setting';
 import { getOrCreateDeviceId, openHistoryStores, readLastGcTime, saveLastGcTime } from '@/store';
+import {
+	findDeletedKeys,
+	isRemoteWriteTask,
+	namespaceOf,
+	readCurrentText,
+	readFileBytes,
+	text,
+	writeVaultFile,
+} from '@/vault';
 import { ingestDeletion, ingestEdit } from '@/wal';
 import { NONE_STRATEGY, prepareGlobMatch } from '@repo/shared/glob-match';
 import { sha256Bytes } from '@repo/shared/sha256-bytes';
-import { Notice, TFile } from 'obsidian';
+import { Notice } from 'obsidian';
 import type { HistoryCipher } from '@/crypto';
 import type { HistoryTranslations } from '@/i18n';
 import type { RemoteHistory } from '@/remote';
@@ -30,20 +40,11 @@ import type {
 	TranslationResource,
 } from '@hesprs/sync-engine-sdk';
 import type { GlobStrategy } from '@repo/shared/glob-match';
-import type { App, Command, EventRef, Menu, TAbstractFile } from 'obsidian';
+import type { App, Command, EventRef, Menu, TAbstractFile, TFile } from 'obsidian';
 
 const DEBOUNCE_MS = 15_000;
 const MAX_WAIT_MS = 60_000;
 const DAY_MS = 86_400_000;
-
-const SUPPORTED_EXTS = ['.md', '.canvas', '.txt', '.json'];
-const isSupportedHistoryFile = (path: string) =>
-	SUPPORTED_EXTS.some((ext) => path.toLowerCase().endsWith(ext));
-const isRemoteWriteTask = (name: string) =>
-	name === 'download' ||
-	name === 'resolveConflict' ||
-	name === 'moveLocal' ||
-	name === 'removeLocal';
 
 type HistoryContext = SelectFromContext<{
 	addCommand: (command: Command) => Command;
@@ -82,7 +83,13 @@ export default class HistoryModule {
 	private cipher?: HistoryCipher;
 	private deviceId = '';
 
-	moduleSettings: HistorySettings = { autoGc: true, maxVersions: 100, retentionDays: 90 };
+	moduleSettings: HistorySettings = {
+		autoGc: true,
+		maxVersions: 100,
+		protectExcludedNotes: false,
+		retentionDays: 90,
+		trackAttachments: false,
+	};
 
 	constructor(private readonly ctx: HistoryContext) {
 		ctx.registerI18n('en', en);
@@ -211,7 +218,7 @@ export default class HistoryModule {
 		void this.checkAutoGc();
 	}
 
-	private isIgnored(filePath: string): boolean {
+	private isSyncIgnored(filePath: string): boolean {
 		const syncStrategy = this.ctx.settings.syncStrategy;
 		if (!syncStrategy || syncStrategy.length === 0) return false;
 		const rulesKey = syncStrategy.map((rule) => `${rule.expr}:${rule.strategy}`).join('|');
@@ -222,10 +229,16 @@ export default class HistoryModule {
 		return this.compiledMatcher(filePath).strategy === NONE_STRATEGY;
 	}
 
+	private isHistoryIgnored(filePath: string): boolean {
+		const isText = isTextFile(filePath);
+		if (this.isSyncIgnored(filePath))
+			return !(isText && this.moduleSettings.protectExcludedNotes);
+		return !isText && !this.moduleSettings.trackAttachments;
+	}
+
 	/** Adds a per-file "Show history" item to the file explorer context menu. */
 	private readonly onFileMenu = (menu: Menu, file: TAbstractFile) => {
-		if ('children' in file || !isSupportedHistoryFile(file.path) || this.isIgnored(file.path))
-			return;
+		if ('children' in file || this.isHistoryIgnored(file.path)) return;
 		menu.addItem((item) => {
 			item.setTitle(this.ctx.translate('showHistory'))
 				.setIcon('history')
@@ -234,7 +247,7 @@ export default class HistoryModule {
 	};
 
 	private async openHistoryForPath(filePath: string): Promise<void> {
-		if (!this.remote || !this.stores || this.isIgnored(filePath)) return;
+		if (!this.remote || !this.stores || this.isHistoryIgnored(filePath)) return;
 		const ctx = { remote: this.remote, requestSync: () => {}, stores: this.stores };
 		let versions;
 		try {
@@ -246,14 +259,8 @@ export default class HistoryModule {
 			new Notice(text(this.ctx.translate('loadFailed', String(error))));
 			return;
 		}
-		const existing = this.ctx.app.vault.getAbstractFileByPath(filePath);
-		let currentText = '';
-		if (existing instanceof TFile)
-			try {
-				currentText = await this.ctx.app.vault.read(existing);
-			} catch {
-				// Keep empty if read fails.
-			}
+		const currentText = await readCurrentText(this.ctx.app, filePath);
+		const isText = isTextFile(filePath);
 
 		new HistoryModal(
 			{ app: this.ctx.app, translate: this.ctx.translate },
@@ -261,16 +268,13 @@ export default class HistoryModule {
 			versions,
 			{
 				currentText,
+				isBinary: !isText,
 				load: async (key, lamport) => {
 					const result = await restoreVersion(ctx, { key, lamport });
-					return result.text;
+					return { binary: result.binary, text: result.text };
 				},
-				restore: async (content) => {
-					const target = this.ctx.app.vault.getAbstractFileByPath(filePath);
-					await (target instanceof TFile
-						? this.ctx.app.vault.modify(target, content)
-						: this.ctx.app.vault.create(filePath, content));
-				},
+				restore: (textContent, binaryContent) =>
+					writeVaultFile(this.ctx.app, filePath, textContent, binaryContent),
 			},
 		).open();
 	}
@@ -280,16 +284,9 @@ export default class HistoryModule {
 		await this.flushPendingDebounces();
 		await reconcile({ remote: this.remote, requestSync: () => {}, stores: this.stores });
 		const locations = await allCommitLocations(this.stores);
-		const deletedKeys = [
-			...new Set(
-				locations
-					.map(([key]) => key.split('@')[0])
-					.filter(
-						(key) =>
-							!this.ctx.app.vault.getAbstractFileByPath(key) && !this.isIgnored(key),
-					),
-			),
-		];
+		const deletedKeys = findDeletedKeys(this.ctx.app, locations, (key) =>
+			this.isHistoryIgnored(key),
+		);
 		new RecoverDeletedModal(
 			{ app: this.ctx.app, translate: this.ctx.translate },
 			deletedKeys,
@@ -306,7 +303,12 @@ export default class HistoryModule {
 				this.lastIngestedHash.set(key, hash);
 				await this.stores.hashes.set(key, hash);
 				const entry = await ingestEdit(this.stores, key, data);
-				this.scheduler?.onEdit(entry.text?.length ?? entry.newChunks?.length ?? 0);
+				this.scheduler?.onEdit(
+					entry.text?.length ??
+						entry.newChunks?.length ??
+						entry.blobData?.reduce((acc, b) => acc + b.bytes.byteLength, 0) ??
+						0,
+				);
 			})
 			.catch(() => {});
 		this.commitQueue = next;
@@ -314,7 +316,7 @@ export default class HistoryModule {
 	}
 
 	private async flushPendingForPath(filePath: string): Promise<void> {
-		if (!this.stores || this.isIgnored(filePath)) return;
+		if (!this.stores || this.isHistoryIgnored(filePath)) return;
 		const pending = this.pendingDebounces.get(filePath);
 		if (!pending) return;
 		clearTimeout(pending.timer);
@@ -329,7 +331,7 @@ export default class HistoryModule {
 		this.pendingDebounces.clear();
 		for (const [index, [key, pending]] of entries.entries()) {
 			clearTimeout(pending.timer);
-			if (this.isIgnored(key)) continue;
+			if (this.isHistoryIgnored(key)) continue;
 			const hash = await sha256Bytes(pending.data);
 			void this.commitEdit(key, pending.data, hash);
 			if ((index + 1) % 10 === 0)
@@ -340,9 +342,11 @@ export default class HistoryModule {
 		await this.commitQueue;
 	}
 
-	private queueIngest(filePath: string, content: string): void {
-		if (!this.stores || this.isIgnored(filePath)) return;
-		const data = new TextEncoder().encode(content);
+	private queueIngest(filePath: string, data: Uint8Array): void {
+		if (!this.stores || this.isHistoryIgnored(filePath)) return;
+		const isText = isTextFile(filePath);
+		const debounceMs = isText ? DEBOUNCE_MS : 1000;
+		const maxWaitMs = isText ? MAX_WAIT_MS : 5000;
 		void sha256Bytes(data).then(async (hash) => {
 			if (!this.stores) return;
 			let lastHash = this.lastIngestedHash.get(filePath);
@@ -355,7 +359,7 @@ export default class HistoryModule {
 			const existing = this.pendingDebounces.get(filePath);
 			if (existing) {
 				clearTimeout(existing.timer);
-				if (now - existing.firstScheduledAt >= MAX_WAIT_MS) {
+				if (now - existing.firstScheduledAt >= maxWaitMs) {
 					this.pendingDebounces.delete(filePath);
 					void this.commitEdit(filePath, data, hash);
 					return;
@@ -363,7 +367,7 @@ export default class HistoryModule {
 				const timer = setTimeout(() => {
 					this.pendingDebounces.delete(filePath);
 					void this.commitEdit(filePath, data, hash);
-				}, DEBOUNCE_MS);
+				}, debounceMs);
 				this.pendingDebounces.set(filePath, {
 					data,
 					firstScheduledAt: existing.firstScheduledAt,
@@ -373,7 +377,7 @@ export default class HistoryModule {
 				const timer = setTimeout(() => {
 					this.pendingDebounces.delete(filePath);
 					void this.commitEdit(filePath, data, hash);
-				}, DEBOUNCE_MS);
+				}, debounceMs);
 				this.pendingDebounces.set(filePath, { data, firstScheduledAt: now, timer });
 			}
 		});
@@ -383,8 +387,7 @@ export default class HistoryModule {
 		if (
 			!this.stores ||
 			'children' in file ||
-			!isSupportedHistoryFile(file.path) ||
-			this.isIgnored(file.path) ||
+			this.isHistoryIgnored(file.path) ||
 			this.syncWrittenFiles.has(file.path)
 		) {
 			this.syncWrittenFiles.delete(file.path);
@@ -396,10 +399,10 @@ export default class HistoryModule {
 	private readonly onVaultCreate = (file: TAbstractFile) => {
 		if (this.shouldIgnoreFile(file)) return;
 		const filePath = file.path;
-		void this.ctx.app.vault.read(file as TFile).then(
-			(content) => {
-				if (!this.stores || content.length === 0) return;
-				this.queueIngest(filePath, content);
+		void readFileBytes(this.ctx.app, file as TFile).then(
+			(data) => {
+				if (!this.stores || data.byteLength === 0) return;
+				this.queueIngest(filePath, data);
 			},
 			() => {},
 		);
@@ -408,10 +411,10 @@ export default class HistoryModule {
 	private readonly onVaultModify = (file: TAbstractFile) => {
 		if (this.shouldIgnoreFile(file)) return;
 		const filePath = file.path;
-		void this.ctx.app.vault.read(file as TFile).then(
-			(content) => {
+		void readFileBytes(this.ctx.app, file as TFile).then(
+			(data) => {
 				if (!this.stores) return;
-				this.queueIngest(filePath, content);
+				this.queueIngest(filePath, data);
 			},
 			() => {},
 		);
@@ -446,8 +449,7 @@ export default class HistoryModule {
 		}
 		this.lastIngestedHash.delete(oldPath);
 		void this.stores.hashes.delete(oldPath);
-		if (isSupportedHistoryFile(file.path) && !this.isIgnored(file.path))
-			this.onVaultModify(file);
+		if (!this.isHistoryIgnored(file.path)) this.onVaultModify(file);
 	};
 
 	private async checkAutoGc(): Promise<void> {
@@ -490,11 +492,3 @@ export default class HistoryModule {
 		this.remoteFsUid = undefined;
 	};
 }
-
-const namespaceOf = (ctx: HistoryContext): string | undefined => {
-	const ns = ctx.getNamespace();
-	return ns instanceof Error ? undefined : ns;
-};
-
-/** Translate types function-valued keys as DocumentFragment; our translations return strings. */
-const text = (value: unknown): string => (typeof value === 'string' ? value : String(value));

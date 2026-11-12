@@ -1,4 +1,4 @@
-import { assembleChunks, captureContent } from '@/chunker';
+import { assembleChunks, captureContent, isTextFile } from '@/chunker';
 import { mergeTextLines } from '@/dag';
 import { reconcile } from '@/flush';
 import { chunkLocation, lookupCommit, versionKey } from '@/index-store';
@@ -86,6 +86,21 @@ export async function restoreVersion(ctx: RestoreContext, ref: VersionRef): Prom
 	if (!entry) {
 		await ctx.stores.index.delete(versionKey(ref));
 		throw new Error(`Version ${ref.key}@${ref.lamport} is missing from its pack`);
+	}
+
+	if (entry.blobs && entry.blobs.length > 0) {
+		const blob = entry.blobs[0];
+		if (!blob) throw new Error(`Empty blob entry for ${ref.key}`);
+		const blobBytes = await ctx.remote.getObject(`${ctx.remote.ns}/blobs/${blob.hash}.blob`);
+		const isText = isTextFile(entry.key);
+		return {
+			at: entry.at,
+			binary: isText ? undefined : blobBytes,
+			key: entry.key,
+			lamport: entry.lamport,
+			merged: false,
+			text: isText ? new TextDecoder().decode(blobBytes) : '',
+		};
 	}
 
 	const decoded = await decodePack(bytes);
