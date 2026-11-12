@@ -1,4 +1,4 @@
-import { getOrCreateDeviceId, DEVICE_ID_STORAGE_KEY } from '@/device-id';
+import { DEVICE_ID_STORAGE_KEY, getOrCreateDeviceId } from '@/device-id';
 import { App } from '@/obsidian-mock.spec';
 import { beforeEach, expect, test } from 'bun:test';
 

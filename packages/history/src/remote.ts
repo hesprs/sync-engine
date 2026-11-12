@@ -1,6 +1,6 @@
 import { decodeHeadLog, encodeHeadLog } from '@/head-log';
 import { packFileName } from '@/pack';
-import { digOriginal, prefixWrapper, readWithSize, writeWithSize } from '@hesprs/sync-engine-sdk';
+import { digOriginal, prefixWrapper, writeWithSize } from '@hesprs/sync-engine-sdk';
 import type { HistoryCipher } from '@/crypto';
 import type { CommitLog } from '@/types';
 import type { Binary, FileStat, Fs, ListOptions, Stat } from '@hesprs/sync-engine-sdk';
@@ -65,28 +65,15 @@ export function openRemoteHistory(
 		await writeWithSize(fs, key, payload as Binary, fileStat(key, payload.byteLength));
 	}
 
-	/** Reads raw (possibly encrypted) bytes, without decrypting. */
+	/**
+	 * Reads raw (possibly encrypted) bytes, without decrypting. History always decodes a whole
+	 * object in memory, so a single full read is used instead of the size-based streaming path:
+	 * ranged streams are unreliable on Android and would only be buffered here anyway.
+	 */
 	async function readBytes(key: string): Promise<Uint8Array> {
 		const stat = await fs.stat(key);
 		if (stat.isDir) throw new Error(`Expected a file at ${key}`);
-		const value = await readWithSize(fs, key, stat);
-		if (!(value instanceof ReadableStream)) return value;
-		const chunks: Array<Uint8Array> = [];
-		const reader = value.getReader();
-		for (;;) {
-			const { done, value: chunk } = await reader.read();
-			if (done) break;
-			chunks.push(chunk);
-		}
-		let total = 0;
-		for (const chunk of chunks) total += chunk.byteLength;
-		const joined = new Uint8Array(total);
-		let offset = 0;
-		for (const chunk of chunks) {
-			joined.set(chunk, offset);
-			offset += chunk.byteLength;
-		}
-		return joined;
+		return fs.read(key, stat);
 	}
 
 	async function get(key: string): Promise<Uint8Array> {

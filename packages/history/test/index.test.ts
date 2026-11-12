@@ -1,4 +1,5 @@
 import HistoryModule from '@/index';
+import { getOrCreateDeviceId, openHistoryStores, readLastGcTime } from '@/store';
 import { expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { WalEntry } from '@/types';
@@ -9,7 +10,7 @@ const sleep = (ms: number) =>
 		setTimeout(resolve, ms);
 	});
 
-function fakeContext() {
+function fakeContext(namespace: string | Error = 'ns') {
 	const i18n: Array<string> = [];
 	const settings: Array<unknown> = [];
 	const events: Array<unknown> = [];
@@ -46,7 +47,7 @@ function fakeContext() {
 				},
 			},
 		},
-		getNamespace: () => 'ns',
+		getNamespace: () => namespace,
 		indexedDB: memDb,
 		on: (event: string, listener: (payload?: unknown) => void) => {
 			const list = listeners.get(event) ?? [];
@@ -84,18 +85,43 @@ function fakeContext() {
 
 test('the constructor registers all four locales', () => {
 	const { ctx, i18n } = fakeContext();
-	const module = new HistoryModule(ctx as never);
+	new HistoryModule(ctx as never);
 	expect(i18n).toStrictEqual(['en', 'zh', 'zh-TW', 'ru']);
-	expect(module.moduleSettings.deviceId).toBeUndefined();
 });
 
-test('start initializes deviceId in local storage and removes legacy deviceId from moduleSettings', () => {
-	const { ctx } = fakeContext();
+test('start initializes deviceId in store and removes legacy deviceId from moduleSettings', async () => {
+	const { ctx, memDb } = fakeContext();
 	const module = new HistoryModule(ctx as never);
 	module.moduleSettings.deviceId = 'legacy-device-id-99';
 	module.start();
 	expect(module.moduleSettings.deviceId).toBeUndefined();
-	expect(ctx.app.loadLocalStorage('sync-engine-history-device-id')).toBe('legacy-device-id-99');
+	const stores = openHistoryStores(memDb, 'ns');
+	const storedId = await getOrCreateDeviceId(stores);
+	expect(storedId).toBe('legacy-device-id-99');
+	module.dispose();
+});
+
+test('start initializes deviceId in store when none exists', async () => {
+	const { ctx, memDb } = fakeContext();
+	const module = new HistoryModule(ctx as never);
+	module.start();
+	const stores = openHistoryStores(memDb, 'ns');
+	const storedId = await getOrCreateDeviceId(stores);
+	expect(typeof storedId).toBe('string');
+	expect(storedId.length).toBeGreaterThan(10);
+	module.dispose();
+});
+
+test('start creates no stores when no backend is configured (namespace is an Error)', async () => {
+	const { ctx, memDb, vaultHandlers } = fakeContext(new Error('no backend'));
+	const module = new HistoryModule(ctx as never);
+	module.moduleSettings.deviceId = 'legacy-device-id-99';
+	module.start();
+	// Vault events and the legacy device id must not create empty-id stores.
+	const created = vaultHandlers.get('create');
+	if (created) created({ path: 'note.md' });
+	await sleep(30);
+	expect(memDb.getStoreNames()).toStrictEqual([]);
 	module.dispose();
 });
 
@@ -151,20 +177,20 @@ test('onVaultCreate queues non-empty supported files with debounce and ignores e
 	files.set('empty.md', '');
 	onCreate?.({ path: 'empty.md' });
 	await sleep(50);
-	const pendingEmpty = memDb.getStore('history-pending-ns').values();
+	const pendingEmpty = memDb.getStore('ns-history-pending').values();
 	expect(pendingEmpty).toHaveLength(0);
 
 	// 2. Unsupported file should be ignored
 	files.set('photo.png', 'binary-data');
 	onCreate?.({ path: 'photo.png' });
 	await sleep(50);
-	const pendingUnsupported = memDb.getStore('history-pending-ns').values();
+	const pendingUnsupported = memDb.getStore('ns-history-pending').values();
 	expect(pendingUnsupported).toHaveLength(0);
 
 	// 3. Folder should be ignored
 	onCreate?.({ children: [], path: 'my-folder' });
 	await sleep(50);
-	const pendingFolder = memDb.getStore('history-pending-ns').values();
+	const pendingFolder = memDb.getStore('ns-history-pending').values();
 	expect(pendingFolder).toHaveLength(0);
 
 	// 4. Non-empty markdown file is debounced and ingested upon flush/sync
@@ -172,7 +198,7 @@ test('onVaultCreate queues non-empty supported files with debounce and ignores e
 	onCreate?.({ path: 'note.md' });
 	await sleep(50);
 	// In debounce queue, not committed yet
-	let pending = memDb.getStore('history-pending-ns').values() as Array<WalEntry>;
+	let pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	expect(pending).toHaveLength(0);
 
 	// Trigger flush via syncStarted
@@ -180,7 +206,7 @@ test('onVaultCreate queues non-empty supported files with debounce and ignores e
 	for (const fn of syncStartedListeners) fn();
 	await sleep(50);
 
-	pending = memDb.getStore('history-pending-ns').values() as Array<WalEntry>;
+	pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	expect(pending).toHaveLength(1);
 	expect(pending[0].key).toBe('note.md');
 	expect(pending[0].text).toBe('# Initial Created Content');
@@ -216,7 +242,7 @@ test('sync downloaded files are ignored and not captured by History', async () =
 	await sleep(50);
 
 	// Downloaded files should not be captured in history
-	const pending = memDb.getStore('history-pending-ns').values() as Array<WalEntry>;
+	const pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	expect(pending).toHaveLength(0);
 
 	module.dispose();
@@ -236,7 +262,7 @@ test('syncStarted flushes pending debounces', async () => {
 	// Allow read and hash to complete
 	await sleep(50);
 	// Still in debounce queue, not committed yet
-	let pending = memDb.getStore('history-pending-ns').values() as Array<WalEntry>;
+	let pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	expect(pending).toHaveLength(0);
 
 	// Trigger syncStarted
@@ -244,7 +270,7 @@ test('syncStarted flushes pending debounces', async () => {
 	for (const fn of syncStartedListeners) fn();
 
 	await sleep(50);
-	pending = memDb.getStore('history-pending-ns').values() as Array<WalEntry>;
+	pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	expect(pending).toHaveLength(1);
 	expect(pending[0].key).toBe('debounced.md');
 
@@ -297,7 +323,7 @@ test('files with none sync strategy are completely ignored by history', async ()
 	for (const fn of syncStartedListeners) fn();
 	await sleep(50);
 
-	const pending = memDb.getStore('history-pending-ns').values() as Array<WalEntry>;
+	const pending = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	expect(pending).toHaveLength(1);
 	expect(pending[0].key).toBe('regular.md');
 
@@ -309,7 +335,7 @@ test('files with none sync strategy are completely ignored by history', async ()
 	for (const fn of syncStartedListeners) fn();
 	await sleep(50);
 
-	const pendingAfterModify = memDb.getStore('history-pending-ns').values() as Array<WalEntry>;
+	const pendingAfterModify = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	expect(pendingAfterModify).toHaveLength(1);
 	expect(pendingAfterModify[0].key).toBe('regular.md');
 
@@ -318,7 +344,7 @@ test('files with none sync strategy are completely ignored by history', async ()
 	onDelete?.({ path: 'ignored/doc.md' });
 	await sleep(50);
 
-	const pendingAfterDelete = memDb.getStore('history-pending-ns').values() as Array<WalEntry>;
+	const pendingAfterDelete = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	expect(pendingAfterDelete).toHaveLength(1);
 
 	// 5. Vault rename: renaming to an ignored path should not capture the new path
@@ -329,9 +355,46 @@ test('files with none sync strategy are completely ignored by history', async ()
 	for (const fn of syncStartedListeners) fn();
 	await sleep(50);
 
-	const pendingAfterRename = memDb.getStore('history-pending-ns').values() as Array<WalEntry>;
+	const pendingAfterRename = memDb.getStore('ns-history-pending').values() as Array<WalEntry>;
 	// Only the previous regular.md entry exists, ignored/renamed.md was never captured
 	expect(pendingAfterRename.map((e) => e.key)).toEqual(['regular.md']);
+
+	module.dispose();
+});
+
+test('checkAutoGc persists lastGcTime in store and does not modify moduleSettings', async () => {
+	const { ctx, memDb } = fakeContext();
+	let saveSettingsCalled = false;
+	ctx.saveSettings = () => {
+		saveSettingsCalled = true;
+		return Promise.resolve();
+	};
+
+	const module = new HistoryModule(ctx as never);
+	module.start();
+
+	const mockRemote = {
+		deletePack: () => Promise.resolve(),
+		deviceId: 'device-a',
+		getObject: () => Promise.resolve(new Uint8Array()),
+		listHeads: () => Promise.resolve([]),
+		listPacks: () => Promise.resolve([]),
+		ns: 'ns',
+		putBlob: () => Promise.resolve(),
+		putHead: () => Promise.resolve(),
+		putPack: () => Promise.resolve(),
+		readHead: () => Promise.resolve(),
+	};
+	(module as unknown as { remote: unknown }).remote = mockRemote;
+
+	await (module as unknown as { checkAutoGc: () => Promise<void> }).checkAutoGc();
+
+	const stores = openHistoryStores(memDb, 'ns');
+	const stored = await readLastGcTime(stores);
+	expect(typeof stored).toBe('number');
+	expect(stored).toBeGreaterThan(0);
+	expect((module.moduleSettings as Record<string, unknown>).lastGcTime).toBeUndefined();
+	expect(saveSettingsCalled).toBe(false);
 
 	module.dispose();
 });

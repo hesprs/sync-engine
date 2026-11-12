@@ -1,55 +1,103 @@
 import type { BlobRef, ChunkLocation, CommitLocation, CommitLog, WalEntry } from '@/types';
-import type { DatabaseAsync, StoreAsync } from '@hesprs/sync-engine-sdk';
+import type { DatabaseAsync, DatabaseSync, StoreAsync } from '@hesprs/sync-engine-sdk';
 
 export type HistoryStoreSchema = Record<string, unknown>;
-export type HistoryDatabase = DatabaseAsync<HistoryStoreSchema>;
+export type HistoryDatabase = DatabaseAsync<HistoryStoreSchema> | DatabaseSync<HistoryStoreSchema>;
 
 export type HistoryStores = {
-	pending: StoreAsync<WalEntry>;
-	chunks: StoreAsync<ChunkLocation>;
-	index: StoreAsync<CommitLocation>;
-	heads: StoreAsync<CommitLog>;
 	blobs: StoreAsync<BlobRef>;
-	lamport: StoreAsync<number>;
+	chunks: StoreAsync<ChunkLocation>;
 	hashes: StoreAsync<string>;
+	heads: StoreAsync<CommitLog>;
+	index: StoreAsync<CommitLocation>;
+	meta: StoreAsync<string | number>;
+	pending: StoreAsync<WalEntry>;
 };
 
 function store<S extends keyof HistoryStores>(
 	db: HistoryDatabase,
-	name: `history-${S}-${string}`,
+	name: `${string}-history-${S}`,
 ): HistoryStores[S] {
 	return db.getStore(name) as HistoryStores[S];
 }
 
-/** Opens the namespaced WAL/CAS/head stores. All keys are namespaced by the vault/remote pair. */
+/**
+ * Opens the WAL/CAS/head stores for one vault/remote pair. The namespace is the leading id so every
+ * store of a pair shares a prefix and can be enumerated, migrated or deleted together. Single-value
+ * metadata (Lamport clock, device id, last GC time) shares one `meta` store.
+ */
 export function openHistoryStores(db: HistoryDatabase, namespace: string): HistoryStores {
 	return {
-		blobs: store(db, `history-blobs-${namespace}`),
-		chunks: store(db, `history-chunks-${namespace}`),
-		hashes: store(db, `history-hashes-${namespace}`),
-		heads: store(db, `history-heads-${namespace}`),
-		index: store(db, `history-index-${namespace}`),
-		lamport: store(db, `history-lamport-${namespace}`),
-		pending: store(db, `history-pending-${namespace}`),
+		blobs: store(db, `${namespace}-history-blobs`),
+		chunks: store(db, `${namespace}-history-chunks`),
+		hashes: store(db, `${namespace}-history-hashes`),
+		heads: store(db, `${namespace}-history-heads`),
+		index: store(db, `${namespace}-history-index`),
+		meta: store(db, `${namespace}-history-meta`),
+		pending: store(db, `${namespace}-history-pending`),
 	};
 }
 
 const LAMPORT_KEY = 'clock';
+const DEVICE_ID_KEY = 'id';
+const GC_TIME_KEY = 'time';
+const deviceIdInFlight = new Map<StoreAsync<string | number>, Promise<string>>();
 
 /** Reads the persisted Lamport clock, falling back to the WAL's own lamport fields. */
 export async function readLamport(stores: HistoryStores, seen = 0): Promise<number> {
-	const clock = (await stores.lamport.get(LAMPORT_KEY)) ?? 0;
+	const clock = await stores.meta.get(LAMPORT_KEY);
 	const wal = await stores.pending.values();
 	let fromWal = 0;
 	for (const entry of wal) fromWal = Math.max(fromWal, entry.lamport);
-	return Math.max(clock, fromWal, seen);
+	return Math.max(typeof clock === 'number' ? clock : 0, fromWal, seen);
 }
 
 export async function bumpLamport(stores: HistoryStores, seen = 0): Promise<number> {
 	const current = (await readLamport(stores, seen)) + 1;
-	await stores.lamport.set(LAMPORT_KEY, current);
+	await stores.meta.set(LAMPORT_KEY, current);
 	return current;
 }
+
+/** Retrieves or initializes the local device identifier for this history store. */
+export function getOrCreateDeviceId(
+	stores: HistoryStores,
+	legacyDeviceId?: string,
+): Promise<string> {
+	const inFlight = deviceIdInFlight.get(stores.meta);
+	if (inFlight) return inFlight;
+	const promise = (async () => {
+		const stored = await stores.meta.get(DEVICE_ID_KEY);
+		if (typeof stored === 'string' && stored.length > 0) return stored;
+		const id =
+			typeof legacyDeviceId === 'string' && legacyDeviceId.length > 0
+				? legacyDeviceId
+				: crypto.randomUUID();
+		await stores.meta.set(DEVICE_ID_KEY, id);
+		return id;
+	})().finally(() => {
+		deviceIdInFlight.delete(stores.meta);
+	});
+	deviceIdInFlight.set(stores.meta, promise);
+	return promise;
+}
+
+export async function readDeviceId(stores: HistoryStores): Promise<string | undefined> {
+	const value = await stores.meta.get(DEVICE_ID_KEY);
+	return typeof value === 'string' ? value : undefined;
+}
+
+/** Reads the timestamp of the last history garbage collection. */
+export async function readLastGcTime(stores: HistoryStores): Promise<number> {
+	const value = await stores.meta.get(GC_TIME_KEY);
+	return typeof value === 'number' ? value : 0;
+}
+
+/** Persists the timestamp of the last history garbage collection. */
+export async function saveLastGcTime(stores: HistoryStores, time: number): Promise<void> {
+	await stores.meta.set(GC_TIME_KEY, time);
+}
+
+export const getLastGcTime = readLastGcTime;
 
 /**
  * Appends a WAL entry and its Lamport bump together. The entry itself carries the lamport value, so

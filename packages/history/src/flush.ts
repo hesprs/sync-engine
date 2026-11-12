@@ -264,7 +264,7 @@ async function indexPackByRef(ctx: FlushContext, ref: PackRef): Promise<void> {
  *    clock so future edits are ordered after every observed remote commit.
  * 3. For each device with newer commits, LIST packs/<deviceId>/ once and promote orphan packs (written
  *    but never recorded in the head log) using the self-certifying seq+hash in the filename.
- * 4. Rebuild history-index and history-chunks only from newly observed packs, skipping packs that were
+ * 4. Rebuild the index and chunk stores only from newly observed packs, skipping packs that were
  *    already indexed under previous generations.
  */
 const inFlightReconciles = new Map<string, Promise<void>>();

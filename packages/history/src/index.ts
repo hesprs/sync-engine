@@ -7,9 +7,8 @@ import HistoryModal, { RecoverDeletedModal } from '@/modal';
 import { openRemoteHistory } from '@/remote';
 import { listVersions, restoreVersion } from '@/restore';
 import historySetting from '@/setting';
-import { openHistoryStores } from '@/store';
+import { getOrCreateDeviceId, openHistoryStores, readLastGcTime, saveLastGcTime } from '@/store';
 import { ingestDeletion, ingestEdit } from '@/wal';
-import { getOrCreateDeviceId } from '@repo/shared/device-id';
 import { NONE_STRATEGY, prepareGlobMatch } from '@repo/shared/glob-match';
 import { sha256Bytes } from '@repo/shared/sha256-bytes';
 import { Notice, TFile } from 'obsidian';
@@ -76,6 +75,7 @@ export default class HistoryModule {
 	private cachedRulesKey = '';
 	private compiledMatcher?: (path: string) => { strategy: string };
 	private stores?: HistoryStores;
+	private storesNamespace?: string;
 	private remote?: RemoteHistory;
 	private remoteFsUid?: string;
 	private scheduler?: FlushScheduler;
@@ -93,20 +93,16 @@ export default class HistoryModule {
 
 	readonly start = () => {
 		const { ctx } = this;
-		this.deviceId = getOrCreateDeviceId(ctx.app, this.moduleSettings.deviceId);
-		if (this.moduleSettings.deviceId !== undefined) {
-			delete this.moduleSettings.deviceId;
-			void ctx.saveSettings();
-		}
-		const stores = openHistoryStores(ctx.indexedDB, namespaceOf(ctx));
-		this.stores = stores;
+		// No namespace yet means no backend: defer opening stores to syncInitialized so no empty-id store is created.
+		const namespace = namespaceOf(ctx);
+		if (namespace !== undefined) this.openStores(namespace);
 		ctx.registerEvent(ctx.app.vault.on('create', this.onVaultCreate));
 		ctx.registerEvent(ctx.app.vault.on('modify', this.onVaultModify));
 		ctx.registerEvent(ctx.app.vault.on('delete', this.onVaultDelete));
 		ctx.registerEvent(ctx.app.vault.on('rename', this.onVaultRename));
 		ctx.registerEvent(ctx.app.workspace.on('file-menu', this.onFileMenu));
 		ctx.addCommand({
-			callback: () => void this.openRecoverDeletedModal(),
+			callback: () => void this.openRecoverDeletedModal().catch(() => {}),
 			id: 'history-recover-deleted',
 			name: ctx.translate('recoverDeleted'),
 		});
@@ -122,7 +118,7 @@ export default class HistoryModule {
 						this.syncWrittenFiles.add(task.key);
 			}),
 			ctx.on('syncInitialized', ({ remoteFs }) => {
-				void this.initializeRemote(remoteFs, stores);
+				void this.initializeRemote(remoteFs);
 			}),
 			ctx.on('syncTerminated', () => {
 				const hadRemoteWrites = this.syncWrittenFiles.size > 0;
@@ -132,7 +128,7 @@ export default class HistoryModule {
 						remote: this.remote,
 						requestSync: () => {},
 						stores: this.stores,
-					});
+					}).catch(() => {});
 
 				void this.checkAutoGc();
 			}),
@@ -160,15 +156,36 @@ export default class HistoryModule {
 		}
 	};
 
+	/** Opens stores for a namespace once and migrates legacy settings into them. */
+	private openStores(namespace: string): HistoryStores {
+		if (this.stores && this.storesNamespace === namespace) return this.stores;
+		const stores = openHistoryStores(this.ctx.indexedDB, namespace);
+		this.stores = stores;
+		this.storesNamespace = namespace;
+		void getOrCreateDeviceId(stores, this.moduleSettings.deviceId).then((id) => {
+			this.deviceId = id;
+		});
+		const { deviceId, lastGcTime } = this.moduleSettings;
+		if (deviceId !== undefined || lastGcTime !== undefined) {
+			delete this.moduleSettings.deviceId;
+			delete this.moduleSettings.lastGcTime;
+			if (lastGcTime) void saveLastGcTime(stores, lastGcTime);
+			void this.ctx.saveSettings();
+		}
+		return stores;
+	}
+
 	/**
 	 * Derives a content cipher when the encryption module is active, then opens the isolated
 	 * history handle. If encryption is on but its password is missing we deliberately keep
 	 * `this.remote` unset so no plaintext history can be written.
 	 */
-	private async initializeRemote(remoteFs: Fs, stores: HistoryStores): Promise<void> {
+	private async initializeRemote(remoteFs: Fs): Promise<void> {
 		const fsUid = remoteFs.getUid();
 		if (this.remote && this.remoteFsUid === fsUid) return;
 		const { ctx } = this;
+		const namespace = ctx.getNamespace(undefined, remoteFs);
+		const stores = this.openStores(namespace);
 		let cipher: HistoryCipher | undefined;
 		try {
 			cipher = await createHistoryCipher(ctx.settings.modules, ctx.app);
@@ -177,12 +194,10 @@ export default class HistoryModule {
 			return;
 		}
 		this.cipher = cipher;
-		const remote = openRemoteHistory(
-			remoteFs,
-			ctx.getNamespace(undefined, remoteFs),
-			this.deviceId,
-			cipher,
-		);
+		const deviceId =
+			this.deviceId || (await getOrCreateDeviceId(stores, this.moduleSettings.deviceId));
+		this.deviceId = deviceId;
+		const remote = openRemoteHistory(remoteFs, namespace, deviceId, cipher);
 		if (!remote) return;
 		this.remote = remote;
 		this.remoteFsUid = fsUid;
@@ -192,7 +207,7 @@ export default class HistoryModule {
 			requestSync: (trigger) => void ctx.requestSync(trigger),
 			stores,
 		});
-		void reconcile({ remote, requestSync: () => {}, stores });
+		void reconcile({ remote, requestSync: () => {}, stores }).catch(() => {});
 		void this.checkAutoGc();
 	}
 
@@ -220,12 +235,12 @@ export default class HistoryModule {
 
 	private async openHistoryForPath(filePath: string): Promise<void> {
 		if (!this.remote || !this.stores || this.isIgnored(filePath)) return;
-		await this.flushPendingForPath(filePath);
-		await this.scheduler?.trigger('openHistory');
 		const ctx = { remote: this.remote, requestSync: () => {}, stores: this.stores };
-		await reconcile(ctx);
 		let versions;
 		try {
+			await this.flushPendingForPath(filePath);
+			await this.scheduler?.trigger('openHistory');
+			await reconcile(ctx);
 			versions = await listVersions(ctx, filePath);
 		} catch (error) {
 			new Notice(text(this.ctx.translate('loadFailed', String(error))));
@@ -364,7 +379,7 @@ export default class HistoryModule {
 		});
 	}
 
-	private readonly onVaultCreate = (file: TAbstractFile) => {
+	private shouldIgnoreFile(file: TAbstractFile): boolean {
 		if (
 			!this.stores ||
 			'children' in file ||
@@ -373,8 +388,13 @@ export default class HistoryModule {
 			this.syncWrittenFiles.has(file.path)
 		) {
 			this.syncWrittenFiles.delete(file.path);
-			return;
+			return true;
 		}
+		return false;
+	}
+
+	private readonly onVaultCreate = (file: TAbstractFile) => {
+		if (this.shouldIgnoreFile(file)) return;
 		const filePath = file.path;
 		void this.ctx.app.vault.read(file as TFile).then(
 			(content) => {
@@ -386,16 +406,7 @@ export default class HistoryModule {
 	};
 
 	private readonly onVaultModify = (file: TAbstractFile) => {
-		if (
-			!this.stores ||
-			'children' in file ||
-			!isSupportedHistoryFile(file.path) ||
-			this.isIgnored(file.path) ||
-			this.syncWrittenFiles.has(file.path)
-		) {
-			this.syncWrittenFiles.delete(file.path);
-			return;
-		}
+		if (this.shouldIgnoreFile(file)) return;
 		const filePath = file.path;
 		void this.ctx.app.vault.read(file as TFile).then(
 			(content) => {
@@ -407,16 +418,8 @@ export default class HistoryModule {
 	};
 
 	private readonly onVaultDelete = (file: TAbstractFile) => {
-		if (
-			!this.stores ||
-			'children' in file ||
-			!isSupportedHistoryFile(file.path) ||
-			this.isIgnored(file.path) ||
-			this.syncWrittenFiles.has(file.path)
-		) {
-			this.syncWrittenFiles.delete(file.path);
-			return;
-		}
+		const { stores } = this;
+		if (!stores || this.shouldIgnoreFile(file)) return;
 		const filePath = file.path;
 		const pending = this.pendingDebounces.get(filePath);
 		if (pending) {
@@ -424,8 +427,8 @@ export default class HistoryModule {
 			this.pendingDebounces.delete(filePath);
 		}
 		this.lastIngestedHash.delete(filePath);
-		void this.stores.hashes.delete(filePath);
-		void ingestDeletion(this.stores, filePath).then(() => {
+		void stores.hashes.delete(filePath);
+		void ingestDeletion(stores, filePath).then(() => {
 			this.scheduler?.onEdit(0);
 		});
 	};
@@ -450,11 +453,10 @@ export default class HistoryModule {
 	private async checkAutoGc(): Promise<void> {
 		if (this.moduleSettings.autoGc === false || !this.remote || !this.stores) return;
 		const now = Date.now();
-		if (now - (this.moduleSettings.lastGcTime ?? 0) < DAY_MS) return;
+		const lastGc = await readLastGcTime(this.stores);
+		if (now - lastGc < DAY_MS) return;
 		try {
 			await this.runGc();
-			this.moduleSettings.lastGcTime = now;
-			void this.ctx.saveSettings();
 		} catch {
 			// Background auto GC error is non-fatal
 		}
@@ -463,13 +465,15 @@ export default class HistoryModule {
 	private async runGc(): Promise<number> {
 		if (!this.remote || !this.stores) return 0;
 		await this.flushPendingDebounces();
-		return compact(
+		const result = await compact(
 			{ remote: this.remote, stores: this.stores },
 			{
 				maxVersions: this.moduleSettings.maxVersions,
 				retentionDays: this.moduleSettings.retentionDays,
 			},
 		);
+		await saveLastGcTime(this.stores, Date.now());
+		return result;
 	}
 
 	readonly dispose = () => {
@@ -481,14 +485,15 @@ export default class HistoryModule {
 		this.cleanup.splice(0).forEach((fn) => fn());
 		this.scheduler?.dispose();
 		this.stores = undefined;
+		this.storesNamespace = undefined;
 		this.remote = undefined;
 		this.remoteFsUid = undefined;
 	};
 }
 
-const namespaceOf = (ctx: HistoryContext): string => {
+const namespaceOf = (ctx: HistoryContext): string | undefined => {
 	const ns = ctx.getNamespace();
-	return ns instanceof Error ? '' : ns;
+	return ns instanceof Error ? undefined : ns;
 };
 
 /** Translate types function-valued keys as DocumentFragment; our translations return strings. */
