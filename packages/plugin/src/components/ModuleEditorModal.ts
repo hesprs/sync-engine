@@ -1,6 +1,6 @@
 import { reactivelyValidate } from '@/settings/utils';
-import sha256 from '@/utils/sha-256';
 import { formatUrl, parseUrl } from '@repo/shared/path';
+import { sha256 } from '@repo/shared/sha256-bytes';
 import { App, Modal, Setting } from 'obsidian';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Fragment, Translate } from '@/modules/I18n';

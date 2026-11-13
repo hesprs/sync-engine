@@ -70,9 +70,17 @@ const RETRYABLE_MESSAGE_PATTERNS = [
 	/\bsocket hang up\b/iu,
 	/\bconnection closed\b/iu,
 	/\bconnection reset\b/iu,
-	/\bconnection aborted\b/iu,
+	/\bconnection abort(?:ed)?\b/iu,
 	/\bconnection refused\b/iu,
+	/\bstream closed\b/iu,
+	/\bstream was reset\b/iu,
+	/\bunexpected end of stream\b/iu,
+	/\bbroken pipe\b/iu,
+	/\bsocket closed\b/iu,
+	/\bnetwork is unreachable\b/iu,
+	/\bfailed to connect\b/iu,
 	/\btemporarily unavailable\b/iu,
+	/\btime-?out\b/iu,
 	/\btimed out\b/iu,
 ];
 

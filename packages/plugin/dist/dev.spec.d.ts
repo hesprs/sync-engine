@@ -1,4 +1,6 @@
-import { Bt as Binary, Ft as RecordStat, It as RecordStatsMap, K as TaskNames, Lt as Stat, Mt as FolderStat, Nt as MaybePromise, Ot as RootFs, Rt as StatsMap, d as RequestResponse, jt as FileStat, kt as WrappedFs, l as Request, u as RequestParam, yt as Fs, z as Decider, zt as StringKV } from "./index-r0HV0XqQ.spec.js";
+import { At as RootFs, Bt as StatsMap, Ft as MaybePromise, Ht as Binary, J as TaskNames, Lt as RecordStat, Nt as FileStat, Pt as FolderStat, Rt as RecordStatsMap, V as Decider, Vt as StringKV, d as RequestResponse, jt as WrappedFs, l as Request, u as RequestParam, xt as Fs, zt as Stat } from "./index-BcHUWKEe.spec.js";
+/** Full SHA-256 over UTF-8 text or raw bytes, lowercase hex. */
+export declare function sha256(input: string | Uint8Array): Promise<string>;
 declare function debugWrapper(original: Fs, log: (content: string) => void): WrappedFs;
 type FsCalls = {
   delete: Array<string>;
@@ -80,5 +82,4 @@ declare const testKit: {
   taskKeys: typeof taskKeys;
   taskNames: typeof taskNames;
 };
-declare function sha256(input: string): Promise<string>;
-export { debugWrapper, sha256, testKit };
+export { debugWrapper, testKit };

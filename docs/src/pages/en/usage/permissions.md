@@ -22,12 +22,13 @@ Sync Engine also persists its modules in `<vault folder>/.obsidian/plugins/sync-
 
 ## Network Requests
 
-Sync Engine only makes network requests for the two purposes below:
+Sync Engine only makes network requests for the purposes below:
 
 - performs authorization and syncs files to the configured backend
 - fetches module sources and downloads modules
+- connects to the MQTT broker configured in the [Collaboration](../deep-dive/modules/collaboration) module while collaboration is enabled
 
-Requests made for syncing purpose only happen during sync runs.
+Requests made for backend syncing only happen during sync runs. MQTT broker traffic happens while Collaboration is enabled.
 
 Module sources are fetched only when automatic module update starts or user opens the module management page. Sync Engine only fetches module sources defined in the "Module sources" setting. Modules are only downloaded when the user manually downloads a module or during module auto update.
 
@@ -45,6 +46,7 @@ Obsidian secret storage is shown as "Keychain" in Obsidian settings. Sync Engine
 - [Google Drive](../deep-dive/modules/gdrive) module: manages a secret named `sync-engine-gdrive-refresh-token` automatically and uses that for authorizing connection checks and sync operations.
 - [Dropbox](../deep-dive/modules/dropbox) module: manages a secret named `sync-engine-dropbox-refresh-token` automatically and uses that for authorizing connection checks and sync operations.
 - [Encryption](../deep-dive/modules/encryption) module: reads the configured encryption password secret at the start of a sync run for later encryption and decryption
+- [Collaboration](../deep-dive/modules/collaboration) module: reads the configured room code secret when connecting and writes a new room code only when the user requests one
 
 Sync Engine and official modules never read beyond what is provided by the user.
 

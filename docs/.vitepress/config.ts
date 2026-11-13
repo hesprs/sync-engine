@@ -164,6 +164,11 @@ const localeConfig = configGenerator<ThemeConfig>((t) => {
 									link: `${deepDive}/modules/rclone-s3-timestamp`,
 									text: t('rcloneS3Timestamp'),
 								},
+								{
+									link: `${deepDive}/modules/collaboration`,
+									text: t('collaboration'),
+								},
+								{ link: `${deepDive}/modules/history`, text: t('history') },
 							],
 							text: t('modules'),
 						},

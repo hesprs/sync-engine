@@ -2,6 +2,7 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 export type Binary = Uint8Array<ArrayBuffer>;
+export { toHex } from './sha256-bytes';
 
 export function toUint8Array(buffer: ArrayBuffer) {
 	return new Uint8Array(buffer);
@@ -97,19 +98,29 @@ export class PartBuffer {
 	}
 }
 
-export function encodeBase64(bytes: Binary): string {
-	return btoa(Array.from(bytes, (byte) => String.fromCodePoint(byte)).join(''));
+export function encodeBase64(value: BufferSource): string {
+	const bytes =
+		value instanceof ArrayBuffer
+			? new Uint8Array(value)
+			: new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+	let binary = '';
+	const chunkSize = 0x80_00;
+	for (let offset = 0; offset < bytes.length; offset += chunkSize)
+		binary += String.fromCodePoint(...bytes.subarray(offset, offset + chunkSize));
+	return btoa(binary);
 }
 
 export function decodeBase64(value: string): Binary {
-	return Uint8Array.from(atob(value), (char) => char.codePointAt(0) as number);
+	const binary = atob(value);
+	return Uint8Array.from(binary, (character) => character.codePointAt(0) as number);
 }
 
-export function encodeBase64Url(value: Binary): string {
+export function encodeBase64Url(value: BufferSource): string {
 	return encodeBase64(value).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 }
 
 export function decodeBase64Url(value: string): Binary {
+	if (!/^[A-Za-z0-9_-]*$/u.test(value)) throw new Error('Invalid base64url value');
 	const padding = value.length % 4;
 	const normalized =
 		value.replaceAll('-', '+').replaceAll('_', '/') +

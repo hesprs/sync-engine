@@ -124,3 +124,32 @@ test('retry middleware returns retryable status response after exhausting retrie
 	expect(harness.calls).toHaveLength(3);
 	expect(sleepSpy).toHaveBeenCalledTimes(2);
 });
+
+test('retry middleware retries mobile OkHttp stream closed and connection errors', async () => {
+	const errors = [
+		'Request failed: java.io.IOException: stream closed',
+		'Request failed: IOException: stream closed',
+		'Request failed: java.io.IOException: unexpected end of stream',
+		'Request failed: java.io.IOException: stream was reset: PROTOCOL_ERROR',
+		'java.net.SocketException: Software caused connection abort',
+		'java.net.SocketException: Broken pipe',
+		'java.net.SocketException: Socket closed',
+		'java.net.SocketTimeoutException: timeout',
+	];
+
+	for (const msg of errors) {
+		sleepSpy.mockClear();
+		let attempts = 0;
+		const harness = request(() => {
+			attempts += 1;
+			if (attempts < 2) throw new Error(msg);
+			return {};
+		});
+		const wrapped = retryMiddleware(harness.request, { maxRetry: 2, retryDelay: () => 25 });
+
+		const res = await wrapped('test.md');
+		expect(res).toMatchObject({ status: 200 });
+		expect(harness.calls).toHaveLength(2);
+		expect(sleepSpy).toHaveBeenCalledTimes(1);
+	}
+});

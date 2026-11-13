@@ -9,6 +9,7 @@ const en = {
 	benchmarking: 'Benchmarking',
 	claims: 'Claims',
 	code: 'en-US',
+	collaboration: 'Collaboration',
 	contributing: 'Contributing',
 	copyright: 'Copyright',
 	debugAndTesting: 'Debug & Testing',
@@ -27,6 +28,7 @@ const en = {
 	fileTree: 'File Tree',
 	folder: '',
 	gdrive: 'Google Drive',
+	history: 'History Versions',
 	home: 'Home',
 	licenseMessage:
 		'All content licensed under the <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a> License.',

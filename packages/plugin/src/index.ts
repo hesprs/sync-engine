@@ -1,5 +1,4 @@
 import '@/global.css';
-import { NONE_STRATEGY } from './utils/glob-match';
 import Bootstrap from '@/modules/Bootstrap';
 import EventBus from '@/modules/EventBus';
 import Extensibility, { OFFICIAL_SOURCE } from '@/modules/Extensibility';
@@ -11,6 +10,7 @@ import Scheduler from '@/modules/Scheduler';
 import Setting from '@/modules/Setting';
 import Storage from '@/modules/Storage';
 import Sync from '@/modules/Sync';
+import { NONE_STRATEGY } from '@repo/shared/glob-match';
 import { Plugin } from 'obsidian';
 import { createContext } from 'synthkernel';
 import type { App, PluginManifest } from 'obsidian';
@@ -82,8 +82,7 @@ export default class SyncEngine extends Plugin {
 			exportLogsDirectory: 'Sync Engine Logs/',
 			focusSync: { enabled: false, value: 300_000 },
 			maxFileSize: { enabled: false, value: 31_457_280 },
-			// See Bootstrap TODO
-			// maxMemoryConsumption: { enabled: true, value: 100 * 1024 ** 2 },
+			maxMemoryConsumption: { enabled: false, value: 64 * 1024 ** 2 },
 			maxRequestConcurrency: { enabled: true, value: 50 },
 			minRequestInterval: { enabled: false, value: 0 },
 			moduleAutoUpdate: true,

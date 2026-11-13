@@ -705,6 +705,73 @@ declare function pipe({ from, to, stat, key }: {
 }): MaybePromise<string>;
 declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promise<Binary | ReadableStream<Binary>>;
 declare function writeWithSize(fs: Fs, key: string, value: MaybePromise<Binary | ReadableStream<Binary>>, stat: FileStat): MaybePromise<string>;
+type SyncStage = 'none' | 'walkingRemote' | 'awaitingConfirmation' | 'executing' | 'completed' | 'completedNoop' | 'cancelled' | 'failed';
+type StatusLevel = 'ok' | 'warning' | 'error';
+type ModuleStatus = {
+  level: StatusLevel;
+  message?: string;
+};
+declare class Observability {
+  private readonly ctx;
+  private lastSyncTime;
+  private lastFailure?;
+  private readonly sinceLastSyncText;
+  private readonly syncStage;
+  private readonly walkProgress;
+  private readonly executionProgress;
+  private readonly cleanupCallbacks;
+  private readonly moduleStatuses;
+  private startIconEl?;
+  private statusIconEl?;
+  private statusEl?;
+  private readonly t;
+  private readonly progressText;
+  readonly settings: {
+    noticeStatusOnMobile: boolean;
+    exportLogsDirectory: string;
+  };
+  readonly i18n: {
+    startSync: string;
+    startNonInteractiveSync: string;
+    stopSync: string;
+    showProgress: string;
+    exportLogsToFile: string;
+    exportLogsFailed: string;
+    idle: string;
+  };
+  constructor(ctx: {
+    addStatusBarItem: () => HTMLElement;
+    on: On<Events>;
+    translate: Translate<Translations>;
+    isIdle: Ref<boolean>;
+    dispatch: Dispatch<Events>;
+    requestSync: (trigger: string) => Promise<SyncTerminateReason>;
+    showProgress: () => void;
+    addCommand: (command: Command) => Command;
+    addRibbonIcon: Plugin['addRibbonIcon'];
+    getLogs: () => string;
+    app: App;
+  });
+  readonly setModuleStatus: (id: string, status?: ModuleStatus) => (() => void);
+  readonly getModuleStatus: (id: string) => ModuleStatus | undefined;
+  private computeBadge;
+  private readonly updateAllIcons;
+  private readonly cleanupMobileHeaderIcons;
+  private readonly updateMobileHeaderIcons;
+  readonly start: () => void;
+  private readonly setupStatus;
+  private readonly setupCommands;
+  private readonly exportLogs;
+  readonly dispose: () => void;
+  root: {
+    executionProgress: Ref<Progress<TaskInfo>>;
+    exportLogs: () => Promise<void>;
+    getModuleStatus: (id: string) => ModuleStatus | undefined;
+    setModuleStatus: (id: string, status?: ModuleStatus) => (() => void);
+    syncStage: Ref<SyncStage>;
+    walkProgress: Ref<Progress>;
+  };
+}
 declare function digOriginal(wrapped: Fs): RootFs;
 type SelectFromContext<O extends object> = Context extends O ? O : never;
 type HeadSettingTranslations = {
@@ -841,6 +908,7 @@ declare class Bootstrap {
     dontSync: string;
   } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
+    maxMemoryConsumption: TogglableValue;
     maxRequestConcurrency: TogglableValue;
     minRequestInterval: TogglableValue;
     realtimeSyncFastMode: boolean;
@@ -871,56 +939,6 @@ declare class Bootstrap {
   });
   readonly start: () => void;
   readonly dispose: () => void;
-}
-type SyncStage = 'none' | 'walkingRemote' | 'awaitingConfirmation' | 'executing' | 'completed' | 'completedNoop' | 'cancelled' | 'failed';
-declare class Observability {
-  private readonly ctx;
-  private lastSyncTime;
-  private lastFailure?;
-  private readonly sinceLastSyncText;
-  private readonly syncStage;
-  private readonly walkProgress;
-  private readonly executionProgress;
-  private readonly cleanupCallbacks;
-  private readonly t;
-  private readonly progressText;
-  readonly settings: {
-    noticeStatusOnMobile: boolean;
-    exportLogsDirectory: string;
-  };
-  readonly i18n: {
-    startSync: string;
-    startNonInteractiveSync: string;
-    stopSync: string;
-    showProgress: string;
-    exportLogsToFile: string;
-    exportLogsFailed: string;
-    idle: string;
-  };
-  constructor(ctx: {
-    addStatusBarItem: () => HTMLElement;
-    on: On<Events>;
-    translate: Translate<Translations>;
-    isIdle: Ref<boolean>;
-    dispatch: Dispatch<Events>;
-    requestSync: (trigger: string) => Promise<SyncTerminateReason>;
-    showProgress: () => void;
-    addCommand: (command: Command) => Command;
-    addRibbonIcon: Plugin['addRibbonIcon'];
-    getLogs: () => string;
-    app: App;
-  });
-  readonly start: () => void;
-  private readonly setupStatus;
-  private readonly setupCommands;
-  private readonly exportLogs;
-  readonly dispose: () => void;
-  root: {
-    executionProgress: Ref<Progress<TaskInfo>>;
-    exportLogs: () => Promise<void>;
-    syncStage: Ref<SyncStage>;
-    walkProgress: Ref<Progress>;
-  };
 }
 type DeleteConfirmReturn = {
   delete: Array<RemoveLocal>;
@@ -1113,6 +1131,7 @@ declare class Sync {
   };
   readonly settings: {
     maxFileSize: TogglableValue;
+    maxMemoryConsumption?: TogglableValue;
     syncStrategy: Array<GlobStrategy>;
   };
   readonly i18n: {
@@ -1304,4 +1323,4 @@ type VaultRequest = <T extends VaultRequestParam = {
   method: 'GET';
 }>(key: string, params?: T) => Promise<VaultRequestResponseMap[T['method']]>;
 type TrashOption = 'local' | 'system' | 'permanent';
-export { MoveLocal as $, setNeedMigration as A, WriteAtom as At, DeciderInput as B, Binary as Bt, REGRET_ERROR_MESSAGE as C, MkdirAtom as Ct, readWithSize as D, OutputAtom as Dt, pipe as E, OptimizerOutput as Et, CallableOrObjectTree as F, RecordStat as Ft, Task as G, AddRecord as H, SettingEntry as I, RecordStatsMap as It, ResolveConflict as J, TaskNames as K, AugmentedModuleMeta as L, Stat as Lt, generateEditableList as M, FolderStat as Mt, reactivelyValidate as N, MaybePromise as Nt, writeWithSize as O, RootFs as Ot, settingEntry as P, Progress as Pt, MoveRemote as Q, ModuleMeta as R, StatsMap as Rt, digOriginal as S, ListReporter as St, concurrency as T, OptimizerInput as Tt, ConflictResolver as U, TaskFactory as V, ConflictResolverPayload as W, RemoveRecord as X, RemoveRemote as Y, RemoveLocal as Z, Events as _, CustomAtom as _t, LocalRequestMiddlewareEntry as a, ObsidianLanguageCode as at, ExistingMemoryDB as b, InputAtom as bt, RemoteRequestMiddlewareEntry as c, TranslationResource as ct, RequestResponse as d, DatabaseAsync as dt, Download as et, TriggerEntry as f, DatabaseSync as ft, Context as g, BatchOptimizer as gt, SyncTerminateReason as h, StoreSync as ht, FsWrapperEntry as i, Fragment as it, LabelDefinition as j, FileStat as jt, prefixWrapper as k, WrappedFs as kt, Request as l, Dispatch as lt, SyncOptions as m, StoreOperations as mt, ConflictResolverEntry as n, CreateLocalDir as nt, OptimizerEntry as o, Snippet as ot, RemoteLister as p, StoreAsync as pt, Upload as q, DeciderEntry as r, RecordStore as rt, RemoteFsEntry as s, Translate as st, VaultRequest as t, CreateRemoteDir as tt, RequestParam as u, On as ut, Settings as v, DeleteAtom as vt, chunkSize as w, MoveAtom as wt, SelectFromContext as x, ListOptions as xt, Translations as y, Fs as yt, Decider as z, StringKV as zt };
+export { RemoveLocal as $, writeWithSize as A, RootFs as At, ModuleMeta as B, StatsMap as Bt, ModuleStatus as C, ListOptions as Ct, concurrency as D, OptimizerInput as Dt, chunkSize as E, MoveAtom as Et, reactivelyValidate as F, MaybePromise as Ft, ConflictResolver as G, DeciderInput as H, Binary as Ht, settingEntry as I, Progress as It, TaskNames as J, ConflictResolverPayload as K, CallableOrObjectTree as L, RecordStat as Lt, setNeedMigration as M, WriteAtom as Mt, LabelDefinition as N, FileStat as Nt, pipe as O, OptimizerOutput as Ot, generateEditableList as P, FolderStat as Pt, RemoveRecord as Q, SettingEntry as R, RecordStatsMap as Rt, digOriginal as S, InputAtom as St, REGRET_ERROR_MESSAGE as T, MkdirAtom as Tt, TaskFactory as U, Decider as V, StringKV as Vt, AddRecord as W, ResolveConflict as X, Upload as Y, RemoveRemote as Z, Events as _, StoreSync as _t, LocalRequestMiddlewareEntry as a, RecordStore as at, ExistingMemoryDB as b, DeleteAtom as bt, RemoteRequestMiddlewareEntry as c, Snippet as ct, RequestResponse as d, Dispatch as dt, MoveRemote as et, TriggerEntry as f, On as ft, Context as g, StoreOperations as gt, SyncTerminateReason as h, StoreAsync as ht, FsWrapperEntry as i, CreateLocalDir as it, prefixWrapper as j, WrappedFs as jt, readWithSize as k, OutputAtom as kt, Request as l, Translate as lt, SyncOptions as m, DatabaseSync as mt, ConflictResolverEntry as n, Download as nt, OptimizerEntry as o, Fragment as ot, RemoteLister as p, DatabaseAsync as pt, Task as q, DeciderEntry as r, CreateRemoteDir as rt, RemoteFsEntry as s, ObsidianLanguageCode as st, VaultRequest as t, MoveLocal as tt, RequestParam as u, TranslationResource as ut, Settings as v, BatchOptimizer as vt, StatusLevel as w, ListReporter as wt, SelectFromContext as x, Fs as xt, Translations as y, CustomAtom as yt, AugmentedModuleMeta as z, Stat as zt };

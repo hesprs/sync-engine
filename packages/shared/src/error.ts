@@ -24,3 +24,13 @@ export function describeError(error: Error, msg: string, newObj?: boolean) {
 	e.message = `${msg}: \`${error.message}\``;
 	return e;
 }
+
+export function isNotFound(error: unknown): boolean {
+	const message = (((error as ErrorLike).message as string) ?? String(error)).toUpperCase();
+	return (
+		getStatus(error) === 404 ||
+		message.includes('ENOENT') ||
+		message.includes('NOSUCHKEY') ||
+		message.includes('NOT FOUND')
+	);
+}
