@@ -108,7 +108,11 @@ New modules are disabled by default. The downloaded text is integrity-checked be
 
 ### Install From File
 
-The module management menu also offers **Install module from file**. The user picks a `.js` file (other extensions are rejected with a notice), and the module editor opens with metadata prefilled from the file's magic bytes, a leading `/*! ... */` comment of `key: value` lines embedded at build time. On save, `installModule()` writes the file to the module directory, stores the confirmed metadata, and loads the module when it is enabled. No source is involved in this path.
+The module management menu also offers **Install module from file**. The user picks a `.js` or `.mjs` file (other extensions are rejected with a notice), and the module editor opens with metadata prefilled from the file's magic bytes, a leading `/*! ... */` comment of `key: value` lines embedded at build time. On save, `installModule()` writes the file to the module directory, stores the confirmed metadata, and loads the module when it is enabled. No source is involved in this path.
+
+### Install From Code
+
+The module management menu also offers **Install module from code**. The user pastes module code into a code input modal, and the module editor opens with metadata prefilled from the code's magic bytes. On save, `installModule()` writes the code to the module directory, stores the confirmed metadata, and loads the module when it is enabled. No source is involved in this path.
 
 ### Automatic Update
 

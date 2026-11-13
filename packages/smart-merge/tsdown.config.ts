@@ -9,5 +9,6 @@ export default defineConfig({
 	minify: true,
 	outExtensions: () => ({ js: '.js' }),
 	outputOptions: { codeSplitting: false },
+	platform: 'browser',
 	plugins: [syncEngineModule(moduleCatalog)],
 });

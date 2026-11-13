@@ -5,6 +5,7 @@ import {
 	textToUint8Array,
 	uint8ArrayToText,
 } from '@repo/shared/binary';
+import { describeError, toError } from '@repo/shared/error';
 import type { Binary, StoreSync } from '@hesprs/sync-engine-sdk';
 
 export type EncryptionStores = {
@@ -71,8 +72,8 @@ function decryptBasename(nameKey: Binary, encryptedBasename: string): string {
 			decodeBase64Url(encryptedBasename),
 		);
 		return normalizeBasename(uint8ArrayToText(plaintext));
-	} catch {
-		throw new Error('Encrypted file name is malformed');
+	} catch (error) {
+		throw describeError(toError(error), 'File name decryption failed');
 	}
 }
 

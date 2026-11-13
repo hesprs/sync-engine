@@ -19,6 +19,8 @@
 	},
 	"devDependencies": {
 		"@hesprs/sync-engine-sdk": "workspace:*",
-		"@repo/shared": "workspace:*"
+		"@repo/shared": "workspace:*",
+		"hash-wasm": "catalog:",
+		"uni-kv": "catalog:"
 	}
 }

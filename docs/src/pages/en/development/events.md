@@ -45,7 +45,7 @@ unsubscribe();
 | `logGeneral` | `string` general log message |
 | `errorSync` | `Error` sync error |
 | `errorGeneral` | `Error` general error |
-| `moduleLoaded` | `string` module name |
+| `moduleLoaded` | `AugmentedModuleMeta` module metadata |
 | `moduleUnloaded` | `string` module name |
 | `syncStarted` | `{ isCancelled: Ref<boolean>; trigger: string }` |
 | `syncInitialized` | `Infras & { match: (path: string) => GlobMatchResult }`: the run's file systems, record store, and compiled matcher |

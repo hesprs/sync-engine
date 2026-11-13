@@ -119,6 +119,8 @@ const en: Translations = {
 	development: 'Development',
 	diffMatchPatch: 'Merge',
 	disableModule: 'Disable module',
+	discoveredModules: ({ module, source }) =>
+		`Discovered ${pc(module, 'module', 'modules')} from ${pc(source, 'source', 'sources')}.`,
 	done: 'Done',
 	dontSync: "Don't sync",
 	download: 'Download',
@@ -247,7 +249,7 @@ const en: Translations = {
 	noticeStatusOnMobileDescription:
 		'Display a notice on mobile devices when synchronization is in progress. Replaces the status bar on desktop.',
 	official: 'Official',
-	openReadme: "Open the module's README page.",
+	openReadme: "Open the module's README page",
 	pleaseSetBackend: 'Please set a backend!',
 	readmePage: 'README page',
 	readmePageDescription:
@@ -261,6 +263,7 @@ const en: Translations = {
 		'Speed up realtime sync by reusing cached data and avoid unnecessary remote discovery.',
 	realtimeSyncPlaceholder: 'Enter sync delay (e.g. 500ms, 5s)',
 	recordsCleared: 'Records cleared',
+	refreshSources: 'Refresh sources',
 	remoteMigration: 'Remote migration',
 	removeLocal: 'Remove local',
 	removeRecord: 'Remove record',

@@ -4,7 +4,7 @@ The WebDAV module registers the `webdav` remote file system. It implements the [
 
 ## Supported Backends
 
-The standard mode can theoretically work with any WebDAV service that supports HTTP(S), Basic authentication, ranged `GET`, `PROPFIND`, `PUT`, `DELETE`, `MOVE`, and `MKCOL`. This includes WebDAV installations based on:
+The standard mode can theoretically work with any WebDAV service that supports HTTP(S), Basic or Digest (MD5) authentication, ranged `GET`, `PROPFIND`, `PUT`, `DELETE`, `MOVE`, and `MKCOL`. This includes WebDAV installations based on:
 
 - Nextcloud
 - ownCloud
@@ -19,6 +19,10 @@ The standard mode can theoretically work with any WebDAV service that supports H
 - AList, OpenList, and Cloudreve's WebDAV compatibility layer
 
 The optional chunked-upload mode requires Nextcloud's upload protocol and is not standard WebDAV. Enable it only for compatible Nextcloud servers.
+
+## Authentication
+
+The module sends Basic credentials first. When the server answers with `401` and a Digest challenge, it switches to Digest (MD5 with `qop=auth`, or the legacy scheme without `qop`) and caches the challenge state in the in-memory database, keyed by endpoint, username, and password. Challenges naming other algorithms are declined, and the module keeps sending Basic credentials.
 
 ## Settings
 

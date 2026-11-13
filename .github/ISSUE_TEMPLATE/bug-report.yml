@@ -47,7 +47,7 @@ body:
       label: Logs
       description: Please go to plugin settings - `Development` - `Export logs`, click `Export`, copy and paste the content of the full log. This will be automatically formatted into code, so no need for backticks.
       render: shell
-      placeholder: If the log contains information that you think is improper to disclose, it's OK to only paste sections with `ERROR` labels.
+      placeholder: If the log contains information that is improper to disclose, it's OK to only paste "General logs" and sections with "ERROR" labels.
 
   - type: checkboxes
     id: terms
@@ -61,7 +61,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        - I have updated Sync Engine to the latest version but the bug persists.
+        - I have updated Sync Engine and its modules to latest versions but the bug persists. The latest version of Sync Engine can be found in the [GitHub releases page](https://github.com/hesprs/sync-engine/releases/latest) and modules versions are in [the module catalog in the documentation website](https://sync.consensia.cc/usage/modules).
         - I have provided clear and reproducible information about the bug.
         - I have ensured that this issue only contains one bug.
         - I have checked historical bugs and there's no entry fitting this scenario.

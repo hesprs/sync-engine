@@ -99,16 +99,17 @@ export default class I18n {
 		getLanguage(),
 		getLanguage().split('-')[0],
 	] as Array<ObsidianLanguageCode>);
-	readonly i18n: TranslationResource = {};
+	readonly i18n = {};
 
 	private readonly registerI18n = (code: ObsidianLanguageCode, resource: TranslationResource) => {
 		if (code === DEFAULT_LANGUAGE && !this.targetLangs.has(DEFAULT_LANGUAGE))
-			for (const [key, value] of Object.entries(resource)) this.i18n[key] ??= value;
+			for (const [key, value] of Object.entries(resource))
+				(this.i18n as TranslationResource)[key] ??= value;
 		else if (this.targetLangs.has(code)) Object.assign(this.i18n, resource);
 	};
 
 	private readonly translate = ((key: string, arg: unknown) => {
-		const value = this.i18n[key];
+		const value = (this.i18n as TranslationResource)[key];
 		if (typeof value === 'string') return value;
 		// Handle missing keys and argument mismatch due to stale i18n modules
 		try {

@@ -6,9 +6,10 @@ export default defineConfig({
 	clean: process.env.MODE !== 'dev',
 	dts: false,
 	entry: { encryption: 'src/index.ts' },
-	inputOptions: { resolve: { alias: { 'hash-wasm': 'hash-wasm/dist/index.esm.js' } } },
 	minify: true,
 	outExtensions: () => ({ js: '.js' }),
 	outputOptions: { codeSplitting: false },
+	platform: 'browser',
 	plugins: [syncEngineModule(moduleCatalog)],
+	treeshake: { manualPureFunctions: ['Mutex'] }, // Removes the dead Mutexes in hash-wasm
 });

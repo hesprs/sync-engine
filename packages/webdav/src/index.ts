@@ -6,6 +6,7 @@ import WebdavFs from '@/webdav/fs';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
 import { parseUrl } from '@repo/shared/path';
 import type { WebdavTranslations } from '@/setting';
+import type { DigestInfo } from '@/webdav/auth';
 import type {
 	RemoteFsEntry,
 	FsWrapperEntry,
@@ -19,6 +20,7 @@ import type {
 	Context,
 	RemoteRequestMiddlewareEntry,
 	DatabaseAsync,
+	DatabaseSync,
 	RecordStat,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
@@ -35,6 +37,11 @@ export type WebdavSettings = {
 	timestampHeaders: boolean;
 };
 
+export type WebdavDB = DatabaseSync<
+	Record<string, unknown>,
+	{ authMarker?: string; digest?: DigestInfo }
+>;
+
 export default class Webdav {
 	private readonly cleanup: Array<() => void> = [];
 
@@ -47,6 +54,7 @@ export default class Webdav {
 			registerSetting: (entry: SettingEntry) => () => void;
 			registerI18n: (lang: ObsidianLanguageCode, translations: TranslationResource) => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
+			memoryDB: WebdavDB;
 			settings: Settings;
 			// TODO: remove after November 17, 2026
 			getNamespace: () => string | Error;
@@ -82,6 +90,7 @@ export default class Webdav {
 			registerRemoteFsWrapper,
 			registerSetting,
 			registerRemoteRequestMiddleware,
+			memoryDB,
 		} = this.ctx;
 		const guardEndpoint = () => {
 			if (!this.moduleSettings.endpoint) throw new Error(translate('pleaseConfigureAccount'));
@@ -99,7 +108,11 @@ export default class Webdav {
 					const { username, password: pwd } = this.moduleSettings;
 					const password = secretStorage.getSecret(pwd);
 					if (password === null) throw new Error(translate('pleaseConfigureAccount'));
-					return authorizationMiddleware(request, { password, username });
+					return authorizationMiddleware(
+						request,
+						{ endpoint: this.moduleSettings.endpoint, password, username },
+						memoryDB,
+					);
 				},
 				priority: 692,
 			}),

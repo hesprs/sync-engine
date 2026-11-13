@@ -105,7 +105,9 @@ export default class EventBus {
 				else putSyncLog(`Sync ended with result: \`${result}\`.`);
 				isIdle(true);
 			}),
-			on('moduleLoaded', (name) => putGeneralLog(`Module \`${name}\` loaded.`)),
+			on('moduleLoaded', ({ id, version }) =>
+				putGeneralLog(`Module \`${id}@${version}\` loaded.`),
+			),
 			on('moduleUnloaded', (name) => putGeneralLog(`Module \`${name}\` unloaded.`)),
 		);
 	}

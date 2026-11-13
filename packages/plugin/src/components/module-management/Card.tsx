@@ -18,22 +18,23 @@ export default function Card(props: {
 		| 'updateModuleMeta'
 		| 'app'
 	>;
-	installedMeta?: AugmentedModuleMeta;
+	sourceMeta?: AugmentedModuleMeta;
+	canonical: AugmentedModuleMeta;
 	isLoaded: boolean;
-	module: AugmentedModuleMeta;
+	installedMeta?: AugmentedModuleMeta;
 	pendingAction?: PendingAction;
 	runAction: (action: PendingAction, op: () => MaybePromise<void>) => void;
 }) {
-	const isInstalled = () => props.installedMeta !== undefined;
+	const isInstalled = () => Boolean(props.installedMeta);
 	const hasUpdate = () =>
-		props.installedMeta !== undefined &&
-		compare(props.module.version, props.installedMeta.version) === 1;
+		props.sourceMeta &&
+		props.installedMeta &&
+		compare(props.sourceMeta.version, props.installedMeta.version) === 1;
 	const busy = () => props.pendingAction !== undefined;
 	const versionLabel = () => {
-		const currentVersion = props.installedMeta?.version;
-		if (currentVersion !== undefined && compare(props.module.version, currentVersion) === 1)
-			return `v${currentVersion} -> v${props.module.version}`;
-		return `v${currentVersion ?? props.module.version}`;
+		if (hasUpdate())
+			return `v${(props.installedMeta as AugmentedModuleMeta).version}\u00A0\u00A0→\u00A0\u00A0v${(props.sourceMeta as AugmentedModuleMeta).version}`;
+		return `v${props.canonical.version}`;
 	};
 
 	return (
@@ -42,16 +43,16 @@ export default function Card(props: {
 				<div class="flex min-w-0 text-base font-semibold text-[--text-normal] break-words">
 					<span
 						class="flex items-center mr-2"
-						ref={(el) => setIcon(el, props.module.icon)}
+						ref={(el) => setIcon(el, props.canonical.icon)}
 					/>
-					{props.module.name}
+					{props.canonical.name}
 				</div>
 				<div class="flex-shrink-0 text-xs text-[--text-faint]">{versionLabel()}</div>
 			</div>
 
 			<div class="flex flex-1 flex-col gap-2">
 				<div class="flex flex-wrap gap-2">
-					<Show when={props.module.source === OFFICIAL_SOURCE}>
+					<Show when={props.canonical.source === OFFICIAL_SOURCE}>
 						<span class="flair m-0 sync-engine-prominent">
 							{props.ctx.translate('official')}
 						</span>
@@ -64,25 +65,25 @@ export default function Card(props: {
 					</Show>
 				</div>
 				<div class="flex-1 text-sm text-[--text-muted] break-words">
-					{props.module.description}
+					{props.canonical.description}
 				</div>
 			</div>
 
 			<div class="flex items-center justify-end gap-2">
-				<Show when={props.module.readme}>
+				<Show when={props.canonical.readme}>
 					<a
 						class="clickable-icon rounded-md p-1"
-						href={props.module.readme}
+						href={props.canonical.readme}
 						ref={(ref) => {
 							setIcon(ref, 'book-open-text');
 							setTooltip(ref, props.ctx.translate('openReadme'));
 						}}
 					/>
 				</Show>
-				<Show when={props.module.main && (!isInstalled() || hasUpdate())}>
+				<Show when={!isInstalled() || hasUpdate()}>
 					<ActionButton
 						disabled={busy()}
-						icon="download"
+						icon={hasUpdate() ? 'circle-fading-arrow-up' : 'download'}
 						pending={props.pendingAction === 'download'}
 						tooltip={
 							hasUpdate()
@@ -91,7 +92,7 @@ export default function Card(props: {
 						}
 						onClick={() =>
 							props.runAction('download', () =>
-								props.ctx.downloadModule(props.module),
+								props.ctx.downloadModule(props.sourceMeta ?? props.canonical),
 							)
 						}
 					/>
@@ -103,7 +104,9 @@ export default function Card(props: {
 						pending={props.pendingAction === 'delete'}
 						tooltip={props.ctx.translate('deleteModule')}
 						onClick={() =>
-							props.runAction('delete', () => props.ctx.deleteModule(props.module.id))
+							props.runAction('delete', () =>
+								props.ctx.deleteModule(props.canonical.id),
+							)
 						}
 					/>
 					<ActionButton
@@ -113,7 +116,7 @@ export default function Card(props: {
 						tooltip={props.ctx.translate('editModuleInformation')}
 						onClick={() =>
 							new ModuleEditorModal(props.ctx, {
-								initial: props.module,
+								initial: props.canonical,
 								onSave: (newMeta) =>
 									props.runAction('editInfo', () =>
 										props.ctx.updateModuleMeta(newMeta),
@@ -126,11 +129,13 @@ export default function Card(props: {
 						enabled={props.isLoaded}
 						translate={props.ctx.translate}
 						onEnable={() =>
-							props.runAction('enable', () => props.ctx.enableModule(props.module.id))
+							props.runAction('enable', () =>
+								props.ctx.enableModule(props.canonical.id),
+							)
 						}
 						onDisable={() =>
 							props.runAction('disable', () =>
-								props.ctx.disableModule(props.module.id),
+								props.ctx.disableModule(props.canonical.id),
 							)
 						}
 					/>

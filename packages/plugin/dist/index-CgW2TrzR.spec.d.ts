@@ -231,7 +231,7 @@ type TranslateParams<R extends TranslationTypes> = R extends Factory<infer A> ? 
 type Translate<O extends TranslationResource> = <K extends keyof O>(key: K, ...arg: TranslateParams<O[K]>) => O[K] extends string | Snippet<General$1> ? string : DocumentFragment;
 declare class I18n {
   private readonly targetLangs;
-  readonly i18n: TranslationResource;
+  readonly i18n: {};
   private readonly registerI18n;
   private readonly translate;
   root: {
@@ -464,10 +464,14 @@ declare class Extensibility {
     failedToLoadModule: Snippet<string>;
     failedToDownloadModule: Snippet<string>;
     failedToFetchSource: Snippet<string>;
+    discoveredModules: Snippet<{
+      module: number;
+      source: number;
+    }>;
     integrityCheckFailed: string;
   };
   readonly events: {
-    moduleLoaded: string;
+    moduleLoaded: AugmentedModuleMeta;
     moduleUnloaded: string;
   };
   constructor(ctx: {
@@ -778,6 +782,13 @@ type ModuleManagementTranslations = {
   official: string;
   someModulesHidden: string;
   openReadme: string;
+  searchModules: string;
+  moduleManagement: string;
+  showInstalledOnly: string;
+  installModuleFromFile: string;
+  installModuleFromCode: string;
+  moduleExtensionWarning: Fragment;
+  refreshSources: string;
 };
 type ModuleEditorTranslations = {
   editModuleInformation: string;
@@ -803,14 +814,7 @@ type ModuleEditorTranslations = {
   readmePageDescription: string;
   readmePagePlaceholder: string;
 };
-type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & CodeInputTranslations & {
-  searchModules: string;
-  moduleManagement: string;
-  showInstalledOnly: string;
-  installModuleFromFile: string;
-  installModuleFromCode: string;
-  moduleExtensionWarning: Fragment;
-};
+type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & CodeInputTranslations;
 type CustomHeaders = Array<{
   type: 'plaintext' | 'secret';
   value: string;

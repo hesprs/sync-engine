@@ -72,11 +72,13 @@ Version and metadata are persisted in IndexedDB (`AugmentedModuleMeta`). For det
 
 When `Auto update modules` is enabled, on plugin load the plugin:
 
-1. Waits 200 milliseconds.
+1. Waits 500 milliseconds.
 2. Fetches all configured source URLs.
 3. For each installed module, compares the remote version with the local version.
 4. If the remote version is newer, queues a download.
 5. Waits for the sync engine to be idle, then downloads and replaces the module file.
+
+The update check is skipped while the device reports being offline.
 
 Only already-installed modules are auto-updated. New modules must be manually installed via the Module Management UI.
 

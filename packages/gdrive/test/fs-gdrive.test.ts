@@ -79,7 +79,7 @@ test('creates folders, lists visible descendants, and honors excluded subtrees',
 			return response({ id: 'folder-1' });
 		return response({
 			files: [
-				{ id: 'folder-1', mimeType: FOLDER_MIME, name: 'notes', parents: ['root'] },
+				{ id: 'folder-1', mimeType: FOLDER_MIME, name: 'notes', parents: ['root-0AAK'] },
 				{
 					id: 'file-1',
 					md5Checksum: 'uid',
@@ -210,7 +210,7 @@ test('list returns meta for included files without extra requests', async () => 
 					mimeType: 'text/markdown',
 					modifiedTime: new Date(1000).toISOString(),
 					name: 'note.md',
-					parents: ['root'],
+					parents: ['root-0AAK'],
 					size: '5',
 				},
 			],
@@ -220,4 +220,63 @@ test('list returns meta for included files without extra requests', async () => 
 	if (stat.isDir) throw new Error('expected file stat');
 	expect(await stat.meta()).toStrictEqual({ custom: 'value', mtime: '1000' });
 	expect(calls.map(({ method }) => method)).toStrictEqual(['GET']);
+});
+
+test('lists and descends top-level items when Drive echoes real root parent ids', async () => {
+	const { fs } = createFs(() =>
+		response({
+			files: [
+				{ id: 'folder-1', mimeType: FOLDER_MIME, name: 'notes', parents: ['root-0AAK'] },
+				{
+					id: 'file-1',
+					md5Checksum: 'uid',
+					mimeType: 'text/markdown',
+					modifiedTime: new Date(1000).toISOString(),
+					name: 'note.md',
+					parents: ['folder-1'],
+					size: '5',
+				},
+			],
+		}),
+	);
+	const result = await fs.list('/', () => 'advance' as const);
+	expect(result.map(({ key }) => key)).toStrictEqual(['notes/', 'notes/note.md']);
+});
+
+test('list covers every unlisted parent and dedupes shared parents', async () => {
+	const { fs } = createFs(() =>
+		response({
+			files: [
+				{
+					id: 'file-1',
+					md5Checksum: 'uid',
+					mimeType: 'text/markdown',
+					modifiedTime: new Date(1000).toISOString(),
+					name: 'a.md',
+					parents: ['root-0AAK'],
+					size: '5',
+				},
+				{
+					id: 'file-2',
+					md5Checksum: 'uid',
+					mimeType: 'text/markdown',
+					modifiedTime: new Date(1000).toISOString(),
+					name: 'b.md',
+					parents: ['root-0AAK'],
+					size: '5',
+				},
+				{
+					id: 'file-3',
+					md5Checksum: 'uid',
+					mimeType: 'text/markdown',
+					modifiedTime: new Date(1000).toISOString(),
+					name: 'moved.md',
+					parents: ['folder-foreign'],
+					size: '5',
+				},
+			],
+		}),
+	);
+	const result = await fs.list('/', () => 'include' as const);
+	expect(result.map(({ key }) => key).sort()).toStrictEqual(['a.md', 'b.md', 'moved.md']);
 });
