@@ -467,6 +467,7 @@ export default class HistoryModule {
 	private async runGc(): Promise<number> {
 		if (!this.remote || !this.stores) return 0;
 		await this.flushPendingDebounces();
+		await reconcile({ remote: this.remote, requestSync: () => {}, stores: this.stores });
 		const result = await compact(
 			{ remote: this.remote, stores: this.stores },
 			{

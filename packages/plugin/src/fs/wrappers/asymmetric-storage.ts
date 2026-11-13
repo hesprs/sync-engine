@@ -7,9 +7,6 @@ const ROOT_KEY = '/';
 const ROOT_ANCHOR = '00000';
 const EMPTY_BINARY = new Uint8Array(0);
 
-const isInternalSyncPath = (key: string) =>
-	key.startsWith('.sync-engine') || key.includes('/.sync-engine');
-
 type ParsedFlatKey =
 	| { isDir: false; basename: string; parentAnchor: string }
 	| { isDir: true; anchor: string; basename: string; parentAnchor: string };
@@ -159,12 +156,11 @@ class AsymmetricStorageFs implements WrappedFs {
 
 	async list(key: string, reporter: ListReporter) {
 		const stats = await this.original.list(this.flattenKey(key), () => 'include');
-		const filteredStats = stats.filter((stat) => !isInternalSyncPath(stat.key));
 		const seen = new Set<string>();
 		const result: Array<Stat> = [];
 		let ignoredCount = 0;
 		await Promise.all(
-			filteredStats.map(async (stat, index) => {
+			stats.map(async (stat, index) => {
 				const inflated = this.inflateStat(stat);
 				if (!inflated) {
 					this.logger(`Asymmetric storage ignored orphaned \`${stat.key}\`.`);
@@ -177,7 +173,7 @@ class AsymmetricStorageFs implements WrappedFs {
 					(await reporter({
 						completed: index + 1,
 						current: inflated.key,
-						total: filteredStats.length,
+						total: stats.length,
 					})) === 'exclude'
 				)
 					return;
@@ -185,7 +181,7 @@ class AsymmetricStorageFs implements WrappedFs {
 				result.push(inflated);
 			}),
 		);
-		if (ignoredCount / (filteredStats.length || 1) >= 0.3)
+		if (ignoredCount / (stats.length || 1) >= 0.3)
 			throw new Error(
 				"There are too many remote files that don't adopt asymmetric storage, maybe you want to turn it off in settings.",
 			);
@@ -237,7 +233,6 @@ class AsymmetricStorageFs implements WrappedFs {
 		this.bootstrapped = true;
 		const candidates: Array<{ anchor: string; basename: string; parentAnchor: string }> = [];
 		for (const stat of this.statStore.values()) {
-			if (isInternalSyncPath(stat.key)) continue;
 			const parsed = parseFlattenedKey(stat.key);
 			if (parsed?.isDir)
 				candidates.push({

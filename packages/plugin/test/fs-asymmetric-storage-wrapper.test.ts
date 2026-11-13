@@ -71,33 +71,6 @@ test('list should throw when encountering too many malformed or orphan flattened
 	);
 });
 
-test('list should ignore internal .sync-engine* files and not count them as orphaned or throw', async () => {
-	seedRemoteContext(file('00000abcde~folder'));
-	const remote = fs({
-		control: {
-			list: () => [
-				file('00000~root.md', { size: 1, uid: 'root-file' }),
-				file('00000abcde~folder', { uid: 'folder-marker' }),
-				file('abcde~child.md', { size: 2, uid: 'child-file' }),
-				file('.sync-engine-history/f20c28a1/heads/device.log', { uid: 'h1' }),
-				file('.sync-engine-history/f20c28a1/packs/device/p-1.pack', { uid: 'p1' }),
-				file('.sync-engine-history/f20c28a1/packs/device/p-2.pack', { uid: 'p2' }),
-				file('.sync-engine-history/f20c28a1/packs/device/p-3.pack', { uid: 'p3' }),
-				file('.sync-engine-history/f20c28a1/packs/device/p-4.pack', { uid: 'p4' }),
-			],
-		},
-	});
-	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});
-
-	// 5 history files vs 3 vault files: >50% non-asymmetric files, but must NOT throw
-	const result = await wrapper.list('/', () => 'include');
-	expect(result).toStrictEqual([
-		file('root.md', { size: 1, uid: 'root-file' }),
-		folder('folder/'),
-		file('folder/child.md', { size: 2, uid: 'child-file' }),
-	]);
-});
-
 test('mkdir should write empty folder marker file and reuse same generated anchor later', async () => {
 	const remote = fs();
 	const wrapper = asymmetricStorageWrapper(remote.fs, store, () => {});

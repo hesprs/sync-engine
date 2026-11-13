@@ -1,7 +1,9 @@
 import { buildCommitLog } from '@/head-log';
 import { allChunkLocations, allCommitLocations, markChunks, packRefKey } from '@/index-store';
-import { decodePack, encodePack } from '@/pack';
+import { decodePack, encodePack, packFileName } from '@/pack';
 import { FLAG_CHECKPOINT } from '@/types';
+import { isNotFound } from '@repo/shared/error';
+import type { DecodedPack } from '@/pack';
 import type { RemoteHistory } from '@/remote';
 import type { HistoryStores } from '@/store';
 import type { ChunkLocation, CommitLog, IndexEntry, PackRef } from '@/types';
@@ -14,6 +16,12 @@ const MAX_PACK_WINDOW = 32;
 const DEFAULT_RETENTION_DAYS = 90;
 const DEFAULT_MAX_VERSIONS = 100;
 
+function isMissingError(error: unknown): boolean {
+	if (isNotFound(error)) return true;
+	const msg = String(error).toLowerCase();
+	return msg.includes('nosuchkey') || msg.includes('missing') || msg.includes('not found');
+}
+
 function packObjectKey(remote: RemoteHistory, pack: PackRef): string {
 	return `${remote.ns}/packs/${pack.deviceId}/p-${String(pack.seq).padStart(8, '0')}-${pack.hash}.pack`;
 }
@@ -22,35 +30,52 @@ function packObjectKey(remote: RemoteHistory, pack: PackRef): string {
 async function liveSet(
 	ctx: GcContext,
 	options: GcOptions,
-): Promise<{ entries: Array<IndexEntry>; hashes: Set<string>; obsoletePacks: Set<string> }> {
+): Promise<{
+	decodedPacks: Map<string, DecodedPack>;
+	entries: Array<IndexEntry>;
+	hashes: Set<string>;
+	obsoletePacks: Map<string, PackRef>;
+}> {
 	const retentionDays = options.retentionDays ?? DEFAULT_RETENTION_DAYS;
 	const maxVersions = options.maxVersions ?? DEFAULT_MAX_VERSIONS;
 	const cutoff = Date.now() - retentionDays * DAY_MS;
-	const packEntries = new Map<string, Array<IndexEntry>>();
-	for (const [, location] of await allCommitLocations(ctx.stores)) {
-		const fileName = `p-${String(location.pack.seq).padStart(8, '0')}-${location.pack.hash}.pack`;
-		if (!packEntries.has(fileName)) packEntries.set(fileName, []);
+
+	const packMap = new Map<string, { pack: PackRef; versionKeys: Array<string> }>();
+	for (const [key, location] of await allCommitLocations(ctx.stores)) {
+		const pKey = packRefKey(location.pack);
+		let item = packMap.get(pKey);
+		if (!item) {
+			item = { pack: location.pack, versionKeys: [] };
+			packMap.set(pKey, item);
+		}
+		item.versionKeys.push(key);
 	}
-	for (const [fileName, cached] of packEntries)
-		if (cached.length === 0) {
-			const bytes = await ctx.remote.getObject(
-				`${ctx.remote.ns}/packs/${ctx.remote.deviceId}/${fileName}`,
-			);
+
+	const decodedPacks = new Map<string, DecodedPack>();
+	for (const [pKey, item] of packMap)
+		try {
+			const bytes = await ctx.remote.getObject(packObjectKey(ctx.remote, item.pack));
 			const decoded = await decodePack(bytes);
-			packEntries.set(fileName, decoded.entries);
+			decodedPacks.set(pKey, decoded);
+		} catch (error) {
+			if (isMissingError(error)) {
+				for (const deadKey of item.versionKeys) await ctx.stores.index.delete(deadKey);
+				continue;
+			}
+			throw error;
 		}
 
-	const byKey = new Map<string, Array<{ entry: IndexEntry; fileName: string }>>();
-	for (const [fileName, list] of packEntries)
-		for (const entry of list) {
-			const listForKey = byKey.get(entry.key) ?? [];
-			listForKey.push({ entry, fileName });
-			byKey.set(entry.key, listForKey);
+	const byKey = new Map<string, Array<{ entry: IndexEntry; packKey: string }>>();
+	for (const [pKey, decoded] of decodedPacks)
+		for (const entry of decoded.entries) {
+			const list = byKey.get(entry.key) ?? [];
+			list.push({ entry, packKey: pKey });
+			byKey.set(entry.key, list);
 		}
 
 	const hashes = new Set<string>();
 	const entries: Array<IndexEntry> = [];
-	const livePacks = new Set<string>();
+	const livePackKeys = new Set<string>();
 	const prunedEntries: Array<IndexEntry> = [];
 
 	for (const [, fileEntries] of byKey) {
@@ -60,24 +85,22 @@ async function liveSet(
 			if (item.entry.at >= cutoff && count < maxVersions) {
 				count++;
 				entries.push(item.entry);
-				livePacks.add(item.fileName);
+				livePackKeys.add(item.packKey);
 				for (const chunk of item.entry.chunks) hashes.add(chunk.hash);
 			} else prunedEntries.push(item.entry);
 	}
 
-	const obsoletePacks = new Set<string>();
-	for (const fileName of packEntries.keys())
-		if (!livePacks.has(fileName)) obsoletePacks.add(fileName);
+	const obsoletePacks = new Map<string, PackRef>();
+	for (const [pKey, item] of packMap)
+		if (!livePackKeys.has(pKey)) obsoletePacks.set(pKey, item.pack);
 
 	for (const entry of prunedEntries)
 		await ctx.stores.index.delete(`${entry.key}@${entry.lamport}`);
 
-	for (const [key, location] of await allCommitLocations(ctx.stores)) {
-		const fileName = `p-${String(location.pack.seq).padStart(8, '0')}-${location.pack.hash}.pack`;
-		if (obsoletePacks.has(fileName)) await ctx.stores.index.delete(key);
-	}
+	for (const [key, location] of await allCommitLocations(ctx.stores))
+		if (obsoletePacks.has(packRefKey(location.pack))) await ctx.stores.index.delete(key);
 
-	return { entries, hashes, obsoletePacks };
+	return { decodedPacks, entries, hashes, obsoletePacks };
 }
 
 /**
@@ -86,7 +109,7 @@ async function liveSet(
  */
 export async function compact(ctx: GcContext, options: number | GcOptions = {}): Promise<number> {
 	const opts: GcOptions = typeof options === 'number' ? { retentionDays: options } : options;
-	const { entries, hashes, obsoletePacks } = await liveSet(ctx, opts);
+	const { decodedPacks, entries, hashes, obsoletePacks } = await liveSet(ctx, opts);
 	if (entries.length === 0) return 0;
 
 	const locations = new Map(
@@ -107,8 +130,17 @@ export async function compact(ctx: GcContext, options: number | GcOptions = {}):
 	for (const hash of hashes) {
 		const location = locations.get(hash);
 		if (!location) continue;
-		const bytes = await ctx.remote.getObject(packObjectKey(ctx.remote, location.pack));
-		const decoded = await decodePack(bytes);
+		const pKey = packRefKey(location.pack);
+		let decoded = decodedPacks.get(pKey);
+		if (!decoded)
+			try {
+				const bytes = await ctx.remote.getObject(packObjectKey(ctx.remote, location.pack));
+				decoded = await decodePack(bytes);
+				decodedPacks.set(pKey, decoded);
+			} catch (error) {
+				if (isMissingError(error)) continue;
+				throw error;
+			}
 		const chunk = decoded.payload.subarray(location.offset, location.offset + location.length);
 		payloadParts.push(new Uint8Array(chunk));
 		chunkLocations.push({
@@ -155,10 +187,17 @@ export async function compact(ctx: GcContext, options: number | GcOptions = {}):
 	await ctx.stores.heads.set(ctx.remote.deviceId, nextLog);
 	await markChunks(ctx.stores, chunkLocations);
 	let removed = 0;
-	for (const fileName of obsoletePacks) {
-		await ctx.remote.deletePack(ctx.remote.deviceId, fileName);
-		removed++;
-	}
+	for (const pack of obsoletePacks.values())
+		try {
+			await ctx.remote.deletePack(
+				pack.deviceId,
+				packFileName(pack.deviceId, pack.seq, pack.hash),
+			);
+			removed++;
+		} catch (error) {
+			if (isMissingError(error)) continue;
+			throw error;
+		}
 	return removed;
 }
 

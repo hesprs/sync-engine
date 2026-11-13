@@ -7,7 +7,7 @@ import type { HistoryCipher } from '@/crypto';
 import type { CommitLog } from '@/types';
 import type { Binary, FileStat, Fs, ListOptions, Stat } from '@hesprs/sync-engine-sdk';
 
-const HISTORY_PREFIX = '.sync-engine-history/';
+const HISTORY_PREFIX = 'sync-engine-history/';
 
 export type RemoteHistory = {
 	fs: Fs;

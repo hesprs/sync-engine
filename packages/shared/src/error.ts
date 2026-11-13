@@ -26,8 +26,11 @@ export function describeError(error: Error, msg: string, newObj?: boolean) {
 }
 
 export function isNotFound(error: unknown): boolean {
+	const message = (((error as ErrorLike).message as string) ?? String(error)).toUpperCase();
 	return (
 		getStatus(error) === 404 ||
-		(((error as ErrorLike).message as string) ?? String(error)).toUpperCase().includes('ENOENT')
+		message.includes('ENOENT') ||
+		message.includes('NOSUCHKEY') ||
+		message.includes('NOT FOUND')
 	);
 }

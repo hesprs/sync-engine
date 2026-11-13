@@ -4,6 +4,7 @@ import { markChunks, packRefKey, putCommitLocation } from '@/index-store';
 import { decodePack, encodePack, packFileName, textBytes } from '@/pack';
 import { blobPresent, bumpLamport, clearPending, markBlobs, readPending } from '@/store';
 import { FLAG_DELETION, FLAG_SMALL_FILE } from '@/types';
+import { isNotFound } from '@repo/shared/error';
 import { sha256Bytes, sha256Text } from '@repo/shared/sha256-bytes';
 import type { RemoteHistory } from '@/remote';
 import type { HistoryStores } from '@/store';
@@ -31,6 +32,12 @@ type Assembled = {
 	blobBytes: Array<{ hash: string; bytes: Uint8Array }>;
 	blobRefs: Array<BlobRef>;
 };
+
+function isMissingError(error: unknown): boolean {
+	if (isNotFound(error)) return true;
+	const msg = String(error).toLowerCase();
+	return msg.includes('nosuchkey') || msg.includes('missing') || msg.includes('not found');
+}
 
 function uint8Concat(parts: Array<Uint8Array>): Uint8Array {
 	let total = 0;
@@ -311,22 +318,32 @@ async function runReconcile(ctx: FlushContext): Promise<void> {
 		for (const fileName of await ctx.remote.listPacks(log.deviceId)) {
 			if (known.has(fileName)) continue;
 			// An orphan pack is self-certifying: seq + hash in the name are enough to index it.
-			const bytes = await ctx.remote.getObject(
-				`${ctx.remote.ns}/packs/${log.deviceId}/${fileName}`,
-			);
-			const decoded = await decodePack(bytes);
-			const orphanRef: PackRef = {
-				deviceId: decoded.header.deviceId,
-				fromLamport: decoded.header.baseLamport,
-				hash: decoded.header.hash,
-				seq: decoded.header.seq,
-				toLamport: decoded.header.peakLamport,
-			};
-			await indexPack(ctx, orphanRef, decoded.header, decoded.entries);
+			try {
+				const bytes = await ctx.remote.getObject(
+					`${ctx.remote.ns}/packs/${log.deviceId}/${fileName}`,
+				);
+				const decoded = await decodePack(bytes);
+				const orphanRef: PackRef = {
+					deviceId: decoded.header.deviceId,
+					fromLamport: decoded.header.baseLamport,
+					hash: decoded.header.hash,
+					seq: decoded.header.seq,
+					toLamport: decoded.header.peakLamport,
+				};
+				await indexPack(ctx, orphanRef, decoded.header, decoded.entries);
+			} catch (error) {
+				if (isMissingError(error)) continue;
+				throw error;
+			}
 		}
 		for (const ref of log.packs) {
 			if (cachedPackKeys.has(`${ref.deviceId}:${ref.seq}:${ref.hash}`)) continue;
-			await indexPackByRef(ctx, ref);
+			try {
+				await indexPackByRef(ctx, ref);
+			} catch (error) {
+				if (isMissingError(error)) continue;
+				throw error;
+			}
 		}
 		await ctx.stores.heads.set(log.deviceId, log);
 	}

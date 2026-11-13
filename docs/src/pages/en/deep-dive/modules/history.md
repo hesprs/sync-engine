@@ -31,7 +31,7 @@ On cold start the module replays any pending WAL, reads the head logs (one listi
 
 Six `uni-kv` stores are namespaced by the vault/remote pair: a pending WAL, a chunk-to-location CAS index, a version-to-index lookup, a mirror of remote head logs, a confirmed-blob set, and the persisted Lamport clock. Each WAL entry carries its own Lamport value, so a single `store.batch` on the pending store is the atomic durability boundary for both the edit and its clock bump. Observed remote peaks are folded back into the clock during reconciliation.
 
-Remote objects live under a literal `.sync-engine-history/<namespace>/` prefix with three subfolders: `packs/<deviceId>/p-<seq>-<hash>.pack`, `blobs/<sha256>.blob`, and `heads/<deviceId>.log`. There is deliberately no `objects/` directory: chunk objects exist only as byte ranges inside packs. Each device is the sole writer of its own head log, which stays small by carrying only a recent window of pack references and a compact chunk map.
+Remote objects live under a literal `sync-engine-history/<namespace>/` prefix with three subfolders: `packs/<deviceId>/p-<seq>-<hash>.pack`, `blobs/<sha256>.blob`, and `heads/<deviceId>.log`. There is deliberately no `objects/` directory: chunk objects exist only as byte ranges inside packs. Each device is the sole writer of its own head log, which stays small by carrying only a recent window of pack references and a compact chunk map.
 
 ## Chunking and Deduplication
 

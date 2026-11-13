@@ -97,7 +97,6 @@ export default class SyncEngine extends Plugin {
 			syncStrategy: [
 				{ expr: '*', strategy: 'bidirectional' },
 				...[
-					'.sync-engine*',
 					'node_modules',
 					'.DS_Store',
 					'__MACOSX',
