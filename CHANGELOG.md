@@ -2,6 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.4.2 - 2026-11-13
+
+### Core
+
+- Supported editing module version in the module editor.
+- Fixed the bug that causes module update button to never show when auto-update is disabled.
+- Added module management menu item to manually refresh sources.
+- Add a loading indicator when module sources are being loaded.
+- Ensured network response headers are always normalized to lowercase.
+
+### WebDAV Module
+
+- Implemented support for digest authorization and automatic digest authorization detection.
+
+### Google Drive Module
+
+- Fixed the bug that when base directory is `/`, sync planning reports to delete all local files after upload.
+- Missing account ID is now treated as not authenticated to prevent mysterious record mismatch and decryption error.
+
+### Rclone S3 Timestamp Module
+
+- Implement the module to transform `x-amz-meta-mtime` header to second precision to make Rclone parse and apply modification time to server files.
+
+### Dropbox Module
+
+- Missing account ID is now treated as not authenticated to prevent mysterious record mismatch and decryption error.
+
+### Contributors
+
+@alan16742, @hesprs
+
 ## Sync Engine v3.4.1 - 2026-11-08
 
 ### Core

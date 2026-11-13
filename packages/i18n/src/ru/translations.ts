@@ -387,6 +387,10 @@ const ru: Translations = {
 	updateModule: 'Обновить модуль',
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Загрузить',
+	version: 'Версия',
+	versionDescription:
+		'Укажите версию модуля, используемую при сравнении обновлений и отображении в карточке модуля.',
+	versionPlaceholder: 'Введите версию (например, 0.0.1)',
 	walkingRemote: 'Сканирование удалённых файлов',
 	writeCode: 'Написать код',
 	writeCodeDescription: 'Напишите код своего модуля здесь на JavaScript',

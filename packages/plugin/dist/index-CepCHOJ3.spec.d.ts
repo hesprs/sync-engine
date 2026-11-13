@@ -231,7 +231,7 @@ type TranslateParams<R extends TranslationTypes> = R extends Factory<infer A> ? 
 type Translate<O extends TranslationResource> = <K extends keyof O>(key: K, ...arg: TranslateParams<O[K]>) => O[K] extends string | Snippet<General$1> ? string : DocumentFragment;
 declare class I18n {
   private readonly targetLangs;
-  readonly i18n: {};
+  readonly i18n: TranslationResource;
   private readonly registerI18n;
   private readonly translate;
   root: {
@@ -813,6 +813,9 @@ type ModuleEditorTranslations = {
   readmePage: string;
   readmePageDescription: string;
   readmePagePlaceholder: string;
+  version: string;
+  versionDescription: string;
+  versionPlaceholder: string;
 };
 type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & CodeInputTranslations;
 type CustomHeaders = Array<{

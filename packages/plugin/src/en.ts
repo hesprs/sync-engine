@@ -375,6 +375,10 @@ const en: Translations = {
 	updateModule: 'Update module',
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Upload',
+	version: 'Version',
+	versionDescription:
+		'Set the version of the module used in update comparison and module card display.',
+	versionPlaceholder: 'Enter version (e.g. 0.0.1)',
 	walkingRemote: 'Discovering remote files',
 	writeCode: 'Write code',
 	writeCodeDescription: 'Write your module code here as JavaScript',
