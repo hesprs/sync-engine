@@ -55,6 +55,7 @@ export default class Gdrive {
 	declare settings: Settings;
 
 	readonly start = () => {
+		const { moduleSettings, ctx, cleanup, settings, tokenManager } = this;
 		const {
 			translate,
 			registerRemoteFs,
@@ -63,30 +64,30 @@ export default class Gdrive {
 			registerRemoteRequestMiddleware,
 			registerSetting,
 			registerCss,
-		} = this.ctx;
-		this.cleanup.push(
+		} = ctx;
+		cleanup.push(
 			registerCss(styles),
 			registerRemoteFs('gdrive', {
-				checkConnection,
-				instantiate: (request) => new GdriveFs(request, this.moduleSettings, memoryDB),
+				checkConnection: (req) => checkConnection(req, moduleSettings.userId),
+				instantiate: (request) => new GdriveFs(request, moduleSettings, memoryDB),
 				prettyName: () => translate('gdrive'),
 			}),
 			registerRemoteFsWrapper({
 				apply: (fs) => {
 					if (digOriginal(fs) instanceof GdriveFs)
-						return prefixWrapper(fs, this.moduleSettings.baseDirectory);
+						return prefixWrapper(fs, moduleSettings.baseDirectory);
 				},
 				priority: 5998,
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
-					if (this.settings.remoteFs === 'gdrive')
-						return bearerMiddleware(request, this.tokenManager);
+					if (settings.remoteFs === 'gdrive')
+						return bearerMiddleware(request, tokenManager);
 				},
 				priority: 305,
 			}),
 			registerSetting({
-				apply: gdriveSetting(this.ctx as Context, this.moduleSettings, this.tokenManager),
+				apply: gdriveSetting(ctx as Context, moduleSettings, tokenManager),
 				priority: 683,
 			}),
 		);

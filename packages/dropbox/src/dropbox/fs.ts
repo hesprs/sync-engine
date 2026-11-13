@@ -12,6 +12,7 @@ import {
 	uidOf,
 	verifyEntries,
 } from './api';
+import { AUTH_ERROR_MESSAGE } from './auth';
 import UploadSessions from './sessions';
 import { SESSION_CHUNK_SIZE, appendSession, concurrentUploadSession, read2xx } from './upload';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
@@ -89,6 +90,7 @@ export default class DropboxFs implements RootFs {
 		private readonly request: Request,
 		private readonly options: DropboxFsOptions,
 	) {
+		if (!options.accountId) throw new Error(AUTH_ERROR_MESSAGE);
 		this.uploadSessions = new UploadSessions(request);
 	}
 

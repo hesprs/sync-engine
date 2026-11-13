@@ -158,7 +158,7 @@ export default function dropboxSetting(
 								.onClick(() => connectDropbox()),
 						);
 					},
-					visible: () => !tokenManager.getRefreshToken(),
+					visible: () => !settings.accountId || !tokenManager.getRefreshToken(),
 				})),
 				1100: s(() => ({
 					desc: translate('connectSuccess'),
@@ -179,7 +179,7 @@ export default function dropboxSetting(
 								}),
 						);
 					},
-					visible: () => Boolean(tokenManager.getRefreshToken()),
+					visible: () => Boolean(tokenManager.getRefreshToken() && settings.accountId),
 				})),
 				2000: s(() => ({
 					desc: translate('baseDirectoryDescription'),

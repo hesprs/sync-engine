@@ -8,6 +8,7 @@ import {
 	parseDriveError,
 	toStat,
 } from './api';
+import { AUTH_ERROR_MESSAGE } from './auth';
 import { guessMimeType, resumableUpload, singleUpload } from './upload';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
@@ -62,6 +63,7 @@ export default class GdriveFs implements RootFs {
 		private readonly options: GdriveFsOptions,
 		memoryDB: GdriveDB,
 	) {
+		if (!options.userId) throw new Error(AUTH_ERROR_MESSAGE);
 		this.ids = memoryDB.getStore('gdriveIds');
 		if (memoryDB.getMeta('gdriveIdsMarker') !== this.getUid()) {
 			this.ids.clear();

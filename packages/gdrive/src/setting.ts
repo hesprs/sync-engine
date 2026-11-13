@@ -168,7 +168,7 @@ export default function gdriveSetting(
 								),
 						);
 					},
-					visible: () => !tokenManager.getRefreshToken(),
+					visible: () => !settings.userId || !tokenManager.getRefreshToken(),
 				})),
 				1100: s(() => ({
 					desc: translate('connectSuccess'),
@@ -190,7 +190,7 @@ export default function gdriveSetting(
 								}),
 						);
 					},
-					visible: () => Boolean(tokenManager.getRefreshToken()),
+					visible: () => Boolean(tokenManager.getRefreshToken() && settings.userId),
 				})),
 				2000: s(() => ({
 					desc: translate('baseDirectoryDescription'),
