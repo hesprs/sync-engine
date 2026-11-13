@@ -1,22 +1,27 @@
+import CodeInputModal from '../CodeInputModal';
+import ModuleEditorModal from '../ModuleEditorModal';
 import Card from './Card';
-import { prepareFuzzySearch } from 'obsidian';
-import { For, Show, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
-import type { ModuleManagementContext, ModuleManagementHooks, PendingAction } from './index';
+import { MODULE_EXTENSION } from '@/modules/Extensibility';
+import { Menu, prepareFuzzySearch, SearchComponent, Notice, ExtraButtonComponent } from 'obsidian';
+import { For, Show, createEffect, createMemo, createSignal, onMount } from 'solid-js';
+import type { ModuleManagementContext, PendingAction } from './index';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { MaybePromise } from '@/types';
-import type { SearchResult } from 'obsidian';
+import type { MenuItem, SearchResult } from 'obsidian';
+
+const ALTERNATIVE_MODULE_EXTENSION = '.mjs';
 
 export default function App(props: {
+	el: Element;
 	ctx: ModuleManagementContext;
-	hooks: ModuleManagementHooks;
 	isUnmounted: () => boolean;
 }) {
 	const t = props.ctx.translate;
-	const [sourceModules, setSourceModules] = createSignal<Array<AugmentedModuleMeta>>([]);
-	const [installedModules, setInstalledModules] = createSignal<
-		Record<string, AugmentedModuleMeta>
-	>({});
-	const [loadedIds, setLoadedIds] = createSignal<Set<string>>(new Set());
+	const [sourceModules, setSourceModules] = createSignal(new Map<string, AugmentedModuleMeta>());
+	const [installedModules, setInstalledModules] = createSignal(props.ctx.discoveredModules, {
+		equals: () => false,
+	});
+	const [loadedIds, setLoadedIds] = createSignal(new Set<string>());
 	const [query, setQuerySignal] = createSignal('');
 	const [showInstalledOnly, setShowInstalledOnlySignal] = createSignal(false);
 	const [hasLoaded, setHasLoaded] = createSignal(false);
@@ -28,20 +33,24 @@ export default function App(props: {
 
 	const syncSnapshots = () => {
 		if (props.isUnmounted()) return;
-		setInstalledModules(Object.fromEntries(props.ctx.discoveredModules));
+		setInstalledModules(props.ctx.discoveredModules);
 		setLoadedIds(new Set(props.ctx.loadedModules.keys()));
 	};
 
-	const refreshSources = async () => {
-		if (props.isUnmounted()) return;
+	const refreshSources = async (manual = false) => {
+		if (props.isUnmounted() || isLoading()) return;
 		setIsLoading(true);
 		try {
 			const seen = new Set<string>();
-			const modules = (await props.ctx.fetchSources()).filter(({ id }) => {
-				if (seen.has(id)) return false;
-				seen.add(id);
-				return true;
-			});
+			const modules = new Map(
+				(await props.ctx.fetchSources(manual))
+					.filter(({ id }) => {
+						if (seen.has(id)) return false;
+						seen.add(id);
+						return true;
+					})
+					.map((module) => [module.id, module]),
+			);
 			if (props.isUnmounted()) return;
 			setSourceModules(modules);
 			syncSnapshots();
@@ -52,28 +61,32 @@ export default function App(props: {
 		}
 	};
 
-	const mergedModules = createMemo<Array<AugmentedModuleMeta>>(() =>
-		mergeModules(sourceModules(), installedModules()),
-	);
+	const mergedModules = createMemo<Array<string>>(() => [
+		...new Set([...sourceModules().keys(), ...installedModules().keys()]),
+	]);
 
-	const visibleModules = createMemo<Array<AugmentedModuleMeta>>(() => {
+	const getCanonicalMeta = (id: string) =>
+		(installedModules().get(id) ?? sourceModules().get(id)) as AugmentedModuleMeta;
+
+	const visibleModules = createMemo<Array<string>>(() => {
 		const normalizedQuery = query().trim();
-		const filtered = mergedModules().filter((module) => {
+		const filtered = mergedModules().filter((id) => {
 			if (!showInstalledOnly()) return true;
-			return module.id in installedModules();
+			return installedModules().has(id);
 		});
 
-		if (!normalizedQuery) return filtered.sort(sortModulesAlphabetically);
+		if (!normalizedQuery) return filtered.sort((a, b) => a.localeCompare(b));
 
 		const match = prepareFuzzySearch(normalizedQuery);
 		return filtered
+			.map(getCanonicalMeta)
 			.map((module) => ({ module, score: getModuleScore(match, module) }))
 			.filter(
 				(entry): entry is { module: AugmentedModuleMeta; score: number } =>
 					entry.score !== undefined,
 			)
-			.sort((a, b) => b.score - a.score || sortModulesAlphabetically(a.module, b.module))
-			.map(({ module }) => module);
+			.sort((a, b) => b.score - a.score || a.module.id.localeCompare(b.module.id))
+			.map(({ module: { id } }) => id);
 	});
 
 	const runAction = async (id: string, action: PendingAction, op: () => MaybePromise<void>) => {
@@ -88,18 +101,9 @@ export default function App(props: {
 		}
 	};
 
-	const unsubscribeQuery = props.hooks.onQuery.subscribe((nextQuery) =>
-		setQuerySignal(nextQuery),
-	);
-	const unsubscribeShowInstalledOnly = props.hooks.onShowInstalledOnlyChange.subscribe(
-		(enabled) => setShowInstalledOnlySignal(enabled),
-	);
-	const unsubscribeInstallFromFile = props.hooks.onInstallModuleFromFile.subscribe(syncSnapshots);
-
-	onCleanup(() => {
-		unsubscribeQuery();
-		unsubscribeShowInstalledOnly();
-		unsubscribeInstallFromFile();
+	createEffect(() => {
+		if (isLoading()) props.el.addClass('is-loading');
+		else props.el.removeClass('is-loading');
 	});
 
 	onMount(() => {
@@ -108,49 +112,128 @@ export default function App(props: {
 	});
 
 	return (
-		<div class="flex flex-col gap-3 pb-1">
-			<Show
-				when={visibleModules().length > 0}
-				fallback={
-					<div class="flex min-h-40 items-center justify-center rounded-md border border-[--background-modifier-border] px-4 py-6 text-center text-[--text-muted] bg-[--background-primary-alt]">
-						{getEmptyStateText({
-							hasLoaded: hasLoaded(),
-							isLoading: isLoading(),
-							query: query(),
-							showInstalledOnly: showInstalledOnly(),
-							translate: t,
-						})}
-					</div>
-				}
-			>
-				<div
-					class="grid gap-3"
-					style={{
-						'grid-template-columns': 'repeat(auto-fit, minmax(min(260px, 100%), 1fr))',
-					}}
+		<>
+			<div
+				class="flex items-center gap-2 py-4"
+				ref={(controls) => {
+					new SearchComponent(controls)
+						.setPlaceholder(t('searchModules'))
+						.onChange(setQuerySignal)
+						.setClass('grow').inputEl.spellcheck = false;
+					const menu = new Menu()
+						.addItem((item) =>
+							item
+								.setIcon('hard-drive-download')
+								.setTitle(t('showInstalledOnly'))
+								.setChecked(showInstalledOnly())
+								.onClick(() => {
+									setShowInstalledOnlySignal(!showInstalledOnly());
+									item.setChecked(showInstalledOnly());
+								}),
+						)
+						.addItem((item) =>
+							pickFile(
+								item.setIcon('package').setTitle(t('installModuleFromFile')),
+								async (fileObj) => {
+									let extension: string;
+									if (fileObj.name.endsWith(MODULE_EXTENSION))
+										extension = MODULE_EXTENSION;
+									else if (fileObj.name.endsWith(ALTERNATIVE_MODULE_EXTENSION))
+										extension = ALTERNATIVE_MODULE_EXTENSION;
+									else {
+										new Notice(t('moduleExtensionWarning'));
+										return;
+									}
+									const file = await fileObj.text();
+									new ModuleEditorModal(props.ctx, {
+										file,
+										initial: {
+											id: fileObj.name
+												.slice(0, -extension.length)
+												.normalize('NFC'),
+										},
+										onSave: async (meta) => {
+											await props.ctx.installModule(meta, file);
+											syncSnapshots();
+										},
+									}).open();
+								},
+							),
+						)
+						.addItem((item) =>
+							item
+								.setIcon('code-xml')
+								.setTitle(t('installModuleFromCode'))
+								.onClick(() => {
+									new CodeInputModal(props.ctx, (file) =>
+										new ModuleEditorModal(props.ctx, {
+											file,
+											onSave: async (meta) => {
+												await props.ctx.installModule(meta, file);
+												syncSnapshots();
+											},
+										}).open(),
+									).open();
+								}),
+						)
+						.addItem((item) =>
+							item
+								.setIcon('rotate-cw')
+								.setTitle(t('refreshSources'))
+								.onClick(() => refreshSources(true)),
+						);
+
+					new ExtraButtonComponent(controls)
+						.setIcon('settings')
+						.extraSettingsEl.onClickEvent((event) => menu.showAtMouseEvent(event));
+				}}
+			/>
+			<div class="flex flex-col gap-3 pb-1">
+				<Show
+					when={visibleModules().length > 0}
+					fallback={
+						<div class="flex min-h-40 items-center justify-center rounded-md border border-[--background-modifier-border] px-4 py-6 text-center text-[--text-muted] bg-[--background-primary-alt]">
+							{getEmptyStateText({
+								hasLoaded: hasLoaded(),
+								isLoading: isLoading(),
+								query: query(),
+								showInstalledOnly: showInstalledOnly(),
+								translate: t,
+							})}
+						</div>
+					}
 				>
-					<For each={visibleModules()}>
-						{(module) => (
-							<Card
-								ctx={props.ctx}
-								installedMeta={installedModules()[module.id]}
-								isLoaded={loadedIds().has(module.id)}
-								module={module}
-								pendingAction={pendingByName()[module.id]}
-								runAction={(action, op) => {
-									void runAction(module.id, action, op);
-								}}
-							/>
-						)}
-					</For>
-				</div>
-			</Show>
-			<Show when={isPluginOutdated()}>
-				<div class="text-center text-[--text-faint] mt-4">
-					{props.ctx.translate('someModulesHidden')}
-				</div>
-			</Show>
-		</div>
+					<div
+						class="grid gap-3"
+						style={{
+							'grid-template-columns':
+								'repeat(auto-fit, minmax(min(260px, 100%), 1fr))',
+						}}
+					>
+						<For each={visibleModules()}>
+							{(id) => (
+								<Card
+									ctx={props.ctx}
+									sourceMeta={sourceModules().get(id)}
+									isLoaded={loadedIds().has(id)}
+									canonical={getCanonicalMeta(id)}
+									installedMeta={installedModules().get(id)}
+									pendingAction={pendingByName()[id]}
+									runAction={(action, op) => {
+										void runAction(id, action, op);
+									}}
+								/>
+							)}
+						</For>
+					</div>
+				</Show>
+				<Show when={isPluginOutdated()}>
+					<div class="text-center text-[--text-faint] mt-4">
+						{props.ctx.translate('someModulesHidden')}
+					</div>
+				</Show>
+			</div>
+		</>
 	);
 }
 
@@ -176,16 +259,15 @@ function getModuleScore(match: (text: string) => SearchResult | null, module: Au
 	return (nameScore ?? 0) + (descriptionScore ?? 0);
 }
 
-function mergeModules(
-	sourceModules: Array<AugmentedModuleMeta>,
-	installedModules: Record<string, AugmentedModuleMeta>,
-): Array<AugmentedModuleMeta> {
-	const merged = new Map<string, AugmentedModuleMeta>();
-	for (const module of sourceModules) merged.set(module.id, module);
-	for (const module of Object.values(installedModules)) merged.set(module.id, module);
-	return [...merged.values()];
-}
-
-function sortModulesAlphabetically(a: AugmentedModuleMeta, b: AugmentedModuleMeta) {
-	return a.name.localeCompare(b.name);
+function pickFile({ dom }: MenuItem, handler: (file: File) => MaybePromise<void>) {
+	dom.addClass('relative');
+	dom.createEl('input', {
+		attr: { accept: '.js,.mjs', title: '' },
+		cls: 'absolute inset-0 opacity-0',
+		type: 'file',
+	}).addEventListener('change', (e) => {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+		void handler(file);
+	});
 }

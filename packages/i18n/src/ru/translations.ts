@@ -133,6 +133,8 @@ const ru: Translations = {
 	development: 'Разработка',
 	diffMatchPatch: 'Объединить',
 	disableModule: 'Отключить модуль',
+	discoveredModules: ({ module, source }) =>
+		`Найдено ${pc(module, 'модуль', 'модуля', 'модулей')} из ${pc(source, 'источника', 'источников', 'источников')}.`,
 	done: 'Готово',
 	dontSync: 'Не синхронизировать',
 	download: 'Скачать',
@@ -260,7 +262,7 @@ const ru: Translations = {
 	noticeStatusOnMobileDescription:
 		'Отображать всплывающее уведомление на мобильных устройствах во время синхронизации. Заменяет строку состояния, используемую на ПК.',
 	official: 'Официальный',
-	openReadme: 'Открыть страницу README модуля.',
+	openReadme: 'Открыть страницу README модуля',
 	pleaseSetBackend: 'Пожалуйста, выберите бэкенд!',
 	readmePage: 'Страница README',
 	readmePageDescription:
@@ -274,6 +276,7 @@ const ru: Translations = {
 		'Ускорить синхронизацию в реальном времени, повторно используя кэшированные данные и избегая лишней проверки удалённых файлов.',
 	realtimeSyncPlaceholder: 'Введите задержку (например, 500ms, 5s)',
 	recordsCleared: 'Записи очищены',
+	refreshSources: 'Обновить источники',
 	remoteMigration: 'Миграция удалённого хранилища',
 	removeLocal: 'Удалить локальный файл',
 	removeRecord: 'Удалить запись',
@@ -384,6 +387,10 @@ const ru: Translations = {
 	updateModule: 'Обновить модуль',
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Загрузить',
+	version: 'Версия',
+	versionDescription:
+		'Укажите версию модуля, используемую при сравнении обновлений и отображении в карточке модуля.',
+	versionPlaceholder: 'Введите версию (например, 0.0.1)',
 	walkingRemote: 'Сканирование удалённых файлов',
 	writeCode: 'Написать код',
 	writeCodeDescription: 'Напишите код своего модуля здесь на JavaScript',

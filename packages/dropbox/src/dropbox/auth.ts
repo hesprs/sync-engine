@@ -6,6 +6,7 @@ import { requestUrl } from 'obsidian';
 import type { Binary, Request, StringKV } from '@hesprs/sync-engine-sdk';
 import type { ObsidianProtocolData, SecretStorage } from 'obsidian';
 
+export const AUTH_ERROR_MESSAGE = 'Please authenticate the Dropbox account!';
 export const APP_KEY = atob(process.env.DROPBOX_APP_KEY ?? '');
 export const REDIRECT_URI = 'obsidian://sync-engine-dropbox-auth';
 export const OAUTH_SCOPE = 'files.content.read files.content.write files.metadata.read';
@@ -134,7 +135,7 @@ export class TokenManager {
 
 	private async refresh(): Promise<string> {
 		const refresh_token = this.getRefreshToken();
-		if (!refresh_token) throw new Error('Please authorize the Dropbox account!');
+		if (!refresh_token) throw new Error(AUTH_ERROR_MESSAGE);
 		const response = await requestUrl({
 			body: formEncode({ client_id: APP_KEY, grant_type: 'refresh_token', refresh_token }),
 			contentType: FORM_CONTENT_TYPE,

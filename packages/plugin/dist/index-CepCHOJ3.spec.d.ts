@@ -464,10 +464,14 @@ declare class Extensibility {
     failedToLoadModule: Snippet<string>;
     failedToDownloadModule: Snippet<string>;
     failedToFetchSource: Snippet<string>;
+    discoveredModules: Snippet<{
+      module: number;
+      source: number;
+    }>;
     integrityCheckFailed: string;
   };
   readonly events: {
-    moduleLoaded: string;
+    moduleLoaded: AugmentedModuleMeta;
     moduleUnloaded: string;
   };
   constructor(ctx: {
@@ -778,6 +782,13 @@ type ModuleManagementTranslations = {
   official: string;
   someModulesHidden: string;
   openReadme: string;
+  searchModules: string;
+  moduleManagement: string;
+  showInstalledOnly: string;
+  installModuleFromFile: string;
+  installModuleFromCode: string;
+  moduleExtensionWarning: Fragment;
+  refreshSources: string;
 };
 type ModuleEditorTranslations = {
   editModuleInformation: string;
@@ -802,15 +813,11 @@ type ModuleEditorTranslations = {
   readmePage: string;
   readmePageDescription: string;
   readmePagePlaceholder: string;
+  version: string;
+  versionDescription: string;
+  versionPlaceholder: string;
 };
-type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & CodeInputTranslations & {
-  searchModules: string;
-  moduleManagement: string;
-  showInstalledOnly: string;
-  installModuleFromFile: string;
-  installModuleFromCode: string;
-  moduleExtensionWarning: Fragment;
-};
+type ModulesTranslations = ModuleEditorTranslations & ModuleManagementTranslations & CodeInputTranslations;
 type CustomHeaders = Array<{
   type: 'plaintext' | 'secret';
   value: string;

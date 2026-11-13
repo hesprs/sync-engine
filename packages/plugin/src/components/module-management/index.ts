@@ -1,9 +1,8 @@
 import App from './App';
 import { render } from 'solid-js/web';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
-import type { Translate } from '@/modules/I18n';
+import type { Fragment, Translate } from '@/modules/I18n';
 import type { App as ObsidianApp } from 'obsidian';
-import type { Hook } from 'synthkernel';
 
 export type PendingAction = 'delete' | 'disable' | 'download' | 'enable' | 'editInfo';
 
@@ -23,15 +22,17 @@ export type ModuleManagementTranslations = {
 	official: string;
 	someModulesHidden: string;
 	openReadme: string;
-};
-
-export type ModuleManagementHooks = {
-	onQuery: Hook<[string]>;
-	onShowInstalledOnlyChange: Hook<[boolean]>;
-	onInstallModuleFromFile: Hook;
+	searchModules: string;
+	moduleManagement: string;
+	showInstalledOnly: string;
+	installModuleFromFile: string;
+	installModuleFromCode: string;
+	moduleExtensionWarning: Fragment;
+	refreshSources: string;
 };
 
 export type ModuleManagementContext = {
+	installModule: (meta: AugmentedModuleMeta, module: string) => Promise<void>;
 	fetchSources: (manual?: boolean) => Promise<Array<AugmentedModuleMeta>>;
 	discoveredModules: Map<string, AugmentedModuleMeta>;
 	loadedModules: Map<string, unknown>;
@@ -47,13 +48,9 @@ export type ModuleManagementContext = {
 	pluginOutdated: boolean;
 };
 
-export function mountModuleManagementList(
-	el: Element,
-	ctx: ModuleManagementContext,
-	hooks: ModuleManagementHooks,
-) {
+export function mountModuleManagement(el: Element, ctx: ModuleManagementContext) {
 	let isUnmounted = false;
-	const unmount = render(() => App({ ctx, hooks, isUnmounted: () => isUnmounted }), el);
+	const unmount = render(() => App({ ctx, el, isUnmounted: () => isUnmounted }), el);
 	return () => {
 		isUnmounted = true;
 		unmount();

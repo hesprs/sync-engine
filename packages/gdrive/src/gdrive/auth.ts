@@ -10,6 +10,7 @@ import { getStatus } from '@repo/shared/error';
 import { Platform, requestUrl, SecretStorage } from 'obsidian';
 import type { Request, StringKV } from '@hesprs/sync-engine-sdk';
 
+export const AUTH_ERROR_MESSAGE = 'Please authenticate the Google Account!';
 export const CLIENT_ID = atob(process.env.CLIENT_ID ?? '');
 export const CLIENT_SECRET = atob(process.env.CLIENT_SECRET ?? ''); // Not really a secret
 const KEYCHAIN_SECRET_ID = 'sync-engine-gdrive-refresh-token'; // Secret storage id under which the Google refresh token is stored.
@@ -218,7 +219,7 @@ export class TokenManager {
 
 	private async refresh(): Promise<string> {
 		const refresh_token = this.getRefreshToken();
-		if (!refresh_token) throw new Error('Please authorize Google Account!');
+		if (!refresh_token) throw new Error(AUTH_ERROR_MESSAGE);
 		const response = await requestUrl({
 			body: formEncode({
 				client_id: CLIENT_ID,

@@ -37,7 +37,7 @@ export type HeadSettingTranslations = {
 	noStrategyConfigured: string;
 };
 
-type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs: string }>;
+type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs?: string }>;
 
 export default function headSettings(
 	ctx: {
@@ -290,6 +290,7 @@ function setupCheckConnection({
 			setError();
 			if (force) new Notice(`${translate('checkConnectionFailed')}: ${error.message}`, 5000);
 			logError(describeError(error, `Check connection to \`${settings.remoteFs}\` failed`));
+			memoryDB.setMeta('lastCheckedFs', undefined);
 			cleanup();
 			scheduleCheckConnection();
 		};

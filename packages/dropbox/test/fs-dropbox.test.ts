@@ -1128,7 +1128,7 @@ test('the commit-ready callback reports ready writes until cleared', async () =>
 
 test('checkConnection validates the token through a root listing', async () => {
 	const failing = createFs(() => json({ error: { '.tag': 'invalid_access_token' } }, 401));
-	const failure = await checkConnection(failing.request);
+	const failure = await checkConnection(failing.request, 'id');
 	expect(failure).toBeInstanceOf(Error);
 	expect(String(failure)).toContain('invalid_access_token');
 
@@ -1136,5 +1136,5 @@ test('checkConnection validates the token through a root listing', async () => {
 		expect(url).toBe(`${API_RPC}/2/files/list_folder`);
 		return json({ cursor: '', entries: [], has_more: false });
 	});
-	expect(await checkConnection(passing.request)).toBeUndefined();
+	expect(await checkConnection(passing.request, 'id')).toBeUndefined();
 });

@@ -12,9 +12,9 @@ Choose the installed module that connects Sync Engine to your storage service. T
 
 ### Module Management
 
-Open the module management page. From there, you can install modules from sources or local files, and update, enable, disable, remove, or edit modules. Modules provide storage backends and extra sync strategies. Review [Security](./security) before installing modules from sources you do not control.
+Open the module management page. From there, you can install modules from sources, local files, or pasted code, and update, enable, disable, remove, or edit modules. Modules provide storage backends and extra sync strategies. Review [Security](./security) before installing modules from sources you do not control.
 
-The [module management page](../deep-dive/module-management-page) contains a search bar, an installed-only filter, an install-from-file entry, and module cards. Module source URLs are edited in the **Module sources** page under Development.
+The [module management page](../deep-dive/module-management-page) contains a search bar, an installed-only filter, install-from-file and install-from-code entries, a refresh-sources entry, and module cards. Module source URLs are edited in the **Module sources** page under Development.
 
 ### Auto-Update Modules
 
@@ -163,9 +163,10 @@ Rules use [`glob` expressions](<https://en.wikipedia.org/wiki/Glob_(programming)
 - `**` matches any number of segments, including none.
 - `?` matches one character.
 - `[abc]` matches one character from the set.
-- `[!abc]` matches one outside thr set.
+- `[!abc]` matches one outside the set.
 - `{a,b,c}` matches any listed variants, and braces can nest.
-- End a rule with `/` to match folders only. A rule containing a slash (other than a trailing one) starts matching from the vault root; otherwise it matches at any depth.
+- End a rule with `/` to match folders only.
+- A rule starting with `/` starts matching from the vault root; otherwise it matches at any depth.
 - Rules are case-sensitive: `Temp` does not match `temp`.
 
 ::: tip
@@ -230,4 +231,4 @@ Write Sync Engine's logs to a file in `<vault root>/Sync Engine Logs/` folder. U
 
 Edit the URLs Sync Engine uses to obtain the module catalog. URLs must use `http:` or `https:` and invalid entries are marked until corrected; use HTTPS whenever possible.
 
-The default source is `https://sync.consensia.cc/modules.json`. An alternative GitHub-hosted source `https://raw.githubusercontent.com/hesprs/sync-engine/refs/heads/gh-pages/modules-alternative.json` is available for networks that cannot reach the default source. Use one official source at a time to avoid duplicate module entries.
+The default source is `https://sync.consensia.cc/modules.json`. An alternative GitHub-hosted source `https://raw.githubusercontent.com/hesprs/sync-engine/refs/heads/gh-pages/modules-alternative.json` is available for networks that cannot reach the default source. Use one official source at a time to avoid duplicating module entries.

@@ -55,9 +55,10 @@ export default class Extensibility {
 		failedToLoadModule: Snippet<string>;
 		failedToDownloadModule: Snippet<string>;
 		failedToFetchSource: Snippet<string>;
+		discoveredModules: Snippet<{ module: number; source: number }>;
 		integrityCheckFailed: string;
 	};
-	declare readonly events: { moduleLoaded: string; moduleUnloaded: string };
+	declare readonly events: { moduleLoaded: AugmentedModuleMeta; moduleUnloaded: string };
 
 	constructor(
 		private readonly ctx: {
@@ -149,8 +150,7 @@ export default class Extensibility {
 	) => {
 		const { id, integrity, name, enabled } = meta;
 		if (this.loadedModules.get(id)) return;
-		const { dispatch, translate, app, __addModule__, __getModule__, allModules, saveSettings } =
-			this.ctx;
+		const { dispatch, translate, app, __addModule__, __getModule__, allModules } = this.ctx;
 		const { adapter } = app.vault;
 		try {
 			const file = module ?? (await adapter.read(this.getModulePath(id)));
@@ -161,17 +161,14 @@ export default class Extensibility {
 			if (typeof ctor !== 'function') throw new TypeError(`Invalid module!`);
 			__addModule__(ctor);
 			const instance: ModuleInstance = __getModule__(ctor as never);
-			const modules = this.settings.modules;
+			const { modules } = this.settings;
 			const moduleSettings = modules[id];
-			if (moduleSettings) {
-				Object.assign(instance.moduleSettings, moduleSettings);
-				modules[id] = instance.moduleSettings;
-			} else modules[id] = instance.moduleSettings;
-			void saveSettings();
+			if (moduleSettings) Object.assign(instance.moduleSettings, moduleSettings);
+			modules[id] = instance.moduleSettings;
 			if (start) instance.start?.();
 			allModules.add(ctor);
 			this.loadedModules.set(id, ctor);
-			dispatch('moduleLoaded', id);
+			dispatch('moduleLoaded', meta);
 		} catch (error) {
 			if (enabled) {
 				const discoveredMeta = this.discoveredModules.get(id);
@@ -239,11 +236,14 @@ export default class Extensibility {
 	private readonly deleteModule = async (id: string) => {
 		const version = this.discoveredModules.get(id);
 		if (!version) return;
+		const { app, saveSettings } = this.ctx;
+		const adapter = app.vault.adapter;
 		this.unloadModule(id);
-		await this.ctx.app.vault.adapter.remove(this.getModulePath(id));
+		const path = this.getModulePath(id);
+		if (await adapter.exists(path)) await adapter.remove(path);
 		this.discoveredModules.delete(id);
 		void this.moduleStore.delete(id);
-		void this.ctx.saveSettings();
+		void saveSettings();
 	};
 
 	private readonly fetchSources = async (manual = false) => {
@@ -293,6 +293,13 @@ export default class Extensibility {
 				});
 			}),
 		);
+		if (manual)
+			new Notice(
+				translate('discoveredModules', {
+					module: modules.length,
+					source: moduleSources.length,
+				}),
+			);
 		dispatch(
 			'logGeneral',
 			`Discovered ${modules.length} module(s) from ${moduleSources.length} source(s).`,
@@ -301,20 +308,22 @@ export default class Extensibility {
 	};
 
 	private readonly updateModules = async () => {
-		if (!this.discoveredModules.size) return;
+		if (!this.discoveredModules.size || !navigator.onLine) return;
 		const { execute, factory, operations } = this.createOperationFactory();
-		const { isIdle } = this.ctx;
+		const { isIdle, dispatch } = this.ctx;
 		(await this.fetchSources()).forEach((meta) => {
 			const { id, source, version } = meta;
 			const existing = this.discoveredModules.get(id);
 			if (!existing || source !== existing.source) return;
 			if (compare(version, existing.version) === 1) factory.download(meta);
 		});
-		if (!operations.length) return;
+		const updatedModules = operations.length;
+		if (!updatedModules) return;
 		await untilTrue(isIdle, 'stop');
 		isIdle(false);
 		await execute();
 		isIdle(true);
+		dispatch('logGeneral', `Auto-updated ${updatedModules} module(s).`);
 	};
 
 	private readonly updateModuleMeta = async (meta: AugmentedModuleMeta) => {

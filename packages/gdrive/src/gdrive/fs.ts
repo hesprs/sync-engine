@@ -8,6 +8,7 @@ import {
 	parseDriveError,
 	toStat,
 } from './api';
+import { AUTH_ERROR_MESSAGE } from './auth';
 import { guessMimeType, resumableUpload, singleUpload } from './upload';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
@@ -62,6 +63,7 @@ export default class GdriveFs implements RootFs {
 		private readonly options: GdriveFsOptions,
 		memoryDB: GdriveDB,
 	) {
+		if (!options.userId) throw new Error(AUTH_ERROR_MESSAGE);
 		this.ids = memoryDB.getStore('gdriveIds');
 		if (memoryDB.getMeta('gdriveIdsMarker') !== this.getUid()) {
 			this.ids.clear();
@@ -350,7 +352,6 @@ export default class GdriveFs implements RootFs {
 			if (siblings) siblings.push(file);
 			else childrenByParent.set(parent, [file]);
 		}
-
 		const results: Array<Stat> = [];
 		const total = all.length;
 		let completed = 0;
@@ -366,7 +367,20 @@ export default class GdriveFs implements RootFs {
 				if (verdict === 'advance') await walk(entry.id, childKey);
 			}
 		};
-		await walk(startId, key === '/' ? '' : key);
+		// Drive resolves the `root` alias in requests but never echoes it back in responses, so a root listing must walk from every parent that is not itself a listed file.
+		const getWalkRoot = () => {
+			if (key !== '/') return [startId];
+			const idSet = new Set(all.map((file) => file.id));
+			const orphanRoots = new Set<string>();
+			for (const { parents } of all) {
+				const root = parents[0];
+				if (root && !idSet.has(root)) orphanRoots.add(root);
+			}
+			return [...orphanRoots];
+		};
+		const walkKey = key === '/' ? '' : key;
+		const walkRoots = getWalkRoot();
+		await Promise.all(walkRoots.map((walkRoot) => walk(walkRoot, walkKey)));
 		return results;
 	}
 }

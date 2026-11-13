@@ -2,37 +2,37 @@
 	{
 		"id": "webdav",
 		"name": "WebDAV",
-		"version": "1.0.0",
+		"version": "1.1.0",
 		"description": "WebDAV backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/webdav.js",
-		"minPluginVersion": "3.4.0",
+		"minPluginVersion": "3.4.2",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/webdav"
 	},
 	{
 		"id": "s3",
 		"name": "S3",
-		"version": "1.0.0",
+		"version": "1.0.1",
 		"description": "S3 and S3-compatible backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/s3.js",
-		"minPluginVersion": "3.4.0",
+		"minPluginVersion": "3.4.2",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/s3"
 	},
 	{
 		"id": "gdrive",
 		"name": "Google Drive",
-		"version": "1.0.1",
+		"version": "1.0.2",
 		"description": "Google Drive backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/gdrive.js",
-		"minPluginVersion": "3.4.0",
+		"minPluginVersion": "3.4.2",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/gdrive"
 	},
 	{
 		"id": "dropbox",
 		"name": "Dropbox",
-		"version": "0.1.0",
+		"version": "0.1.1",
 		"description": "[Beta] Dropbox backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/dropbox.js",
@@ -42,7 +42,7 @@
 	{
 		"id": "encryption",
 		"name": "Encryption",
-		"version": "1.0.0",
+		"version": "1.0.1",
 		"description": "Client-side encrypt vault files before uploading to backend.",
 		"icon": "key-round",
 		"main": "https://sync.consensia.cc/modules/encryption.js",
@@ -52,7 +52,7 @@
 	{
 		"id": "i18n-zh",
 		"name": "I18n 简体中文",
-		"version": "1.0.0",
+		"version": "1.0.1",
 		"description": "Simplified Chinese UI language pack. / 简体中文介面语言包。",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-zh.js",
@@ -61,7 +61,7 @@
 	{
 		"id": "i18n-zh-TW",
 		"name": "I18n 繁體中文",
-		"version": "1.0.0",
+		"version": "1.0.1",
 		"description": "Traditional Chinese UI language pack. / 繁體中文介面語言包。",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-zh-TW.js",
@@ -70,7 +70,7 @@
 	{
 		"id": "i18n-ru",
 		"name": "I18n Русский",
-		"version": "1.0.0",
+		"version": "1.0.1",
 		"description": "Russian UI language pack. / Пакет русского интерфейса.",
 		"icon": "languages",
 		"main": "https://sync.consensia.cc/modules/i18n-ru.js",
@@ -89,11 +89,11 @@
 	{
 		"id": "rclone-s3-timestamp",
 		"name": "Rclone S3 Timestamp",
-		"version": "0.1.0",
+		"version": "0.1.1",
 		"description": "Preserves file modification times at server side if you are using \"Rclone serve S3\". This module depends on the S3 module.",
 		"icon": "bandage",
 		"main": "https://sync.consensia.cc/modules/rclone-s3-timestamp.js",
-		"minPluginVersion": "3.3.0",
+		"minPluginVersion": "3.4.2",
 		"readme": "https://sync.consensia.cc/deep-dive/modules/rclone-s3-timestamp"
 	}
 ]

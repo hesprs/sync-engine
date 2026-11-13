@@ -64,6 +64,7 @@ export default class Dropbox {
 	declare settings: Settings;
 
 	readonly start = () => {
+		const { ctx, cleanup, tokenManager, pending, moduleSettings, settings } = this;
 		const {
 			translate,
 			registerRemoteFs,
@@ -74,38 +75,33 @@ export default class Dropbox {
 			registerCss,
 			registerObsidianProtocolHandler,
 		} = this.ctx;
-		this.cleanup.push(
+		cleanup.push(
 			registerCss(styles),
 			registerRemoteFs('dropbox', {
-				checkConnection,
-				instantiate: (request) => new DropboxFs(request, this.moduleSettings),
+				checkConnection: (req) => checkConnection(req, moduleSettings.accountId),
+				instantiate: (request) => new DropboxFs(request, moduleSettings),
 				prettyName: () => translate('dropbox'),
 			}),
 			registerRemoteFsWrapper({
 				apply: (fs) => {
 					if (digOriginal(fs) instanceof DropboxFs)
-						return prefixWrapper(fs, this.moduleSettings.baseDirectory);
+						return prefixWrapper(fs, moduleSettings.baseDirectory);
 				},
 				priority: 6418,
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
-					if (this.settings.remoteFs === 'dropbox')
-						return bearerMiddleware(request, this.tokenManager);
+					if (settings.remoteFs === 'dropbox')
+						return bearerMiddleware(request, tokenManager);
 				},
 				priority: 306,
 			}),
 			registerRemoteOptimizer({ apply: dropboxOptimizer, priority: 3342 }),
 			registerSetting({
-				apply: dropboxSetting(
-					this.ctx as Context,
-					this.moduleSettings,
-					this.tokenManager,
-					this.pending,
-				),
+				apply: dropboxSetting(ctx as Context, moduleSettings, tokenManager, pending),
 				priority: 803,
 			}),
-			registerObsidianProtocolHandler('sync-engine-dropbox-auth', this.pending.notify),
+			registerObsidianProtocolHandler('sync-engine-dropbox-auth', pending.notify),
 		);
 	};
 

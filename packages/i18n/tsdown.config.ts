@@ -12,5 +12,6 @@ export default defineConfig({
 	},
 	minify: true,
 	outExtensions: () => ({ js: '.js' }),
+	platform: 'browser',
 	plugins: [syncEngineModule(moduleCatalog)],
 });

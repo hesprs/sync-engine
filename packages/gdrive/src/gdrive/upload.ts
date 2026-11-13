@@ -1,12 +1,12 @@
 import { parseDriveError } from './api';
 import { concatBinary, PartBuffer, textToUint8Array } from '@repo/shared/binary';
 import type { DriveFile } from './api';
-import type { Binary, Request, RequestResponse, StringKV } from '@hesprs/sync-engine-sdk';
+import type { Binary, Request, RequestResponse } from '@hesprs/sync-engine-sdk';
 
 // Resumable uploads must be sequential (Drive rejects chunks that skip ahead of the uploaded size), so the SDK's memory-tuned chunk size does not apply here.
 const GDRIVE_CHUNK_SIZE = 8 * 1024 ** 2;
 
-const MIME_BY_EXTENSION: Partial<StringKV> = {
+const MIME_BY_EXTENSION: Dict<string> = {
 	base: 'text/yaml',
 	canvas: 'application/json',
 	css: 'text/css',
