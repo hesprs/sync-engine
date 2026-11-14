@@ -6,7 +6,6 @@ import { requestUrl } from 'obsidian';
 import type { Binary, Request, StringKV } from '@hesprs/sync-engine-sdk';
 import type { ObsidianProtocolData, SecretStorage } from 'obsidian';
 
-export const AUTH_ERROR_MESSAGE = 'Please authenticate the Dropbox account!';
 export const APP_KEY = atob(process.env.DROPBOX_APP_KEY ?? '');
 export const REDIRECT_URI = 'obsidian://sync-engine-dropbox-auth';
 export const OAUTH_SCOPE = 'files.content.read files.content.write files.metadata.read';
@@ -121,7 +120,21 @@ export class TokenManager {
 	readonly setRefreshToken = (token: string) =>
 		this.secretStorage.setSecret(KEYCHAIN_SECRET_ID, token);
 
-	readonly deleteRefreshToken = () => this.secretStorage.deleteSecret(KEYCHAIN_SECRET_ID);
+	readonly deleteRefreshToken = () => {
+		const token = this.getRefreshToken();
+		if (!token) return;
+		return this.getToken()
+			.finally(() => this.secretStorage.deleteSecret(KEYCHAIN_SECRET_ID))
+			.then((access) =>
+				requestUrl({
+					headers: { Authorization: `Bearer ${access}` },
+					method: 'POST',
+					throw: false,
+					url: `${API_RPC}/2/auth/token/revoke`,
+				}),
+			)
+			.catch(() => {});
+	};
 
 	readonly setToken = (token: string, expiresIn: number): void => {
 		this.accessToken = token;
@@ -135,7 +148,7 @@ export class TokenManager {
 
 	private async refresh(): Promise<string> {
 		const refresh_token = this.getRefreshToken();
-		if (!refresh_token) throw new Error(AUTH_ERROR_MESSAGE);
+		if (!refresh_token) throw new Error('Please authenticate the Dropbox account!');
 		const response = await requestUrl({
 			body: formEncode({ client_id: APP_KEY, grant_type: 'refresh_token', refresh_token }),
 			contentType: FORM_CONTENT_TYPE,
@@ -168,28 +181,13 @@ export function bearerMiddleware(request: Request, manager: TokenManager): Reque
 				headers: { ...params?.headers, Authorization: `Bearer ${token}` },
 			});
 		try {
-			return await send(await manager.getToken());
+			return await manager.getToken().then(send);
 		} catch (error: unknown) {
 			if (getStatus(error) !== 401) throw error;
 			manager.invalidate();
-			return send(await manager.getToken(true));
+			return manager.getToken(true).then(send);
 		}
 	};
-}
-
-/** Revokes the token set derived from the current refresh token. Fire-and-forget. */
-export async function revokeToken(manager: TokenManager): Promise<void> {
-	try {
-		const token = await manager.getToken();
-		await requestUrl({
-			headers: { Authorization: `Bearer ${token}` },
-			method: 'POST',
-			throw: false,
-			url: `${API_RPC}/2/auth/token/revoke`,
-		});
-	} catch {
-		// Best-effort; the token also expires on its own.
-	}
 }
 
 /**

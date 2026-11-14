@@ -18,22 +18,22 @@ export default function Card(props: {
 		| 'updateModuleMeta'
 		| 'app'
 	>;
-	sourceMeta?: AugmentedModuleMeta;
+	upstream?: AugmentedModuleMeta;
 	canonical: AugmentedModuleMeta;
 	isLoaded: boolean;
-	installedMeta?: AugmentedModuleMeta;
+	installed?: AugmentedModuleMeta;
 	pendingAction?: PendingAction;
 	runAction: (action: PendingAction, op: () => MaybePromise<void>) => void;
 }) {
-	const isInstalled = () => Boolean(props.installedMeta);
+	const isInstalled = () => Boolean(props.installed);
 	const hasUpdate = () =>
-		props.sourceMeta &&
-		props.installedMeta &&
-		compare(props.sourceMeta.version, props.installedMeta.version) === 1;
+		props.upstream &&
+		props.installed &&
+		compare(props.upstream.version, props.installed.version) === 1;
 	const busy = () => props.pendingAction !== undefined;
 	const versionLabel = () => {
 		if (hasUpdate())
-			return `v${(props.installedMeta as AugmentedModuleMeta).version}\u00A0\u00A0→\u00A0\u00A0v${(props.sourceMeta as AugmentedModuleMeta).version}`;
+			return `v${(props.installed as AugmentedModuleMeta).version}\u00A0\u00A0→\u00A0\u00A0v${(props.upstream as AugmentedModuleMeta).version}`;
 		return `v${props.canonical.version}`;
 	};
 
@@ -92,7 +92,7 @@ export default function Card(props: {
 						}
 						onClick={() =>
 							props.runAction('download', () =>
-								props.ctx.downloadModule(props.sourceMeta ?? props.canonical),
+								props.ctx.downloadModule(props.upstream ?? props.canonical),
 							)
 						}
 					/>

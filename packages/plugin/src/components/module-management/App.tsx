@@ -4,6 +4,7 @@ import Card from './Card';
 import { MODULE_EXTENSION } from '@/modules/Extensibility';
 import { Menu, prepareFuzzySearch, SearchComponent, Notice, ExtraButtonComponent } from 'obsidian';
 import { For, Show, createEffect, createMemo, createSignal, onMount } from 'solid-js';
+import { compare } from 'verkit';
 import type { ModuleManagementContext, PendingAction } from './index';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { MaybePromise } from '@/types';
@@ -11,13 +12,19 @@ import type { MenuItem, SearchResult } from 'obsidian';
 
 const ALTERNATIVE_MODULE_EXTENSION = '.mjs';
 
+type MergedMeta = {
+	canonical: AugmentedModuleMeta;
+	installed?: AugmentedModuleMeta;
+	upstream?: AugmentedModuleMeta;
+};
+
 export default function App(props: {
 	el: Element;
 	ctx: ModuleManagementContext;
 	isUnmounted: () => boolean;
 }) {
 	const t = props.ctx.translate;
-	const [sourceModules, setSourceModules] = createSignal(new Map<string, AugmentedModuleMeta>());
+	const [sourceModules, setSourceModules] = createSignal<Array<AugmentedModuleMeta>>([]);
 	const [installedModules, setInstalledModules] = createSignal(props.ctx.discoveredModules, {
 		equals: () => false,
 	});
@@ -41,16 +48,7 @@ export default function App(props: {
 		if (props.isUnmounted() || isLoading()) return;
 		setIsLoading(true);
 		try {
-			const seen = new Set<string>();
-			const modules = new Map(
-				(await props.ctx.fetchSources(manual))
-					.filter(({ id }) => {
-						if (seen.has(id)) return false;
-						seen.add(id);
-						return true;
-					})
-					.map((module) => [module.id, module]),
-			);
+			const modules = await props.ctx.fetchSources(manual);
 			if (props.isUnmounted()) return;
 			setSourceModules(modules);
 			syncSnapshots();
@@ -61,32 +59,58 @@ export default function App(props: {
 		}
 	};
 
-	const mergedModules = createMemo<Array<string>>(() => [
-		...new Set([...sourceModules().keys(), ...installedModules().keys()]),
-	]);
+	const mergedModules = createMemo<Record<string, MergedMeta>>(() => {
+		const sourceMap = new Map<string, Array<AugmentedModuleMeta>>();
+		const installedMeta = installedModules();
+		for (const module of sourceModules()) {
+			let existing = sourceMap.get(module.id);
+			if (!existing) {
+				existing = [];
+				sourceMap.set(module.id, existing);
+			}
+			existing.push(module);
+		}
+		const result: Record<string, MergedMeta> = {};
+		const ids = new Set([...sourceMap.keys(), ...installedMeta.keys()]);
+		for (const id of ids) {
+			const installed = installedMeta.get(id);
+			const sourceMapModules = sourceMap.get(id);
+			const upstream = sourceMapModules
+				? installed
+					? sourceMapModules.find(({ source }) => source === installed.source)
+					: sourceMapModules.reduce((max, cur) =>
+							compare(cur.version, max.version) === 1 ? cur : max,
+						)
+				: undefined;
+			const canonical = (installed ?? upstream) as AugmentedModuleMeta;
+			result[id] = { canonical, installed, upstream };
+		}
+		return result;
+	});
 
-	const getCanonicalMeta = (id: string) =>
-		(installedModules().get(id) ?? sourceModules().get(id)) as AugmentedModuleMeta;
-
-	const visibleModules = createMemo<Array<string>>(() => {
-		const normalizedQuery = query().trim();
-		const filtered = mergedModules().filter((id) => {
+	const visibleModules = createMemo<Map<string, MergedMeta>>(() => {
+		const filtered = Object.entries(mergedModules()).filter(([id]) => {
 			if (!showInstalledOnly()) return true;
 			return installedModules().has(id);
 		});
 
-		if (!normalizedQuery) return filtered.sort((a, b) => a.localeCompare(b));
-
+		const normalizedQuery = query().trim();
+		if (!normalizedQuery) return new Map(filtered.sort(([a], [b]) => a.localeCompare(b)));
 		const match = prepareFuzzySearch(normalizedQuery);
-		return filtered
-			.map(getCanonicalMeta)
-			.map((module) => ({ module, score: getModuleScore(match, module) }))
-			.filter(
-				(entry): entry is { module: AugmentedModuleMeta; score: number } =>
-					entry.score !== undefined,
-			)
-			.sort((a, b) => b.score - a.score || a.module.id.localeCompare(b.module.id))
-			.map(({ module: { id } }) => id);
+		return new Map(
+			filtered
+				.map((entry) => ({ entry, score: getModuleScore(match, entry[1].canonical) }))
+				.filter(
+					(entry): entry is { entry: [string, MergedMeta]; score: number } =>
+						entry.score !== undefined,
+				)
+				.sort(
+					(a, b) =>
+						b.score - a.score ||
+						a.entry[1].canonical.id.localeCompare(b.entry[1].canonical.id),
+				)
+				.map(({ entry }) => entry),
+		);
 	});
 
 	const runAction = async (id: string, action: PendingAction, op: () => MaybePromise<void>) => {
@@ -190,7 +214,7 @@ export default function App(props: {
 			/>
 			<div class="flex flex-col gap-3 pb-1">
 				<Show
-					when={visibleModules().length > 0}
+					when={visibleModules().size}
 					fallback={
 						<div class="flex min-h-40 items-center justify-center rounded-md border border-[--background-modifier-border] px-4 py-6 text-center text-[--text-muted] bg-[--background-primary-alt]">
 							{getEmptyStateText({
@@ -210,20 +234,23 @@ export default function App(props: {
 								'repeat(auto-fit, minmax(min(260px, 100%), 1fr))',
 						}}
 					>
-						<For each={visibleModules()}>
-							{(id) => (
-								<Card
-									ctx={props.ctx}
-									sourceMeta={sourceModules().get(id)}
-									isLoaded={loadedIds().has(id)}
-									canonical={getCanonicalMeta(id)}
-									installedMeta={installedModules().get(id)}
-									pendingAction={pendingByName()[id]}
-									runAction={(action, op) => {
-										void runAction(id, action, op);
-									}}
-								/>
-							)}
+						<For each={[...visibleModules().keys()]}>
+							{(id) => {
+								const get = () => visibleModules().get(id) as MergedMeta;
+								return (
+									<Card
+										ctx={props.ctx}
+										upstream={get().upstream}
+										isLoaded={loadedIds().has(id)}
+										canonical={get().canonical}
+										installed={get().installed}
+										pendingAction={pendingByName()[id]}
+										runAction={(action, op) => {
+											void runAction(id, action, op);
+										}}
+									/>
+								);
+							}}
 						</For>
 					</div>
 				</Show>

@@ -119,8 +119,8 @@ class EncryptionFs implements WrappedFs {
 		);
 	}
 
-	async delete(key: string) {
-		return this.original.delete(await this.encryptKey(key));
+	delete(key: string) {
+		return this.encryptKey(key).then((enc) => this.original.delete(enc));
 	}
 
 	async move(oldKey: string, newKey: string) {
@@ -142,7 +142,7 @@ class EncryptionFs implements WrappedFs {
 	}
 
 	async stat(key: string) {
-		const stat = await this.original.stat(await this.encryptKey(key));
+		const stat = await this.encryptKey(key).then((enc) => this.original.stat(enc));
 		stat.key = await this.decryptKey(stat.key);
 		if (stat.isDir) return stat;
 		const { metaKey } = await this.getKeys();
@@ -151,8 +151,8 @@ class EncryptionFs implements WrappedFs {
 		return stat;
 	}
 
-	async exists(key: string): Promise<boolean> {
-		return this.original.exists(await this.encryptKey(key));
+	exists(key: string): Promise<boolean> {
+		return this.encryptKey(key).then((enc) => this.original.exists(enc));
 	}
 
 	async list(key: string, reporter: ListReporter) {

@@ -10,7 +10,6 @@ import { getStatus } from '@repo/shared/error';
 import { Platform, requestUrl, SecretStorage } from 'obsidian';
 import type { Request, StringKV } from '@hesprs/sync-engine-sdk';
 
-export const AUTH_ERROR_MESSAGE = 'Please authenticate the Google Account!';
 export const CLIENT_ID = atob(process.env.CLIENT_ID ?? '');
 export const CLIENT_SECRET = atob(process.env.CLIENT_SECRET ?? ''); // Not really a secret
 const KEYCHAIN_SECRET_ID = 'sync-engine-gdrive-refresh-token'; // Secret storage id under which the Google refresh token is stored.
@@ -171,16 +170,6 @@ function extractSub(idToken: string): string {
 	return payload.sub;
 }
 
-// Fire-and-forget revocation
-export function revokeToken(token: string) {
-	return requestUrl({
-		contentType: FORM_CONTENT_TYPE,
-		method: 'POST',
-		throw: false,
-		url: buildUrl(TOKEN_REVOKE_URL, '', { token }),
-	}).catch(() => {});
-}
-
 /**
  * Caches the short-lived access token and refreshes it with the stored refresh token when needed.
  * One instance is shared by the request middleware and the connection check so a token refresh
@@ -205,7 +194,17 @@ export class TokenManager {
 	readonly setRefreshToken = (token: string) =>
 		this.secretStorage.setSecret(KEYCHAIN_SECRET_ID, token);
 
-	readonly deleteRefreshToken = () => this.secretStorage.deleteSecret(KEYCHAIN_SECRET_ID);
+	readonly deleteRefreshToken = () => {
+		const token = this.getRefreshToken();
+		if (!token) return;
+		this.secretStorage.deleteSecret(KEYCHAIN_SECRET_ID);
+		return requestUrl({
+			contentType: FORM_CONTENT_TYPE,
+			method: 'POST',
+			throw: false,
+			url: buildUrl(TOKEN_REVOKE_URL, '', { token }),
+		}).catch(() => {});
+	};
 
 	readonly setToken = (token: string, expiresIn: number) => {
 		this.accessToken = token;
@@ -219,7 +218,7 @@ export class TokenManager {
 
 	private async refresh(): Promise<string> {
 		const refresh_token = this.getRefreshToken();
-		if (!refresh_token) throw new Error(AUTH_ERROR_MESSAGE);
+		if (!refresh_token) throw new Error('Please authenticate the Google Account!');
 		const response = await requestUrl({
 			body: formEncode({
 				client_id: CLIENT_ID,
@@ -258,11 +257,11 @@ export function bearerMiddleware(request: Request, manager: TokenManager): Reque
 				headers: { ...params?.headers, Authorization: `Bearer ${token}` },
 			});
 		try {
-			return await send(await manager.getToken());
+			return await manager.getToken().then(send);
 		} catch (error: unknown) {
 			if (getStatus(error) !== 401) throw error;
 			manager.invalidate();
-			return send(await manager.getToken(true));
+			return manager.getToken(true).then(send);
 		}
 	};
 }

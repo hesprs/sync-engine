@@ -168,7 +168,9 @@ export default class VaultFs implements RootFs {
 			: { isDir: true, key, meta };
 	}
 
-	async removeIfExist(key: string) {
-		if (await this.exists(key)) await this.delete(key);
+	removeIfExist(key: string) {
+		return this.exists(key).then((exists) => {
+			if (exists) return this.delete(key);
+		});
 	}
 }

@@ -68,7 +68,7 @@ export default class Gdrive {
 		cleanup.push(
 			registerCss(styles),
 			registerRemoteFs('gdrive', {
-				checkConnection: (req) => checkConnection(req, moduleSettings.userId),
+				checkConnection,
 				instantiate: (request) => new GdriveFs(request, moduleSettings, memoryDB),
 				prettyName: () => translate('gdrive'),
 			}),
@@ -91,6 +91,10 @@ export default class Gdrive {
 				priority: 683,
 			}),
 		);
+
+		// The token can exist despite the user ID is missing (e.g. user reinstalled the plugin), force a re-auth to prevent bugs caused by a missing ID
+		const token = tokenManager.getRefreshToken();
+		if (!moduleSettings.userId && token) void tokenManager.deleteRefreshToken();
 	};
 
 	readonly dispose = () => {
