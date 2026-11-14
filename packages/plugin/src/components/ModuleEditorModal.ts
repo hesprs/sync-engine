@@ -72,7 +72,7 @@ export default class ModuleEditorModal extends Modal {
 			description: description || magic.description || 'An unknown module.',
 			enabled,
 			icon: icon || magic.icon || 'puzzle',
-			id: id || name || magic.name || crypto.randomUUID(),
+			id: id || magic.id || name || magic.name || crypto.randomUUID(),
 			integrity,
 			main,
 			name: name || magic.name || 'Unknown Module',

@@ -22,7 +22,7 @@
 	{
 		"id": "gdrive",
 		"name": "Google Drive",
-		"version": "1.0.2",
+		"version": "1.0.3",
 		"description": "Google Drive backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/gdrive.js",
@@ -32,7 +32,7 @@
 	{
 		"id": "dropbox",
 		"name": "Dropbox",
-		"version": "0.1.1",
+		"version": "0.1.2",
 		"description": "[Beta] Dropbox backend support.",
 		"icon": "server",
 		"main": "https://sync.consensia.cc/modules/dropbox.js",

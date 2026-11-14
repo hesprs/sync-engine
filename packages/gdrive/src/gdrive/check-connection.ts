@@ -1,13 +1,8 @@
 import { DRIVE_API, buildUrl, parseDriveError } from './api';
-import { AUTH_ERROR_MESSAGE } from './auth';
 import { toError } from '@repo/shared/error';
 import type { Request } from '@hesprs/sync-engine-sdk';
 
-export default async function checkConnection(
-	request: Request,
-	userId: string,
-): Promise<void | Error> {
-	if (!userId) return new Error(AUTH_ERROR_MESSAGE);
+export default async function checkConnection(request: Request): Promise<void | Error> {
 	try {
 		const response = await request(buildUrl(DRIVE_API, '/about', { fields: 'storageQuota' }), {
 			method: 'GET',

@@ -5,10 +5,10 @@ import {
 	FOLDER_MIME,
 	buildUrl,
 	escapeQuery,
+	getFileUid,
 	parseDriveError,
 	toStat,
 } from './api';
-import { AUTH_ERROR_MESSAGE } from './auth';
 import { guessMimeType, resumableUpload, singleUpload } from './upload';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { textToUint8Array } from '@repo/shared/binary';
@@ -63,7 +63,6 @@ export default class GdriveFs implements RootFs {
 		private readonly options: GdriveFsOptions,
 		memoryDB: GdriveDB,
 	) {
-		if (!options.userId) throw new Error(AUTH_ERROR_MESSAGE);
 		this.ids = memoryDB.getStore('gdriveIds');
 		if (memoryDB.getMeta('gdriveIdsMarker') !== this.getUid()) {
 			this.ids.clear();
@@ -193,16 +192,15 @@ export default class GdriveFs implements RootFs {
 	}
 
 	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
-		const file = await singleUpload(
-			{
-				...(await this.uploadTarget(key, stat, 'multipart')),
-				mimeType: guessMimeType(basename(key)),
-				request: this.request,
-			},
-			await value,
+		const file = await Promise.all([this.uploadTarget(key, stat, 'multipart'), value]).then(
+			([targets, val]) =>
+				singleUpload(
+					{ ...targets, mimeType: guessMimeType(basename(key)), request: this.request },
+					val,
+				),
 		);
-		if (file.id) this.ids.set(key, file.id);
-		return file.md5Checksum ?? `${stat.mtime}~${stat.size}`;
+		this.ids.set(key, file.id);
+		return getFileUid(file, key);
 	}
 
 	async writeStream(
@@ -210,16 +208,12 @@ export default class GdriveFs implements RootFs {
 		value: MaybePromise<ReadableStream<Binary>>,
 		stat: FileStat,
 	): Promise<string> {
-		const file = await resumableUpload(
-			{
-				...(await this.uploadTarget(key, stat, 'resumable')),
-				request: this.request,
-				size: stat.size,
-			},
-			await value,
+		const file = await Promise.all([this.uploadTarget(key, stat, 'resumable'), value]).then(
+			([targets, val]) =>
+				resumableUpload({ ...targets, request: this.request, size: stat.size }, val),
 		);
-		if (file.id) this.ids.set(key, file.id);
-		return file.md5Checksum ?? `${stat.mtime}~${stat.size}`;
+		this.ids.set(key, file.id);
+		return getFileUid(file, key);
 	}
 
 	async delete(key: string): Promise<void> {
@@ -313,9 +307,9 @@ export default class GdriveFs implements RootFs {
 		return toStat(key, entry);
 	}
 
-	async exists(key: string): Promise<boolean> {
+	exists(key: string): Promise<boolean> {
 		// When Sync Engine calls `exists()`, the only possibility is that something unexpected happened, don't trust cache here
-		return (await this.resolveIdFresh(key)) !== undefined;
+		return this.resolveIdFresh(key).then((id) => id !== undefined);
 	}
 
 	/**

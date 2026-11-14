@@ -273,6 +273,7 @@ export default class Extensibility {
 					? await fetchSingleSource(url)
 					: (this.sourceCache.get(url) ?? (await fetchSingleSource(url)));
 				const seenId = new Set<string>();
+				const result: Array<AugmentedModuleMeta> = [];
 				content.forEach((meta: unknown) => {
 					if (!isValidMeta(meta)) return;
 					const { id, minPluginVersion, icon, main } = meta;
@@ -282,7 +283,7 @@ export default class Extensibility {
 					}
 					if (seenId.has(id)) return;
 					seenId.add(id);
-					modules.push({
+					result.push({
 						...meta,
 						enabled: this.discoveredModules.get(id)?.enabled ?? false,
 						icon: icon ?? 'puzzle',
@@ -291,8 +292,9 @@ export default class Extensibility {
 						source: url,
 					});
 				});
+				return result;
 			}),
-		);
+		).then((sources) => sources.forEach((source) => modules.push(...source)));
 		if (manual)
 			new Notice(
 				translate('discoveredModules', {

@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 - Supported editing module version in the module editor.
 - Fixed the bug that causes module update button to never show when auto-update is disabled.
 - Added module management menu item to manually refresh sources.
-- Add a loading indicator when module sources are being loaded.
+- Added a loading indicator when module sources are being loaded.
 - Ensured network response headers are always normalized to lowercase.
 
 ### WebDAV Module
@@ -52,7 +52,7 @@ All notable changes to this project will be documented in this file.
 - Removed memory control options since it does not have real effect in current Obsidian environment.
 - Made internal operation optimization capturing more precise and simplified its implementation.
 - Improved syncing robustness when confronting server rate limits and network fluctuation.
-- Improved interval namespace isolation to support double instancing.
+- Improved internal namespace isolation to support double instancing.
 - Improved internal sync operation construction flow.
 - Improved internal file tree rendering process.
 

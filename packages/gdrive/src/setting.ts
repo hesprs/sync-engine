@@ -1,4 +1,4 @@
-import { pollDeviceToken, revokeToken, startDeviceAuthorization } from './gdrive/auth';
+import { pollDeviceToken, startDeviceAuthorization } from './gdrive/auth';
 import { settingEntry as s } from '@hesprs/sync-engine-sdk';
 import { describeError, toError } from '@repo/shared/error';
 import { normalizeBaseDir } from '@repo/shared/path';
@@ -168,7 +168,7 @@ export default function gdriveSetting(
 								),
 						);
 					},
-					visible: () => !settings.userId || !tokenManager.getRefreshToken(),
+					visible: () => !tokenManager.getRefreshToken(),
 				})),
 				1100: s(() => ({
 					desc: translate('connectSuccess'),
@@ -179,18 +179,17 @@ export default function gdriveSetting(
 								.setButtonText(translate('disconnect'))
 								.setDestructive()
 								.onClick(async () => {
-									const token = tokenManager.getRefreshToken();
-									if (!token) return;
-									await revokeToken(token);
-									settings.userId = '';
-									tokenManager.deleteRefreshToken();
-									tokenManager.invalidate();
-									void saveSettings();
+									if (tokenManager.getRefreshToken()) {
+										await tokenManager.deleteRefreshToken();
+										settings.userId = '';
+										tokenManager.invalidate();
+										void saveSettings();
+									}
 									refreshSettingTab();
 								}),
 						);
 					},
-					visible: () => Boolean(tokenManager.getRefreshToken() && settings.userId),
+					visible: () => Boolean(tokenManager.getRefreshToken()),
 				})),
 				2000: s(() => ({
 					desc: translate('baseDirectoryDescription'),

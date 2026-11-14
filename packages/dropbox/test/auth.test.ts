@@ -1,4 +1,12 @@
 import { API_RPC, OAUTH_TOKEN_URL } from '@/dropbox/api';
+import {
+	APP_KEY,
+	PendingAuthorization,
+	TokenManager,
+	bearerMiddleware,
+	exchangeCodeForTokens,
+	startAuthorization,
+} from '@/dropbox/auth';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import ObsidianMock from '@repo/shared/obsidian-mock';
 import { expect, mock, test } from 'bun:test';
@@ -24,16 +32,6 @@ void mock.module('obsidian', () => ({
 		});
 	},
 }));
-
-const {
-	APP_KEY,
-	PendingAuthorization,
-	TokenManager,
-	bearerMiddleware,
-	exchangeCodeForTokens,
-	revokeToken,
-	startAuthorization,
-} = await import('@/dropbox/auth');
 
 function reset(...next: Array<HttpResponse>) {
 	requests.length = 0;
@@ -174,8 +172,10 @@ test('caches tokens and retries bearer requests after a 401', async () => {
 test('revokes the current token set derived from the refresh token', async () => {
 	reset({ json: { access_token: 'access', expires_in: 14_400 } }, {});
 	const manager = new TokenManager(createSecrets());
-	await revokeToken(manager);
 
+	await manager.deleteRefreshToken();
+
+	expect(manager.getRefreshToken()).toBeUndefined();
 	expect(requests[1]?.url).toBe(`${API_RPC}/2/auth/token/revoke`);
 	expect(requests[1]?.headers?.Authorization).toBe('Bearer access');
 });

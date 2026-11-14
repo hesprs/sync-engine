@@ -78,3 +78,9 @@ export function toStat(
 		uid: md5Checksum ?? `${mtime}~${size}`,
 	};
 }
+
+export function getFileUid(file: DriveFile, key: string) {
+	const stat = toStat(key, file);
+	if (stat.isDir) throw new Error(`Google Drive write returned a folder stat for ${key}.`);
+	return stat.uid;
+}

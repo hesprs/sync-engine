@@ -78,7 +78,7 @@ export default class Dropbox {
 		cleanup.push(
 			registerCss(styles),
 			registerRemoteFs('dropbox', {
-				checkConnection: (req) => checkConnection(req, moduleSettings.accountId),
+				checkConnection,
 				instantiate: (request) => new DropboxFs(request, moduleSettings),
 				prettyName: () => translate('dropbox'),
 			}),
@@ -103,6 +103,10 @@ export default class Dropbox {
 			}),
 			registerObsidianProtocolHandler('sync-engine-dropbox-auth', pending.notify),
 		);
+
+		// The token can exist despite the user ID is missing (e.g. user reinstalled the plugin), force a re-auth to prevent bugs caused by a missing ID
+		const token = tokenManager.getRefreshToken();
+		if (!moduleSettings.accountId && token) void tokenManager.deleteRefreshToken();
 	};
 
 	readonly dispose = () => this.cleanup.splice(0).forEach((fn) => fn());

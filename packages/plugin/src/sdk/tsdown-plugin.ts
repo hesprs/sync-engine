@@ -14,30 +14,26 @@ type SyncEngineConfig = {
 };
 
 type ModuleMeta = Partial<
-	Record<'name' | 'icon' | 'description' | 'source' | 'version' | 'readme', string>
+	Record<'id' | 'name' | 'icon' | 'description' | 'source' | 'version' | 'readme', string>
 >;
-type ModuleMetaWithId = ModuleMeta & { id: string };
 
-const MAGIC_KEYS = ['name', 'icon', 'description', 'source', 'version', 'readme'] as const;
+type MetaOption = ModuleMeta | Array<ModuleMeta> | Record<string, ModuleMeta>;
+
+const MAGIC_KEYS = ['id', 'name', 'icon', 'description', 'source', 'version', 'readme'] as const;
 
 function magicBytes(meta: ModuleMeta): string {
 	const lines = MAGIC_KEYS.filter((key) => meta[key]).map((key) => `${key}: ${meta[key]}`);
 	return `/*!\n${lines.join('\n')}\n*/\n`;
 }
 
-function resolveMeta(
-	meta: ModuleMeta | Array<ModuleMetaWithId> | Record<string, ModuleMeta>,
-	entryName: string,
-): ModuleMeta | undefined {
+function resolveMeta(meta: MetaOption, entryName: string): ModuleMeta | undefined {
 	if (Array.isArray(meta)) return meta.find(({ id }) => id === entryName);
 	if (typeof Object.values(meta)[0] === 'object')
 		return (meta as Record<string, ModuleMeta>)[entryName];
 	return meta;
 }
 
-export default function syncEngineModule(
-	meta?: ModuleMeta | Array<ModuleMetaWithId> | Record<string, ModuleMeta>,
-) {
+export default function syncEngineModule(meta?: MetaOption) {
 	return {
 		name: 'sync-engine-module',
 		renderChunk(code: string, chunk: { name: string; isEntry: boolean }) {

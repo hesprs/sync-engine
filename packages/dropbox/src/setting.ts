@@ -1,4 +1,4 @@
-import { exchangeCodeForTokens, revokeToken, startAuthorization } from './dropbox/auth';
+import { exchangeCodeForTokens, startAuthorization } from './dropbox/auth';
 import { settingEntry as s } from '@hesprs/sync-engine-sdk';
 import { describeError, toError } from '@repo/shared/error';
 import { normalizeBaseDir } from '@repo/shared/path';
@@ -158,7 +158,7 @@ export default function dropboxSetting(
 								.onClick(() => connectDropbox()),
 						);
 					},
-					visible: () => !settings.accountId || !tokenManager.getRefreshToken(),
+					visible: () => !tokenManager.getRefreshToken(),
 				})),
 				1100: s(() => ({
 					desc: translate('connectSuccess'),
@@ -169,17 +169,17 @@ export default function dropboxSetting(
 								.setButtonText(translate('disconnect'))
 								.setDestructive()
 								.onClick(async () => {
-									if (!tokenManager.getRefreshToken()) return;
-									await revokeToken(tokenManager);
-									settings.accountId = '';
-									tokenManager.deleteRefreshToken();
-									tokenManager.invalidate();
-									void saveSettings();
+									if (tokenManager.getRefreshToken()) {
+										await tokenManager.deleteRefreshToken();
+										settings.accountId = '';
+										tokenManager.invalidate();
+										void saveSettings();
+									}
 									refreshSettingTab();
 								}),
 						);
 					},
-					visible: () => Boolean(tokenManager.getRefreshToken() && settings.accountId),
+					visible: () => Boolean(tokenManager.getRefreshToken()),
 				})),
 				2000: s(() => ({
 					desc: translate('baseDirectoryDescription'),

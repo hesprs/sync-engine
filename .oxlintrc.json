@@ -124,7 +124,8 @@
 		"unicorn/max-nested-calls": ["warn", { "max": 5 }],
 		"eslint/require-await": "off", // overlaps with typescript
 		"typescript/ban-types": "off",
-		"eslint/capitalized-comments": ["warn", "always", { "ignoreConsecutiveComments": true }]
+		"eslint/capitalized-comments": ["warn", "always", { "ignoreConsecutiveComments": true }],
+		"unicorn/no-array-reduce": "off"
 	},
 	"env": { "builtin": true, "browser": true, "vue": true },
 	"globals": {

@@ -1,3 +1,9 @@
+import {
+	TokenManager,
+	bearerMiddleware,
+	pollDeviceToken,
+	startDeviceAuthorization,
+} from '@/gdrive/auth';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import ObsidianMock from '@repo/shared/obsidian-mock';
 import { expect, mock, test } from 'bun:test';
@@ -20,9 +26,6 @@ void mock.module('obsidian', () => ({
 		return Promise.resolve({ json: response.json, status: response.status ?? 200 });
 	},
 }));
-
-const { TokenManager, bearerMiddleware, pollDeviceToken, startDeviceAuthorization } =
-	await import('@/gdrive/auth');
 
 const GRANTED_SCOPE = 'https://www.googleapis.com/auth/drive.file openid';
 
