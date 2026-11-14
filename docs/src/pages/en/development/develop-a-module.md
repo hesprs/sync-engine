@@ -90,7 +90,7 @@ Passing module metadata to the plugin prepends a magic bytes comment to each com
 ```TypeScript
 plugins: [
 	syncEngineModule({
-    id: 'my-module',
+		id: 'my-module',
 		name: 'My Module',
 		icon: 'puzzle',
 		description: 'An example module.',
