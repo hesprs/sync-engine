@@ -84,7 +84,7 @@ Every object written through the handle — packs, blobs and head logs — is en
 
 ## Retention and Garbage Collection
 
-Retention is client-side and explicit, governed by both a maximum version count per note (`maxVersions`, default 100) and an age cutoff (`retentionDays`, default 90). Compaction sorts commits descending by Lamport clock/timestamp per file, retains up to `maxVersions` within the retention window, rewrites those live chunks into a new immutable pack with checkpoint entries, publishes a new head log, prunes obsolete entries from local index, and deletes packs that contain no live versions. A pack is never mutated in place, and the operation is idempotent.
+Retention is client-side and explicit, governed by both a maximum version count per note (`maxVersions`, default 100), an age cutoff (`retentionDays`, default 90), and an intelligent tiered retention policy (`tieredRetention`, default true). To prevent rapid, continuous editing sessions from crowding out previous days' milestones, the tiered policy retains fine-grained versions for recent work (< 1 hour), at most one version per hour for the past 24 hours, at most one version per day for the past 30 days, and at most one version per week beyond that. Compaction rewrites live chunks into a new immutable pack with checkpoint entries, publishes a new head log, prunes obsolete entries from the local index, and deletes packs that contain no live versions. A pack is never mutated in place, and the operation is idempotent.
 
 ## Collaboration
 

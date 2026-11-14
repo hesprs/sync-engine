@@ -181,3 +181,79 @@ test('compact tolerates deletePack failure (NoSuchKey) when pack is already dele
 	const removed = await compact({ remote, stores }, { maxVersions: 2, retentionDays: 90 });
 	expect(removed).toBe(0);
 });
+
+test('compact with tiered retention preserves older daily versions even when same-day burst exceeds maxVersions', async () => {
+	const setupReturn = setup();
+	const now = Date.now();
+	const dayMs = 86_400_000;
+	// 1 version 10 days ago
+	await seed(setupReturn, 'v-10d', now - 10 * dayMs, { lamport: 1, seq: 1 });
+	// 1 version yesterday
+	await seed(setupReturn, 'v-yesterday', now - dayMs, { lamport: 2, seq: 2 });
+	// 5 rapid edits today (within last 10 minutes)
+	for (let i = 0; i < 5; i++)
+		await seed(setupReturn, `v-today-${i}`, now - 600_000 + i * 1000, {
+			lamport: 3 + i,
+			seq: 3 + i,
+		});
+
+	const { remote, stores } = setupReturn;
+	await compact({ remote, stores }, { maxVersions: 3, now, retentionDays: 90, tiered: true });
+
+	// Historical versions MUST survive despite the burst of edits today
+	expect(await stores.index.get('note.md@1')).toBeDefined();
+	expect(await stores.index.get('note.md@2')).toBeDefined();
+	// The newest version from today is kept
+	expect(await stores.index.get('note.md@7')).toBeDefined();
+	// Older versions from today are pruned to respect maxVersions budget
+	expect(await stores.index.get('note.md@3')).toBeUndefined();
+	expect(await stores.index.get('note.md@4')).toBeUndefined();
+	expect(await stores.index.get('note.md@5')).toBeUndefined();
+	expect(await stores.index.get('note.md@6')).toBeUndefined();
+});
+
+test('compact with tiered retention thins multiple edits on past days down to 1 milestone per day', async () => {
+	const setupReturn = setup();
+	const now = Date.now();
+	const dayMs = 86_400_000;
+	// 3 versions from 3 days ago (e.g. morning, afternoon, evening)
+	await seed(setupReturn, 'v-3d-morning', now - 3 * dayMs - 3_600_000, { lamport: 1, seq: 1 });
+	await seed(setupReturn, 'v-3d-afternoon', now - 3 * dayMs - 1_800_000, { lamport: 2, seq: 2 });
+	await seed(setupReturn, 'v-3d-evening', now - 3 * dayMs, { lamport: 3, seq: 3 });
+	// 1 version today
+	await seed(setupReturn, 'v-today', now - 1000, { lamport: 4, seq: 4 });
+
+	const { remote, stores } = setupReturn;
+	await compact({ remote, stores }, { maxVersions: 10, now, retentionDays: 90, tiered: true });
+
+	// The latest version of 3 days ago is kept as the daily milestone
+	expect(await stores.index.get('note.md@3')).toBeDefined();
+	// Intermediate edits from 3 days ago are thinned out
+	expect(await stores.index.get('note.md@1')).toBeUndefined();
+	expect(await stores.index.get('note.md@2')).toBeUndefined();
+	// Today's version is kept
+	expect(await stores.index.get('note.md@4')).toBeDefined();
+});
+
+test('compact with tiered: false falls back to flat newest-first pruning', async () => {
+	const setupReturn = setup();
+	const now = Date.now();
+	const dayMs = 86_400_000;
+	await seed(setupReturn, 'v-10d', now - 10 * dayMs, { lamport: 1, seq: 1 });
+	await seed(setupReturn, 'v-yesterday', now - dayMs, { lamport: 2, seq: 2 });
+	for (let i = 0; i < 5; i++)
+		await seed(setupReturn, `v-today-${i}`, now - 600_000 + i * 1000, {
+			lamport: 3 + i,
+			seq: 3 + i,
+		});
+
+	const { remote, stores } = setupReturn;
+	await compact({ remote, stores }, { maxVersions: 3, now, retentionDays: 90, tiered: false });
+
+	// In flat mode, the 3 newest versions are kept, crowding out older history
+	expect(await stores.index.get('note.md@1')).toBeUndefined();
+	expect(await stores.index.get('note.md@2')).toBeUndefined();
+	expect(await stores.index.get('note.md@5')).toBeDefined();
+	expect(await stores.index.get('note.md@6')).toBeDefined();
+	expect(await stores.index.get('note.md@7')).toBeDefined();
+});

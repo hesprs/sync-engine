@@ -9,12 +9,117 @@ import type { HistoryStores } from '@/store';
 import type { ChunkLocation, CommitLog, IndexEntry, PackRef } from '@/types';
 
 export type GcContext = { remote: RemoteHistory; stores: HistoryStores };
-export type GcOptions = { maxVersions?: number; retentionDays?: number };
+export type GcOptions = {
+	maxVersions?: number;
+	now?: number;
+	retentionDays?: number;
+	tiered?: boolean;
+};
 
+const HOUR_MS = 3_600_000;
 const DAY_MS = 86_400_000;
 const MAX_PACK_WINDOW = 32;
 const DEFAULT_RETENTION_DAYS = 90;
 const DEFAULT_MAX_VERSIONS = 100;
+
+function calendarDayKey(timestamp: number): string {
+	const d = new Date(timestamp);
+	return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+function calendarHourKey(timestamp: number): string {
+	const d = new Date(timestamp);
+	return `${calendarDayKey(timestamp)}-${d.getHours()}`;
+}
+
+function weekKey(timestamp: number): string {
+	return `w-${Math.floor(timestamp / (7 * DAY_MS))}`;
+}
+
+export function selectLiveEntries(
+	fileEntries: Array<{ entry: IndexEntry; packKey: string }>,
+	options: { cutoff: number; maxVersions: number; now?: number; tiered?: boolean },
+): {
+	kept: Array<{ entry: IndexEntry; packKey: string }>;
+	pruned: Array<{ entry: IndexEntry; packKey: string }>;
+} {
+	const { cutoff, maxVersions, now = Date.now(), tiered = true } = options;
+	fileEntries.sort((a, b) => b.entry.lamport - a.entry.lamport || b.entry.at - a.entry.at);
+
+	if (!tiered) {
+		const kept: Array<{ entry: IndexEntry; packKey: string }> = [];
+		const pruned: Array<{ entry: IndexEntry; packKey: string }> = [];
+		let count = 0;
+		for (const item of fileEntries)
+			if (item.entry.at >= cutoff && count < maxVersions) {
+				count++;
+				kept.push(item);
+			} else pruned.push(item);
+		return { kept, pruned };
+	}
+
+	const valid: Array<{ entry: IndexEntry; packKey: string }> = [];
+	const pruned: Array<{ entry: IndexEntry; packKey: string }> = [];
+	for (const item of fileEntries)
+		if (item.entry.at >= cutoff) valid.push(item);
+		else pruned.push(item);
+
+	const seenBuckets = new Set<string>();
+	const tieredCandidates: Array<{ entry: IndexEntry; packKey: string }> = [];
+	const tieredPruned: Array<{ entry: IndexEntry; packKey: string }> = [];
+
+	for (const item of valid) {
+		const age = Math.max(0, now - item.entry.at);
+		if (age < HOUR_MS) tieredCandidates.push(item);
+		else if (age < 24 * HOUR_MS) {
+			const bucket = `h-${calendarHourKey(item.entry.at)}`;
+			if (seenBuckets.has(bucket)) tieredPruned.push(item);
+			else {
+				seenBuckets.add(bucket);
+				tieredCandidates.push(item);
+			}
+		} else if (age < 30 * DAY_MS) {
+			const bucket = `d-${calendarDayKey(item.entry.at)}`;
+			if (seenBuckets.has(bucket)) tieredPruned.push(item);
+			else {
+				seenBuckets.add(bucket);
+				tieredCandidates.push(item);
+			}
+		} else {
+			const bucket = weekKey(item.entry.at);
+			if (seenBuckets.has(bucket)) tieredPruned.push(item);
+			else {
+				seenBuckets.add(bucket);
+				tieredCandidates.push(item);
+			}
+		}
+	}
+
+	if (tieredCandidates.length <= maxVersions)
+		return { kept: tieredCandidates, pruned: [...pruned, ...tieredPruned] };
+
+	const historical: Array<{ entry: IndexEntry; packKey: string }> = [];
+	const recent: Array<{ entry: IndexEntry; packKey: string }> = [];
+	for (const item of tieredCandidates)
+		if (Math.max(0, now - item.entry.at) >= 24 * HOUR_MS) historical.push(item);
+		else recent.push(item);
+
+	let kept: Array<{ entry: IndexEntry; packKey: string }>;
+	let extraPruned: Array<{ entry: IndexEntry; packKey: string }>;
+
+	if (historical.length < maxVersions) {
+		const remainingQuota = maxVersions - historical.length;
+		const keptRecent = recent.slice(0, remainingQuota);
+		const droppedRecent = recent.slice(remainingQuota);
+		kept = [...keptRecent, ...historical];
+		extraPruned = droppedRecent;
+	} else {
+		kept = tieredCandidates.slice(0, maxVersions);
+		extraPruned = tieredCandidates.slice(maxVersions);
+	}
+
+	return { kept, pruned: [...pruned, ...tieredPruned, ...extraPruned] };
+}
 
 function isMissingError(error: unknown): boolean {
 	if (isNotFound(error)) return true;
@@ -79,15 +184,18 @@ async function liveSet(
 	const prunedEntries: Array<IndexEntry> = [];
 
 	for (const [, fileEntries] of byKey) {
-		fileEntries.sort((a, b) => b.entry.lamport - a.entry.lamport || b.entry.at - a.entry.at);
-		let count = 0;
-		for (const item of fileEntries)
-			if (item.entry.at >= cutoff && count < maxVersions) {
-				count++;
-				entries.push(item.entry);
-				livePackKeys.add(item.packKey);
-				for (const chunk of item.entry.chunks) hashes.add(chunk.hash);
-			} else prunedEntries.push(item.entry);
+		const { kept, pruned } = selectLiveEntries(fileEntries, {
+			cutoff,
+			maxVersions,
+			now: options.now,
+			tiered: options.tiered !== false,
+		});
+		for (const item of kept) {
+			entries.push(item.entry);
+			livePackKeys.add(item.packKey);
+			for (const chunk of item.entry.chunks) hashes.add(chunk.hash);
+		}
+		for (const item of pruned) prunedEntries.push(item.entry);
 	}
 
 	const obsoletePacks = new Map<string, PackRef>();

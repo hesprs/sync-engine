@@ -11,6 +11,7 @@ export type HistorySettings = {
 	maxVersions: number;
 	protectExcludedNotes?: boolean;
 	retentionDays: number;
+	tieredRetention?: boolean;
 	trackAttachments?: boolean;
 };
 
@@ -57,6 +58,20 @@ export default function historySetting(
 									settings.maxVersions = parsed;
 								void saveSettings();
 							});
+						});
+					},
+				})),
+				2100: s(() => ({
+					desc: translate('tieredRetentionDescription'),
+					name: translate('tieredRetention'),
+					render: (setting) => {
+						setting.addToggle((toggle) => {
+							toggle
+								.setValue(settings.tieredRetention !== false)
+								.onChange((value) => {
+									settings.tieredRetention = value;
+									void saveSettings();
+								});
 						});
 					},
 				})),

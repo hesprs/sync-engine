@@ -28,6 +28,8 @@ export type HistoryTranslations = {
 	retentionDaysDescription: string;
 	runGc: string;
 	showHistory: string;
+	tieredRetention: string;
+	tieredRetentionDescription: string;
 	trackAttachments: string;
 	trackAttachmentsDescription: string;
 	version: (args: { at: number }) => string;
@@ -73,6 +75,9 @@ const en: HistoryTranslations = {
 		'Versions older than this many days are dropped during garbage collection.',
 	runGc: 'Run garbage collection',
 	showHistory: 'Sync Engine: Show history',
+	tieredRetention: 'Tiered retention',
+	tieredRetentionDescription:
+		'Gradually thin older versions (frequent recent versions, daily for past month, weekly beyond) so rapid editing does not crowd out earlier history.',
 	trackAttachments: 'Track attachment history',
 	trackAttachmentsDescription:
 		'Save historical versions for synced attachments and binary files (increases remote storage usage).',
@@ -113,6 +118,9 @@ const zh: HistoryTranslations = {
 	retentionDaysDescription: '垃圾回收会丢弃超过该天数的旧版本。',
 	runGc: '运行垃圾回收',
 	showHistory: 'Sync Engine：查看历史',
+	tieredRetention: '分层保留策略',
+	tieredRetentionDescription:
+		'按时间逐步稀疏化保留旧版本（近期高频、单月内每天一个、往后每周一个），防止短时间连续编辑挤占早期历史。',
 	trackAttachments: '记录附件历史版本',
 	trackAttachmentsDescription:
 		'为库内正常同步的附件及二进制文件保存历史版本（会增加云端存储占用）。',
@@ -153,6 +161,9 @@ const zhTW: HistoryTranslations = {
 	retentionDaysDescription: '垃圾回收會捨棄超過此天數的舊版本。',
 	runGc: '執行垃圾回收',
 	showHistory: 'Sync Engine：查看歷史',
+	tieredRetention: '分層保留策略',
+	tieredRetentionDescription:
+		'按時間逐步稀疏化保留舊版本（近期高頻、單月內每天一個、往後每週一個），防止短時間連續編輯擠佔早期歷史。',
 	trackAttachments: '記錄附件歷史版本',
 	trackAttachmentsDescription:
 		'為庫內正常同步的附件及二進位檔案儲存歷史版本（會增加雲端儲存空間佔用）。',
@@ -197,6 +208,9 @@ const ru: HistoryTranslations = {
 	retentionDaysDescription: 'Версии старше этого числа дней удаляются при сборке мусора.',
 	runGc: 'Запустить сборку мусора',
 	showHistory: 'Sync Engine: показать историю',
+	tieredRetention: 'Многоуровневое хранение',
+	tieredRetentionDescription:
+		'Постепенно прореживать старые версии (частые недавние, ежедневные за последний месяц, еженедельные ранее), чтобы частое редактирование не вытесняло историю.',
 	trackAttachments: 'История версий для вложений',
 	trackAttachmentsDescription:
 		'Сохранять историю версий для синхронизируемых вложений и бинарных файлов (увеличивает объем используемого хранилища).',

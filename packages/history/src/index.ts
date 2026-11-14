@@ -43,7 +43,7 @@ import type { GlobStrategy } from '@repo/shared/glob-match';
 import type { App, Command, EventRef, Menu, TAbstractFile, TFile } from 'obsidian';
 
 const DEBOUNCE_MS = 15_000;
-const MAX_WAIT_MS = 60_000;
+const MAX_WAIT_MS = 120_000;
 const DAY_MS = 86_400_000;
 
 type HistoryContext = SelectFromContext<{
@@ -88,6 +88,7 @@ export default class HistoryModule {
 		maxVersions: 100,
 		protectExcludedNotes: false,
 		retentionDays: 90,
+		tieredRetention: true,
 		trackAttachments: false,
 	};
 
@@ -468,12 +469,10 @@ export default class HistoryModule {
 		if (!this.remote || !this.stores) return 0;
 		await this.flushPendingDebounces();
 		await reconcile({ remote: this.remote, requestSync: () => {}, stores: this.stores });
+		const { maxVersions, retentionDays, tieredRetention } = this.moduleSettings;
 		const result = await compact(
 			{ remote: this.remote, stores: this.stores },
-			{
-				maxVersions: this.moduleSettings.maxVersions,
-				retentionDays: this.moduleSettings.retentionDays,
-			},
+			{ maxVersions, retentionDays, tiered: tieredRetention !== false },
 		);
 		await saveLastGcTime(this.stores, Date.now());
 		return result;
