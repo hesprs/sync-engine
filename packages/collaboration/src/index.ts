@@ -1,3 +1,4 @@
+import { DEFAULT_SECRET_ID, MAX_SEEN_CACHE, SEEN_TTL } from '@/constants';
 import {
 	deriveRoomKeys,
 	deriveTopic,
@@ -8,7 +9,7 @@ import {
 } from '@/crypto';
 import { en, ru, zh, zhTW } from '@/i18n';
 import { cleanupMobileHeaderIcons } from '@/mobile-status';
-import { openPulse, parseEnvelope, preparePulse, SEEN_TTL, sealPulse } from '@/protocol';
+import { openPulse, parseEnvelope, preparePulse, sealPulse } from '@/protocol';
 import { RaceJournal } from '@/race';
 import captureRemoteState from '@/remote-wrapper';
 import collaborationSetting from '@/setting';
@@ -16,56 +17,9 @@ import RemoteStateCache from '@/state-cache';
 import SyncBridge from '@/sync-bridge';
 import CollaborationTransport from '@/transport';
 import deviceType, { buildClientId, readSecret, text, toError } from '@/utils';
-import type { CollaborationTranslations } from '@/i18n';
 import type { Envelope, UserProperties } from '@/protocol';
 import type { CollaborationSettings, CollaborationStatus } from '@/setting';
-import type { GlobStrategy } from '@/types';
-import type {
-	ConflictResolver,
-	DeciderEntry,
-	Dispatch,
-	Events,
-	ExistingMemoryDB,
-	FsWrapperEntry,
-	ModuleStatus,
-	ObsidianLanguageCode,
-	On,
-	SelectFromContext,
-	SettingEntry,
-	SyncTerminateReason,
-	Translate,
-	TranslationResource,
-	TriggerEntry,
-} from '@hesprs/sync-engine-sdk';
-import type { App } from 'obsidian';
-
-const DEFAULT_SECRET_ID = 'sync-engine-collaboration';
-const MAX_SEEN = 8192;
-
-type CollaborationContext = SelectFromContext<{
-	app: App;
-	deciderRegistry: Map<string, DeciderEntry>;
-	dispatch: Dispatch<Events>;
-	getConflictResolver: () => ConflictResolver;
-	memoryDB: ExistingMemoryDB;
-	on: On<Events>;
-	refreshSettingTab: () => void;
-	registerDecider: (id: string, entry: DeciderEntry) => () => boolean;
-	rerenderSettingTab: () => void;
-	registerI18n: (locale: ObsidianLanguageCode, resource: TranslationResource) => void;
-	registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => boolean;
-	registerSetting: (entry: SettingEntry) => () => boolean;
-	registerTrigger: (key: string, entry: TriggerEntry) => () => boolean;
-	requestSync: (trigger: string) => Promise<SyncTerminateReason>;
-	saveSettings: () => Promise<void>;
-	setModuleStatus: (id: string, status?: ModuleStatus) => () => void;
-	settings: {
-		confirmDeleteInAutoSync?: boolean;
-		realtimeSyncFastMode?: boolean;
-		syncStrategy: Array<GlobStrategy>;
-	};
-	translate: Translate<CollaborationTranslations>;
-}>;
+import type { CollaborationContext } from '@/types';
 
 export default class Collaboration {
 	private readonly cleanup: Array<() => void> = [];
@@ -100,10 +54,13 @@ export default class Collaboration {
 	};
 
 	constructor(private readonly ctx: CollaborationContext) {
-		ctx.registerI18n('en', en);
-		ctx.registerI18n('zh', zh);
-		ctx.registerI18n('zh-TW', zhTW);
-		ctx.registerI18n('ru', ru);
+		for (const [locale, res] of [
+			['en', en],
+			['zh', zh],
+			['zh-TW', zhTW],
+			['ru', ru],
+		] as const)
+			ctx.registerI18n(locale, res);
 	}
 
 	readonly start = () => {
@@ -207,13 +164,10 @@ export default class Collaboration {
 		this.bridge?.dispose();
 		this.bridge = undefined;
 		this.cleanup.splice(0).forEach((cleanup) => cleanup());
-		this.seen.clear();
-		this.journal.clear();
-		this.stateCache.clearAll();
+		this.resetRoomState();
 		this.keys = undefined;
 		this.topic = undefined;
 		this.roomTopic = undefined;
-		this.publishQueued = false;
 		this.status = 'disabled';
 		this.updateModuleStatus();
 		cleanupMobileHeaderIcons();
@@ -233,24 +187,26 @@ export default class Collaboration {
 			this.ctx.setModuleStatus('collaboration');
 			return;
 		}
-		if (this.status === 'connected') this.ctx.setModuleStatus('collaboration', { level: 'ok' });
-		else if (this.status === 'error')
-			this.ctx.setModuleStatus('collaboration', {
-				level: 'error',
-				message: `MQTT: ${this.statusError?.message ?? text(this.ctx.translate('statusError'))}`,
-			});
-		else {
-			const msgKey =
-				this.status === 'reconnecting'
-					? 'statusReconnecting'
-					: this.status === 'connecting'
-						? 'statusConnecting'
-						: 'statusMissingRoomCode';
-			this.ctx.setModuleStatus('collaboration', {
-				level: 'warning',
-				message: `MQTT: ${text(this.ctx.translate(msgKey))}`,
-			});
+		if (this.status === 'connected') {
+			this.ctx.setModuleStatus('collaboration', { level: 'ok' });
+			return;
 		}
+		const isError = this.status === 'error';
+		const key = isError
+			? 'statusError'
+			: this.status === 'reconnecting'
+				? 'statusReconnecting'
+				: this.status === 'connecting'
+					? 'statusConnecting'
+					: 'statusMissingRoomCode';
+		const msg =
+			isError && this.statusError?.message
+				? this.statusError.message
+				: text(this.ctx.translate(key));
+		this.ctx.setModuleStatus('collaboration', {
+			level: isError ? 'error' : 'warning',
+			message: `MQTT: ${msg}`,
+		});
 	}
 
 	private readonly resetRoomState = () => {
@@ -273,12 +229,13 @@ export default class Collaboration {
 			this.setStatus('disabled');
 			return;
 		}
-		const secret = this.moduleSettings.roomSecretId
-			? this.ctx.app.secretStorage.getSecret(this.moduleSettings.roomSecretId)
-			: undefined;
+		const secret = readSecret(
+			this.ctx.app,
+			this.moduleSettings.roomSecretId || DEFAULT_SECRET_ID,
+		);
 		if (!secret) {
 			this.setStatus('missing-room');
-			this.ctx.dispatch('logGeneral', this.ctx.translate('roomCodeMissing'));
+			this.ctx.dispatch('logGeneral', text(this.ctx.translate('roomCodeMissing')));
 			return;
 		}
 		let room: ReturnType<typeof parseRoomCode>;
@@ -374,7 +331,7 @@ export default class Collaboration {
 		const now = Date.now();
 		for (const [key, timestamp] of this.seen)
 			if (now - timestamp > SEEN_TTL) this.seen.delete(key);
-		while (this.seen.size > MAX_SEEN) {
+		while (this.seen.size > MAX_SEEN_CACHE) {
 			const oldest = this.seen.keys().next().value;
 			if (oldest === undefined) break;
 			this.seen.delete(oldest);
@@ -383,16 +340,16 @@ export default class Collaboration {
 
 	private readonly logInvalidMessage = () => {
 		const now = Date.now();
-		if (now - this.lastInvalidLog < 5000) return;
+		if (now - this.lastInvalidLog < 60_000) return;
 		this.lastInvalidLog = now;
-		this.ctx.dispatch('logGeneral', this.ctx.translate('invalidMessage'));
+		this.ctx.dispatch('logGeneral', text(this.ctx.translate('invalidMessage')));
 	};
 
 	private readonly logStaleMessage = () => {
 		const now = Date.now();
 		if (now - this.lastStaleLog < 60_000) return;
 		this.lastStaleLog = now;
-		this.ctx.dispatch('logGeneral', this.ctx.translate('staleMessage'));
+		this.ctx.dispatch('logGeneral', text(this.ctx.translate('staleMessage')));
 	};
 
 	private readonly publishPulse = async () => {
@@ -447,15 +404,13 @@ export default class Collaboration {
 		this.ctx.app.secretStorage.setSecret(id, code);
 		this.moduleSettings.roomSecretId = id;
 		await this.ctx.saveSettings();
-		const copied = await this.copyRoomCode();
 		void this.reconnect();
-		return copied;
+		return this.copyRoomCode();
 	};
 
 	private readonly copyRoomCode = async (): Promise<boolean> => {
 		const id = this.moduleSettings.roomSecretId;
-		if (!id) return false;
-		const code = this.ctx.app.secretStorage.getSecret(id);
+		const code = id ? this.ctx.app.secretStorage.getSecret(id) : undefined;
 		if (!code || !navigator.clipboard) return false;
 		await navigator.clipboard.writeText(code);
 		return true;

@@ -13,6 +13,7 @@ export type CaptureOptions = {
 	activeUploads: ReadonlySet<string>;
 	enabled: () => boolean;
 	journal: RaceJournal;
+	onUpload?: (key: string, remoteUid: string, stat: FileStat) => void;
 	stateCache: RemoteStateCache;
 };
 
@@ -93,6 +94,7 @@ class CapturingRemoteFs implements WrappedFs {
 
 	private captureUpload(key: string, remoteUid: string, stat: FileStat): void {
 		this.options.journal.record({ key, localUid: stat.uid, remoteUid, uploadedAt: Date.now() });
+		this.options.onUpload?.(key, remoteUid, stat);
 	}
 }
 

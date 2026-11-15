@@ -38,7 +38,7 @@ export default function collaborationSetting(
 	},
 	settings: CollaborationSettings,
 ): CallableOrObjectTree {
-	const { translate, saveSettings, refreshSettingTab } = ctx;
+	const { translate, saveSettings } = ctx;
 	const saveAndReconnect = () => {
 		void saveSettings();
 		void ctx.reconnect();
@@ -107,7 +107,9 @@ export default function collaborationSetting(
 					render: (setting) => {
 						setting.addButton((button) =>
 							button.setButtonText(translate('reconnect')).onClick(() => {
-								void Promise.resolve(ctx.reconnect()).finally(refreshSettingTab);
+								void Promise.resolve(ctx.reconnect()).finally(() =>
+									ctx.rerenderSettingTab(),
+								);
 							}),
 						);
 					},

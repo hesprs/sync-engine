@@ -1,3 +1,4 @@
+import { DEFAULT_PULSE_DEBOUNCE_MS, WRAPPER_PREFIX } from '@/constants';
 import { createRaceAwareResolver, findRaceCandidates, forceRaceConflicts } from '@/race';
 import type { CollaborationTranslations } from '@/i18n';
 import type { Pulse } from '@/protocol';
@@ -16,8 +17,6 @@ import type {
 	SyncTerminateReason,
 	Translate,
 } from '@hesprs/sync-engine-sdk';
-
-const WRAPPER_PREFIX = 'collaboration:';
 
 type BridgeContext = {
 	deciderRegistry: Map<string, DeciderEntry>;
@@ -110,6 +109,7 @@ export default class SyncBridge {
 	private readonly cleanupCallbacks: Array<() => void> = [];
 	private readonly deciderCleanups: Array<() => boolean> = [];
 	private readonly activeUploads = new Set<string>();
+	private readonly committedPeers = new Map<string, string>();
 	/**
 	 * Shared with the race-aware resolver by reference. buildOptions() runs before the wrapped
 	 * decider, which runs before any ResolveConflict task — so the decider must MUTATE this map
@@ -142,6 +142,7 @@ export default class SyncBridge {
 			ctx.on('syncTerminated', () => {
 				this.activeUploads.clear();
 				this.activeCandidates.clear();
+				this.committedPeers.clear();
 				if (this.pending) void this.ctx.requestSync('collaboration');
 			}),
 		);
@@ -151,7 +152,7 @@ export default class SyncBridge {
 		return () => this.buildOptions();
 	}
 
-	accept(pulse: Pulse, debounceMs = 1500): void {
+	accept(pulse: Pulse, debounceMs = DEFAULT_PULSE_DEBOUNCE_MS): void {
 		const current = this.pending;
 		if (
 			current &&
@@ -226,16 +227,52 @@ export default class SyncBridge {
 						input,
 						this.activeCandidates,
 					);
+					for (const [key, committedRemoteUid] of this.committedPeers) {
+						const remote = input.remoteStats.get(key);
+						const local = input.localStats.get(key);
+						if (
+							remote &&
+							!remote.isDir &&
+							remote.uid === committedRemoteUid &&
+							local &&
+							!local.isDir
+						)
+							records.set(key, {
+								isDir: false,
+								local: local.uid,
+								remote: remote.uid,
+							});
+					}
 					if (forcedKeys.size)
 						this.ctx.dispatch(
 							'logSync',
 							text(this.ctx.translate('raceDetected', forcedKeys.size)),
 						);
-					return base.decider({ ...input, records });
+					const tasks = base.decider({ ...input, records });
+					for (const [key, committedRemoteUid] of this.committedPeers) {
+						const remote = input.remoteStats.get(key);
+						const local = input.localStats.get(key);
+						if (
+							remote &&
+							!remote.isDir &&
+							remote.uid === committedRemoteUid &&
+							local &&
+							!local.isDir
+						) {
+							const hasTask = tasks.some((t) => t.key === key);
+							if (!hasTask)
+								tasks.push(input.taskFactory('addRecord', { key, local, remote }));
+						}
+					}
+					return tasks;
 				},
 			}),
 		);
 		return id;
+	}
+
+	recordCommittedPeer(key: string, remoteUid: string): void {
+		this.committedPeers.set(key, remoteUid);
 	}
 
 	reset(): void {
@@ -246,6 +283,7 @@ export default class SyncBridge {
 		this.pending = undefined;
 		this.activeCandidates.clear();
 		this.activeUploads.clear();
+		this.committedPeers.clear();
 	}
 
 	dispose(): void {

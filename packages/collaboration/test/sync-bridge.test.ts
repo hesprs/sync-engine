@@ -288,3 +288,30 @@ test('the wrapped decider fills candidates from the real remote listing', () => 
 	expect(options?.conflictResolver).toBeDefined();
 	bridge.dispose();
 });
+
+test('the wrapped decider reconciles committed peer files to prevent false conflicts', () => {
+	const { bridge, registry } = setup();
+	bridge.recordCommittedPeer('synced.md', 'remote-committed-uid');
+	bridge.accept(pulse());
+	bridge.triggerOptions();
+	const wrapped = registry.get('collaboration:bidirectional');
+	expect(wrapped).toBeDefined();
+
+	const local = file('synced.md', { size: 50, uid: 'local-synced-uid' });
+	const remote = file('synced.md', { mtime: Date.now(), size: 50, uid: 'remote-committed-uid' });
+	const tasks = wrapped?.decider({
+		localStats: new Map([['synced.md', local]]),
+		records: new Map([
+			['synced.md', { isDir: false, local: 'old-local', remote: 'old-remote' }],
+		]),
+		remoteStats: new Map([['synced.md', remote]]),
+		taskFactory: ((name: string, taskOptions: object) => ({ name, ...taskOptions })) as never,
+	});
+
+	expect(tasks).toBeDefined();
+	expect(tasks?.length).toBe(1);
+	const task = tasks?.[0];
+	expect(task?.name).toBe('addRecord');
+	expect((task as unknown as { key: string })?.key).toBe('synced.md');
+	bridge.dispose();
+});
