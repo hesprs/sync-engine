@@ -106,10 +106,11 @@ export type RestoreResult = {
  */
 export type VersionSummary = { key: string; lamport: number; at: number; index: number };
 
-export const FLAG_SMALL_FILE = 1;
-export const FLAG_DELETION = 2;
-export const FLAG_CHECKPOINT = 4;
-
-export const PACK_MAGIC = 0x53_45_48_50; // "SEHP"
-export const PACK_VERSION = 1;
-export const PACK_HEADER_BYTES = 128;
+export {
+	FLAG_CHECKPOINT,
+	FLAG_DELETION,
+	FLAG_SMALL_FILE,
+	PACK_HEADER_BYTES,
+	PACK_MAGIC,
+	PACK_VERSION,
+} from '@/constants';

@@ -1,20 +1,31 @@
+import {
+	CRYPTO_SALT,
+	ENCRYPTION_INFO,
+	KEY_DERIVATION_ITERATIONS,
+	MAX_CLOCK_SKEW,
+	MESSAGE_KEY_BYTES,
+	NONCE_BYTES,
+	ROOM_CODE_PREFIX,
+	ROOM_ID_BYTES,
+	ROOM_SECRET_BYTES,
+	TOPIC_INFO,
+	TOPIC_KEY_BYTES,
+} from '@/constants';
 import { decodeBase64Url, encodeBase64Url, toArrayBuffer } from '@repo/shared/binary';
 import type { Binary } from '@hesprs/sync-engine-sdk';
 
 export { decodeBase64, decodeBase64Url, encodeBase64, encodeBase64Url } from '@repo/shared/binary';
+export {
+	KEY_DERIVATION_ITERATIONS,
+	MAX_CLOCK_SKEW,
+	MESSAGE_KEY_BYTES,
+	NONCE_BYTES,
+	ROOM_CODE_PREFIX,
+	ROOM_ID_BYTES,
+	ROOM_SECRET_BYTES,
+	TOPIC_KEY_BYTES,
+} from '@/constants';
 
-export const ROOM_CODE_PREFIX = 'sec1';
-export const ROOM_ID_BYTES = 16;
-export const ROOM_SECRET_BYTES = 32;
-export const NONCE_BYTES = 12;
-export const MESSAGE_KEY_BYTES = 32;
-export const TOPIC_KEY_BYTES = 32;
-export const KEY_DERIVATION_ITERATIONS = 210_000;
-export const MAX_CLOCK_SKEW = 120_000;
-
-const CRYPTO_SALT = 'sync-engine-collaboration/v1';
-const ENCRYPTION_INFO = 'message-encryption';
-const TOPIC_INFO = 'topic';
 const textEncoder = new TextEncoder();
 
 export type RoomCode = { roomId: Binary; secret: Binary };

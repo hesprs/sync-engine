@@ -1,3 +1,4 @@
+import { MAX_JOURNAL_ENTRIES, RACE_WINDOW } from '@/constants';
 import type {
 	ConflictResolver,
 	DeciderInput,
@@ -5,8 +6,7 @@ import type {
 	StatsMap,
 } from '@hesprs/sync-engine-sdk';
 
-export const RACE_WINDOW = 30_000;
-const MAX_JOURNAL_ENTRIES = 4096;
+export { MAX_JOURNAL_ENTRIES, RACE_WINDOW } from '@/constants';
 
 export type UploadEpoch = { key: string; localUid: string; remoteUid: string; uploadedAt: number };
 

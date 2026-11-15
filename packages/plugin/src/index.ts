@@ -1,3 +1,12 @@
+import {
+	DEFAULT_FOCUS_SYNC_GAP_MS,
+	DEFAULT_MAX_FILE_SIZE_BYTES,
+	DEFAULT_MAX_MEMORY_BYTES,
+	DEFAULT_MAX_REQUEST_CONCURRENCY,
+	DEFAULT_REALTIME_SYNC_DELAY_MS,
+	DEFAULT_SCHEDULED_SYNC_INTERVAL_MS,
+	DEFAULT_STARTUP_SYNC_DELAY_MS,
+} from '@/constants';
 import '@/global.css';
 import Bootstrap from '@/modules/Bootstrap';
 import EventBus from '@/modules/EventBus';
@@ -80,20 +89,20 @@ export default class SyncEngine extends Plugin {
 			conflictResolver: 'renameAndKeepBoth',
 			customHeaders: [],
 			exportLogsDirectory: 'Sync Engine Logs/',
-			focusSync: { enabled: false, value: 300_000 },
-			maxFileSize: { enabled: false, value: 31_457_280 },
-			maxMemoryConsumption: { enabled: false, value: 64 * 1024 ** 2 },
-			maxRequestConcurrency: { enabled: true, value: 50 },
+			focusSync: { enabled: false, value: DEFAULT_FOCUS_SYNC_GAP_MS },
+			maxFileSize: { enabled: false, value: DEFAULT_MAX_FILE_SIZE_BYTES },
+			maxMemoryConsumption: { enabled: false, value: DEFAULT_MAX_MEMORY_BYTES },
+			maxRequestConcurrency: { enabled: true, value: DEFAULT_MAX_REQUEST_CONCURRENCY },
 			minRequestInterval: { enabled: false, value: 0 },
 			moduleAutoUpdate: true,
 			moduleSources: [OFFICIAL_SOURCE],
 			modules: {},
 			noticeStatusOnMobile: true,
-			realtimeSync: { enabled: false, value: 5000 },
+			realtimeSync: { enabled: false, value: DEFAULT_REALTIME_SYNC_DELAY_MS },
 			realtimeSyncFastMode: true,
 			remoteFs: '',
-			scheduledSync: { enabled: false, value: 300_000 },
-			startupSync: { enabled: false, value: 5000 },
+			scheduledSync: { enabled: false, value: DEFAULT_SCHEDULED_SYNC_INTERVAL_MS },
+			startupSync: { enabled: false, value: DEFAULT_STARTUP_SYNC_DELAY_MS },
 			syncStrategy: [
 				{ expr: '*', strategy: 'bidirectional' },
 				...[

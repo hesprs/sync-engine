@@ -1,3 +1,4 @@
+import { MOBILE_SYNC_NOTICE_HIDE_DELAY_MS, SINCE_LAST_SYNC_UPDATE_INTERVAL_MS } from '@/constants';
 import roundPercent from '@/utils/round-percent';
 import { formatTime } from '@/utils/unit-converter';
 import { describeError, toError } from '@repo/shared/error';
@@ -24,8 +25,6 @@ export type SyncStage =
 export type StatusLevel = 'ok' | 'warning' | 'error';
 
 export type ModuleStatus = { level: StatusLevel; message?: string };
-
-const MOBILE_SYNC_NOTICE_HIDE_DELAY = 2000;
 
 function renderSyncIcon(
 	container: HTMLElement,
@@ -330,14 +329,14 @@ export default class Observability {
 					noticeTimeout = window.setTimeout(() => {
 						mobileSyncNotice?.hide();
 						mobileSyncNotice = undefined;
-					}, MOBILE_SYNC_NOTICE_HIDE_DELAY);
+					}, MOBILE_SYNC_NOTICE_HIDE_DELAY_MS);
 				this.lastSyncTime = Date.now();
 				const setUpdateInterval = () =>
 					(updateInterval = window.setInterval(() => {
 						const sinceNow = Date.now() - this.lastSyncTime;
 						const time = formatTime(sinceNow);
 						sinceLastSyncText(` ${time} ago`);
-					}, 60_000));
+					}, SINCE_LAST_SYNC_UPDATE_INTERVAL_MS));
 				if (result === 'cancelled') syncStage('cancelled');
 				else if (result === 'completed') {
 					syncStage('completed');

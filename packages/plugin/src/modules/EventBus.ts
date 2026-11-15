@@ -1,3 +1,4 @@
+import { MAX_SYNC_LOGS } from '@/constants';
 import formatDateTime from '@/utils/format-date';
 import { formatTime } from '@/utils/unit-converter';
 import { describeError } from '@repo/shared/error';
@@ -17,7 +18,6 @@ export const OS = {
 	macOS: Platform.isMacOS,
 	Windows: Platform.isWin,
 };
-const MAX_SYNC_LOGS = 100;
 
 export type Dispatch<O extends object> = <K extends keyof O>(
 	...[key, payload]: undefined extends O[K] ? [K] : [K, O[K]]

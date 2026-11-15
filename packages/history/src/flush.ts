@@ -1,4 +1,11 @@
 import { keyHash } from '@/chunker';
+import {
+	FAST_SYNC_DEBOUNCE_MS,
+	MAX_PACK_BYTES,
+	MAX_PACK_REVISIONS,
+	MAX_PACK_WINDOW,
+	PACK_IDLE_MS,
+} from '@/constants';
 import { buildCommitLog } from '@/head-log';
 import { markChunks, packRefKey, putCommitLocation } from '@/index-store';
 import { decodePack, encodePack, packFileName, textBytes } from '@/pack';
@@ -9,12 +16,6 @@ import { sha256Bytes, sha256Text } from '@repo/shared/sha256-bytes';
 import type { RemoteHistory } from '@/remote';
 import type { HistoryStores } from '@/store';
 import type { BlobRef, ChunkLocation, CommitLog, IndexEntry, PackRef, WalEntry } from '@/types';
-
-const MAX_PACK_WINDOW = 32;
-const IDLE_MS = 30_000;
-const MAX_REVISIONS = 20;
-const MAX_BYTES = 256 * 1024;
-const FAST_DEBOUNCE_MS = 1000;
 
 export type FlushContext = {
 	stores: HistoryStores;
@@ -153,7 +154,7 @@ export async function flushPending(ctx: FlushContext, reason: string): Promise<b
 export async function flushPendingBatch(
 	ctx: FlushContext,
 	reason: string,
-	maxBytes = MAX_BYTES,
+	maxBytes = MAX_PACK_BYTES,
 ): Promise<boolean> {
 	const all = await readPending(ctx.stores);
 	const wal: Array<WalEntry> = [];
@@ -366,11 +367,11 @@ export class FlushScheduler {
 		this.pendingRevisions += 1;
 		// Fast channel: a thin 1s debounce that only asks the sync core to upload the live note.
 		if (this.fastTimer) clearTimeout(this.fastTimer);
-		this.fastTimer = setTimeout(() => this.ctx.requestSync('realtime'), FAST_DEBOUNCE_MS);
+		this.fastTimer = setTimeout(() => this.ctx.requestSync('realtime'), FAST_SYNC_DEBOUNCE_MS);
 		if (this.idleTimer) clearTimeout(this.idleTimer);
-		this.idleTimer = setTimeout(() => void this.trigger('idle'), IDLE_MS);
-		if (this.pendingRevisions >= MAX_REVISIONS || this.pendingBytes >= MAX_BYTES)
-			void this.trigger(this.pendingRevisions >= MAX_REVISIONS ? 'count' : 'volume');
+		this.idleTimer = setTimeout(() => void this.trigger('idle'), PACK_IDLE_MS);
+		if (this.pendingRevisions >= MAX_PACK_REVISIONS || this.pendingBytes >= MAX_PACK_BYTES)
+			void this.trigger(this.pendingRevisions >= MAX_PACK_REVISIONS ? 'count' : 'volume');
 	}
 
 	async trigger(reason: string): Promise<void> {

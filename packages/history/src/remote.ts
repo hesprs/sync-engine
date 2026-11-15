@@ -1,3 +1,4 @@
+import { HISTORY_PREFIX } from '@/constants';
 import { decodeHeadLog, encodeHeadLog } from '@/head-log';
 import { packFileName } from '@/pack';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
@@ -6,8 +7,6 @@ import { dirname } from '@repo/shared/path';
 import type { HistoryCipher } from '@/crypto';
 import type { CommitLog } from '@/types';
 import type { Binary, FileStat, Fs, ListOptions, Stat } from '@hesprs/sync-engine-sdk';
-
-const HISTORY_PREFIX = 'sync-engine-history/';
 
 export type RemoteHistory = {
 	fs: Fs;

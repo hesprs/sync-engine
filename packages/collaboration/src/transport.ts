@@ -1,3 +1,4 @@
+import { MQTT_CONNECT_TIMEOUT_MS, MQTT_PUBLISH_TIMEOUT_MS } from '@/constants';
 import { stringifyEnvelope, wireProperties } from '@/protocol';
 import { uint8ArrayToText } from '@repo/shared/binary';
 import mqtt from 'mqtt/dist/mqtt.esm';
@@ -77,7 +78,7 @@ export default class CollaborationTransport {
 				if (generation === this.generation)
 					onStatus('error', new Error('MQTT connection timed out'));
 				settle();
-			}, 15_000);
+			}, MQTT_CONNECT_TIMEOUT_MS);
 			client.on('connect', () => {
 				if (generation !== this.generation) return;
 				connected = true;
@@ -142,7 +143,7 @@ export default class CollaborationTransport {
 					new Promise<void>((resolve, reject) => {
 						const timeout = setTimeout(
 							() => reject(new Error('MQTT publish timed out')),
-							15_000,
+							MQTT_PUBLISH_TIMEOUT_MS,
 						);
 						client.publish(
 							this.options.topic,

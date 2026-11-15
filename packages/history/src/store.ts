@@ -1,3 +1,4 @@
+import { DEVICE_ID_KEY, GC_TIME_KEY, LAMPORT_KEY } from '@/constants';
 import type { BlobRef, ChunkLocation, CommitLocation, CommitLog, WalEntry } from '@/types';
 import type { DatabaseAsync, DatabaseSync, StoreAsync } from '@hesprs/sync-engine-sdk';
 
@@ -38,9 +39,6 @@ export function openHistoryStores(db: HistoryDatabase, namespace: string): Histo
 	};
 }
 
-const LAMPORT_KEY = 'clock';
-const DEVICE_ID_KEY = 'id';
-const GC_TIME_KEY = 'time';
 const deviceIdInFlight = new Map<StoreAsync<string | number>, Promise<string>>();
 
 /** Reads the persisted Lamport clock, falling back to the WAL's own lamport fields. */

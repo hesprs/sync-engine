@@ -1,7 +1,11 @@
-import { BIG_BLOB_LIMIT, fastCdc, SMALL_FILE_LIMIT } from '@repo/shared/fastcdc';
+import { TEXT_EXTS } from '@/constants';
+import { BIG_BLOB_LIMIT, chunkContent, SMALL_FILE_LIMIT } from '@repo/shared/cdc';
 import { sha256Bytes, sha256Text } from '@repo/shared/sha256-bytes';
 import type { HistoryStores } from '@/store';
 import type { BlobRef } from '@/types';
+
+export { TEXT_EXTS } from '@/constants';
+export { assembleChunksToText as assembleChunks } from '@repo/shared/cdc';
 
 const decoder = new TextDecoder();
 
@@ -13,7 +17,6 @@ export type ChunkedContent = {
 	blobData?: Array<{ hash: string; bytes: Uint8Array }>;
 };
 
-export const TEXT_EXTS = ['.md', '.canvas', '.txt', '.json', '.base'];
 export const isTextFile = (path: string): boolean =>
 	TEXT_EXTS.some((ext) => path.toLowerCase().endsWith(ext));
 
@@ -41,13 +44,7 @@ export async function captureContent(
 	}
 	if (data.byteLength < SMALL_FILE_LIMIT) return { text: decoder.decode(data) };
 
-	const spans = fastCdc(data);
-	const rawChunks = await Promise.all(
-		spans.map(async (span) => {
-			const bytes = data.subarray(span.offset, span.offset + span.length);
-			return { bytes, hash: await sha256Bytes(bytes) };
-		}),
-	);
+	const rawChunks = await chunkContent(data);
 	const chunkHashes = rawChunks.map((c) => c.hash);
 	const uniqueChunks = new Map<string, Uint8Array>();
 	for (const { bytes, hash } of rawChunks)
@@ -61,17 +58,4 @@ export async function captureContent(
 		}),
 	);
 	return { chunkHashes, newChunks };
-}
-
-/** Reassembles text from ordered chunk bytes. Used by the restore planner. */
-export function assembleChunks(chunks: Array<Uint8Array>): string {
-	let total = 0;
-	for (const chunk of chunks) total += chunk.byteLength;
-	const joined = new Uint8Array(total);
-	let offset = 0;
-	for (const chunk of chunks) {
-		joined.set(chunk, offset);
-		offset += chunk.byteLength;
-	}
-	return decoder.decode(joined);
 }

@@ -1,3 +1,13 @@
+import {
+	DAY_MS,
+	DEFAULT_MAX_VERSIONS,
+	DEFAULT_RETENTION_DAYS,
+	MAX_PACK_WINDOW,
+	TIER_DAILY_CUTOFF_MS,
+	TIER_HOURLY_CUTOFF_MS,
+	TIER_RECENT_CUTOFF_MS,
+	WEEK_MS,
+} from '@/constants';
 import { buildCommitLog } from '@/head-log';
 import { allChunkLocations, allCommitLocations, markChunks, packRefKey } from '@/index-store';
 import { decodePack, encodePack, packFileName } from '@/pack';
@@ -16,12 +26,6 @@ export type GcOptions = {
 	tiered?: boolean;
 };
 
-const HOUR_MS = 3_600_000;
-const DAY_MS = 86_400_000;
-const MAX_PACK_WINDOW = 32;
-const DEFAULT_RETENTION_DAYS = 90;
-const DEFAULT_MAX_VERSIONS = 100;
-
 function calendarDayKey(timestamp: number): string {
 	const d = new Date(timestamp);
 	return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -33,7 +37,7 @@ function calendarHourKey(timestamp: number): string {
 }
 
 function weekKey(timestamp: number): string {
-	return `w-${Math.floor(timestamp / (7 * DAY_MS))}`;
+	return `w-${Math.floor(timestamp / WEEK_MS)}`;
 }
 
 export function selectLiveEntries(
@@ -70,15 +74,15 @@ export function selectLiveEntries(
 
 	for (const item of valid) {
 		const age = Math.max(0, now - item.entry.at);
-		if (age < HOUR_MS) tieredCandidates.push(item);
-		else if (age < 24 * HOUR_MS) {
+		if (age < TIER_RECENT_CUTOFF_MS) tieredCandidates.push(item);
+		else if (age < TIER_HOURLY_CUTOFF_MS) {
 			const bucket = `h-${calendarHourKey(item.entry.at)}`;
 			if (seenBuckets.has(bucket)) tieredPruned.push(item);
 			else {
 				seenBuckets.add(bucket);
 				tieredCandidates.push(item);
 			}
-		} else if (age < 30 * DAY_MS) {
+		} else if (age < TIER_DAILY_CUTOFF_MS) {
 			const bucket = `d-${calendarDayKey(item.entry.at)}`;
 			if (seenBuckets.has(bucket)) tieredPruned.push(item);
 			else {
@@ -101,7 +105,7 @@ export function selectLiveEntries(
 	const historical: Array<{ entry: IndexEntry; packKey: string }> = [];
 	const recent: Array<{ entry: IndexEntry; packKey: string }> = [];
 	for (const item of tieredCandidates)
-		if (Math.max(0, now - item.entry.at) >= 24 * HOUR_MS) historical.push(item);
+		if (Math.max(0, now - item.entry.at) >= TIER_HOURLY_CUTOFF_MS) historical.push(item);
 		else recent.push(item);
 
 	let kept: Array<{ entry: IndexEntry; packKey: string }>;

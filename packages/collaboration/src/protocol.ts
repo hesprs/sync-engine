@@ -1,4 +1,10 @@
 import {
+	MAX_CHANGED_KEYS,
+	MAX_CIPHERTEXT_BYTES,
+	MAX_PLAINTEXT_BYTES,
+	PROTOCOL_VERSION,
+} from '@/constants';
+import {
 	createChunkAAD,
 	decodeBase64Url,
 	decryptChunk,
@@ -8,14 +14,13 @@ import {
 import type { RoomKeys } from '@/crypto';
 import type { Binary } from '@hesprs/sync-engine-sdk';
 
-export const PROTOCOL_VERSION = 1;
-export const SEEN_TTL = 300_000;
-/** A pulse is a single small ciphertext; this bounds absurd messages from the broker. */
-export const MAX_CIPHERTEXT_BYTES = 4096;
-/** AES-GCM adds a 16-byte tag; the rest is reserved for the envelope's JSON framing. */
-const MAX_PLAINTEXT_BYTES = MAX_CIPHERTEXT_BYTES - 16 - 64;
-/** Upper bound on changed keys carried in one pulse, independent of the byte budget. */
-export const MAX_CHANGED_KEYS = 512;
+export {
+	MAX_CHANGED_KEYS,
+	MAX_CIPHERTEXT_BYTES,
+	MAX_PLAINTEXT_BYTES,
+	PROTOCOL_VERSION,
+	SEEN_TTL,
+} from '@/constants';
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
@@ -25,7 +30,7 @@ const textDecoder = new TextDecoder();
  * of the PUBLISH payload. Every value is a string; numbers are stringified. These values are also
  * bound into the AAD, so tampering with them makes the pulse fail to decrypt.
  */
-export type WireMetadata = { v: 1; batchId: string; clientId: string; sentAt: number };
+export type WireMetadata = { batchId: string; clientId: string; sentAt: number; v: 1 };
 
 /** The encrypted payload carries a timestamp and, when it fits, the changed file keys. */
 export type PulsePayload = { sentAt: number; keys?: Array<string> };
@@ -34,7 +39,7 @@ export type PulsePayload = { sentAt: number; keys?: Array<string> };
 export type Envelope = WireMetadata & { nonce: string; ciphertext: string };
 
 /** The decrypted, validated pulse handed to the sync bridge. */
-export type Pulse = { sentAt: number; clientId: string; batchId: string; keys?: Array<string> };
+export type Pulse = { batchId: string; clientId: string; sentAt: number; keys?: Array<string> };
 
 export type PreparedPulse = { data: Binary; sentAt: number };
 
@@ -87,7 +92,6 @@ export function preparePulse({
 }): PreparedPulse {
 	let payload: PulsePayload = { sentAt };
 	if (keys && keys.length > 0 && keys.length <= MAX_CHANGED_KEYS) payload = { keys, sentAt };
-	// DEBUG: console.log('[collaboration] plaintext pulse (before encrypt)', JSON.stringify(payload));
 	let data = textEncoder.encode(JSON.stringify(payload));
 	if ('keys' in payload && data.byteLength > MAX_PLAINTEXT_BYTES) {
 		payload = { sentAt };
@@ -147,7 +151,6 @@ export async function openPulse({
 		nonce,
 		createChunkAAD({ batchId, clientId, sentAt, topic }),
 	);
-	// DEBUG: console.log('[collaboration] decrypted pulse (from ciphertext)', textDecoder.decode(data));
 	const payload = parsePulsePayload(data);
 	if (payload.sentAt !== sentAt) throw new Error('Collaboration message metadata mismatch');
 	return { batchId, clientId, sentAt, ...(payload.keys ? { keys: payload.keys } : {}) };
@@ -174,7 +177,6 @@ export function parseEnvelope(value: string, properties: UserProperties = {}): E
 	const parsed: unknown = JSON.parse(value);
 	if (!isRecord(parsed)) throw new Error('Invalid collaboration envelope');
 	const { nonce, ciphertext } = parsed;
-	// DEBUG: console.log('[collaboration] wire envelope', { nonce, ciphertext, ...properties });
 	if (!isString(nonce) || !isString(ciphertext))
 		throw new Error('Invalid collaboration envelope');
 	if (
@@ -191,7 +193,7 @@ export function stringifyEnvelope(envelope: Envelope): string {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null;
+	return typeof value === 'object' && Boolean(value);
 }
 
 function isString(value: unknown): value is string {

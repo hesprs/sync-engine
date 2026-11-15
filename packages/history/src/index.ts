@@ -1,4 +1,13 @@
 import { isTextFile } from '@/chunker';
+import {
+	AUTO_GC_COOLDOWN_MS,
+	DEFAULT_MAX_VERSIONS,
+	DEFAULT_RETENTION_DAYS,
+	NON_TEXT_DEBOUNCE_MS,
+	NON_TEXT_MAX_WAIT_MS,
+	TEXT_DEBOUNCE_MS,
+	TEXT_MAX_WAIT_MS,
+} from '@/constants';
 import { createHistoryCipher } from '@/crypto';
 import { FlushScheduler, reconcile } from '@/flush';
 import { compact } from '@/gc';
@@ -42,10 +51,6 @@ import type {
 import type { GlobStrategy } from '@repo/shared/glob-match';
 import type { App, Command, EventRef, Menu, TAbstractFile, TFile } from 'obsidian';
 
-const DEBOUNCE_MS = 15_000;
-const MAX_WAIT_MS = 120_000;
-const DAY_MS = 86_400_000;
-
 type HistoryContext = SelectFromContext<{
 	addCommand: (command: Command) => Command;
 	app: App;
@@ -85,9 +90,9 @@ export default class HistoryModule {
 
 	moduleSettings: HistorySettings = {
 		autoGc: true,
-		maxVersions: 100,
+		maxVersions: DEFAULT_MAX_VERSIONS,
 		protectExcludedNotes: false,
-		retentionDays: 90,
+		retentionDays: DEFAULT_RETENTION_DAYS,
 		tieredRetention: true,
 		trackAttachments: false,
 	};
@@ -346,8 +351,8 @@ export default class HistoryModule {
 	private queueIngest(filePath: string, data: Uint8Array): void {
 		if (!this.stores || this.isHistoryIgnored(filePath)) return;
 		const isText = isTextFile(filePath);
-		const debounceMs = isText ? DEBOUNCE_MS : 1000;
-		const maxWaitMs = isText ? MAX_WAIT_MS : 5000;
+		const debounceMs = isText ? TEXT_DEBOUNCE_MS : NON_TEXT_DEBOUNCE_MS;
+		const maxWaitMs = isText ? TEXT_MAX_WAIT_MS : NON_TEXT_MAX_WAIT_MS;
 		void sha256Bytes(data).then(async (hash) => {
 			if (!this.stores) return;
 			let lastHash = this.lastIngestedHash.get(filePath);
@@ -457,7 +462,7 @@ export default class HistoryModule {
 		if (this.moduleSettings.autoGc === false || !this.remote || !this.stores) return;
 		const now = Date.now();
 		const lastGc = await readLastGcTime(this.stores);
-		if (now - lastGc < DAY_MS) return;
+		if (now - lastGc < AUTO_GC_COOLDOWN_MS) return;
 		try {
 			await this.runGc();
 		} catch {

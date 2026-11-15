@@ -25,6 +25,7 @@ export class Notice {
 export class Vault {}
 export class TFolder {}
 export class TFile {}
+export class MarkdownView {}
 export class Plugin {}
 export class App {
 	private readonly localStorageStore = new Map<string, unknown>();
