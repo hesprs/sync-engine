@@ -43,7 +43,7 @@ export type Pulse = { batchId: string; clientId: string; sentAt: number; keys?: 
 
 export type PreparedPulse = { data: Binary; sentAt: number };
 
-export const WIRE_PROPERTIES = {
+const WIRE_PROPERTIES = {
 	batchId: 'batch_id',
 	clientId: 'client_id',
 	sentAt: 'sent_at',
@@ -66,7 +66,7 @@ function readProperty(properties: UserProperties, key: string): string | undefin
 	return typeof value === 'string' ? value : undefined;
 }
 
-export function parseWireMetadata(properties: UserProperties): WireMetadata {
+function parseWireMetadata(properties: UserProperties): WireMetadata {
 	const v = readProperty(properties, WIRE_PROPERTIES.v);
 	const batchId = readProperty(properties, WIRE_PROPERTIES.batchId);
 	const clientId = readProperty(properties, WIRE_PROPERTIES.clientId);

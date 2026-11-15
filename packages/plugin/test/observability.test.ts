@@ -270,7 +270,7 @@ test('sync failure produces error badge on the sync icon', () => {
 test('mobile header icon renders in view-actions and responds to status changes and clicks', () => {
 	const leafContainer = fakeElement('div');
 	const viewActions = leafContainer.createEl('div', { cls: 'view-actions' });
-	const legacyBtn = viewActions.createEl('button', { cls: 'sync-engine-collab-action' });
+	viewActions.createEl('button', { cls: 'sync-engine-collab-action' });
 
 	const fake = createFakeObservability({
 		isMobile: true,

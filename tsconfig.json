@@ -9,6 +9,7 @@
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
 		"strictNullChecks": true,
+		"noUnusedLocals": true,
 		"resolveJsonModule": true,
 		"noEmit": true,
 		"verbatimModuleSyntax": true,

@@ -1,5 +1,5 @@
 import { PACK_MAGIC, PACK_VERSION } from '@/types';
-import { textToUint8Array, uint8ArrayToText } from '@repo/shared/binary';
+import { textToUint8Array } from '@repo/shared/binary';
 import { sha256Bytes } from '@repo/shared/sha256-bytes';
 // The /browser subpath avoids fflate's `node` export condition, which pulls in `module` and
 // worker_threads. Those cannot be resolved when Obsidian loads the module as browser ESM.
@@ -250,8 +250,4 @@ export function packFileName(deviceId: string, seq: number, hash: string): strin
 
 export function textBytes(text: string): Binary {
 	return textToUint8Array(text);
-}
-
-export function bytesText(bytes: Uint8Array): string {
-	return uint8ArrayToText(bytes as Binary);
 }

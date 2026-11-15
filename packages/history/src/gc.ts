@@ -40,7 +40,7 @@ function weekKey(timestamp: number): string {
 	return `w-${Math.floor(timestamp / WEEK_MS)}`;
 }
 
-export function selectLiveEntries(
+function selectLiveEntries(
 	fileEntries: Array<{ entry: IndexEntry; packKey: string }>,
 	options: { cutoff: number; maxVersions: number; now?: number; tiered?: boolean },
 ): {

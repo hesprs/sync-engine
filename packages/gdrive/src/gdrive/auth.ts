@@ -10,8 +10,8 @@ import { getStatus } from '@repo/shared/error';
 import { Platform, requestUrl, SecretStorage } from 'obsidian';
 import type { Request, StringKV } from '@hesprs/sync-engine-sdk';
 
-export const CLIENT_ID = atob(process.env.CLIENT_ID ?? '');
-export const CLIENT_SECRET = atob(process.env.CLIENT_SECRET ?? ''); // Not really a secret
+const CLIENT_ID = atob(process.env.CLIENT_ID ?? '');
+const CLIENT_SECRET = atob(process.env.CLIENT_SECRET ?? ''); // Not really a secret
 const KEYCHAIN_SECRET_ID = 'sync-engine-gdrive-refresh-token'; // Secret storage id under which the Google refresh token is stored.
 
 type TokenResponse = {

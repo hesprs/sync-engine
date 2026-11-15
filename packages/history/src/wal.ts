@@ -5,7 +5,7 @@ import type { HistoryStores } from '@/store';
 import type { WalEntry } from '@/types';
 
 /** Reads the current DAG tip for a key; the parent of a new local edit. */
-export function parentOf(entries: ReadonlyArray<WalEntry>, key: string): string {
+function parentOf(entries: ReadonlyArray<WalEntry>, key: string): string {
 	for (let index = entries.length - 1; index >= 0; index--) {
 		const entry = entries[index];
 		if (entry.key === key) return `${entry.key}@${entry.lamport}`;

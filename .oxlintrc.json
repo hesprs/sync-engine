@@ -39,6 +39,11 @@
 		],
 		"unicorn/prefer-global-this": "off",
 		"eslint/no-new": "off",
+		"eslint/no-unused-vars": [
+			"error",
+			{ "argsIgnorePattern": "^_", "varsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }
+		],
+		"eslint/no-unused-private-class-members": "error",
 		"eslint/sort-imports": "off",
 		"eslint/no-duplicate-imports": ["warn", { "allowSeparateTypeImports": true }],
 		"eslint/new-cap": "off",

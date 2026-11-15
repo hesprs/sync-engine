@@ -9,7 +9,7 @@ export const DECRYPTION_ERROR_MESSAGE =
 export const MASTER_KEY_LENGTH = 32;
 export const MASTER_SALT_LENGTH = 16;
 export const FILE_SALT_LENGTH = 16;
-export const AES_GCM_TAG_LENGTH = 16;
+const AES_GCM_TAG_LENGTH = 16;
 export const CONTENT_CHUNK_SIZE = 128 * 1024;
 const ENCRYPTED_CONTENT_CHUNK_SIZE = CONTENT_CHUNK_SIZE + AES_GCM_TAG_LENGTH;
 const FILE_KEY_INFO = 'file-key-v1';
@@ -92,7 +92,7 @@ export function encodeUInt96(value: number): Binary {
 	return encodeUInt(value, 12);
 }
 
-export function encodeUInt64(value: number): Binary {
+function encodeUInt64(value: number): Binary {
 	return encodeUInt(value, 8);
 }
 

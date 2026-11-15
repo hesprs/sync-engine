@@ -8,8 +8,8 @@ import type { Request, StringKV } from '@hesprs/sync-engine-sdk';
 import type { ObsidianProtocolData, SecretStorage } from 'obsidian';
 
 export const APP_KEY = atob(process.env.DROPBOX_APP_KEY ?? '');
-export const REDIRECT_URI = 'obsidian://sync-engine-dropbox-auth';
-export const OAUTH_SCOPE = 'files.content.read files.content.write files.metadata.read';
+const REDIRECT_URI = 'obsidian://sync-engine-dropbox-auth';
+const OAUTH_SCOPE = 'files.content.read files.content.write files.metadata.read';
 const KEYCHAIN_SECRET_ID = 'sync-engine-dropbox-refresh-token';
 const FORM_CONTENT_TYPE = 'application/x-www-form-urlencoded';
 const TOKEN_EXPIRY_MARGIN = 60_000;
@@ -39,7 +39,7 @@ function describeAuthError(data: TokenResponse, status: number): string {
 	return data.error_description ?? data.error ?? `HTTP ${status}`;
 }
 
-export function buildAuthorizeUrl(state: string, codeChallenge: string): string {
+function buildAuthorizeUrl(state: string, codeChallenge: string): string {
 	return `${OAUTH_AUTHORIZE_URL}?${compileQuery({
 		client_id: APP_KEY,
 		code_challenge: codeChallenge,

@@ -8,7 +8,6 @@ import {
 	parseRoomCode,
 } from '@/crypto';
 import { en, ru, zh, zhTW } from '@/i18n';
-import { cleanupMobileHeaderIcons } from '@/mobile-status';
 import { openPulse, parseEnvelope, preparePulse, sealPulse } from '@/protocol';
 import { RaceJournal } from '@/race';
 import captureRemoteState from '@/remote-wrapper';
@@ -16,7 +15,7 @@ import collaborationSetting from '@/setting';
 import RemoteStateCache from '@/state-cache';
 import SyncBridge from '@/sync-bridge';
 import CollaborationTransport from '@/transport';
-import deviceType, { buildClientId, readSecret, text, toError } from '@/utils';
+import deviceType, { buildClientId, cleanupMobileHeaderIcons, readSecret, text, toError } from '@/utils';
 import type { Envelope, UserProperties } from '@/protocol';
 import type { CollaborationSettings, CollaborationStatus } from '@/setting';
 import type { CollaborationContext } from '@/types';

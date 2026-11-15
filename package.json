@@ -18,7 +18,8 @@
 		"compile": "turbo run compile",
 		"ver": "bun scripts/version-bump.ts",
 		"fix": "turbo run fix",
-		"check": "turbo run check",
+		"check:unused": "bun scripts/check-unused-exports.ts",
+		"check": "turbo run check && bun scripts/check-unused-exports.ts",
 		"tests": "turbo run tests"
 	},
 	"devDependencies": {

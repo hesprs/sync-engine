@@ -86,7 +86,7 @@ export function computeChunkDiff(
  * Reassembles raw bytes from a chunk hash list using a chunk resolver. Returns undefined if any
  * chunk hash cannot be resolved (missing chunk).
  */
-export function reassembleFromChunks(
+function reassembleFromChunks(
 	chunkHashes: Array<string>,
 	getChunk: (hash: string) => Uint8Array | undefined,
 ): Uint8Array | undefined {

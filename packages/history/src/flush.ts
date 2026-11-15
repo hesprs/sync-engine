@@ -367,7 +367,6 @@ async function runReconcile(ctx: FlushContext): Promise<void> {
 }
 
 export class FlushScheduler {
-	private lastEdit = 0;
 	private pendingBytes = 0;
 	private pendingRevisions = 0;
 	private idleTimer?: ReturnType<typeof setTimeout>;
@@ -378,7 +377,6 @@ export class FlushScheduler {
 
 	/** Called on every captured edit. Fast channel and flush predicates negotiate with realtimeSync. */
 	onEdit(size: number): void {
-		this.lastEdit = Date.now();
 		this.pendingBytes += size;
 		this.pendingRevisions += 1;
 

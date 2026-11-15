@@ -95,8 +95,6 @@ export async function saveLastGcTime(stores: HistoryStores, time: number): Promi
 	await stores.meta.set(GC_TIME_KEY, time);
 }
 
-export const getLastGcTime = readLastGcTime;
-
 /**
  * Appends a WAL entry and its Lamport bump together. The entry itself carries the lamport value, so
  * a single pending-store batch is the atomic durability boundary: a kill before it resolves loses

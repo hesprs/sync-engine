@@ -6,8 +6,6 @@ import type { DatabaseAsync, StoreAsync } from 'uni-kv';
 export type IndexedDBSchema = Record<string, RecordStat>;
 export type RecordStore = StoreAsync<RecordStat>;
 
-export const SYNC_STATE_STORE_NAME = 'sync-state';
-
 export default class Storage {
 	private readonly memoryDB;
 	private readonly indexedDB;

@@ -52,7 +52,6 @@ export default class HistoryModule {
 	private remote?: RemoteHistory;
 	private remoteFsUid?: string;
 	private scheduler?: FlushScheduler;
-	private cipher?: HistoryCipher;
 	private deviceId = '';
 
 	moduleSettings: HistorySettings = {
@@ -173,7 +172,6 @@ export default class HistoryModule {
 			new Notice(`History encryption: ${String(error)}`);
 			return;
 		}
-		this.cipher = cipher;
 		const deviceId =
 			this.deviceId || (await getOrCreateDeviceId(stores, this.moduleSettings.deviceId));
 		this.deviceId = deviceId;

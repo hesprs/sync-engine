@@ -34,15 +34,15 @@ function remotePath(ns: string, ...parts: Array<string>): string {
 	return [ns, ...parts].join('/');
 }
 
-export function headKey(ns: string, deviceId: string): string {
+function headKey(ns: string, deviceId: string): string {
 	return remotePath(ns, 'heads', `${deviceId}.log`);
 }
 
-export function packKey(ns: string, deviceId: string, fileName: string): string {
+function packKey(ns: string, deviceId: string, fileName: string): string {
 	return remotePath(ns, 'packs', deviceId, fileName);
 }
 
-export function blobKey(ns: string, hash: string): string {
+function blobKey(ns: string, hash: string): string {
 	return remotePath(ns, 'blobs', `${hash}.blob`);
 }
 
