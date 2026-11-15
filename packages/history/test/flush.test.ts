@@ -40,7 +40,7 @@ function fakeRemote() {
 			return value ? Promise.resolve(value) : Promise.reject(new Error(`missing ${key}`));
 		},
 		listHeads() {
-			return Promise.resolve([...heads.keys()]);
+			return Promise.resolve([...heads.keys()].map((deviceId) => ({ deviceId })));
 		},
 		listPacks(deviceId = 'device-a') {
 			return Promise.resolve(
@@ -433,4 +433,50 @@ test('FlushScheduler negotiates with realtimeSync config', async () => {
 	});
 	expect(syncTrigger).toBe('');
 	enabledScheduler.dispose();
+});
+
+test('reconcile skips readHead when remote head uid matches cached remoteUid', async () => {
+	const { ctx, remote, stores } = setup();
+	const { buildCommitLog } = await import('@/head-log');
+
+	const log = await buildCommitLog({
+		chunkIndex: {},
+		deviceId: 'device-b',
+		generation: 1,
+		heads: [],
+		ns: 'ns',
+		packs: [],
+		peakLamport: 5,
+		seq: 1,
+		updatedAt: 1000,
+	});
+	await remote.writeHead(log);
+
+	let currentUid: string | undefined = 'etag-v1';
+	remote.listHeads = () => Promise.resolve([{ deviceId: 'device-b', uid: currentUid }]);
+
+	let readHeadCalls = 0;
+	const origReadHead = remote.readHead;
+	remote.readHead = (id: string) => {
+		readHeadCalls++;
+		return origReadHead(id);
+	};
+
+	// 1. First reconcile: reads head, caches remoteUid
+	await reconcile(ctx);
+	expect(readHeadCalls).toBe(1);
+	const cached1 = await stores.heads.get('device-b');
+	expect(cached1?.remoteUid).toBe('etag-v1');
+	expect(await readLamport(stores)).toBeGreaterThanOrEqual(5);
+
+	// 2. Second reconcile with identical uid: skips readHead completely!
+	await reconcile(ctx);
+	expect(readHeadCalls).toBe(1);
+
+	// 3. Third reconcile with updated uid: reads head and updates remoteUid
+	currentUid = 'etag-v2';
+	await reconcile(ctx);
+	expect(readHeadCalls).toBe(2);
+	const cached2 = await stores.heads.get('device-b');
+	expect(cached2?.remoteUid).toBe('etag-v2');
 });

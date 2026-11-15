@@ -83,6 +83,7 @@ export type CommitLog = {
 	heads: Array<string>; // Current DAG tip commit hashes
 	updatedAt: number;
 	integrity: string; // SHA-256 of the log minus this field
+	remoteUid?: string; // Remote storage UID/ETag for zero-cost reconcile short-circuit
 };
 
 /** WAL record. Persisted before an edit is considered captured. */

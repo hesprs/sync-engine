@@ -8,6 +8,8 @@ import type { HistoryCipher } from '@/crypto';
 import type { CommitLog } from '@/types';
 import type { Binary, FileStat, Fs, ListOptions, Stat } from '@hesprs/sync-engine-sdk';
 
+export type RemoteHeadStat = { deviceId: string; mtime?: number; uid?: string };
+
 export type RemoteHistory = {
 	fs: Fs;
 	ns: string;
@@ -17,7 +19,7 @@ export type RemoteHistory = {
 	getObject: (key: string) => Promise<Uint8Array>;
 	readHead: (deviceId: string) => Promise<CommitLog | undefined>;
 	writeHead: (log: CommitLog) => Promise<void>;
-	listHeads: () => Promise<Array<string>>;
+	listHeads: () => Promise<Array<RemoteHeadStat>>;
 	listPacks: (deviceId: string) => Promise<Array<string>>;
 	deletePack: (deviceId: string, fileName: string) => Promise<void>;
 };
@@ -93,7 +95,7 @@ export function openRemoteHistory(
 		return cipher ? cipher.decrypt(raw) : raw;
 	}
 
-	async function listHeadIds(): Promise<Array<string>> {
+	async function listHeadStats(): Promise<Array<RemoteHeadStat>> {
 		let stats: Array<Stat>;
 		try {
 			stats = await fs.list(remotePath(ns, 'heads'), includeAll);
@@ -101,8 +103,12 @@ export function openRemoteHistory(
 			return [];
 		}
 		return stats
-			.filter((stat) => !stat.isDir && stat.key.endsWith('.log'))
-			.map((stat) => (stat.key.split('/').at(-1) ?? stat.key).slice(0, -4));
+			.filter((stat): stat is FileStat => !stat.isDir && stat.key.endsWith('.log'))
+			.map((stat) => ({
+				deviceId: (stat.key.split('/').at(-1) ?? stat.key).slice(0, -4),
+				mtime: stat.mtime,
+				uid: stat.uid,
+			}));
 	}
 
 	async function listPackNames(packDeviceId: string): Promise<Array<string>> {
@@ -126,7 +132,7 @@ export function openRemoteHistory(
 		deviceId,
 		fs,
 		getObject: get,
-		listHeads: listHeadIds,
+		listHeads: listHeadStats,
 		listPacks: listPackNames,
 		ns,
 		async putBlob(hash, bytes) {

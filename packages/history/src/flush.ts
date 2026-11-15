@@ -292,19 +292,34 @@ export async function reconcile(ctx: FlushContext): Promise<void> {
 
 async function runReconcile(ctx: FlushContext): Promise<void> {
 	await flushPending(ctx, 'cold-start');
-	const headIds = await ctx.remote.listHeads();
+	const headStats = await ctx.remote.listHeads();
 	let seenLamport = 0;
 	const logsToReconcile: Array<{ cached?: CommitLog; log: CommitLog }> = [];
-	for (const headId of headIds) {
+	for (const head of headStats) {
+		const headId = typeof head === 'string' ? head : head.deviceId;
+		const uid = typeof head === 'string' ? undefined : head.uid;
 		const cached = await ctx.stores.heads.get(headId);
 		if (headId === ctx.remote.deviceId && cached) {
 			seenLamport = Math.max(seenLamport, cached.peakLamport);
 			continue;
 		}
+
+		if (cached && uid !== undefined && cached.remoteUid === uid) {
+			seenLamport = Math.max(seenLamport, cached.peakLamport);
+			continue;
+		}
+
 		const log = await ctx.remote.readHead(headId);
 		if (!log) continue;
+		if (uid !== undefined) log.remoteUid = uid;
 		seenLamport = Math.max(seenLamport, log.peakLamport);
-		if (cached && cached.generation >= log.generation) continue;
+		if (cached && cached.generation >= log.generation) {
+			if (uid !== undefined && cached.remoteUid !== uid) {
+				cached.remoteUid = uid;
+				await ctx.stores.heads.set(headId, cached);
+			}
+			continue;
+		}
 
 		logsToReconcile.push({ cached, log });
 	}
