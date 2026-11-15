@@ -32,45 +32,12 @@ import { NONE_STRATEGY, prepareGlobMatch } from '@repo/shared/glob-match';
 import { sha256Bytes } from '@repo/shared/sha256-bytes';
 import { Notice } from 'obsidian';
 import type { HistoryCipher } from '@/crypto';
-import type { HistoryTranslations } from '@/i18n';
 import type { RemoteHistory } from '@/remote';
 import type { HistorySettings } from '@/setting';
-import type { HistoryDatabase, HistoryStores } from '@/store';
-import type {
-	Context,
-	Events,
-	Fs,
-	ObsidianLanguageCode,
-	On,
-	SelectFromContext,
-	SettingEntry,
-	SyncTerminateReason,
-	Translate,
-	TranslationResource,
-} from '@hesprs/sync-engine-sdk';
-import type { GlobStrategy } from '@repo/shared/glob-match';
-import type { App, Command, EventRef, Menu, TAbstractFile, TFile } from 'obsidian';
-
-type HistoryContext = SelectFromContext<{
-	addCommand: (command: Command) => Command;
-	app: App;
-	getNamespace: Context['getNamespace'];
-	indexedDB: HistoryDatabase;
-	on: On<Events>;
-	registerEvent: (ref: EventRef) => void;
-	registerI18n: (locale: ObsidianLanguageCode, resource: TranslationResource) => void;
-	registerSetting: (entry: SettingEntry) => () => boolean;
-	requestSync: (trigger: string) => Promise<SyncTerminateReason>;
-	saveSettings: () => Promise<void>;
-	settings: { modules: Record<string, object>; syncStrategy?: Array<GlobStrategy> };
-	translate: Translate<HistoryTranslations>;
-}>;
-
-type PendingDebounce = {
-	data: Uint8Array;
-	firstScheduledAt: number;
-	timer: ReturnType<typeof setTimeout>;
-};
+import type { HistoryStores } from '@/store';
+import type { HistoryContext, PendingDebounce } from '@/types';
+import type { Fs } from '@hesprs/sync-engine-sdk';
+import type { Menu, TAbstractFile, TFile } from 'obsidian';
 
 export default class HistoryModule {
 	private readonly cleanup: Array<() => void> = [];
@@ -216,6 +183,7 @@ export default class HistoryModule {
 		this.remoteFsUid = fsUid;
 		this.scheduler?.dispose();
 		this.scheduler = new FlushScheduler({
+			getRealtimeSyncConfig: () => ctx.settings.realtimeSync,
 			remote,
 			requestSync: (trigger) => void ctx.requestSync(trigger),
 			stores,

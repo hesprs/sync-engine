@@ -18,10 +18,11 @@ import type { HistoryStores } from '@/store';
 import type { BlobRef, ChunkLocation, CommitLog, IndexEntry, PackRef, WalEntry } from '@/types';
 
 export type FlushContext = {
-	stores: HistoryStores;
+	getRealtimeSyncConfig?: () => { enabled: boolean; value: number } | undefined;
+	onFlushError?: (error: Error) => void;
 	remote: RemoteHistory;
 	requestSync: (trigger: string) => void;
-	onFlushError?: (error: Error) => void;
+	stores: HistoryStores;
 };
 
 type Assembled = {
@@ -360,16 +361,30 @@ export class FlushScheduler {
 
 	constructor(private readonly ctx: FlushContext) {}
 
-	/** Called on every captured edit. Fast channel and flush predicates are independent. */
+	/** Called on every captured edit. Fast channel and flush predicates negotiate with realtimeSync. */
 	onEdit(size: number): void {
 		this.lastEdit = Date.now();
 		this.pendingBytes += size;
 		this.pendingRevisions += 1;
-		// Fast channel: a thin 1s debounce that only asks the sync core to upload the live note.
+
 		if (this.fastTimer) clearTimeout(this.fastTimer);
-		this.fastTimer = setTimeout(() => this.ctx.requestSync('realtime'), FAST_SYNC_DEBOUNCE_MS);
+		const realtimeConfig = this.ctx.getRealtimeSyncConfig?.();
+		if (realtimeConfig === undefined)
+			this.fastTimer = setTimeout(
+				() => this.ctx.requestSync('realtime'),
+				FAST_SYNC_DEBOUNCE_MS,
+			);
+		else if (realtimeConfig.enabled) {
+			const fastDebounceMs = Math.max(FAST_SYNC_DEBOUNCE_MS, realtimeConfig.value);
+			this.fastTimer = setTimeout(() => this.ctx.requestSync('realtime'), fastDebounceMs);
+		}
+
 		if (this.idleTimer) clearTimeout(this.idleTimer);
-		this.idleTimer = setTimeout(() => void this.trigger('idle'), PACK_IDLE_MS);
+		const packIdleMs = realtimeConfig?.enabled
+			? Math.max(PACK_IDLE_MS, realtimeConfig.value)
+			: PACK_IDLE_MS;
+		this.idleTimer = setTimeout(() => void this.trigger('idle'), packIdleMs);
+
 		if (this.pendingRevisions >= MAX_PACK_REVISIONS || this.pendingBytes >= MAX_PACK_BYTES)
 			void this.trigger(this.pendingRevisions >= MAX_PACK_REVISIONS ? 'count' : 'volume');
 	}

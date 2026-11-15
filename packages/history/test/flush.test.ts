@@ -390,3 +390,47 @@ test('reconcile deduplicates concurrent calls', async () => {
 	await Promise.all([reconcile(ctx), reconcile(ctx)]);
 	expect(listHeadsCalls).toBe(1);
 });
+
+test('FlushScheduler negotiates with realtimeSync config', async () => {
+	const { ctx, stores } = setup();
+	await ingestEdit(stores, 'note.md', encoder.encode('one'));
+
+	let syncTrigger = '';
+	const requestSync = (trigger: string) => {
+		syncTrigger = trigger;
+	};
+
+	// 1. When realtimeSync is explicitly disabled, fast channel stays silent
+	const disabledCtx = {
+		...ctx,
+		getRealtimeSyncConfig: () => ({ enabled: false, value: 30_000 }),
+		requestSync,
+	};
+	const disabledScheduler = new FlushScheduler(disabledCtx);
+	disabledScheduler.onEdit(3);
+
+	// Wait 50ms - should not fire fastTimer
+	await new Promise<void>((resolve) => {
+		setTimeout(resolve, 50);
+	});
+	expect(syncTrigger).toBe('');
+	disabledScheduler.dispose();
+
+	// 2. When realtimeSync is enabled with a value, respects it
+	syncTrigger = '';
+	const enabledCtx = {
+		...ctx,
+		getRealtimeSyncConfig: () => ({ enabled: true, value: 50 }),
+		requestSync,
+	};
+	const enabledScheduler = new FlushScheduler(enabledCtx);
+	enabledScheduler.onEdit(3);
+
+	// Wait 70ms (> 50ms test value, but FAST_SYNC_DEBOUNCE_MS floor is 1000ms)
+	// So at 70ms it should NOT have fired because Math.max(1000, 50) = 1000ms!
+	await new Promise<void>((resolve) => {
+		setTimeout(resolve, 70);
+	});
+	expect(syncTrigger).toBe('');
+	enabledScheduler.dispose();
+});

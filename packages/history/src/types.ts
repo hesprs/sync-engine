@@ -1,3 +1,19 @@
+import type { HistoryTranslations } from '@/i18n';
+import type { HistoryDatabase } from '@/store';
+import type {
+	Context,
+	Events,
+	ObsidianLanguageCode,
+	On,
+	SelectFromContext,
+	SettingEntry,
+	SyncTerminateReason,
+	Translate,
+	TranslationResource,
+} from '@hesprs/sync-engine-sdk';
+import type { GlobStrategy } from '@repo/shared/glob-match';
+import type { App, Command, EventRef } from 'obsidian';
+
 export type ChunkRef = {
 	hash: string; // Full SHA-256 of chunk bytes
 	offset: number; // Byte offset into the inflated payload
@@ -114,3 +130,30 @@ export {
 	PACK_MAGIC,
 	PACK_VERSION,
 } from '@/constants';
+
+export type TogglableValue<T = number> = { enabled: boolean; value: T };
+
+export type HistoryContext = SelectFromContext<{
+	addCommand: (command: Command) => Command;
+	app: App;
+	getNamespace: Context['getNamespace'];
+	indexedDB: HistoryDatabase;
+	on: On<Events>;
+	registerEvent: (ref: EventRef) => void;
+	registerI18n: (locale: ObsidianLanguageCode, resource: TranslationResource) => void;
+	registerSetting: (entry: SettingEntry) => () => boolean;
+	requestSync: (trigger: string) => Promise<SyncTerminateReason>;
+	saveSettings: () => Promise<void>;
+	settings: {
+		modules: Record<string, object>;
+		realtimeSync?: TogglableValue;
+		syncStrategy?: Array<GlobStrategy>;
+	};
+	translate: Translate<HistoryTranslations>;
+}>;
+
+export type PendingDebounce = {
+	data: Uint8Array;
+	firstScheduledAt: number;
+	timer: ReturnType<typeof setTimeout>;
+};
