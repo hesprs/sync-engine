@@ -38,6 +38,7 @@ function makeIncrementalLister(
 	keys: Array<string> | undefined,
 	memoryDB: ExistingMemoryDB,
 	fastModeFallback = false,
+	bridge?: SyncBridge,
 ): NonNullable<SyncOptions['remoteLister']> | undefined {
 	const store = memoryDB.getStore('remoteContext20000');
 	if (store.keys().length === 0) return undefined;
@@ -64,7 +65,7 @@ function makeIncrementalLister(
 	}
 	return async ({ remoteFs, reporter }) => {
 		try {
-			await patchChangedStats(remoteFs, store, keys);
+			await patchChangedStats(remoteFs, store, keys, bridge);
 		} catch {
 			return remoteFs.list('/', reporter);
 		}
@@ -92,6 +93,7 @@ async function patchChangedStats(
 	remoteFs: Fs,
 	store: StoreSync<Stat>,
 	keys: Array<string>,
+	bridge?: SyncBridge,
 ): Promise<void> {
 	await Promise.all(
 		keys.map(async (key) => {
@@ -101,6 +103,7 @@ async function patchChangedStats(
 			}
 			const stat = await remoteFs.stat(key);
 			store.set(key, stat);
+			if (!stat.isDir && bridge) bridge.recordCommittedPeer(key, stat.uid);
 		}),
 	);
 }
@@ -177,7 +180,7 @@ export default class SyncBridge {
 		const fastMode = Boolean(this.options.fastMode?.());
 		if (!this.pending) {
 			const remoteLister = fastMode
-				? makeIncrementalLister(undefined, this.ctx.memoryDB, true)
+				? makeIncrementalLister(undefined, this.ctx.memoryDB, true, this)
 				: undefined;
 			if (!remoteLister) return;
 			const rules = this.options.rules();
@@ -193,7 +196,7 @@ export default class SyncBridge {
 		const { keys } = this.pending;
 		this.pending = undefined;
 		this.activeCandidates.clear();
-		const remoteLister = makeIncrementalLister(keys, this.ctx.memoryDB, fastMode);
+		const remoteLister = makeIncrementalLister(keys, this.ctx.memoryDB, fastMode, this);
 		const options: SyncOptions = remoteLister ? { remoteLister } : {};
 		const rules = this.options.rules();
 		const syncStrategy = rules.map((rule) => ({
@@ -236,12 +239,14 @@ export default class SyncBridge {
 							remote.uid === committedRemoteUid &&
 							local &&
 							!local.isDir
-						)
+						) {
+							const existing = input.records.get(key);
 							records.set(key, {
 								isDir: false,
 								local: local.uid,
-								remote: remote.uid,
+								remote: existing && !existing.isDir ? existing.remote : '',
 							});
+						}
 					}
 					if (forcedKeys.size)
 						this.ctx.dispatch(
@@ -261,7 +266,7 @@ export default class SyncBridge {
 						) {
 							const hasTask = tasks.some((t) => t.key === key);
 							if (!hasTask)
-								tasks.push(input.taskFactory('addRecord', { key, local, remote }));
+								tasks.push(input.taskFactory('download', { key, remote }));
 						}
 					}
 					return tasks;

@@ -15,7 +15,13 @@ import collaborationSetting from '@/setting';
 import RemoteStateCache from '@/state-cache';
 import SyncBridge from '@/sync-bridge';
 import CollaborationTransport from '@/transport';
-import deviceType, { buildClientId, cleanupMobileHeaderIcons, readSecret, text, toError } from '@/utils';
+import deviceType, {
+	buildClientId,
+	cleanupMobileHeaderIcons,
+	readSecret,
+	text,
+	toError,
+} from '@/utils';
 import type { Envelope, UserProperties } from '@/protocol';
 import type { CollaborationSettings, CollaborationStatus } from '@/setting';
 import type { CollaborationContext } from '@/types';
@@ -104,6 +110,13 @@ export default class Collaboration {
 					...this.bridge?.triggerOptions(),
 				}),
 				priority: 1500,
+			}),
+			ctx.registerTrigger('realtime', {
+				options: () => ({
+					needConfirmDeletion: this.ctx.settings.confirmDeleteInAutoSync,
+					...this.bridge?.triggerOptions(),
+				}),
+				priority: 1000,
 			}),
 			ctx.registerSetting({
 				apply: collaborationSetting(

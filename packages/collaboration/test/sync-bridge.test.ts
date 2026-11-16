@@ -289,7 +289,7 @@ test('the wrapped decider fills candidates from the real remote listing', () => 
 	bridge.dispose();
 });
 
-test('the wrapped decider reconciles committed peer files to prevent false conflicts', () => {
+test('the wrapped decider reconciles committed peer files to prevent false conflicts by downloading', () => {
 	const { bridge, registry } = setup();
 	bridge.recordCommittedPeer('synced.md', 'remote-committed-uid');
 	bridge.accept(pulse());
@@ -311,7 +311,43 @@ test('the wrapped decider reconciles committed peer files to prevent false confl
 	expect(tasks).toBeDefined();
 	expect(tasks?.length).toBe(1);
 	const task = tasks?.[0];
-	expect(task?.name).toBe('addRecord');
+	expect(task?.name).toBe('download');
 	expect((task as unknown as { key: string })?.key).toBe('synced.md');
+	bridge.dispose();
+});
+
+test('patchChangedStats automatically records committed peers from remote stats during incremental listing', async () => {
+	const { bridge, registry, memoryDB } = setup();
+	memoryDB.getStore('remoteContext20000').set('peer.md', file('peer.md', { uid: 'old-remote' }));
+	const remoteStat = file('peer.md', { mtime: Date.now(), size: 3, uid: 'new-remote' });
+	const remoteFs = fakeRemoteFs(new Map([['peer.md', remoteStat]]));
+
+	bridge.accept(pulse({ keys: ['peer.md'] }));
+	const options = bridge.triggerOptions();
+	expect(options?.remoteLister).toBeDefined();
+
+	await options?.remoteLister?.({
+		localFs: {} as never,
+		record: {} as never,
+		remoteFs,
+		reporter: () => 'include',
+	});
+
+	const wrapped = registry.get('collaboration:bidirectional');
+	expect(wrapped).toBeDefined();
+
+	const local = file('peer.md', { size: 3, uid: 'local-stat-uid' });
+	const tasks = wrapped?.decider({
+		localStats: new Map([['peer.md', local]]),
+		records: new Map([['peer.md', { isDir: false, local: 'old-local', remote: 'old-remote' }]]),
+		remoteStats: new Map([['peer.md', remoteStat]]),
+		taskFactory: ((name: string, taskOptions: object) => ({ name, ...taskOptions })) as never,
+	});
+
+	expect(tasks).toBeDefined();
+	expect(tasks?.length).toBe(1);
+	const task = tasks?.[0];
+	expect(task?.name).toBe('download');
+	expect((task as unknown as { key: string })?.key).toBe('peer.md');
 	bridge.dispose();
 });
