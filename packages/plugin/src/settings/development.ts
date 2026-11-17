@@ -89,7 +89,7 @@ export default function developmentSettings({
 								button
 									.setButtonText(translate('export'))
 									.onClick(exportLogs)
-									.setClass('sync-engine-button-shrink');
+									.setClass('se-button-shrink');
 							});
 					},
 				})),

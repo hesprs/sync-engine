@@ -151,7 +151,7 @@ export default function s3Setting(
 					name: translate('sessionToken'),
 					render: (setting) => {
 						setting
-							.setClass('sync-engine-column')
+							.setClass('se-column')
 							.addComponent((element) =>
 								new SecretComponent(app, element)
 									.setValue(settings.sessionToken.value)
@@ -221,7 +221,7 @@ export default function s3Setting(
 					name: translate('proxyUrl'),
 					render: (setting) => {
 						setting
-							.setClass('sync-engine-column')
+							.setClass('se-column')
 							.addText((text) => {
 								text.setPlaceholder(translate('proxyUrlPlaceholder')).setValue(
 									formatUrl(settings.proxyUrl.value),

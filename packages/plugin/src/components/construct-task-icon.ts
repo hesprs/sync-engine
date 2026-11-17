@@ -9,18 +9,25 @@ export default function constructTaskIcon(
 	name: TaskNames,
 	isDir: boolean,
 ): HTMLElement {
-	element.addClass('relative', 'aspect-square');
+	element.addClass('se-relative', 'se-aspect-square');
 	const { icon: mainIcon, color: mainColor } = getMain(name, isDir);
 	setIcon(element, mainIcon);
 	const main = getIcon(element);
-	main.addClass('sync-engine-cropped-icon');
+	main.addClass('se-cropped-icon');
 	main.setAttr('stroke', mainColor);
 	const auxiliaryIconColor = getAuxiliary(name);
 	if (!auxiliaryIconColor) return element;
 	const { icon: auxiliaryIcon, color: auxiliaryColor } = auxiliaryIconColor;
 	setIcon(element, auxiliaryIcon);
 	const auxiliary = getIcon(element);
-	auxiliary.addClass('absolute', 'bottom-0', 'right-0', 'w-50%!', 'h-50%!', 'stroke-width-4!');
+	auxiliary.addClass(
+		'se-absolute',
+		'se-bottom-0',
+		'se-right-0',
+		'se-w-50%!',
+		'se-h-50%!',
+		'se-stroke-width-4!',
+	);
 	auxiliary.setAttr('stroke', auxiliaryColor);
 	element.empty();
 	element.append(main, auxiliary);

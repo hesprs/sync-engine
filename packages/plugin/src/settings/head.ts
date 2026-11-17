@@ -77,10 +77,7 @@ export default function headSettings(
 			desc: translate('settingTips', { addLabel, labels: [matchLabel(), speedLabel()] }),
 			name: 'dummy',
 			render: (setting) => {
-				setting.settingEl.addClass(
-					'sync-engine-setting-hide-name',
-					'sync-engine-setting-rendered-desc',
-				);
+				setting.settingEl.addClass('se-setting-hide-name', 'se-setting-rendered-desc');
 				queueMicrotask(() => {
 					const tab = getSettingTab();
 					if (!tab) return;
@@ -248,30 +245,30 @@ function setupCheckConnection({
 }) {
 	let timeout: number | undefined;
 	const possibleClasses = [
-		'color-[--color-green]',
-		'color-[--color-red]',
-		'color-[-text-faint]',
-		'animate-spin',
+		'se-color-[--color-green]',
+		'se-color-[--color-red]',
+		'se-color-[-text-faint]',
+		'se-animate-spin',
 	];
 	const setChecking = () => {
 		const ele = button.setIcon('loader-circle').setDisabled(true)
 			.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClass('animate-spin', 'color-[-text-faint]');
+		ele.addClass('se-animate-spin', 'se-color-[-text-faint]');
 	};
 	const setSuccess = () => {
 		const ele = button.setIcon('check').setDisabled(false).extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClass('color-[--color-green]');
+		ele.addClass('se-color-[--color-green]');
 	};
 	const setError = () => {
 		const ele = button.setIcon('cloud-off').setDisabled(false)
 			.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClass('color-[--color-red]');
+		ele.addClass('se-color-[--color-red]');
 	};
 	const scheduleCheckConnection = () =>
 		(timeout = window.setTimeout(() => void check(), CHECK_CONNECTION_INTERVAL));

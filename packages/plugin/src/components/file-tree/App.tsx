@@ -22,15 +22,15 @@ export default function App(props: {
 	};
 
 	return (
-		<div class="flex flex-col gap-2">
+		<div class="se-flex se-flex-col se-gap-2">
 			<Show when={props.data.taskNodeIds.length > 1}>
 				<div
-					class="flex items-center gap-2 whitespace-nowrap w-fit pr-3"
+					class="se-flex se-items-center se-gap-2 se-whitespace-nowrap se-w-fit se-pr-3"
 					onClick={toggleAll}
 				>
 					<input
 						checked={allSelected()}
-						class="m-0! cursor-pointer accent-[--interactive-accent]"
+						class="se-m-0! se-cursor-pointer se-accent-[--interactive-accent]"
 						ref={(element) => {
 							createEffect(() => {
 								element.indeterminate = someSelected();
@@ -38,10 +38,10 @@ export default function App(props: {
 						}}
 						type="checkbox"
 					/>
-					<div class="h-4 w-4" ref={(element) => setIcon(element, 'folders')} />
-					<div class="text-[--text-normal] whitespace-nowrap">
+					<div class="se-h-4 se-w-4" ref={(element) => setIcon(element, 'folders')} />
+					<div class="se-text-[--text-normal] se-whitespace-nowrap">
 						{props.translate('selectAll')}
-						<span class="ml-2 color-[--text-muted]">
+						<span class="se-ml-2 se-color-[--text-muted]">
 							{props.translate('xSelected', selectedCount())}
 						</span>
 					</div>

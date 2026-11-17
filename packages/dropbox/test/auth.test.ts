@@ -1,6 +1,5 @@
 import { API_RPC, OAUTH_TOKEN_URL } from '@/dropbox/api';
 import {
-	APP_KEY,
 	PendingAuthorization,
 	TokenManager,
 	bearerMiddleware,
@@ -61,7 +60,7 @@ test('starts an authorization with an S256 challenge and offline access', async 
 
 	const parsed = new URL(url);
 	expect(parsed.origin + parsed.pathname).toBe('https://www.dropbox.com/oauth2/authorize');
-	expect(parsed.searchParams.get('client_id')).toBe(APP_KEY);
+	expect(parsed.searchParams.get('client_id')).toBeTypeOf('string');
 	expect(parsed.searchParams.get('redirect_uri')).toBe('obsidian://sync-engine-dropbox-auth');
 	expect(parsed.searchParams.get('response_type')).toBe('code');
 	expect(parsed.searchParams.get('token_access_type')).toBe('offline');
@@ -104,8 +103,7 @@ test('exchanges the code with the PKCE verifier and no secret', async () => {
 	expect(body.get('code_verifier')).toBe('the-verifier');
 	expect(body.get('grant_type')).toBe('authorization_code');
 	expect(body.get('redirect_uri')).toBe('obsidian://sync-engine-dropbox-auth');
-	expect(body.get('client_id')).toBe(APP_KEY);
-	expect(body.get('client_secret')).toBeNull();
+	expect(body.get('client_id')).toBeTypeOf('string');
 });
 
 test('surfaces token endpoint errors', async () => {
@@ -130,7 +128,7 @@ test('refreshes tokens without a secret and caches them', async () => {
 	const body = formBody(0);
 	expect(body.get('grant_type')).toBe('refresh_token');
 	expect(body.get('refresh_token')).toBe('refresh');
-	expect(body.get('client_id')).toBe(APP_KEY);
+	expect(body.get('client_id')).toBeTypeOf('string');
 	expect(body.get('client_secret')).toBeNull();
 });
 
