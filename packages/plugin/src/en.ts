@@ -289,11 +289,11 @@ const en: Translations = {
 			paragraph.appendText(
 				' for more detailed explanation of each setting. Labels on settings:',
 			);
-			const ul = frag.createEl('ul', 'list-none ps-0!');
+			const ul = frag.createEl('ul', 'se-list-none se-ps-0!');
 			for (const label of labels) {
 				const li = ul.createEl('li');
 				const flair = addLabel(li, label);
-				flair.addClass('m-0');
+				flair.addClass('se-m-0');
 				li.appendText(` ${flair.ariaLabel}`);
 			}
 		}),
@@ -337,7 +337,7 @@ const en: Translations = {
 			});
 			const ul = frag
 				.createDiv(
-					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
+					'se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-px-2',
 				)
 				.createEl('ul');
 			const li1 = ul.createEl('li');

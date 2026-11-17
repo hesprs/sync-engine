@@ -74,7 +74,7 @@ export default function webdavSetting(
 						void saveSettings();
 					}),
 				)
-				.settingEl.addClass('sync-engine-setting-rendered-desc');
+				.settingEl.addClass('se-setting-rendered-desc');
 		};
 	return {
 		749: s(

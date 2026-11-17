@@ -182,12 +182,12 @@ export default class Observability {
 					if (!svgIcon) return;
 					if (idle) {
 						startIcon.removeAttribute('aria-disabled');
-						svgIcon.removeClass('animate-spin');
-						stopIcon.addClass('hidden');
+						svgIcon.removeClass('se-animate-spin');
+						stopIcon.addClass('se-hidden');
 					} else {
 						startIcon.setAttr('aria-disabled', 'true');
-						svgIcon.addClass('animate-spin');
-						stopIcon.removeClass('hidden');
+						svgIcon.addClass('se-animate-spin');
+						stopIcon.removeClass('se-hidden');
 					}
 				},
 				{ immediate: true },
@@ -200,14 +200,17 @@ export default class Observability {
 		const { isIdle, addStatusBarItem } = ctx;
 		const statusEl = addStatusBarItem();
 		setIcon(statusEl, 'refresh-cw');
-		const status = statusEl.createSpan({ cls: 'ml-1 max-w-250px truncate', text: t('idle') });
+		const status = statusEl.createSpan({
+			cls: 'se-ml-1 se-max-w-250px se-truncate',
+			text: t('idle'),
+		});
 		this.cleanupCallbacks.push(
 			isIdle.subscribe(
 				(idle) => {
 					const icon = statusEl.firstElementChild;
 					if (!icon) return;
-					if (idle) icon.removeClass('animate-spin');
-					else icon.addClass('animate-spin');
+					if (idle) icon.removeClass('se-animate-spin');
+					else icon.addClass('se-animate-spin');
 				},
 				{ immediate: true },
 			),

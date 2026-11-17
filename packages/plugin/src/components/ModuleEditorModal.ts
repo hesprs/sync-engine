@@ -47,7 +47,7 @@ export default class ModuleEditorModal extends Modal {
 		},
 	) {
 		super(ctx.app);
-		this.contentEl.addClass('sync-engine-setting');
+		this.contentEl.addClass('se-setting');
 	}
 
 	onOpen() {
@@ -135,7 +135,7 @@ export default class ModuleEditorModal extends Modal {
 						.setPlaceholder(translate('descriptionPlaceholder')),
 					'description',
 				);
-				text.inputEl.addClass('min-w-100%');
+				text.inputEl.addClass('se-min-w-100%');
 			});
 
 		new Setting(this.contentEl)
@@ -146,7 +146,7 @@ export default class ModuleEditorModal extends Modal {
 					text.setValue(updated.version).setPlaceholder(translate('versionPlaceholder')),
 					'version',
 				);
-				text.inputEl.addClass('min-w-100%');
+				text.inputEl.addClass('se-min-w-100%');
 			});
 
 		new Setting(this.contentEl)

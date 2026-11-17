@@ -38,41 +38,43 @@ export default function Card(props: {
 	};
 
 	return (
-		<div class="flex min-h-40 flex-col gap-3 rounded-[--radius-s] border border-[--background-modifier-border] px-4 py-3 bg-[--background-primary-alt]">
-			<div class="flex items-start justify-between gap-3">
-				<div class="flex min-w-0 text-base font-semibold text-[--text-normal] break-words">
+		<div class="se-flex se-min-h-40 se-flex-col se-gap-3 se-rounded-[--radius-s] se-border se-border-[--background-modifier-border] se-px-4 se-py-3 se-bg-[--background-primary-alt]">
+			<div class="se-flex se-items-start se-justify-between se-gap-3">
+				<div class="se-flex se-min-w-0 se-text-base se-font-semibold se-text-[--text-normal] se-break-words">
 					<span
-						class="flex items-center mr-2"
+						class="se-flex se-items-center se-mr-2"
 						ref={(el) => setIcon(el, props.canonical.icon)}
 					/>
 					{props.canonical.name}
 				</div>
-				<div class="flex-shrink-0 text-xs text-[--text-faint]">{versionLabel()}</div>
+				<div class="se-flex-shrink-0 se-text-xs se-text-[--text-faint]">
+					{versionLabel()}
+				</div>
 			</div>
 
-			<div class="flex flex-1 flex-col gap-2">
-				<div class="flex flex-wrap gap-2">
+			<div class="se-flex se-flex-1 se-flex-col se-gap-2">
+				<div class="se-flex se-flex-wrap se-gap-2">
 					<Show when={props.canonical.source === OFFICIAL_SOURCE}>
-						<span class="flair m-0 sync-engine-prominent">
+						<span class="flair se-m-0 se-prominent">
 							{props.ctx.translate('official')}
 						</span>
 					</Show>
 					<Show when={isInstalled()}>
-						<span class="flair m-0">{props.ctx.translate('installed')}</span>
+						<span class="flair se-m-0">{props.ctx.translate('installed')}</span>
 					</Show>
 					<Show when={hasUpdate()}>
-						<span class="flair m-0">{props.ctx.translate('updateAvailable')}</span>
+						<span class="flair se-m-0">{props.ctx.translate('updateAvailable')}</span>
 					</Show>
 				</div>
-				<div class="flex-1 text-sm text-[--text-muted] break-words">
+				<div class="se-flex-1 se-text-sm se-text-[--text-muted] se-break-words">
 					{props.canonical.description}
 				</div>
 			</div>
 
-			<div class="flex items-center justify-end gap-2">
+			<div class="se-flex se-items-center se-justify-end se-gap-2">
 				<Show when={props.canonical.readme}>
 					<a
-						class="clickable-icon rounded-md p-1"
+						class="clickable-icon se-rounded-md se-p-1"
 						href={props.canonical.readme}
 						ref={(ref) => {
 							setIcon(ref, 'book-open-text');
@@ -166,7 +168,7 @@ function EnableToggle(props: {
 
 	return (
 		<div
-			class="flex items-center"
+			class="se-flex se-items-center"
 			ref={(el) => {
 				toggleEl = el;
 				toggle = new ToggleComponent(el)
@@ -195,12 +197,12 @@ function ActionButton(props: {
 		button.ariaLabel = props.tooltip;
 		setTooltip(button, props.tooltip);
 		const iconSvg = button.firstElementChild;
-		if (iconSvg) iconSvg.classList.toggle('animate-spin', props.pending);
+		if (iconSvg) iconSvg.classList.toggle('se-animate-spin', props.pending);
 	});
 
 	return (
 		<button
-			class="clickable-icon rounded-md p-1"
+			class="clickable-icon se-rounded-md se-p-1"
 			disabled={props.disabled}
 			onClick={props.onClick}
 			ref={(ref) => (button = ref)}

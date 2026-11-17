@@ -190,12 +190,12 @@ export default class ProgressModal extends Modal {
 	};
 
 	private readonly showDetails = () => {
-		this.description?.removeClass('hidden');
-		this.detailContainer?.removeClass('hidden');
+		this.description?.removeClass('se-hidden');
+		this.detailContainer?.removeClass('se-hidden');
 	};
 	private readonly hideDetails = () => {
-		this.description?.addClass('hidden');
-		this.detailContainer?.addClass('hidden');
+		this.description?.addClass('se-hidden');
+		this.detailContainer?.addClass('se-hidden');
 	};
 
 	onOpen() {
@@ -256,11 +256,11 @@ export default class ProgressModal extends Modal {
 			{ deps: [walkProgress, syncStage, executionProgress] },
 		);
 
-		const container = contentEl.createDiv('flex flex-col gap-4 max-h-75vh py-3');
+		const container = contentEl.createDiv('se-flex se-flex-col se-gap-4 se-max-h-75vh se-py-3');
 		const { bar, left, right } = renderProgress(container);
-		this.description = container.createEl('p', 'whitespace-pre-line hidden my-0');
+		this.description = container.createEl('p', 'se-whitespace-pre-line se-hidden se-my-0');
 		this.detailContainer = container.createDiv(
-			'max-h-50vh overflow-y-auto rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] p-3 hidden',
+			'se-max-h-50vh se-overflow-y-auto se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-p-3 se-hidden',
 		);
 
 		modalCleanupCallbacks.subscribe(

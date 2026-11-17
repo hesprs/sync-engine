@@ -254,11 +254,11 @@ const zhTW: Translations = {
 				text: '文件',
 			});
 			p.appendText('以瞭解各項設定的詳細說明。設定標籤：');
-			const ul = frag.createEl('ul', 'list-none ps-0!');
+			const ul = frag.createEl('ul', 'se-list-none se-ps-0!');
 			for (const label of labels) {
 				const li = ul.createEl('li');
 				const flair = addLabel(li, label);
-				flair.addClass('m-0');
+				flair.addClass('se-m-0');
 				li.appendText(` ${flair.ariaLabel}`);
 			}
 		}),
@@ -300,7 +300,7 @@ const zhTW: Translations = {
 			p1.createEl('strong', { text: '請在繼續之前檢閱以下資訊：' });
 			const ul = frag
 				.createDiv(
-					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
+					'se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-px-2',
 				)
 				.createEl('ul');
 			const li1 = ul.createEl('li');

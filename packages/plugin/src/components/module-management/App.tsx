@@ -138,12 +138,12 @@ export default function App(props: {
 	return (
 		<>
 			<div
-				class="flex items-center gap-2 py-4"
+				class="se-flex se-items-center se-gap-2 se-py-4"
 				ref={(controls) => {
 					new SearchComponent(controls)
 						.setPlaceholder(t('searchModules'))
 						.onChange(setQuerySignal)
-						.setClass('grow').inputEl.spellcheck = false;
+						.setClass('se-grow').inputEl.spellcheck = false;
 					const menu = new Menu()
 						.addItem((item) =>
 							item
@@ -212,11 +212,11 @@ export default function App(props: {
 						.extraSettingsEl.onClickEvent((event) => menu.showAtMouseEvent(event));
 				}}
 			/>
-			<div class="flex flex-col gap-3 pb-1">
+			<div class="se-flex se-flex-col se-gap-3 se-pb-1">
 				<Show
 					when={visibleModules().size}
 					fallback={
-						<div class="flex min-h-40 items-center justify-center rounded-md border border-[--background-modifier-border] px-4 py-6 text-center text-[--text-muted] bg-[--background-primary-alt]">
+						<div class="se-flex se-min-h-40 se-items-center se-justify-center se-rounded-md se-border se-border-[--background-modifier-border] se-px-4 se-py-6 se-text-center se-text-[--text-muted] se-bg-[--background-primary-alt]">
 							{getEmptyStateText({
 								hasLoaded: hasLoaded(),
 								isLoading: isLoading(),
@@ -228,7 +228,7 @@ export default function App(props: {
 					}
 				>
 					<div
-						class="grid gap-3"
+						class="se-grid se-gap-3"
 						style={{
 							'grid-template-columns':
 								'repeat(auto-fit, minmax(min(260px, 100%), 1fr))',
@@ -255,7 +255,7 @@ export default function App(props: {
 					</div>
 				</Show>
 				<Show when={isPluginOutdated()}>
-					<div class="text-center text-[--text-faint] mt-4">
+					<div class="se-text-center se-text-[--text-faint] se-mt-4">
 						{props.ctx.translate('someModulesHidden')}
 					</div>
 				</Show>
@@ -287,10 +287,10 @@ function getModuleScore(match: (text: string) => SearchResult | null, module: Au
 }
 
 function pickFile({ dom }: MenuItem, handler: (file: File) => MaybePromise<void>) {
-	dom.addClass('relative');
+	dom.addClass('se-relative');
 	dom.createEl('input', {
 		attr: { accept: '.js,.mjs', title: '' },
-		cls: 'absolute inset-0 opacity-0',
+		cls: 'se-absolute se-inset-0 se-opacity-0',
 		type: 'file',
 	}).addEventListener('change', (e) => {
 		const file = (e.target as HTMLInputElement).files?.[0];
