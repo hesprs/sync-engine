@@ -26,7 +26,7 @@ export type FeaturesSettingTranslations = {
 	focusSyncPlaceholder: string;
 	asymmetricStorage: string;
 	asymmetricStorageDescription: Fragment;
-	asymmetricStorageMigration: Fragment<boolean>;
+	asymmetricStorageWarning: Fragment<boolean>;
 } & MigrationModalTranslations;
 
 export default function featuresSettings(ctx: {
@@ -123,7 +123,7 @@ export default function featuresSettings(ctx: {
 									settings.asymmetricStorage = value;
 									void saveSettings();
 								},
-								content: (value) => translate('asymmetricStorageMigration', value),
+								content: (value) => translate('asymmetricStorageWarning', value),
 								needMigration: () => recordStoreExists(),
 								toggle: toggle.setValue(settings.asymmetricStorage),
 							}),

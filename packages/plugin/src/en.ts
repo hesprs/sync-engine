@@ -23,7 +23,7 @@ const en: Translations = {
 			});
 			frag.appendText(' to substantially accelerate syncing.');
 		}),
-	asymmetricStorageMigration: (enable) =>
+	asymmetricStorageWarning: (enable) =>
 		createFragment((frag) => {
 			if (enable) {
 				frag.createEl('p', {
@@ -39,9 +39,6 @@ const en: Translations = {
 				ol.createEl('li', {
 					text: 'After enabling, please ensure all devices have asymmetric storage enabled.',
 				});
-				ol.createEl('li', {
-					text: 'Migration is necessary if this vault was previously synchronized without asymmetric storage.',
-				});
 			} else {
 				frag.createEl('p', {
 					text: 'You should be cautious about following points before disabling asymmetric storage:',
@@ -52,9 +49,6 @@ const en: Translations = {
 				});
 				ol.createEl('li', {
 					text: 'Please ensure all devices have asymmetric storage disabled.',
-				});
-				ol.createEl('li', {
-					text: 'Migration is necessary if this vault was previously synchronized with asymmetric storage enabled.',
 				});
 			}
 		}),
@@ -197,9 +191,11 @@ const en: Translations = {
 	maxRequestConcurrencyDescription:
 		'Limit the number of simultaneous requests during synchronization. This option is useful for services with request rate limits. Alter the concurrency limit in the field.',
 	maxRequestConcurrencyPlaceholder: 'Enter concurrency limit',
-	migrationInstruction: () =>
+	migrationInstruction: (enable) =>
 		createFragment((frag) => {
-			const p1 = frag.createEl('p', { text: 'See ' });
+			const p1 = frag.createEl('p', {
+				text: `If you have previously synchronized the vault with this option ${enable ? 'disabled' : 'enabled'}, you might need to migrate your remote storage. See `,
+			});
 			p1.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
 				text: 'documentation page',
@@ -380,6 +376,7 @@ const en: Translations = {
 		'Set the version of the module used in update comparison and module card display.',
 	versionPlaceholder: 'Enter version (e.g. 0.0.1)',
 	walkingRemote: 'Discovering remote files',
+	warning: 'Warning',
 	writeCode: 'Write code',
 	writeCodeDescription: 'Write your module code here as JavaScript',
 	xConfigured: (count) => `${count} configured`,

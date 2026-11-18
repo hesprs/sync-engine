@@ -5,7 +5,6 @@ import S3Fs from '@/s3/fs';
 import { sigv4Middleware } from '@/s3/sigv4';
 import s3Setting from '@/setting';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
-import { parseUrl } from '@repo/shared/path';
 import type { UrlStyle } from '@/s3/sigv4';
 import type { S3Translations } from '@/setting';
 import type {
@@ -23,8 +22,6 @@ import type {
 	Context,
 	DatabaseSync,
 	Binary,
-	RecordStat,
-	DatabaseAsync,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 
@@ -56,11 +53,6 @@ export default class S3 {
 			registerRemoteOptimizer: (entry: OptimizerEntry) => () => void;
 			registerRemoteRequestMiddleware: (entry: RemoteRequestMiddlewareEntry) => () => void;
 			memoryDB: S3DB;
-			settings: Settings;
-			// TODO: remove after November 17, 2026
-			getNamespace: () => string | Error;
-			indexedDB: DatabaseAsync<Record<string, RecordStat>>;
-			saveSettings: () => Promise<void>;
 		}>,
 	) {
 		ctx.registerI18n('en', en);
@@ -144,47 +136,6 @@ export default class S3 {
 			registerSetting({
 				apply: s3Setting(this.ctx as Context, this.moduleSettings),
 				priority: 604,
-			}),
-		);
-
-		void this.migrateEndpoint().catch(() => {});
-	};
-
-	// TODO: remove after November 17, 2026
-	private readonly migrateEndpoint = async () => {
-		const legacyEndpoint = this.moduleSettings.endpoint;
-		let newEndpoint: string | undefined;
-		try {
-			newEndpoint = parseUrl(legacyEndpoint);
-			this.moduleSettings.proxyUrl.value = parseUrl(this.moduleSettings.proxyUrl.value);
-		} catch {
-			// Keep the legacy if it cannot be parsed
-		}
-		if (!newEndpoint || newEndpoint === legacyEndpoint) return;
-		const { settings, getNamespace, indexedDB, saveSettings } = this.ctx;
-		if (settings.remoteFs !== 's3') return;
-		const oldNamespace = getNamespace();
-		if (oldNamespace instanceof Error) return;
-		const encryption = settings.modules.encryption as
-			| { enabled?: boolean; legacyEndpoint?: string }
-			| undefined;
-		if (encryption?.enabled === true) encryption.legacyEndpoint = legacyEndpoint;
-		this.moduleSettings.endpoint = newEndpoint;
-		void saveSettings();
-		const newNamespace = getNamespace();
-		if (newNamespace instanceof Error) return;
-		const names = await indexedDB.getStoreNames();
-		await Promise.all(
-			names.map(async (name) => {
-				if (!name.includes(oldNamespace)) return;
-				const target = name.replace(oldNamespace, newNamespace);
-				const entries = await indexedDB.getStore(name).entries();
-				await Promise.all([
-					indexedDB
-						.getStore(target)
-						.batch(entries.map(([key, value]) => ({ key, type: 'set', value }))),
-					indexedDB.deleteStore(name),
-				]);
 			}),
 		);
 	};

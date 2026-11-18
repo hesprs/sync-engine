@@ -6,6 +6,7 @@ import type {
 	Fragment,
 	LabelDefinition,
 	MaybePromise,
+	Settings,
 	Translate,
 	Translations,
 } from '@hesprs/sync-engine-sdk';
@@ -14,7 +15,7 @@ import type { App } from 'obsidian';
 export type EncryptionTranslations = {
 	encryption: string;
 	encryptionDescription: string;
-	encryptionMigration: Fragment<boolean>;
+	encryptionWarning: Fragment<{ enable: boolean; backend: string }>;
 	pleaseSetPassword: string;
 	considerMigratingRemote: string;
 	considerMigratingRemoteDescription: string;
@@ -32,10 +33,19 @@ export default function encryptionSetting(
 		recordStoreExists: () => MaybePromise<boolean>;
 		matchLabel: () => LabelDefinition;
 		refreshSettingTab: () => void;
+		settings: Settings;
 	},
 	settings: EncryptionSettings,
 ): CallableOrObjectTree {
-	const { translate, app, saveSettings, recordStoreExists, matchLabel, refreshSettingTab } = ctx;
+	const {
+		translate,
+		app,
+		saveSettings,
+		recordStoreExists,
+		matchLabel,
+		refreshSettingTab,
+		settings: hostSettings,
+	} = ctx;
 	return {
 		1000: {
 			6037: s(() => ({
@@ -59,7 +69,11 @@ export default function encryptionSetting(
 									settings.enabled = value;
 									void saveSettings();
 								},
-								content: (value) => translate('encryptionMigration', value),
+								content: (enable) =>
+									translate('encryptionWarning', {
+										backend: hostSettings.remoteFs,
+										enable,
+									}),
 								needMigration: () => recordStoreExists(),
 								toggle: toggle.setValue(settings.enabled),
 							}),
