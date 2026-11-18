@@ -16,7 +16,7 @@ const zhTW: Translations = {
 			});
 			frag.appendText('來大幅提升同步速度。');
 		}),
-	asymmetricStorageMigration: (flag) =>
+	asymmetricStorageWarning: (flag) =>
 		createFragment((frag) => {
 			if (flag) {
 				frag.createEl('p', { text: '在啟用非對稱儲存前，請務必留意以下幾點：' });
@@ -28,17 +28,11 @@ const zhTW: Translations = {
 					text: '若您需要讓遠端檔案保持可讀的目錄結構，請勿啟用此功能。',
 				});
 				ol.createEl('li', { text: '啟用後，請確保所有裝置皆已開啟非對稱儲存。' });
-				ol.createEl('li', {
-					text: '若此儲存庫先前未啟用非對稱儲存即進行過同步，則必須執行遷移。',
-				});
 			} else {
 				frag.createEl('p', { text: '在停用非對稱儲存前，請務必留意以下幾點：' });
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: '後續的所有上傳將會還原為本地的層級結構。' });
 				ol.createEl('li', { text: '請確保所有裝置皆已停用非對稱儲存。' });
-				ol.createEl('li', {
-					text: '若此儲存庫先前是在啟用非對稱儲存的狀態下同步，則必須執行遷移。',
-				});
 			}
 		}),
 	avoidAutoSyncWhenOffline: '離線時避免自動同步',
@@ -171,9 +165,11 @@ const zhTW: Translations = {
 	maxRequestConcurrencyDescription:
 		'限制同步過程中的同時請求數量。此選項適用於有請求速率限制的服務。請在欄位中修改併發限制。',
 	maxRequestConcurrencyPlaceholder: '輸入併發限制',
-	migrationInstruction: () =>
+	migrationInstruction: (enable) =>
 		createFragment((frag) => {
-			const p1 = frag.createEl('p', { text: '請參閱' });
+			const p1 = frag.createEl('p', {
+				text: `若此儲存庫先前是在${enable ? '停用' : '啟用'}此選項的狀態下同步，您可能需要遷移遠端儲存。請參閱`,
+			});
 			p1.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
 				text: '文件頁面',
@@ -341,6 +337,7 @@ const zhTW: Translations = {
 	versionDescription: '設定用於更新比較與模組卡片顯示的模組版本。',
 	versionPlaceholder: '輸入版本（例如 0.0.1）',
 	walkingRemote: '正在掃描遠端檔案',
+	warning: '警告',
 	writeCode: '撰寫程式碼',
 	writeCodeDescription: '在此處以 JavaScript 撰寫您的模組程式碼',
 	xConfigured: (count) => `已設定 ${count} 項`,

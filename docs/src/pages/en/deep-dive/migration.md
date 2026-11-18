@@ -18,18 +18,10 @@ For implementation simplicity, migrations are ad-hoc and time-bounded:
 
 ## Ongoing Migrations
 
-### URL Canonicalization
-
-- Reason: the URL discipline enforcement requires endpoints to be stored in RFC 3986 percent-encoded form instead of whatever the user supplied.
-- Window: 2026-10-17 to 2026-11-17
-- Scope: WebDAV and S3 users whose endpoint contains one or more characters in literal form whose encoded form differs from its literal form, such as `@`.
-- Operation: the endpoint and the S3 proxy URL are re-encoded, and the IndexedDB stores keyed by the namespace derived from the changed Fs UID are copied to the new name.
-- Human action: automatic, no human action needed.
-
 ### Encryption Master Salt
 
 - Reason: the master salt is derived from the Fs UID, which the URL canonicalization changes. Without a workaround, every file already uploaded with encryption would become undecryptable.
-- Window: 2026-10-17 to 2027-02-17
+- Window: 2026-10-17 to 2027-04-17
 - Scope: users with encryption enabled whose S3/WebDAV endpoint was changed by the URL canonicalization (contains one or more characters in literal form whose encoded form differs from its literal form).
 - Operation: the pre-migration endpoint is recorded as `legacyEndpoint`, so the master salt keeps being derived from the old Fs UID. This workaround will be removed once the window is complete.
 - Human action: the affected user need to re-upload the encrypted remote following the [Remote Migration guide](../usage/remote-migration) before the end of the window, since the salt changes back once the workaround is removed.

@@ -667,15 +667,16 @@ type MigrationModalTranslations = {
   cancel: string;
   confirm: string;
   remoteMigration: string;
-  migrationInstruction: Fragment;
+  migrationInstruction: Fragment<boolean>;
+  warning: string;
 };
 declare function setNeedMigration({ app, translate }: {
   app: App;
   translate: Translate<MigrationModalTranslations>;
-}, { toggle, needMigration, content, apply }: {
+}, { toggle, needMigration, apply, content }: {
   toggle: ToggleComponent;
   needMigration?: (value: boolean) => MaybePromise<boolean>;
-  content: (value: boolean) => string | DocumentFragment;
+  content?: (value: boolean) => string | DocumentFragment | void;
   apply: (value: boolean) => MaybePromise<void>;
 }): void;
 type FeaturesSettingTranslations = {
@@ -696,7 +697,7 @@ type FeaturesSettingTranslations = {
   focusSyncPlaceholder: string;
   asymmetricStorage: string;
   asymmetricStorageDescription: Fragment;
-  asymmetricStorageMigration: Fragment<boolean>;
+  asymmetricStorageWarning: Fragment<boolean>;
 } & MigrationModalTranslations;
 declare function prefixWrapper(original: Fs, prefix: string): WrappedFs;
 declare const REGRET_ERROR_MESSAGE = "=== Sync Engine Operation Regretted ===";

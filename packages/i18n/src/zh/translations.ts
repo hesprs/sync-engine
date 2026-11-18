@@ -16,7 +16,7 @@ const zh: Translations = {
 			});
 			frag.appendText(' 来大幅提升同步速度。');
 		}),
-	asymmetricStorageMigration: (flag) =>
+	asymmetricStorageWarning: (flag) =>
 		createFragment((frag) => {
 			if (flag) {
 				frag.createEl('p', { text: '在启用非对称存储之前，您需要注意以下几点：' });
@@ -26,17 +26,11 @@ const zh: Translations = {
 				});
 				ol.createEl('li', { text: '如果您需要远程端保持人类可读性，请不要启用此功能。' });
 				ol.createEl('li', { text: '启用后，请确保所有设备都已启用非对称存储。' });
-				ol.createEl('li', {
-					text: '如果该库此前在未启用非对称存储的情况下同步过，则必须进行迁移。',
-				});
 			} else {
 				frag.createEl('p', { text: '在禁用非对称存储之前，您需要注意以下几点：' });
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: '后续的所有上传都将镜像本地的层级结构。' });
 				ol.createEl('li', { text: '请确保所有设备都已禁用非对称存储。' });
-				ol.createEl('li', {
-					text: '如果该库此前在启用非对称存储的情况下同步过，则必须进行迁移。',
-				});
 			}
 		}),
 	avoidAutoSyncWhenOffline: '离线时避免自动同步',
@@ -169,9 +163,11 @@ const zh: Translations = {
 	maxRequestConcurrencyDescription:
 		'限制同步过程中的同时请求数。此选项对于有请求频率限制的服务非常有用。在输入框中修改并发限制。',
 	maxRequestConcurrencyPlaceholder: '输入并发限制',
-	migrationInstruction: () =>
+	migrationInstruction: (enable) =>
 		createFragment((frag) => {
-			const p1 = frag.createEl('p', { text: '请参阅' });
+			const p1 = frag.createEl('p', {
+				text: `如果该库此前在${enable ? '禁用' : '启用'}此选项的情况下同步过，您可能需要迁移远程存储。请参阅`,
+			});
 			p1.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
 				text: '文档页面',
@@ -340,6 +336,7 @@ const zh: Translations = {
 	versionDescription: '设置用于更新比较和模块卡片显示的模块版本。',
 	versionPlaceholder: '输入版本（例如 0.0.1）',
 	walkingRemote: '正在探测远程文件',
+	warning: '警告',
 	writeCode: '编写代码',
 	writeCodeDescription: '在此处使用 JavaScript 编写您的模块代码',
 	xConfigured: (count) => `已配置 ${count} 项`,

@@ -34,7 +34,7 @@ const ru: Translations = {
 			});
 			frag.appendText(', чтобы существенно ускорить синхронизацию.');
 		}),
-	asymmetricStorageMigration: (flag) =>
+	asymmetricStorageWarning: (flag) =>
 		createFragment((frag) => {
 			if (flag) {
 				frag.createEl('p', {
@@ -50,9 +50,6 @@ const ru: Translations = {
 				ol.createEl('li', {
 					text: 'После включения убедитесь, что асимметричное хранилище активировано на всех устройствах.',
 				});
-				ol.createEl('li', {
-					text: 'Миграция необходима, если это хранилище ранее синхронизировалось без асимметричного хранилища.',
-				});
 			} else {
 				frag.createEl('p', {
 					text: 'Обратите внимание на следующее перед отключением асимметричного хранилища:',
@@ -63,9 +60,6 @@ const ru: Translations = {
 				});
 				ol.createEl('li', {
 					text: 'Убедитесь, что асимметричное хранилище отключено на всех устройствах.',
-				});
-				ol.createEl('li', {
-					text: 'Миграция необходима, если это хранилище ранее синхронизировалось с включённым асимметричным хранилищем.',
 				});
 			}
 		}),
@@ -210,9 +204,11 @@ const ru: Translations = {
 	maxRequestConcurrencyDescription:
 		'Ограничить количество параллельных запросов во время синхронизации. Полезно для сервисов с лимитом на частоту запросов. Измените лимит в поле ниже.',
 	maxRequestConcurrencyPlaceholder: 'Введите лимит запросов',
-	migrationInstruction: () =>
+	migrationInstruction: (enable) =>
 		createFragment((frag) => {
-			const p1 = frag.createEl('p', { text: 'См. ' });
+			const p1 = frag.createEl('p', {
+				text: `Если вы ранее синхронизировали хранилище, когда эта опция была ${enable ? 'отключена' : 'включена'}, может потребоваться миграция удалённого хранилища. См. `,
+			});
 			p1.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
 				text: 'страницу документации',
@@ -392,6 +388,7 @@ const ru: Translations = {
 		'Укажите версию модуля, используемую при сравнении обновлений и отображении в карточке модуля.',
 	versionPlaceholder: 'Введите версию (например, 0.0.1)',
 	walkingRemote: 'Сканирование удалённых файлов',
+	warning: 'Предупреждение',
 	writeCode: 'Написать код',
 	writeCodeDescription: 'Напишите код своего модуля здесь на JavaScript',
 	xConfigured: (count) => `Настроено: ${count}`,

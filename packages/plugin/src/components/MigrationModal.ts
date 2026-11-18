@@ -7,7 +7,8 @@ export type MigrationModalTranslations = {
 	cancel: string;
 	confirm: string;
 	remoteMigration: string;
-	migrationInstruction: Fragment;
+	migrationInstruction: Fragment<boolean>;
+	warning: string;
 };
 
 export default function setNeedMigration(
@@ -15,12 +16,12 @@ export default function setNeedMigration(
 	{
 		toggle,
 		needMigration,
-		content,
 		apply,
+		content,
 	}: {
 		toggle: ToggleComponent;
 		needMigration?: (value: boolean) => MaybePromise<boolean>;
-		content: (value: boolean) => string | DocumentFragment;
+		content?: (value: boolean) => string | DocumentFragment | void;
 		apply: (value: boolean) => MaybePromise<void>;
 	},
 ) {
@@ -31,18 +32,21 @@ export default function setNeedMigration(
 			return;
 		}
 		const showMigration = async (need: boolean) => {
-			if (need) {
+			const text = content?.(value);
+			if (need || text) {
 				selfTrigger = true;
 				toggle.setValue(!value); // Revert UI back, not migrated yet
 				const modal = new ConfirmationModal(app)
-					.setTitle(translate('remoteMigration'))
+					.setTitle(translate(need ? 'remoteMigration' : 'warning'))
 					.setContent(
 						createFragment((frag) => {
-							const text = content(value);
-							frag.append(
-								text instanceof DocumentFragment ? text : createEl('p', { text }),
-								translate('migrationInstruction'),
-							);
+							if (text)
+								frag.append(
+									text instanceof DocumentFragment
+										? text
+										: createEl('p', { text }),
+								);
+							if (need) frag.append(translate('migrationInstruction', value));
 						}),
 					)
 					.addCancelButton(translate('cancel'))
