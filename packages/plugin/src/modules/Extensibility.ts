@@ -45,6 +45,7 @@ export default class Extensibility {
 	private readonly loadedModules = new Map<string, ModuleCtor>(); // Name -> ctor
 	private readonly moduleStore: StoreAsync<AugmentedModuleMeta>;
 	private autoUpdateTimeout?: number;
+	private disposed = false;
 
 	declare readonly settings: {
 		moduleSources: Array<string>;
@@ -79,11 +80,17 @@ export default class Extensibility {
 	}
 
 	readonly start = () => {
-		if (!this.settings.moduleAutoUpdate) return;
-		this.autoUpdateTimeout = window.setTimeout(
-			() => void this.updateModules(),
-			AUTO_UPDATE_DELAY,
-		);
+		this.disposed = false;
+		if (!this.settings.moduleAutoUpdate || !this.discoveredModules.size) return;
+		const schedule = () => {
+			if (this.disposed) return;
+			this.autoUpdateTimeout = window.setTimeout(
+				() => void this.updateModules(),
+				AUTO_UPDATE_DELAY,
+			);
+		};
+		if (this.ctx.app.workspace?.onLayoutReady) this.ctx.app.workspace.onLayoutReady(schedule);
+		else schedule();
 	};
 
 	private readonly createOperationFactory = () => {
@@ -162,12 +169,13 @@ export default class Extensibility {
 			__addModule__(ctor);
 			const instance: ModuleInstance = __getModule__(ctor as never);
 			const modules = this.settings.modules;
-			const moduleSettings = modules[id];
-			if (moduleSettings) {
-				Object.assign(instance.moduleSettings, moduleSettings);
-				modules[id] = instance.moduleSettings;
-			} else modules[id] = instance.moduleSettings;
-			void saveSettings();
+			const moduleSettings = modules[id] as Record<string, unknown> | undefined;
+			const shouldSave =
+				!moduleSettings ||
+				Object.keys(instance.moduleSettings).some((k) => !(k in moduleSettings));
+			if (moduleSettings) Object.assign(instance.moduleSettings, moduleSettings);
+			modules[id] = instance.moduleSettings;
+			if (shouldSave) void saveSettings();
 			if (start) instance.start?.();
 			allModules.add(ctor);
 			this.loadedModules.set(id, ctor);
@@ -347,6 +355,7 @@ export default class Extensibility {
 		path.slice(this.moduleDir.length + 1, -MODULE_EXTENSION.length).normalize('NFC');
 
 	readonly dispose = () => {
+		this.disposed = true;
 		window.clearTimeout(this.autoUpdateTimeout);
 		delete (window as WindowAugmentation).syncEngineApiBridge;
 		this.loadedModules.clear();

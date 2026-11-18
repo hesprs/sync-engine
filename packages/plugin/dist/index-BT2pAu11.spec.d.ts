@@ -455,6 +455,7 @@ declare class Extensibility {
   private readonly loadedModules;
   private readonly moduleStore;
   private autoUpdateTimeout?;
+  private disposed;
   readonly settings: {
     moduleSources: Array<string>;
     moduleAutoUpdate: boolean;

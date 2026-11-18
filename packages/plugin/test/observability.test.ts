@@ -154,10 +154,12 @@ function fakeElement(tag = 'div'): MockElement {
 
 function createFakeObservability(options?: {
 	isMobile?: boolean;
-	rootLeaves?: Array<{ view?: { containerEl?: MockElement } }>;
+	layoutReady?: boolean;
+	rootLeaves?: Array<{ isDeferred?: boolean; view?: { containerEl?: MockElement } }>;
 }) {
 	const callbacks = new Map<string, Array<(...args: Array<unknown>) => void>>();
 	const workspaceCallbacks = new Map<string, Array<() => void>>();
+	const layoutReadyCallbacks: Array<() => void> = [];
 	const isIdle = ref(true);
 	const startIconEl = fakeElement('div');
 	const statusEl = fakeElement('div');
@@ -165,25 +167,32 @@ function createFakeObservability(options?: {
 	let progressShown = false;
 
 	const rootLeaves = options?.rootLeaves ?? [];
+	const workspace = {
+		iterateRootLeaves: (cb: (leaf: unknown) => void) => {
+			rootLeaves.forEach(cb);
+		},
+		layoutReady: options?.layoutReady ?? true,
+		offref: () => {},
+		on: (event: string, cb: () => void) => {
+			const list = workspaceCallbacks.get(event) ?? [];
+			list.push(cb);
+			workspaceCallbacks.set(event, list);
+			return {} as never;
+		},
+		onLayoutReady:
+			options?.layoutReady === undefined
+				? undefined
+				: (cb: () => void) => {
+						if (workspace.layoutReady) cb();
+						else layoutReadyCallbacks.push(cb);
+					},
+	};
 
 	const ctx = {
 		addCommand: () => ({}) as never,
 		addRibbonIcon: () => startIconEl as unknown as HTMLElement,
 		addStatusBarItem: () => statusEl as unknown as HTMLElement,
-		app: {
-			workspace: {
-				iterateRootLeaves: (cb: (leaf: unknown) => void) => {
-					rootLeaves.forEach(cb);
-				},
-				offref: () => {},
-				on: (event: string, cb: () => void) => {
-					const list = workspaceCallbacks.get(event) ?? [];
-					list.push(cb);
-					workspaceCallbacks.set(event, list);
-					return {} as never;
-				},
-			},
-		} as never,
+		app: { workspace } as never,
 		dispatch: () => {},
 		getLogs: () => '',
 		isIdle,
@@ -219,6 +228,10 @@ function createFakeObservability(options?: {
 	obs.start();
 	return {
 		callbacks,
+		flushLayoutReady: () => {
+			workspace.layoutReady = true;
+			layoutReadyCallbacks.splice(0).forEach((cb) => cb());
+		},
 		isIdle,
 		isProgressShown: () => progressShown,
 		isSyncRequested: () => syncRequested,
@@ -317,5 +330,53 @@ test('mobile header icon renders in view-actions and responds to status changes 
 
 	fake.obs.dispose();
 	expect(viewActions.querySelector('.sync-engine-mobile-action')).toBeUndefined();
+	Platform.isMobile = false;
+});
+
+test('mobile header icon defers until layoutReady, skips deferred leaves, and avoids rebuilding unchanged icons', () => {
+	const activeLeafContainer = fakeElement('div');
+	const activeViewActions = activeLeafContainer.createEl('div', { cls: 'view-actions' });
+	const deferredLeafContainer = fakeElement('div');
+	const deferredViewActions = deferredLeafContainer.createEl('div', { cls: 'view-actions' });
+
+	const fake = createFakeObservability({
+		isMobile: true,
+		layoutReady: false,
+		rootLeaves: [
+			{ isDeferred: false, view: { containerEl: activeLeafContainer } },
+			{ isDeferred: true, view: { containerEl: deferredLeafContainer } },
+		],
+	});
+
+	// Defers leaf listeners and DOM mutations before layoutReady
+	expect(fake.workspaceCallbacks.get('active-leaf-change')).toBeUndefined();
+	expect(fake.workspaceCallbacks.get('layout-change')).toBeUndefined();
+	expect(activeViewActions.querySelector('.sync-engine-mobile-action')).toBeUndefined();
+
+	fake.obs.setModuleStatus('collaboration', { level: 'warning', message: 'Connecting' });
+	expect(activeViewActions.querySelector('.sync-engine-mobile-action')).toBeUndefined();
+
+	// Once layout is ready, only non-deferred leaves get the icon
+	fake.flushLayoutReady();
+	expect(fake.workspaceCallbacks.get('active-leaf-change')).toHaveLength(1);
+	expect(fake.workspaceCallbacks.get('layout-change')).toHaveLength(1);
+	const mobileBtn = activeViewActions.querySelector('.sync-engine-mobile-action');
+	expect(mobileBtn).toBeDefined();
+	expect(deferredViewActions.querySelector('.sync-engine-mobile-action')).toBeUndefined();
+
+	// Unchanged updates and spin-only toggles reuse the existing .sync-engine-main-icon node
+	const mainIcon = mobileBtn?.querySelector('.sync-engine-main-icon');
+	for (const handler of fake.workspaceCallbacks.get('layout-change') ?? []) handler();
+	expect(mobileBtn?.querySelector('.sync-engine-main-icon')).toBe(mainIcon);
+
+	fake.isIdle(false);
+	expect(mobileBtn?.querySelector('.sync-engine-main-icon')).toBe(mainIcon);
+	expect(mainIcon?.hasClass('animate-spin')).toBe(true);
+
+	fake.isIdle(true);
+	expect(mobileBtn?.querySelector('.sync-engine-main-icon')).toBe(mainIcon);
+	expect(mainIcon?.hasClass('animate-spin')).toBe(false);
+
+	fake.obs.dispose();
 	Platform.isMobile = false;
 });

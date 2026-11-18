@@ -53,6 +53,8 @@ export default class HistoryModule {
 	private remoteFsUid?: string;
 	private scheduler?: FlushScheduler;
 	private deviceId = '';
+	private disposed = false;
+	private gcRunning = false;
 
 	moduleSettings: HistorySettings = {
 		autoGc: true,
@@ -72,13 +74,19 @@ export default class HistoryModule {
 
 	readonly start = () => {
 		const { ctx } = this;
-		// No namespace yet means no backend: defer opening stores to syncInitialized so no empty-id store is created.
-		const namespace = namespaceOf(ctx);
-		if (namespace !== undefined) this.openStores(namespace);
-		ctx.registerEvent(ctx.app.vault.on('create', this.onVaultCreate));
-		ctx.registerEvent(ctx.app.vault.on('modify', this.onVaultModify));
-		ctx.registerEvent(ctx.app.vault.on('delete', this.onVaultDelete));
-		ctx.registerEvent(ctx.app.vault.on('rename', this.onVaultRename));
+		this.disposed = false;
+		const initAfterLayout = () => {
+			if (this.disposed) return;
+			// No namespace yet means no backend: defer opening stores to syncInitialized so no empty-id store is created.
+			const namespace = namespaceOf(ctx);
+			if (namespace !== undefined) this.openStores(namespace);
+			ctx.registerEvent(ctx.app.vault.on('create', this.onVaultCreate));
+			ctx.registerEvent(ctx.app.vault.on('modify', this.onVaultModify));
+			ctx.registerEvent(ctx.app.vault.on('delete', this.onVaultDelete));
+			ctx.registerEvent(ctx.app.vault.on('rename', this.onVaultRename));
+		};
+		if (ctx.app.workspace.onLayoutReady) ctx.app.workspace.onLayoutReady(initAfterLayout);
+		else initAfterLayout();
 		ctx.registerEvent(ctx.app.workspace.on('file-menu', this.onFileMenu));
 		ctx.addCommand({
 			callback: () => void this.openRecoverDeletedModal().catch(() => {}),
@@ -187,7 +195,6 @@ export default class HistoryModule {
 			stores,
 		});
 		void reconcile({ remote, requestSync: () => {}, stores }).catch(() => {});
-		void this.checkAutoGc();
 	}
 
 	private isSyncIgnored(filePath: string): boolean {
@@ -425,14 +432,16 @@ export default class HistoryModule {
 	};
 
 	private async checkAutoGc(): Promise<void> {
-		if (this.moduleSettings.autoGc === false || !this.remote || !this.stores) return;
-		const now = Date.now();
-		const lastGc = await readLastGcTime(this.stores);
-		if (now - lastGc < AUTO_GC_COOLDOWN_MS) return;
+		if (this.gcRunning || this.moduleSettings.autoGc === false || !this.remote || !this.stores)
+			return;
+		this.gcRunning = true;
 		try {
-			await this.runGc();
+			const lastGc = await readLastGcTime(this.stores);
+			if (Date.now() - lastGc >= AUTO_GC_COOLDOWN_MS) await this.runGc();
 		} catch {
 			// Background auto GC error is non-fatal
+		} finally {
+			this.gcRunning = false;
 		}
 	}
 
@@ -450,6 +459,7 @@ export default class HistoryModule {
 	}
 
 	readonly dispose = () => {
+		this.disposed = true;
 		void this.flushPendingDebounces();
 		void this.scheduler?.onUnload();
 		for (const pending of this.pendingDebounces.values()) clearTimeout(pending.timer);

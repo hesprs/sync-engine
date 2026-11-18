@@ -1,4 +1,4 @@
-import { At as RootFs, Bt as StatsMap, Ft as MaybePromise, Ht as Binary, J as TaskNames, Lt as RecordStat, Nt as FileStat, Pt as FolderStat, Rt as RecordStatsMap, V as Decider, Vt as StringKV, d as RequestResponse, jt as WrappedFs, l as Request, u as RequestParam, xt as Fs, zt as Stat } from "./index-BcHUWKEe.spec.js";
+import { At as RootFs, Bt as StatsMap, Ft as MaybePromise, Ht as Binary, J as TaskNames, Lt as RecordStat, Nt as FileStat, Pt as FolderStat, Rt as RecordStatsMap, V as Decider, Vt as StringKV, d as RequestResponse, jt as WrappedFs, l as Request, u as RequestParam, xt as Fs, zt as Stat } from "./index-BT2pAu11.spec.js";
 /** Full SHA-256 over UTF-8 text or raw bytes, lowercase hex. */
 export declare function sha256(input: string | Uint8Array): Promise<string>;
 declare function debugWrapper(original: Fs, log: (content: string) => void): WrappedFs;

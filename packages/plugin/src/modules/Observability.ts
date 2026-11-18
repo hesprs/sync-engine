@@ -1,8 +1,9 @@
+import renderSyncIcon, { setAttrIfChanged } from '@/components/render-sync-icon';
 import { MOBILE_SYNC_NOTICE_HIDE_DELAY_MS, SINCE_LAST_SYNC_UPDATE_INTERVAL_MS } from '@/constants';
 import roundPercent from '@/utils/round-percent';
 import { formatTime } from '@/utils/unit-converter';
 import { describeError, toError } from '@repo/shared/error';
-import { Notice, Platform, setIcon } from 'obsidian';
+import { Notice, Platform } from 'obsidian';
 import { computed, ref } from 'synthkernel';
 import type { Dispatch, On } from './EventBus';
 import type { Translate } from './I18n';
@@ -25,69 +26,6 @@ export type SyncStage =
 export type StatusLevel = 'ok' | 'warning' | 'error';
 
 export type ModuleStatus = { level: StatusLevel; message?: string };
-
-function renderSyncIcon(
-	container: HTMLElement,
-	badge?: 'warning' | 'error',
-	spinning = false,
-): void {
-	container.empty();
-	container.style.position = 'relative';
-	container.style.display = 'inline-flex';
-	container.style.alignItems = 'center';
-	container.style.justifyContent = 'center';
-
-	const mainWrapper = container.createSpan({ cls: 'sync-engine-main-icon' });
-	mainWrapper.style.display = 'inline-flex';
-	mainWrapper.style.alignItems = 'center';
-	mainWrapper.style.justifyContent = 'center';
-	setIcon(mainWrapper, 'refresh-cw');
-	if (spinning) mainWrapper.addClass('animate-spin');
-	const mainSvg = mainWrapper.firstElementChild as HTMLElement | undefined;
-	if (mainSvg && spinning) mainSvg.addClass('animate-spin');
-
-	if (badge === 'warning') {
-		const badgeWrapper = container.createSpan({ cls: 'sync-engine-badge-icon' });
-		badgeWrapper.style.position = 'absolute';
-		badgeWrapper.style.bottom = '-2px';
-		badgeWrapper.style.right = '-2px';
-		badgeWrapper.style.width = '60%';
-		badgeWrapper.style.height = '60%';
-		badgeWrapper.style.display = 'inline-flex';
-		badgeWrapper.style.alignItems = 'center';
-		badgeWrapper.style.justifyContent = 'center';
-		badgeWrapper.style.pointerEvents = 'none';
-		setIcon(badgeWrapper, 'alert-circle');
-		const badgeSvg = badgeWrapper.firstElementChild as HTMLElement | null;
-		if (badgeSvg) {
-			badgeSvg.style.width = '100%';
-			badgeSvg.style.height = '100%';
-			badgeSvg.style.stroke = 'var(--text-warning, #f59e0b)';
-			badgeSvg.style.fill = 'var(--background-primary, #1e1e1e)';
-			badgeSvg.style.strokeWidth = '2.5';
-		}
-	} else if (badge === 'error') {
-		const badgeWrapper = container.createSpan({ cls: 'sync-engine-badge-icon' });
-		badgeWrapper.style.position = 'absolute';
-		badgeWrapper.style.bottom = '-2px';
-		badgeWrapper.style.right = '-2px';
-		badgeWrapper.style.width = '60%';
-		badgeWrapper.style.height = '60%';
-		badgeWrapper.style.display = 'inline-flex';
-		badgeWrapper.style.alignItems = 'center';
-		badgeWrapper.style.justifyContent = 'center';
-		badgeWrapper.style.pointerEvents = 'none';
-		setIcon(badgeWrapper, 'x-circle');
-		const badgeSvg = badgeWrapper.firstElementChild as HTMLElement | null;
-		if (badgeSvg) {
-			badgeSvg.style.width = '100%';
-			badgeSvg.style.height = '100%';
-			badgeSvg.style.stroke = 'var(--text-error, #f85149)';
-			badgeSvg.style.fill = 'var(--background-primary, #1e1e1e)';
-			badgeSvg.style.strokeWidth = '2.5';
-		}
-	}
-}
 
 export default class Observability {
 	private lastSyncTime = 0;
@@ -160,12 +98,18 @@ export default class Observability {
 	}
 
 	readonly setModuleStatus = (id: string, status?: ModuleStatus): (() => void) => {
-		if (!status || status.level === 'ok') this.moduleStatuses.delete(id);
-		else this.moduleStatuses.set(id, status);
-		this.updateAllIcons();
-		return () => {
-			this.moduleStatuses.delete(id);
+		const prev = this.moduleStatuses.get(id);
+		if (!status || status.level === 'ok') {
+			if (prev) {
+				this.moduleStatuses.delete(id);
+				this.updateAllIcons();
+			}
+		} else if (prev?.level !== status.level || prev.message !== status.message) {
+			this.moduleStatuses.set(id, status);
 			this.updateAllIcons();
+		}
+		return () => {
+			if (this.moduleStatuses.delete(id)) this.updateAllIcons();
 		};
 	};
 
@@ -197,18 +141,16 @@ export default class Observability {
 			renderSyncIcon(this.startIconEl, badge, spinning);
 			const baseTitle = this.t('startSync');
 			const title = message ? `${baseTitle} (${message})` : baseTitle;
-			this.startIconEl.setAttribute('aria-label', title);
-			this.startIconEl.setAttribute('title', title);
+			setAttrIfChanged(this.startIconEl, 'aria-label', title);
+			setAttrIfChanged(this.startIconEl, 'title', title);
 		}
 
 		if (this.statusIconEl) {
 			renderSyncIcon(this.statusIconEl, badge, spinning);
-			if (this.statusEl)
-				if (message) this.statusEl.setAttribute('title', message);
-				else this.statusEl.removeAttribute('title');
+			if (this.statusEl) setAttrIfChanged(this.statusEl, 'title', message);
 		}
 
-		this.updateMobileHeaderIcons();
+		if (Platform.isMobile) this.updateMobileHeaderIcons();
 	};
 
 	private readonly cleanupMobileHeaderIcons = () => {
@@ -235,7 +177,8 @@ export default class Observability {
 
 	private readonly updateMobileHeaderIcons = () => {
 		if (!Platform.isMobile) return;
-		if (!this.ctx.app.workspace?.iterateRootLeaves) return;
+		const { workspace } = this.ctx.app;
+		if (!workspace?.iterateRootLeaves || !workspace.layoutReady) return;
 
 		const isIdle = this.ctx.isIdle();
 		const spinning = !isIdle;
@@ -243,7 +186,8 @@ export default class Observability {
 		const baseTitle = this.t('startSync');
 		const title = message ? `${baseTitle} (${message})` : baseTitle;
 
-		this.ctx.app.workspace.iterateRootLeaves((leaf: WorkspaceLeaf) => {
+		workspace.iterateRootLeaves((leaf: WorkspaceLeaf) => {
+			if ((leaf as { isDeferred?: boolean }).isDeferred) return;
 			const container = leaf.view?.containerEl;
 			if (!container) return;
 			const viewActions =
@@ -251,10 +195,11 @@ export default class Observability {
 				container.closest('.workspace-leaf-content')?.querySelector('.view-actions');
 			if (!viewActions) return;
 
-			viewActions.querySelectorAll('.sync-engine-collab-action').forEach((el) => el.remove());
-
 			let btn = viewActions.querySelector<HTMLElement>('.sync-engine-mobile-action');
 			if (!btn) {
+				viewActions
+					.querySelectorAll('.sync-engine-collab-action')
+					.forEach((el) => el.remove());
 				btn = viewActions.createEl('button', {
 					cls: 'clickable-icon view-action sync-engine-mobile-action',
 				});
@@ -269,8 +214,8 @@ export default class Observability {
 			}
 
 			renderSyncIcon(btn, badge, spinning);
-			btn.setAttribute('aria-label', title);
-			btn.setAttribute('title', title);
+			setAttrIfChanged(btn, 'aria-label', title);
+			setAttrIfChanged(btn, 'title', title);
 		});
 	};
 
@@ -381,17 +326,30 @@ export default class Observability {
 			),
 		);
 		if (Platform.isMobile) {
-			const onLeafChange = () => {
+			let active = true;
+			cleanupCallbacks.push(() => {
+				active = false;
+			});
+			const registerMobileListeners = () => {
+				if (!active) return;
+				const leafRef = this.ctx.app.workspace?.on?.(
+					'active-leaf-change',
+					this.updateMobileHeaderIcons,
+				);
+				const layoutRef = this.ctx.app.workspace?.on?.(
+					'layout-change',
+					this.updateMobileHeaderIcons,
+				);
+				cleanupCallbacks.push(() => {
+					if (leafRef) this.ctx.app.workspace?.offref?.(leafRef);
+					if (layoutRef) this.ctx.app.workspace?.offref?.(layoutRef);
+					this.cleanupMobileHeaderIcons();
+				});
 				this.updateMobileHeaderIcons();
 			};
-			const leafRef = this.ctx.app.workspace?.on?.('active-leaf-change', onLeafChange);
-			const layoutRef = this.ctx.app.workspace?.on?.('layout-change', onLeafChange);
-			cleanupCallbacks.push(() => {
-				if (leafRef) this.ctx.app.workspace?.offref?.(leafRef);
-				if (layoutRef) this.ctx.app.workspace?.offref?.(layoutRef);
-				this.cleanupMobileHeaderIcons();
-			});
-			this.updateMobileHeaderIcons();
+			if (this.ctx.app.workspace?.onLayoutReady)
+				this.ctx.app.workspace.onLayoutReady(registerMobileListeners);
+			else registerMobileListeners();
 		}
 	};
 
@@ -403,7 +361,6 @@ export default class Observability {
 		const iconWrap = statusEl.createSpan({ cls: 'sync-engine-status-icon-wrap' });
 		this.statusIconEl = iconWrap;
 		const status = statusEl.createSpan({ cls: 'ml-1 max-w-250px truncate', text: t('idle') });
-		this.updateAllIcons();
 		this.cleanupCallbacks.push(progressText.subscribe((text) => status.setText(text)));
 	};
 
