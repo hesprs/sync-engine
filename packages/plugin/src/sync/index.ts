@@ -21,7 +21,6 @@ export type {
 export type { TaskFactory, Decider, DeciderInput } from './decision/interface';
 export { taskMap } from './decision/interface';
 export { default as convertMoves } from './utils/detect-moves';
-export { default as excludeOversized } from './utils/exclude-oversized';
 export { default as bidirectionalDecider } from './decision/bidirectional';
 export { mirrorLocalDecider, mirrorRemoteDecider } from './decision/mirror';
 export { default as pholderDecider } from './decision/pholder';

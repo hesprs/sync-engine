@@ -5,7 +5,6 @@ import {
 	AddRecord,
 	RemoveRecord,
 	convertMoves,
-	excludeOversized,
 	syncCancelledError,
 	taskMap,
 } from '@/sync';
@@ -79,9 +78,19 @@ export default class Sync {
 	declare readonly settings: { maxFileSize: TogglableValue; syncStrategy: Array<GlobStrategy> };
 	declare readonly i18n: { xOperationsFailed: Snippet<number> };
 
-	private readonly postProcess: PostProcess = (lists) => {
+	private readonly postProcess: PostProcess = ({ local, records, remote }) => {
 		const { enabled, value } = this.settings.maxFileSize;
-		return excludeOversized({ ...lists, maxSize: enabled ? value : Infinity });
+		if (!enabled) return { local, records, remote };
+		const oversized = new Set<string>();
+		for (const stat of [...local, ...remote])
+			if (!stat.isDir && stat.size > value) oversized.add(stat.key);
+		if (oversized.size === 0) return { local, records, remote };
+		const keep = ({ key }: Stat) => !oversized.has(key);
+		return {
+			local: local.filter(keep),
+			records: records.filter(([key]) => !oversized.has(key)),
+			remote: remote.filter(keep),
+		};
 	};
 
 	private readonly confirmTasks = (tasks: Array<Task>) =>
