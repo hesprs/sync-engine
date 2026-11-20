@@ -1,4 +1,6 @@
 import { createVaultRequest, VaultFs } from '@/fs';
+import { OS } from '@/modules/EventBus';
+import { formatFileSize } from '@/utils/unit-converter';
 import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
 import hash from '@repo/shared/crypto';
 import { toError } from '@repo/shared/error';
@@ -50,9 +52,17 @@ export type RequestResponse = {
 	status: number;
 };
 export type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
+// On iOS `requestUrl()` cannot send a larger body: the web view is terminated instead of the request failing. Measured on Obsidian 1.15.1, iOS 27.2: 50 MB is sent, 64 MB is not.
+const IOS_MAX_BODY_SIZE = 48 * 1024 ** 2;
 const request: Request = async (url: string, params?: RequestParam) => {
 	const body = params?.body;
-	if (body instanceof Uint8Array) (params as RequestUrlParam).body = toArrayBuffer(body);
+	if (body instanceof Uint8Array) {
+		if (OS.iOS && body.byteLength > IOS_MAX_BODY_SIZE)
+			throw new Error(
+				`Request body of ${formatFileSize(body.byteLength)} exceeds the ${formatFileSize(IOS_MAX_BODY_SIZE)} Obsidian can send in a single request on iOS.`,
+			);
+		(params as RequestUrlParam).body = toArrayBuffer(body);
+	}
 	const response = await requestUrl(
 		params ? (Object.assign(params, { url }) as RequestUrlParam) : url,
 	);

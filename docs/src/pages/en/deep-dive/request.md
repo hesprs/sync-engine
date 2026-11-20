@@ -37,6 +37,7 @@ Remote file-system modules receive `getRequest()` in context, not the base funct
 ### Limitations
 
 - Obsidian `requestUrl()` accepts only a complete string or `ArrayBuffer` body. `Request` cannot upload a `ReadableStream`.
+- On iOS, `requestUrl()` terminates the web view when the body is larger than roughly 50 MB. `Request` rejects binary bodies above 48 MB there, so an upload that cannot be chunked fails with an error instead of crashing Obsidian.
 - `requestUrl()` does not expose a response body stream through this abstraction. `bytes()` materializes the complete response.
 - Streaming remote reads must be implemented above `Request`, normally with multiple ranged requests. Streaming writes must use a backend-specific chunked-upload protocol.
 - Request errors are normally thrown by `requestUrl()` for HTTP status `400` and above. Retry behavior belongs to request middleware, not this base implementation.
