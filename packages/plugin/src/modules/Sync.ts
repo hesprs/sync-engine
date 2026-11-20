@@ -5,6 +5,7 @@ import {
 	AddRecord,
 	RemoveRecord,
 	convertMoves,
+	excludeOversized,
 	syncCancelledError,
 	taskMap,
 } from '@/sync';
@@ -78,10 +79,9 @@ export default class Sync {
 	declare readonly settings: { maxFileSize: TogglableValue; syncStrategy: Array<GlobStrategy> };
 	declare readonly i18n: { xOperationsFailed: Snippet<number> };
 
-	private readonly postProcess = (stats: Array<Stat>) => {
+	private readonly postProcess: PostProcess = (lists) => {
 		const { enabled, value } = this.settings.maxFileSize;
-		const maxSize = enabled ? value : Infinity;
-		return stats.filter((stat) => stat.isDir || stat.size <= maxSize);
+		return excludeOversized({ ...lists, maxSize: enabled ? value : Infinity });
 	};
 
 	private readonly confirmTasks = (tasks: Array<Task>) =>
@@ -342,6 +342,8 @@ function sortTasks(tasks: Array<Task>) {
 }
 
 type ReporterLister = (reporter: ListReporter) => MaybePromise<Array<Stat>>;
+type Lists = { local: Array<Stat>; remote: Array<Stat>; records: Array<[string, RecordStat]> };
+type PostProcess = (lists: Lists) => Lists;
 export type StrategyMapping = Record<
 	string,
 	{ localStats: StatsMap; remoteStats: StatsMap; records: RecordStatsMap }
@@ -357,7 +359,7 @@ async function list({
 	listRemote: ReporterLister;
 	listRecord: () => MaybePromise<Array<[string, RecordStat]>>;
 	match: (path: string) => GlobMatchResult;
-	postProcess: (stats: Array<Stat>) => Array<Stat>;
+	postProcess: PostProcess;
 }) {
 	const matchCache = new Map<string, GlobMatchResult>();
 	const cachedMatch = (path: string): GlobMatchResult => {
@@ -419,12 +421,15 @@ async function list({
 		listLocal((prog) => reporter(prog, 'local')),
 		listRemoteAndRecord(),
 	]);
-	const local = postProcess(localList);
-	const remote = postProcess(remoteList);
+	const { local, records, remote } = postProcess({
+		local: localList,
+		records: recordList,
+		remote: remoteList,
+	});
 	organizer(local, 'local');
 	organizer(remote, 'remote');
 	synthesizer(local, 'local');
 	synthesizer(remote, 'remote');
-	recordSynthesizer(recordList);
+	recordSynthesizer(records);
 	return { localList, mapping, recordList, remoteList };
 }
