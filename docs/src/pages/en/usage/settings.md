@@ -2,7 +2,7 @@
 
 Open **Settings > Sync Engine** to change these options.
 
-Some settings are registered by modules, their usage are documented in module specific pages.
+Some settings are registered by modules, their usage is documented in module specific pages.
 
 ## Core
 
@@ -157,7 +157,7 @@ Rules use [`glob` expressions](<https://en.wikipedia.org/wiki/Glob_(programming)
 | `test-files/**/*` | Everything inside `test-files` and its subfolders |
 | `.trash/`         | Any folder named `.trash`                         |
 | `*.{png,jpg}`     | `png` or `jpg` files anywhere in your vault       |
-| `/.obsidian/`     | `.obsidian` at vault root                         |
+| `/.obsidian/`     | folder `.obsidian` at vault root                  |
 
 - `*` matches any characters within one path segment.
 - `**` matches any number of segments, including none.
@@ -166,7 +166,7 @@ Rules use [`glob` expressions](<https://en.wikipedia.org/wiki/Glob_(programming)
 - `[!abc]` matches one outside the set.
 - `{a,b,c}` matches any listed variants, and braces can nest.
 - End a rule with `/` to match folders only.
-- A rule starting with `/` starts matching from the vault root; otherwise it matches at any depth.
+- A rule starting with `/` starts matching from the vault root, otherwise it matches at any depth.
 - Rules are case-sensitive: `Temp` does not match `temp`.
 
 ::: tip

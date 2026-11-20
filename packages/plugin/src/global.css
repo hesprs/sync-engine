@@ -119,8 +119,9 @@ div.se-setting .setting-group .setting-items {
 	}
 }
 
-.setting-group.mod-list .setting-items .setting-item.se-editable-list {
-	.setting-item-info {
+.setting-item.se-editable-list {
+	.setting-item-info,
+	.setting-item-icon {
 		display: none;
 	}
 	.setting-item-control {

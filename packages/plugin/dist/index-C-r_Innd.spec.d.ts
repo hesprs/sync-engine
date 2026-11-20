@@ -720,7 +720,7 @@ type HeadSettingTranslations = {
   backend: string;
   backendDescription: string;
   syncStrategy: string;
-  syncStrategyDescription: Fragment;
+  syncStrategyDescription: string;
   globPlaceholder: string;
   checkConnectionFailed: string;
   checkConnectionSuccess: string;
@@ -733,6 +733,7 @@ type HeadSettingTranslations = {
     labels: Array<LabelDefinition>;
     addLabel: typeof addLabel;
   }>;
+  syncStrategyTips: Fragment;
   addStrategy: string;
   noStrategyConfigured: string;
 };

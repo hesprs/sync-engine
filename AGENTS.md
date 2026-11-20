@@ -14,7 +14,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - **Bun** as its package manager and task runner
 - **Turbo** for monorepo orchestration
 - **Tsdown** for building
-- **Oxlint and Oxfmt** for linting and formatting
+- **Oxlint and Bun fmt** for linting and formatting
 - **Solid.js** and **TailwindCSS** (via UnoCSS) for UI
 - **VitePress** for documentation website
 - custom package **SynthKernel** for dependency injection

@@ -92,7 +92,7 @@ For modules not part of the official monorepo:
 4. Any static hosting works: JsDelivr, GitHub Releases, Cloudflare Pages, etc.
 5. Users add your registry URL in **Settings > Sync Engine > Development > Module sources**.
 
-It is highly recommended to contribute your module to the Sync Engine monorepo if you think your module can benefic more people, see [contributing](../usage/contributing#module-contribution).
+It is highly recommended to contribute your module to the Sync Engine monorepo if you think your module can benefit more people, see [contributing](../usage/contributing#module-contribution).
 
 ### Computing `integrity` with `sha256`
 

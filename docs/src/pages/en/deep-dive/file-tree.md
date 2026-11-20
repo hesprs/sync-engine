@@ -10,7 +10,7 @@ Renders select box, Obsidian tooltip, icon, and task path
 
 1 universal path compaction rule:
 
-- if a folder only has one children in the task list, and the folder itself is not in the task list, the children and folder combines into one entry with path shown as `<parent-basename> / <child-basename>`. This applies to each two path segments, so continuous nesting chains can be joined continuously, only stop at shallowest common parent.
+- if a folder only has one child in the task list, and the folder itself is not in the task list, the child and folder combine into one entry with path shown as `<parent-basename> / <child-basename>`. This applies to each two path segments, so continuous nesting chains can be joined continuously, only stop at shallowest common parent.
 
 Selection rules:
 

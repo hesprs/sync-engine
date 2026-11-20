@@ -6,7 +6,7 @@ The word "migration" stands for two unrelated things.
 
 **Migration**, as used here and in the codebase, means the automatic upgrade of data that Sync Engine itself persisted in an older format, like settings in `data.json` and IndexedDB stores. It never touches the remote, and it is never something the user triggers.
 
-**For users: opening Obsidian / updating Sync Engine at least once during the window performs the automatic migration. For those requiring human action, please ensure you have performed before the deadline.**
+**For users: opening Obsidian / updating Sync Engine at least once during the window performs the automatic migration. For those requiring human action, please ensure you have performed it before the deadline.**
 
 For implementation simplicity, migrations are ad-hoc and time-bounded:
 
@@ -24,4 +24,4 @@ For implementation simplicity, migrations are ad-hoc and time-bounded:
 - Window: 2026-10-17 to 2027-04-17
 - Scope: users with encryption enabled whose S3/WebDAV endpoint was changed by the URL canonicalization (contains one or more characters in literal form whose encoded form differs from its literal form).
 - Operation: the pre-migration endpoint is recorded as `legacyEndpoint`, so the master salt keeps being derived from the old Fs UID. This workaround will be removed once the window is complete.
-- Human action: the affected user need to re-upload the encrypted remote following the [Remote Migration guide](../usage/remote-migration) before the end of the window, since the salt changes back once the workaround is removed.
+- Human action: the affected user needs to re-upload the encrypted remote following the [Remote Migration guide](../usage/remote-migration) before the end of the window, since the salt changes back once the workaround is removed.

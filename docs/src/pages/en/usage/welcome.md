@@ -2,9 +2,9 @@
 
 > A sync plugin that's also a platform — extend it with modules, no fork required.
 
-Thank you for choosing the plugin Sync Engine. We aim to become the fastest and most versatile free syncing plugin in the Obsidian ecosystem through technical innovation and constant evolution. Your every adoption of Sync Engine is an aknowledgement for its engineering rigor.
+Thank you for choosing the plugin Sync Engine. We aim to become the fastest and most versatile free syncing plugin in the Obsidian ecosystem through technical innovation and constant evolution. Your every adoption of Sync Engine is an acknowledgement of its engineering rigor.
 
-The Sync Engine documentation contains three sections: _Usage_, [_Development_](../development/develop-a-module), and [_Deep Dive_](../deep-dive/architecture), each section serve for its specific purpose:
+The Sync Engine documentation contains three sections: _Usage_, [_Development_](../development/develop-a-module), and [_Deep Dive_](../deep-dive/architecture), each section serves its specific purpose:
 
 - _Usage_: explains how to use Sync Engine and what users care most (reliability, security, and data privacy) in the language that everyone can understand. Designed for ordinary users to familiarize and explore around Sync Engine.
 - _Development_: elaborates Sync Engine's modular contract and SDK API. Designed for technical users who want to extend Sync Engine with their own modules.

@@ -17,9 +17,9 @@ hero:
 features:
   - icon: 🗽
     title: Free and Open-Source
-    details: Completely free, no extra payment, all code MIT licensed. Use your own services, your file controlled by yourself.
+    details: Completely free, no extra payment, all code MIT licensed. Use your own services, your files are controlled by yourself.
   - icon: ⚡
-    title: Lighting Fast
+    title: Lightning Fast
     details: Highly optimized sync routine never wastes one millisecond. Innovative technology powers the speed.
   - icon: 🧩
     title: Extensible

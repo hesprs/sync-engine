@@ -89,7 +89,7 @@ Behavior:
 
 Receive `isCancelled: Ref<boolean>` in the second argument to detect sync cancellation.
 
-Intercept all `Fs` methods except `getUid()`. Wrap all method calls with a throw if cancelled at before and after relaying. Special cases: only check cancellation **before** `read()` & `readStream()` and **after** `write()` & `writeStream()` to prevent cancellation race blocking memory control counter release.
+Intercept all `Fs` methods except `getUid()`. Wrap all method calls with a throw if cancelled before and after relaying. Special cases: only check cancellation **before** `read()` & `readStream()` and **after** `write()` & `writeStream()` to prevent cancellation race blocking memory control counter release.
 
 ## Debug Wrapper
 

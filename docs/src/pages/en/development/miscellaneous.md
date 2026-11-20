@@ -80,7 +80,7 @@ Internal supporting types can appear in exported signatures but are not standalo
 
 ## Other Context Members
 
-These Context members are not commonly used by modules. Explore source code to obtain usage patterns.
+These Context members are not commonly used by modules. Explore the source code to obtain usage patterns.
 
 ### Module Management
 

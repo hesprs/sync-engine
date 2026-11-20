@@ -1,5 +1,5 @@
 // oxlint-disable import/no-nodejs-modules
-import { configGenerator } from './i18n';
+import { configGenerator, translate } from './i18n';
 import { lstatSync } from 'node:fs';
 import { resolve } from 'node:path';
 import canvas from 'vite-plugin-json-canvas';
@@ -183,7 +183,7 @@ export default defineConfig<ThemeConfig>({
 		['meta', { content: 'dark light', name: 'color-scheme' }],
 	],
 	lastUpdated: true,
-	locales: { root: localeConfig('en') },
+	locales: { root: localeConfig('en'), 'zh-Hans': localeConfig('zh-Hans') },
 	markdown: { image: { lazyLoad: true } },
 	outDir: p('dist'),
 	rewrites: { 'en/:rest*': ':rest*' },
@@ -194,7 +194,12 @@ export default defineConfig<ThemeConfig>({
 		editLink: 'https://github.com/hesprs/sync-engine/edit/main/docs/src/pages/:path',
 		logo: { alt: 'Website logo', dark: '/logo-small-dark.svg', light: '/logo-small-light.svg' },
 		logoLarge: { alt: 'Website large logo', src: '/logo.svg' },
-		search: { provider: 'local' },
+		search: {
+			options: {
+				locales: { 'zh-Hans': { translations: translate('docSearch', 'zh-Hans') } },
+			},
+			provider: 'local',
+		},
 		socialLinks: [
 			{ icon: 'npm', link: 'https://www.npmjs.com/package/@hesprs/sync-engine-sdk' },
 			{ icon: 'github', link: 'https://github.com/hesprs/sync-engine' },

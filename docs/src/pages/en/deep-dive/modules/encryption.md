@@ -210,7 +210,7 @@ Path segments and derived keys are cached, persistent beyond sync runs. The cach
 
 Behavior:
 
-- `memoryDB` from context is of different type, cast it to ` MemoryDatabase<EncryptionDBSchema, EncryptionDBMeta>`.
+- `memoryDB` from context is of different type, cast it to `MemoryDatabase<EncryptionDBSchema, EncryptionDBMeta>`.
 - `encryptionMarker` = `RemoteFs.getUid()` || `~` || _user password_
-- Cached derived keys are stared in store meta `encryptionKeys` field
+- Cached derived keys are stored in store meta `encryptionKeys` field
 - Only once when the wrapper is activated: check if store meta `encryptionMarker` is aligned with the current one. If not, clear stores and `encryptionKeys`, and update the meta to the current uid.
