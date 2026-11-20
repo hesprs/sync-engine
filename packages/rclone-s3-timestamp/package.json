@@ -13,8 +13,8 @@
 	"scripts": {
 		"dev": "MODE=dev bun --bun tsdown",
 		"compile": "bun --bun tsdown",
-		"fix": "oxlint --silent --fix && oxfmt",
-		"check": "oxlint && oxfmt --check",
+		"fix": "oxlint --silent --fix && bun fmt",
+		"check": "oxlint && bun fmt --check",
 		"tests": "bun --preload=./test/mocks test"
 	},
 	"devDependencies": {

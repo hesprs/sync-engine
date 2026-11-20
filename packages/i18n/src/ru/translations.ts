@@ -296,7 +296,7 @@ const ru: Translations = {
 				text: 'документацию',
 			});
 			paragraph.appendText(' для подробного объяснения каждой настройки. Метки настроек:');
-			const ul = frag.createEl('ul', 'se-list-none se-ps-0!');
+			const ul = frag.createEl('ul');
 			for (const label of labels) {
 				const li = ul.createEl('li');
 				const flair = addLabel(li, label);
@@ -321,18 +321,69 @@ const ru: Translations = {
 	stopSync: 'Остановить синхронизацию',
 	syncProgress: 'Прогресс синхронизации',
 	syncStrategy: 'Стратегия синхронизации',
-	syncStrategyDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'Настройте разные стратегии синхронизации для разных файлов на основе правил Glob. Если с одним файлом совпадают несколько правил, применяется последнее из них. См. ',
-			);
-			frag.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
-				text: 'страницу документации',
-			});
-			frag.appendText('.');
-		}),
+	syncStrategyDescription:
+		'Настройте разные стратегии синхронизации для разных файлов на основе правил Glob. Если с одним файлом совпадают несколько правил, применяется последнее из них.',
 	syncStrategyNotInstalled: (strategy) => `Стратегия синхронизации «${strategy}» не установлена!`,
+	syncStrategyTips: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', {
+				text: 'Конфигурация стратегии синхронизации — это упорядоченный список записей вида ',
+			});
+			p1.createEl('a', {
+				attr: { href: 'https://en.wikipedia.org/wiki/Glob_(programming)' },
+			}).createEl('strong', { text: 'правило Glob' });
+			p1.appendText(' + ');
+			p1.createEl('strong', { text: 'направление синхронизации' });
+			p1.appendText(
+				'. Правило Glob выбирает целевой набор файлов, а направление синхронизации определяет, как синхронизируются изменения этих файлов. Один файл может соответствовать нескольким записям; приоритет имеет последняя совпадающая запись в списке.',
+			);
+			const p2 = frag.createEl('p', {
+				text: 'Правило Glob записывается как простой путь к файлу с ',
+			});
+			p2.createEl('code', { text: '/' });
+			p2.appendText(
+				' в качестве разделителя пути и несколькими расширениями подстановочных знаков:',
+			);
+			const olGlob = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				'*': 'соответствует любым символам внутри одного сегмента пути.',
+				'**': 'соответствует любому количеству сегментов, включая ни одного.',
+				'?': 'соответствует одному символу.',
+				'[abc]': 'соответствует одному символу из набора.',
+				'[!abc]': 'соответствует одному символу вне набора.',
+				'{a,b,c}':
+					'соответствует любому из перечисленных вариантов, фигурные скобки могут вкладываться.',
+			}).forEach(([key, text]) => {
+				const li = olGlob.createEl('li');
+				li.createEl('code', { text: key });
+				li.appendText(`: ${text}`);
+			});
+			const li1 = olGlob.createEl('li', { text: 'Правило, заканчивающееся на ' });
+			li1.createEl('code', { text: '/' });
+			li1.appendText(', соответствует только папкам.');
+			const li2 = olGlob.createEl('li', { text: 'Правило, начинающееся с ' });
+			li2.createEl('code', { text: '/' });
+			li2.appendText(
+				', сопоставляется от корня хранилища, иначе оно соответствует на любой глубине.',
+			);
+			olGlob.createEl('li', { text: 'Регистр в правилах учитывается.' });
+			frag.createEl('p', { text: 'Встроенные направления синхронизации включают:' });
+			const olDirection = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				Двунаправленная: 'синхронизирует изменения с обеих сторон.',
+				'Зеркало локального хранилища':
+					'перезаписывает удалённое хранилище локальными изменениями.',
+				'Зеркало удалённого хранилища':
+					'перезаписывает локальное хранилище удалёнными изменениями.',
+				'Не синхронизировать': 'исключает соответствующие файлы из синхронизации.',
+			}).forEach(([key, text]) => {
+				const li = olDirection.createEl('li');
+				li.createEl('strong', { text: key });
+				li.appendText(`: ${text}`);
+			});
+		}),
 	untrustedModule: 'Модуль из недоверенного источника',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {

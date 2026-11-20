@@ -67,7 +67,7 @@ The scope does **not** grant general access to the user's Drive. In particular, 
 
 ### `openid`
 
-The `openid` scope makes Google return an OpenID Connect ID token during device authorization. The module reads the token's stable `sub` subject identifier and stores it as the connected account identifier. This lets Sync Engine identify which Google account is connected and distinguish multiple account connections, so that the sync record for different Google accounts don't interfere; it does not read the user's profile or request broad identity permissions.
+The `openid` scope makes Google return an OpenID Connect ID token during device authorization. The module reads the token's stable `sub` subject identifier and stores it as the connected account identifier. This lets Sync Engine identify which Google account is connected and distinguish multiple account connections, so that the sync record for different Google accounts doesn't interfere; it does not read the user's profile or request broad identity permissions.
 
 ## File Metadata
 

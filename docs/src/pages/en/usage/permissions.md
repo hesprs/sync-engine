@@ -1,6 +1,6 @@
 # Runtime Permissions
 
-This page is an exhaustive list of runtime APIs used by Sync Engine and official modules that may raise concerns, with verifiable explanations that justify their necessity. You can also compare this list against Obsidian Community website "Disclosure" section in the plugin scorecard.
+This page is an exhaustive list of runtime APIs used by Sync Engine and official modules that may raise concerns, with verifiable explanations that justify their necessity. You can also compare this list against the "Disclosure" section in the plugin scorecard on the Obsidian Community website.
 
 ## Dynamic JavaScript Module Evaluation
 

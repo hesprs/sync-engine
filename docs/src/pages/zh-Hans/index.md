@@ -1,0 +1,30 @@
+---
+layout: home
+hero:
+  name: Sync Engine
+  text: 新一代 Obsidian 同步插件
+  tagline: 免费 · 高性能 · 可扩展
+  actions:
+    - theme: brand
+      text: 欢迎！
+      link: /zh-Hans/usage/welcome
+    - theme: alt
+      text: 开发模块
+      link: /zh-Hans/development/develop-a-module
+    - theme: alt
+      text: 前往 GitHub →
+      link: https://github.com/hesprs/sync-engine
+features:
+  - icon: 🗽
+    title: 免费开源
+    details: 完全免费，无需额外付费，全部代码以 MIT 协议开源。使用你自己的服务，文件始终掌握在你自己手中。
+  - icon: ⚡
+    title: 极速同步
+    details: 高度优化的同步流程不浪费一毫秒。创新的技术带来极致的速度。
+  - icon: 🧩
+    title: 可扩展
+    details: 模块市场让功能无限延伸。不用在多个插件之间来回切换，一个自定义模块就够了。
+  - icon: 🦾
+    title: 对 Agent 友好
+    details: 不会写代码也没关系。官方指南可以帮助 AI Agent 为你编写模块。
+---

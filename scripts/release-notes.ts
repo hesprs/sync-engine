@@ -48,7 +48,7 @@ async function main(): Promise<void> {
 		? 'Development release built for debug purpose, not recommended for daily usage.'
 		: extractNotes(versionTag);
 	await Bun.write(OUTPUT_PATH, notes);
-	Bun.spawnSync({ cmd: ['bun', 'oxfmt', OUTPUT_PATH] });
+	Bun.spawnSync({ cmd: ['bun', 'fmt', OUTPUT_PATH] });
 
 	console.log(`Successfully wrote release notes to ${OUTPUT_PATH}`);
 }
