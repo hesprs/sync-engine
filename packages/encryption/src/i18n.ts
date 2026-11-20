@@ -112,7 +112,7 @@ export const zh: EncryptionTranslations = {
 				text: '兼容窗口将在 2027 年 4 月 17 日后结束。在该日期之前，加密功能仍可正常使用，但需要进行',
 			});
 			p.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/usage/remote-migration' },
 				text: '远程迁移',
 			});
 			p.appendText('。');

@@ -11,7 +11,7 @@ const zh: Translations = {
 		createFragment((frag) => {
 			frag.appendText('使用 ');
 			frag.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/deep-dive/asymmetric-storage' },
 				text: '非对称存储',
 			});
 			frag.appendText(' 来大幅提升同步速度。');
@@ -169,7 +169,7 @@ const zh: Translations = {
 				text: `如果该库此前在${enable ? '禁用' : '启用'}此选项的情况下同步过，您可能需要迁移远程存储。请参阅`,
 			});
 			p1.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/usage/remote-migration' },
 				text: '文档页面',
 			});
 			p1.appendText(
@@ -245,11 +245,11 @@ const zh: Translations = {
 		createFragment((frag) => {
 			const p = frag.createEl('p', { text: '感谢您选择 Sync Engine！访问 ' });
 			p.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/settings' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/usage/settings' },
 				text: '文档',
 			});
 			p.appendText('以了解每个设置的详细说明。设置标签：');
-			const ul = frag.createEl('ul', 'se-list-none se-ps-0!');
+			const ul = frag.createEl('ul');
 			for (const label of labels) {
 				const li = ul.createEl('li');
 				const flair = addLabel(li, label);
@@ -272,18 +272,58 @@ const zh: Translations = {
 	stopSync: '停止同步',
 	syncProgress: '同步进度',
 	syncStrategy: '同步策略',
-	syncStrategyDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'根据 Glob 规则为不同的文件配置不同的同步策略。当多条规则匹配同一个文件时，以最后一条规则为准。详见',
-			);
-			frag.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
-				text: '文档页面',
-			});
-			frag.appendText('。');
-		}),
+	syncStrategyDescription:
+		'根据 Glob 规则为不同的文件配置不同的同步策略。当多条规则匹配同一个文件时，以最后一条规则为准。',
 	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安装！`,
+	syncStrategyTips: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', { text: '同步策略配置是一个由 ' });
+			p1.createEl('a', {
+				attr: { href: 'https://en.wikipedia.org/wiki/Glob_(programming)' },
+			}).createEl('strong', { text: 'Glob 规则' });
+			p1.appendText(' + ');
+			p1.createEl('strong', { text: '同步方向' });
+			p1.appendText(
+				' 条目组成的有序列表。Glob 规则选定目标文件集合，同步方向决定这些文件的变更如何同步。同一个文件可以被多个条目匹配，列表中最后一条匹配的条目优先生效。',
+			);
+			const p2 = frag.createEl('p', { text: 'Glob 规则写作一个以 ' });
+			p2.createEl('code', { text: '/' });
+			p2.appendText(' 为路径分隔符的简单文件路径，并带有若干通配符扩展：');
+			const olGlob = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				'*': '匹配单个路径段内的任意字符。',
+				'**': '匹配任意数量的路径段，包括零个。',
+				'?': '匹配一个字符。',
+				'[abc]': '匹配集合中的一个字符。',
+				'[!abc]': '匹配集合之外的一个字符。',
+				'{a,b,c}': '匹配列出的任意变体，花括号可以嵌套。',
+			}).forEach(([key, text]) => {
+				const li = olGlob.createEl('li');
+				li.createEl('code', { text: key });
+				li.appendText(`：${text}`);
+			});
+			const li1 = olGlob.createEl('li', { text: '以 ' });
+			li1.createEl('code', { text: '/' });
+			li1.appendText(' 结尾的规则仅匹配文件夹。');
+			const li2 = olGlob.createEl('li', { text: '以 ' });
+			li2.createEl('code', { text: '/' });
+			li2.appendText(' 开头的规则从仓库根目录开始匹配，否则可在任意深度匹配。');
+			olGlob.createEl('li', { text: '规则区分大小写。' });
+			frag.createEl('p', { text: '内置的同步方向包括：' });
+			const olDirection = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				双向同步: '同步两侧的变更。',
+				镜像本地: '用本地变更覆盖远程。',
+				镜像远程: '用远程变更覆盖本地。',
+				不同步: '将匹配的文件排除在同步之外。',
+			}).forEach(([key, text]) => {
+				const li = olDirection.createEl('li');
+				li.createEl('strong', { text: key });
+				li.appendText(`：${text}`);
+			});
+		}),
 	untrustedModule: '非信任模块',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
@@ -320,7 +360,7 @@ const zh: Translations = {
 				'如果您确认该模块在您的控制之下，可以选择“配置”并启用它；如果您不知道它来自哪里，可以选择将其删除。关于此警告的详细说明，请参阅 ',
 			);
 			p2.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/deep-dive/extensibility' },
 				text: '文档页面',
 			});
 			p2.appendText('。');

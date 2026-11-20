@@ -43,7 +43,7 @@ Remote file-system modules receive `getRequest()` in context, not the base funct
 
 ## Vault Request
 
-`VaultRequest` is the local counterpart used by `VaultFs`, uses Obsidian vault cache smartly to improve performance. It is a discriminated operation function:
+`VaultRequest` is the local counterpart used by `VaultFs`; it uses the Obsidian vault cache smartly to improve performance. It is a discriminated operation function:
 
 ```ts
 type VaultRequest = <T extends VaultRequestParam = { method: 'GET' }>(
@@ -71,8 +71,8 @@ Before calling the adapter, `VaultRequest` removes a trailing slash from every n
 - `DELETE`: calls `adapter.remove()`, `adapter.trashLocal()`, `adapter.trashSystem()` according to user trash options.
 - `MOVE`: `adapter.rename()` to the normalized destination path.
 - `MKDIR`: calls `adapter.mkdir()`. Creating `/` is a no-op.
-- `EXISTS`: checks `vault.getAbstractFileByPath()` first, then fallback to `adapter.exists(path, true)`.
-- `STAT`: returns an stat object typed in Obsidian `Stat`; with `cached` enabled, uses cached `TFile`/`TFolder` objects when `workspace.layoutReady`, otherwise falls back to `adapter.stat()`.
+- `EXISTS`: checks `vault.getAbstractFileByPath()` first, then falls back to `adapter.exists(path, true)`.
+- `STAT`: returns a stat object typed in Obsidian `Stat`; with `cached` enabled, uses cached `TFile`/`TFolder` objects when `workspace.layoutReady`, otherwise falls back to `adapter.stat()`.
 - `LIST`: with `cached` enabled, uses cached `TFolder.children` when the layout is ready and the key is not `/`; otherwise uses `adapter.list()`. Folder results are normalized with trailing slashes.
 
 ## Boundary

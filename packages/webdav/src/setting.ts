@@ -74,7 +74,7 @@ export default function webdavSetting(
 						void saveSettings();
 					}),
 				)
-				.settingEl.addClass('se-setting-rendered-desc');
+				.settingEl.addClass('se-setting-rendered-desc', 'markdown-rendered');
 		};
 	return {
 		749: s(

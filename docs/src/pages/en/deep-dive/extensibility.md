@@ -15,7 +15,7 @@ The module system trusts:
 The loader guards against:
 
 - module files without existing record to prove user approval are not loaded automatically
-- module file must match its recorded SHA-256 value before it is imported, unless explicitly disabled by the user
+- module files must match their recorded SHA-256 value before they are imported, unless explicitly disabled by the user
 - compromised custom sources cannot disturb existing modules
 
 ## Module Sources
@@ -58,7 +58,7 @@ The source entry supplies both the module download URL (`main`) and the expected
 
 Module artifacts are stored in `<vault config directory>/plugins/sync-engine/modules/<id>.js`. The module directory is inside Obsidian's plugin configuration directory. New installations explicitly exclude this module directory, as well as the broader vault config directory, from synchronization.
 
-Installed module metadata is stored in a IndexedDB store whose name is derived from the vault name: `modules-<hash of vault name>`, so normal attacking method (e.g. compromised syncing backend) cannot arbitrarily modify module meta.
+Installed module metadata is stored in an IndexedDB store whose name is derived from the vault name: `modules-<hash of vault name>`, so normal attacking method (e.g. compromised syncing backend) cannot arbitrarily modify module meta.
 
 The stored metadata extends source metadata with:
 
@@ -149,4 +149,4 @@ The registered module APIs include, among others:
 - capability registries for backends, resolvers, optimizers, listers, settings, and CSS
 - SynthKernel module management helpers and the shared `allModules` set
 
-These privileges are intentional for trusted modules. Similar to how Obsidian gives full API access to user downloaded and enabled plugins.
+These privileges are intentional for trusted modules. This is similar to how Obsidian gives full API access to user-downloaded and enabled plugins.

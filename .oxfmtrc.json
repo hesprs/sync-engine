@@ -1,6 +1,6 @@
 {
-	"$schema": "./node_modules/oxfmt/configuration_schema.json",
 	"tabWidth": 4,
+	"printWidth": 100,
 	"useTabs": true,
 	"endOfLine": "lf",
 	"singleQuote": true,

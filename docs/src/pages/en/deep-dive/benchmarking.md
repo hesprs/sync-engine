@@ -5,8 +5,8 @@
 The benchmark aims to obtain reliable and reproducible sync performance and algorithmic correctness statistics between Sync Engine and other syncing plugins. The Obsidian instance must have only the benchmarked plugin installed during a benchmark. And the benchmarked plugin must use the default settings except:
 
 - account configuration
-- UI confirmations that prevents a sync from happening non-interactively
-- setting that would cause the final result have "errors" per the [Correctness Validator](#correctness-validator) (max size limits / don't sync specific files / ...)
+- UI confirmations that prevent a sync from happening non-interactively
+- setting that would cause the final result to have "errors" per the [Correctness Validator](#correctness-validator) (max size limits / don't sync specific files / ...)
 
 Each benchmark contains fixed routines and test cases as specified below, any special deviation from the test routine must be documented clearly.
 
@@ -37,7 +37,7 @@ On the benchmarking machine, kill Obsidian Electron APP completely and restart f
 
 **Move detection**: Whether the plugin can properly identify local and remote file moves instead of making them delete + upload / download.
 
-**Chunked transfer**: Whether the plugin read / write / download / upload large files in stream or chunks, and does not buffer the whole file in memory. This feature determine whether it can transfer large files on mobile devices without crashing.
+**Chunked transfer**: Whether the plugin read / write / download / upload large files in stream or chunks, and does not buffer the whole file in memory. This feature determines whether it can transfer large files on mobile devices without crashing.
 
 **Metadata syncing**: Whether the plugin can preserve file last modified time / creation time when syncing across devices.
 
@@ -61,7 +61,7 @@ Reuse the already uploaded test vault above, create a new empty vault and config
 
 Now we should have two copies of the vault, one (original) is generated from [Test Vault Bootstrapper](#test-vault-bootstrapper), another one (replica) is newly downloaded from remote.
 
-Perform deterministic sync-on-change using [Operation Executor](#operation-executor) inside the original vault. The scripts contains 10 independent and sequential test cases covering create, modify, delete, and rename (move) operations to simulate small but frequent user edit. Each operation is gated with CLI command to continue. A sync is triggered every case in original vault first, then in replica vault. If the benchmarked plugin has "Sync on change" option, enabled it in original vault, otherwise trigger syncs in original manually.
+Perform deterministic sync-on-change using [Operation Executor](#operation-executor) inside the original vault. The scripts contain 10 independent and sequential test cases covering create, modify, delete, and rename (move) operations to simulate small but frequent user edit. Each operation is gated with CLI command to continue. A sync is triggered every case in original vault first, then in replica vault. If the benchmarked plugin has "Sync on change" option, enable it in the original vault, otherwise trigger syncs in the original vault manually.
 
 When all cases finish, calculate the max, min, and median duration of the above 10 syncs.
 
@@ -77,7 +77,7 @@ The benchmarking utilities are located in `scripts/benchmark/` in this repo. It 
 
 File: `scripts/benchmark/test-vault.ts`
 
-Initiate a deterministic test vault using `scripts/benchmark/test-vault.ts`. Clears the vault first, then populates the vault with a large vault simulation with randomly and deeply nested files; consists 1880 small files with sizes ranging from 50 bytes to 50 KiB, 100 medium files with sizes ranging from 500 KiB to 2 MiB, and 20 large files with sizes ranging from 15 MiB to 100 MiB.
+Initiate a deterministic test vault using `scripts/benchmark/test-vault.ts`. Clears the vault first, then populates the vault with a large vault simulation with randomly and deeply nested files; consists of 1880 small files with sizes ranging from 50 bytes to 50 KiB, 100 medium files with sizes ranging from 500 KiB to 2 MiB, and 20 large files with sizes ranging from 15 MiB to 100 MiB.
 
 ### Operation Executor
 
@@ -115,6 +115,6 @@ After validation, it outputs the total count of errors, and each error with its 
 
 File: `scripts/benchmark/ping-test.ts`
 
-The Ping Tester tests average HTTP ping delay when trying to connect to a URL. It launches 20 sequential HTTP `HEAD` requests toward the target and record the response delay.
+The Ping Tester tests average HTTP ping delay when trying to connect to a URL. It launches 20 sequential HTTP `HEAD` requests toward the target and records the response delay.
 
-After all tests, it sorts the request delays and discard the longest two and shortest two delays. Then calculate the average for the rest 16 samples.
+After all tests, it sorts the request delays and discards the longest two and shortest two delays. Then it calculates the average for the rest 16 samples.

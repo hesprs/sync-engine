@@ -23,7 +23,7 @@ export type HeadSettingTranslations = {
 	backend: string;
 	backendDescription: string;
 	syncStrategy: string;
-	syncStrategyDescription: Fragment;
+	syncStrategyDescription: string;
 	globPlaceholder: string;
 	checkConnectionFailed: string;
 	checkConnectionSuccess: string;
@@ -33,6 +33,7 @@ export type HeadSettingTranslations = {
 	xEnabled: Snippet<number>;
 	xConfigured: Snippet<number>;
 	settingTips: Fragment<{ labels: Array<LabelDefinition>; addLabel: typeof addLabel }>;
+	syncStrategyTips: Fragment;
 	addStrategy: string;
 	noStrategyConfigured: string;
 };
@@ -77,7 +78,11 @@ export default function headSettings(
 			desc: translate('settingTips', { addLabel, labels: [matchLabel(), speedLabel()] }),
 			name: 'dummy',
 			render: (setting) => {
-				setting.settingEl.addClass('se-setting-hide-name', 'se-setting-rendered-desc');
+				setting.settingEl.addClass(
+					'se-setting-hide-name',
+					'se-setting-rendered-desc',
+					'markdown-rendered',
+				);
 				queueMicrotask(() => {
 					const tab = getSettingTab();
 					if (!tab) return;
@@ -152,7 +157,18 @@ export default function headSettings(
 				type: 'page',
 			}),
 			{
-				1000: s(() => {
+				1000: s(() => ({
+					desc: translate('syncStrategyTips'),
+					name: 'dummy',
+					render: (setting) =>
+						setting.settingEl.addClass(
+							'se-setting-hide-name',
+							'se-setting-rendered-desc',
+							'markdown-rendered',
+						),
+					searchable: false,
+				})),
+				2000: s(() => {
 					const options: StringKV = {};
 					deciderRegistry.forEach(({ prettyName }, key) => {
 						const name = prettyName?.();

@@ -61,7 +61,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        - I have updated Sync Engine and its modules to latest versions but the bug persists. The latest version of Sync Engine can be found in the [GitHub releases page](https://github.com/hesprs/sync-engine/releases/latest) and modules versions are in [the module catalog in the documentation website](https://sync.consensia.cc/usage/modules).
+        - I have updated Sync Engine and its modules to latest versions but the bug persists. The latest version of Sync Engine can be found in the [GitHub releases page](https://github.com/hesprs/sync-engine/releases/latest) and modules are in [the module catalog in the documentation website](https://sync.consensia.cc/usage/modules).
         - I have provided clear and reproducible information about the bug.
         - I have ensured that this issue only contains one bug.
         - I have checked historical bugs and there's no entry fitting this scenario.

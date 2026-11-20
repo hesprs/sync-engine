@@ -285,7 +285,7 @@ const en: Translations = {
 			paragraph.appendText(
 				' for more detailed explanation of each setting. Labels on settings:',
 			);
-			const ul = frag.createEl('ul', 'se-list-none se-ps-0!');
+			const ul = frag.createEl('ul');
 			for (const label of labels) {
 				const li = ul.createEl('li');
 				const flair = addLabel(li, label);
@@ -309,18 +309,64 @@ const en: Translations = {
 	stopSync: 'Stop sync',
 	syncProgress: 'Sync progress',
 	syncStrategy: 'Sync strategy',
-	syncStrategyDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'Configure different synchronization strategies for different files based on Glob rules. The last rule wins when multiple rules match the same file. See ',
-			);
-			frag.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
-				text: 'documentation page',
-			});
-			frag.append(' for configuration details.');
-		}),
+	syncStrategyDescription:
+		'Configure different synchronization strategies for different files based on Glob rules. The last rule wins when multiple rules match the same file.',
 	syncStrategyNotInstalled: (strategy) => `Sync strategy "${strategy}" not installed!`,
+	syncStrategyTips: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', {
+				text: 'The sync strategy configuration is an ordered list of ',
+			});
+			p1.createEl('a', {
+				attr: { href: 'https://en.wikipedia.org/wiki/Glob_(programming)' },
+			}).createEl('strong', { text: 'Glob rules' });
+			p1.appendText(' + ');
+			p1.createEl('strong', { text: 'sync direction' });
+			p1.appendText(
+				' entries. The Glob rule selects the target set of files, and the sync direction determines how to sync file changes for those files. The same file can be matched by multiple entries, the latest matching entry in the list take the precedence.',
+			);
+			const p2 = frag.createEl('p', {
+				text: 'A Glob rule is drafted as a simple file path with ',
+			});
+			p2.createEl('code', { text: '/' });
+			p2.appendText(' as path separator and several wildcard extensions:');
+			const olGlob = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				'*': 'matches any characters within one path segment.',
+				'**': 'matches any number of segments, including none.',
+				'?': 'matches one character.',
+				'[abc]': 'matches one character from the set.',
+				'[!abc]': 'matches one outside the set.',
+				'{a,b,c}': 'matches any listed variants, and braces can nest.',
+			}).forEach(([key, text]) => {
+				const li = olGlob.createEl('li');
+				li.createEl('code', { text: key });
+				li.appendText(`: ${text}`);
+			});
+			const li1 = olGlob.createEl('li', { text: 'A rule ending with ' });
+			li1.createEl('code', { text: '/' });
+			li1.appendText(' matches folders only.');
+			const li2 = olGlob.createEl('li', { text: 'A rule starting with ' });
+			li2.createEl('code', { text: '/' });
+			li2.appendText(
+				' starts matching from the vault root, otherwise it matches at any depth.',
+			);
+			olGlob.createEl('li', { text: 'Rules are case-sensitive.' });
+			frag.createEl('p', { text: 'The built-in sync directions including:' });
+			const olDirection = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				Bidirectional: 'syncs changes from both sides.',
+				'Mirror local': 'overwrite remote with local changes.',
+				'Mirror remote': 'overwrite local with remote changes.',
+				"Don't sync": 'exclude the matching files from sync.',
+			}).forEach(([key, text]) => {
+				const li = olDirection.createEl('li');
+				li.createEl('strong', { text: key });
+				li.appendText(`: ${text}`);
+			});
+		}),
 	untrustedModule: 'Untrusted module',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
