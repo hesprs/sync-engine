@@ -309,6 +309,9 @@ const zh: Translations = {
 			const li2 = olGlob.createEl('li', { text: '以 ' });
 			li2.createEl('code', { text: '/' });
 			li2.appendText(' 开头的规则从仓库根目录开始匹配，否则可在任意深度匹配。');
+			const li3 = olGlob.createEl('li', { text: '匹配文件时，记得添加扩展名（例如 ' });
+			li3.createEl('code', { text: '.md' });
+			li3.appendText('）。');
 			olGlob.createEl('li', { text: '规则区分大小写。' });
 			frag.createEl('p', { text: '内置的同步方向包括：' });
 			const olDirection = frag.createEl('ul');

@@ -23,7 +23,7 @@ function getSizeCaps(): { streamThreshold: number; chunkSize: number; concurrenc
 }
 
 const { chunkSize, concurrency, streamThreshold } = getSizeCaps();
-export { chunkSize, concurrency };
+export { chunkSize, concurrency, streamThreshold };
 
 export function pipe({ from, to, stat, key }: { from: Fs; to: Fs; key: string; stat: FileStat }) {
 	return writeWithSize(to, key, readWithSize(from, key, stat), stat);

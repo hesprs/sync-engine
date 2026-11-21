@@ -352,6 +352,9 @@ const en: Translations = {
 			li2.appendText(
 				' starts matching from the vault root, otherwise it matches at any depth.',
 			);
+			const li3 = olGlob.createEl('li', { text: 'Remember to add extensions (e.g. ' });
+			li3.createEl('code', { text: '.md' });
+			li3.appendText(') when matching files.');
 			olGlob.createEl('li', { text: 'Rules are case-sensitive.' });
 			frag.createEl('p', { text: 'The built-in sync directions including:' });
 			const olDirection = frag.createEl('ul');
