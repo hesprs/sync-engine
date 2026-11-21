@@ -136,7 +136,7 @@ const zhHans: Translation = {
 	registration: '注册',
 	remoteMigration: '远程迁移',
 	request: '请求',
-	requestMiddleware: 'RequestMiddleware',
+	requestMiddleware: '请求中间件',
 	s3: 'S3',
 	security: '安全',
 	settings: '设置',
