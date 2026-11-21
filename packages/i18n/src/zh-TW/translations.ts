@@ -311,6 +311,9 @@ const zhTW: Translations = {
 			const li2 = olGlob.createEl('li', { text: '以 ' });
 			li2.createEl('code', { text: '/' });
 			li2.appendText(' 開頭的規則從儲存庫根目錄開始比對，否則可在任意深度比對。');
+			const li3 = olGlob.createEl('li', { text: '比對檔案時，記得加上副檔名（例如 ' });
+			li3.createEl('code', { text: '.md' });
+			li3.appendText('）。');
 			olGlob.createEl('li', { text: '規則區分大小寫。' });
 			frag.createEl('p', { text: '內建的同步方向包括：' });
 			const olDirection = frag.createEl('ul');

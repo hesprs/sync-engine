@@ -1,6 +1,12 @@
+import isMergeablePath from './utils/is-mergeable-path';
 import { diffCommon } from '@/diff3';
 import merge from '@/utils/merge';
-import { readWithSize, REGRET_ERROR_MESSAGE, writeWithSize } from '@hesprs/sync-engine-sdk';
+import {
+	readWithSize,
+	REGRET_ERROR_MESSAGE,
+	writeWithSize,
+	streamThreshold,
+} from '@hesprs/sync-engine-sdk';
 import { textToUint8Array, uint8ArrayEquals, uint8ArrayToText } from '@repo/shared/binary';
 import parseTimestamp from '@repo/shared/timestamp';
 import type { MergeOptions } from '@/utils/merge';
@@ -49,24 +55,30 @@ export default function smartMergeResolver(
 			},
 			mtime: Math.max(local.mtime, remote.mtime),
 			size: latestSide === 'local' ? local.size : remote.size, // Match the latest survive fallback size to prevent writeWithSize misfiring
-			uid: crypto.randomUUID(), // Doesn't matter
+			uid: 'dummy', // Doesn't matter
 		};
 
 		const getMergedBuffer = async (): Promise<
 			| { type: 'latest'; side: 'local' | 'remote'; latest: Binary | ReadableStream<Binary> }
 			| { type: 'merge'; localBuffer: Binary; remoteBuffer: Binary; mergedBuffer: Binary }
 		> => {
-			const [localBuffer, remoteBuffer, baseText] = await Promise.all([
-				readWithSize(localFs, key, local),
-				readWithSize(remoteFs, key, remote),
-				store.get(key),
-			]);
-			if (localBuffer instanceof ReadableStream || remoteBuffer instanceof ReadableStream)
+			if (
+				!isMergeablePath(key) ||
+				local.size >= streamThreshold ||
+				remote.size >= streamThreshold
+			)
 				return {
-					latest: latestSide === 'local' ? localBuffer : remoteBuffer,
+					latest: await (latestSide === 'local'
+						? readWithSize(localFs, key, local)
+						: readWithSize(remoteFs, key, remote)),
 					side: latestSide,
 					type: 'latest',
 				};
+			const [localBuffer, remoteBuffer, baseText] = await Promise.all([
+				readWithSize(localFs, key, local) as Promise<Binary>,
+				readWithSize(remoteFs, key, remote) as Promise<Binary>,
+				store.get(key),
+			]);
 			if (uint8ArrayEquals(localBuffer, remoteBuffer)) {
 				await record.set(key, { isDir: false, local: local.uid, remote: remote.uid });
 				throw REGRET_ERROR;

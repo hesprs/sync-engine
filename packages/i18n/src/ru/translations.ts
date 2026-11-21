@@ -367,6 +367,11 @@ const ru: Translations = {
 			li2.appendText(
 				', сопоставляется от корня хранилища, иначе оно соответствует на любой глубине.',
 			);
+			const li3 = olGlob.createEl('li', {
+				text: 'Не забывайте добавлять расширения (например, ',
+			});
+			li3.createEl('code', { text: '.md' });
+			li3.appendText(') при сопоставлении файлов.');
 			olGlob.createEl('li', { text: 'Регистр в правилах учитывается.' });
 			frag.createEl('p', { text: 'Встроенные направления синхронизации включают:' });
 			const olDirection = frag.createEl('ul');
