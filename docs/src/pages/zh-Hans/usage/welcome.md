@@ -10,7 +10,7 @@ Sync Engine 文档分为三个部分：_用法_、[_开发_](../development/deve
 - _开发_：详述 Sync Engine 的模块契约与 SDK API。适合希望用自己的模块扩展 Sync Engine 的技术用户。
 - _深入解析_：带你了解 Sync Engine 与官方模块的每一个技术细节。适合好奇 Sync Engine 如何实现功能的学习者，以及希望验证 Sync Engine 各项声明的审计者。
 
-当前是 _用法_ 部分，你可能对以下内容感兴趣：
+当前是*用法*部分，你可能对以下内容感兴趣：
 
 - [为什么选择 Sync Engine](./why-sync-engine)：Sync Engine 与其他同步插件的区别，以及如何开始你的第一次同步。
 - [设置](./settings)：Sync Engine 每个设置项的含义。
