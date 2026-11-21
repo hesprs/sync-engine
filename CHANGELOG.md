@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## Sync Engine v3.4.3 - 2026-11-21
+
+### Core
+
+- Fixed the bug that when the max file size limit is enabled, oversized files are treated as deleted. They are now left out of sync entirely.
+- Fixed CSS classes colliding with Excalidraw by isolating all internal classes.
+- Improved module management to pick the highest module version across sources and prefer the source that is currently installed.
+- Improved the asymmetric storage confirmation dialog to also display standalone warnings that do not require migration.
+- Greatly optimized binary request body encoding to reduce peak memory usage when uploading large files on mobile.
+- Added sync strategy guide in the settings UI.
+
+### Smart Merge Module
+
+- Fixed the conflict resolver blindly merging non-mergeable files.
+- Added `.txt` files to the mergeable file types.
+
+### Encryption Module
+
+- Improved the warnings shown when toggling encryption to explain the consequences, including backend-specific advice.
+
+### Dropbox Module
+
+- Fixed header JSON escaping for file names containing emoji or other characters outside the Unicode BMP.
+
+### Contributors
+
+@Trident6355, @hesprs
+
 ## Sync Engine v3.4.2 - 2026-11-13
 
 ### Core
