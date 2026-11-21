@@ -79,8 +79,9 @@ export function keyToPath(key: string): string {
  */
 export function escapeHeaderJson(arg: Record<string, unknown>): string {
 	return JSON.stringify(arg).replaceAll(
-		/[\u007F-\uFFFF]/gu,
-		(char) => `\\u${(char.codePointAt(0) as number).toString(16).padStart(4, '0')}`,
+		// oxlint-disable-next-line require-unicode-regexp
+		/[\u007F-\uFFFF]/g,
+		(char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`,
 	);
 }
 

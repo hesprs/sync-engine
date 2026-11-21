@@ -1,6 +1,5 @@
 import { taskMap } from '@/sync';
 import type { Fs, ListReporter, RootFs } from '@/fs';
-import type { Request, RequestParam, RequestResponse } from '@/modules/Registrar';
 import type { Decider, TaskFactory, TaskNames } from '@/sync';
 import type { GenericOptions } from '@/sync/tasks/interface';
 import type {
@@ -14,6 +13,7 @@ import type {
 	StatsMap,
 	StringKV,
 } from '@/types';
+import type { Request, RequestParam, RequestResponse } from '@/utils/native';
 
 type FsCalls = {
 	delete: Array<string>;
