@@ -4,7 +4,7 @@
 
 ## 动态执行 JavaScript 模块
 
-动态执行 JavaScript 模块属于_动态代码执行_，与 Obsidian 加载插件的方式类似。它是 Sync Engine 可扩展架构的基础。
+动态执行 JavaScript 模块属于*动态代码执行*，与 Obsidian 加载插件的方式类似。它是 Sync Engine 可扩展架构的基础。
 
 Sync Engine 只执行用户明确下载或批准的 JavaScript ESM 模块，而且只在插件启动、模块自动更新或用户显式操作时执行。
 
