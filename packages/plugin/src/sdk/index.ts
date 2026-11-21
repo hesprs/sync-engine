@@ -17,6 +17,7 @@ export {
 	streamThreshold,
 	REGRET_ERROR_MESSAGE,
 } from '@/utils/pipe';
+export { request, OS } from '@/utils/native';
 export { settingEntry, reactivelyValidate, generateEditableList } from '@/settings/utils';
 
 export type {
@@ -70,9 +71,6 @@ export type {
 	TriggerEntry,
 	OptimizerEntry,
 	ConflictResolverEntry,
-	Request,
-	RequestParam,
-	RequestResponse,
 } from '@/modules/Registrar';
 export type { CallableOrObjectTree, SettingEntry } from '@/modules/Setting';
 export type { LabelDefinition } from '@/settings/utils';
@@ -82,4 +80,5 @@ export type { SyncTerminateReason, SyncOptions, RemoteLister } from '@/modules/S
 export type { ExistingMemoryDB } from '@/modules/Bootstrap';
 export type * from '@/fs/interface';
 export type { VaultRequest } from '@/fs';
+export type { Request, RequestParam, RequestResponse } from '@/utils/native';
 export type SelectFromContext<O extends object> = Context extends O ? O : never;

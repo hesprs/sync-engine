@@ -73,7 +73,7 @@ test('starts an authorization with an S256 challenge and offline access', async 
 	expect(verifier.length).toBeLessThanOrEqual(128);
 
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-	const expected = btoa(String.fromCodePoint(...new Uint8Array(digest)))
+	const expected = btoa(String.fromCharCode(...new Uint8Array(digest)))
 		.replaceAll('+', '-')
 		.replaceAll('/', '_')
 		.replaceAll('=', '');

@@ -1,4 +1,12 @@
-import { collectStreamToBinary, concatBinary, PartBuffer } from '@/binary';
+import {
+	collectStreamToBinary,
+	concatBinary,
+	decodeBase64,
+	decodeBase64Url,
+	encodeBase64,
+	encodeBase64Url,
+	PartBuffer,
+} from '@/binary';
 import { expect, test } from 'bun:test';
 import type { Binary } from '@/binary';
 
@@ -66,6 +74,52 @@ test('slice returns a lone chunk without copying it', () => {
 	buffer.push(chunk);
 
 	expect(buffer.slice(2).buffer).toBe(chunk.buffer);
+});
+
+test('encodes an empty binary to an empty string', () => {
+	expect(encodeBase64(new Uint8Array(0))).toBe('');
+});
+
+test('encodes binaries larger than one chunk into valid base64', () => {
+	const bytes = new Uint8Array(0x80_00 * 2 + 5);
+	for (let index = 0; index < bytes.length; index++) bytes[index] = index % 251;
+
+	expect(new Uint8Array(Buffer.from(encodeBase64(bytes), 'base64'))).toStrictEqual(bytes);
+});
+
+test('encode functions fall back to the manual path when toBase64 is absent', () => {
+	const bytes = new Uint8Array(0x80_00 * 2 + 5);
+	for (let index = 0; index < bytes.length; index++) bytes[index] = index % 251;
+	const expectedBase64 = encodeBase64(bytes);
+	const expectedUrl = encodeBase64Url(bytes);
+	const proto = Uint8Array.prototype as { toBase64?: unknown };
+	const saved = proto.toBase64;
+	delete proto.toBase64;
+	try {
+		expect(encodeBase64(bytes)).toBe(expectedBase64);
+		expect(encodeBase64(new Uint8Array(0))).toBe('');
+		expect(new Uint8Array(Buffer.from(encodeBase64(bytes), 'base64'))).toStrictEqual(bytes);
+		expect(encodeBase64Url(bytes)).toBe(expectedUrl);
+	} finally {
+		proto.toBase64 = saved;
+	}
+});
+
+test('decode functions fall back to the manual path when fromBase64 is absent', () => {
+	const bytes = new Uint8Array(1024);
+	for (let index = 0; index < bytes.length; index++) bytes[index] = index % 251;
+	const encoded = encodeBase64(bytes);
+	expect(decodeBase64(encoded)).toStrictEqual(bytes);
+	const ctor = Uint8Array as { fromBase64?: unknown };
+	const saved = ctor.fromBase64;
+	delete ctor.fromBase64;
+	try {
+		expect(decodeBase64(encoded)).toStrictEqual(bytes);
+		expect(decodeBase64('')).toStrictEqual(new Uint8Array(0));
+		expect(decodeBase64Url(encodeBase64Url(bytes))).toStrictEqual(bytes);
+	} finally {
+		ctor.fromBase64 = saved;
+	}
 });
 
 test('slice throws when fewer bytes are buffered than requested', () => {

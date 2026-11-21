@@ -1,5 +1,5 @@
 import { getStatus } from '@repo/shared/error';
-import type { Request } from '@/modules/Registrar';
+import type { Request } from '@/utils/native';
 import type { ErrorLike } from '@repo/shared/error';
 
 const MAX_RETRY_AFTER = 180;

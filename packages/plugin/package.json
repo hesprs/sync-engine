@@ -54,6 +54,7 @@
 		"tests": "bun --preload=./test/mocks test"
 	},
 	"dependencies": {
+		"@obsidian-typings/obsidian-public-latest": "catalog:",
 		"obsidian": "catalog:"
 	},
 	"devDependencies": {

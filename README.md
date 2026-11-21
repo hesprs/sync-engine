@@ -50,8 +50,7 @@
 
 Sync Engine is a vault syncing plugin to **synchronize vault files in multiple devices**, it supports:
 
-**Backends**: [S3](https://sync.consensia.cc/deep-dive/modules/s3), [WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav), [Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive), and [Dropbox](https://sync.consensia.cc/deep-dive/modules/dropbox)<br>
-**Features**:
+**Backends**: [S3](https://sync.consensia.cc/deep-dive/modules/s3), [WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav), [Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive), and [Dropbox](https://sync.consensia.cc/deep-dive/modules/dropbox)<br>**Features**:
 
 - [Client-side encryption](https://sync.consensia.cc/deep-dive/modules/encryption)
 - Granular sync strategy configuration (bidirectional / mirror remote / mirror local / don't sync) using Glob rules.
@@ -157,7 +156,6 @@ Sync Engine has a [wishlist of features](https://github.com/hesprs/sync-engine/i
 
 ## License
 
-The source code of Sync Engine and modules in this repository are licensed under the [MIT License](https://mit-license.org/).<br>
-Pages in the documentation website are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
+The source code of Sync Engine and modules in this repository are licensed under the [MIT License](https://mit-license.org/).<br>Pages in the documentation website are licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license.
 
 Copyright ©️ 2026 Hēsperus and All Contributors

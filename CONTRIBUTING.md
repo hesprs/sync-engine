@@ -115,14 +115,7 @@ For maintainer convenience, the review messages will be in English. Same for iss
 If you want to contribute a new module, please make it a package under `packages`. The `package.json` of your module should at least include the following:
 
 ```json
-{
-  "contributors": [
-    {
-      "name": "<the-name-to-call-you>",
-      "github": "<your-github-account-name>"
-    }
-  ]
-}
+{ "contributors": [{ "name": "<the-name-to-call-you>", "github": "<your-github-account-name>" }] }
 ```
 
 Then modify `modules.json` at the repo root to include your module:

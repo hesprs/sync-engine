@@ -6,7 +6,7 @@
       "name": "sync-engine",
       "devDependencies": {
         "@hesprs/harness": "catalog:",
-        "@obsidian-typings/obsidian-public-latest": "^6.59.0",
+        "@obsidian-typings/obsidian-public-latest": "catalog:",
         "@tsdown/css": "^0.23.7",
         "@types/bun": "^1.4.4",
         "obsidian": "catalog:",
@@ -71,6 +71,7 @@
       "name": "@hesprs/sync-engine-sdk",
       "version": "3.4.2",
       "dependencies": {
+        "@obsidian-typings/obsidian-public-latest": "catalog:",
         "obsidian": "catalog:",
       },
       "devDependencies": {
@@ -129,6 +130,7 @@
   },
   "catalog": {
     "@hesprs/harness": "./harness.tgz",
+    "@obsidian-typings/obsidian-public-latest": "^6.59.0",
     "hash-wasm": "^4.13.0",
     "obsidian": "^1.14.4",
     "synthkernel": "./synthkernel.tgz",

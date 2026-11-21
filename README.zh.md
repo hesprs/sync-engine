@@ -50,8 +50,7 @@
 
 Sync Engine 是一款用于**多设备间同步 Vault 笔记文件**的插件，主要支持：
 
-**存储后端**：[S3](https://sync.consensia.cc/deep-dive/modules/s3)、[WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav)、[Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive) 及 [Dropbox](https://sync.consensia.cc/deep-dive/modules/dropbox)<br>
-**核心特性**：
+**存储后端**：[S3](https://sync.consensia.cc/deep-dive/modules/s3)、[WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav)、[Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive) 及 [Dropbox](https://sync.consensia.cc/deep-dive/modules/dropbox)<br>**核心特性**：
 
 - [客户端端到端加密](https://sync.consensia.cc/deep-dive/modules/encryption)
 - 使用 Glob 规则进行精细化的同步策略配置（双向同步 / 镜像远程 / 镜像本地 / 不同步）。
@@ -157,7 +156,6 @@ Sync Engine 设立了[功能需求清单](https://github.com/hesprs/sync-engine/
 
 ## 开源协议
 
-本仓库中的 Sync Engine 源码及相关模块均采用 [MIT 开源协议](https://mit-license.org/) 授权。<br>
-文档网站的内容页面采用 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 授权。
+本仓库中的 Sync Engine 源码及相关模块均采用 [MIT 开源协议](https://mit-license.org/) 授权。<br>文档网站的内容页面采用 [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) 授权。
 
 版权所有 ©️ 2026 Hēsperus 及全体贡献者

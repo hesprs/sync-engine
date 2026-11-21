@@ -1,5 +1,5 @@
-import type { Request } from '@/modules/Registrar';
 import type { MaybePromise } from '@/types';
+import type { Request } from '@/utils/native';
 
 type RateLimiterOptions = { maxConcurrency: number; minInterval: number };
 

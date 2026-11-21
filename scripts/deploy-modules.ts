@@ -1,9 +1,9 @@
 // oxlint-disable import/no-nodejs-modules no-console
+import modules from '../modules.json' with { type: 'json' };
+import sha256 from '../packages/plugin/src/utils/sha-256';
 import { mkdtemp, mkdir, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import modules from '../modules.json' with { type: 'json' };
-import sha256 from '../packages/plugin/src/utils/sha-256';
 
 type ModuleMeta = {
 	id: string;
