@@ -108,7 +108,11 @@ export function encodeBase64(bytes: Binary): string {
 }
 
 export function decodeBase64(value: string): Binary {
-	return Uint8Array.from(atob(value), (char) => char.charCodeAt(0));
+	if (typeof Uint8Array.fromBase64 === 'function') return Uint8Array.fromBase64(value);
+	const binary = atob(value);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+	return bytes;
 }
 
 export function encodeBase64Url(value: Binary): string {

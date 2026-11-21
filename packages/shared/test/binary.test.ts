@@ -1,6 +1,8 @@
 import {
 	collectStreamToBinary,
 	concatBinary,
+	decodeBase64,
+	decodeBase64Url,
 	encodeBase64,
 	encodeBase64Url,
 	PartBuffer,
@@ -100,6 +102,23 @@ test('encode functions fall back to the manual path when toBase64 is absent', ()
 		expect(encodeBase64Url(bytes)).toBe(expectedUrl);
 	} finally {
 		proto.toBase64 = saved;
+	}
+});
+
+test('decode functions fall back to the manual path when fromBase64 is absent', () => {
+	const bytes = new Uint8Array(1024);
+	for (let index = 0; index < bytes.length; index++) bytes[index] = index % 251;
+	const encoded = encodeBase64(bytes);
+	expect(decodeBase64(encoded)).toStrictEqual(bytes);
+	const ctor = Uint8Array as { fromBase64?: unknown };
+	const saved = ctor.fromBase64;
+	delete ctor.fromBase64;
+	try {
+		expect(decodeBase64(encoded)).toStrictEqual(bytes);
+		expect(decodeBase64('')).toStrictEqual(new Uint8Array(0));
+		expect(decodeBase64Url(encodeBase64Url(bytes))).toStrictEqual(bytes);
+	} finally {
+		ctor.fromBase64 = saved;
 	}
 });
 

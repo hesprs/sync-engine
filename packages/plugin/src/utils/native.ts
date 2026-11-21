@@ -63,24 +63,26 @@ function lowercaseHeaders(headers: Record<string, string>): StringKV {
 	return headers;
 }
 
-async function requestViaCapacitor(url: string, params?: RequestParam): Promise<RequestResponse> {
+async function requestViaCapacitor(
+	url: string,
+	{ body, throw: th, contentType, headers, method }: RequestParam = {},
+): Promise<RequestResponse> {
 	appPlugin ??= window.Capacitor.registerPlugin<AppPlugin>('App');
-	const body = params?.body;
 	const {
-		body: rawBody,
-		headers,
+		body: responseBody,
+		headers: responseHeaders,
 		status,
 	} = await appPlugin.requestUrl({
 		binary: body !== undefined && typeof body !== 'string',
 		body: typeof body === 'string' || body === undefined ? body : encodeBase64(body),
-		contentType: params?.contentType,
-		headers: params?.headers,
-		method: params?.method,
+		contentType,
+		headers,
+		method,
 		url,
 	});
-	const bytes = decodeBase64(rawBody);
-	const lowered = lowercaseHeaders(headers);
-	if ((params?.throw ?? true) && status >= 400) {
+	const bytes = decodeBase64(responseBody);
+	const lowered = lowercaseHeaders(responseHeaders);
+	if ((th ?? true) && status >= 400) {
 		const error = new Error(`Request failed, status ${status}`);
 		(error as { headers?: StringKV }).headers = lowered;
 		(error as { status?: number }).status = status;
