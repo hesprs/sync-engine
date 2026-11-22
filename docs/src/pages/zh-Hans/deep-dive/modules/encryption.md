@@ -210,7 +210,6 @@ import Canvas from '@/components/Canvas.vue';
 
 行为：
 
-- context 的 `memoryDB` 类型不同，把它转型为 ` MemoryDatabase<EncryptionDBSchema, EncryptionDBMeta>`。
 - `encryptionMarker` = `RemoteFs.getUid()` || `~` || _用户密码_
 - 缓存的派生密钥保存在 store meta 的 `encryptionKeys` 字段中
 - 仅在包装器激活时执行一次：检查 store meta 的 `encryptionMarker` 是否与当前一致。不一致时清空存储和 `encryptionKeys`，并把元数据更新为当前 uid。
