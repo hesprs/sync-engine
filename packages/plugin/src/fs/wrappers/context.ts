@@ -1,5 +1,5 @@
-import type { WrappedFs, Fs, ListReporter } from '../interface';
-import type { MaybePromise, Stat, Binary, FileStat, FolderStat } from '@/types';
+import type { Fs, ListReporter, WrappedFs } from '../interface';
+import type { Binary, FileStat, FolderStat, MaybePromise, Stat } from '@/types';
 import type { DatabaseSync, StoreSync } from 'uni-kv';
 
 type ContextOptions<S extends string, M extends string> = {

@@ -1,8 +1,8 @@
 import 'tsdown/client';
-import { PendingAuthorization, TokenManager, bearerMiddleware } from './dropbox/auth';
+import { bearerMiddleware, PendingAuthorization, TokenManager } from './dropbox/auth';
 import checkConnection from './dropbox/check-connection';
 import DropboxFs from './dropbox/fs';
-import { ru, en, zh, zhTW } from './i18n';
+import { en, ru, zh, zhTW } from './i18n';
 import dropboxOptimizer from './optimizer';
 import dropboxSetting from './setting';
 import styles from './styles.css?inline';
@@ -19,8 +19,8 @@ import type {
 	SettingEntry,
 	Settings,
 	Translate,
-	Translations,
 	TranslationResource,
+	Translations,
 } from '@hesprs/sync-engine-sdk';
 import type { App, ObsidianProtocolHandler } from 'obsidian';
 

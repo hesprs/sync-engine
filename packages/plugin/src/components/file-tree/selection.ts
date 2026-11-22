@@ -2,7 +2,7 @@ import CreateLocalDir from '@/sync/tasks/CreateLocalDir';
 import CreateRemoteDir from '@/sync/tasks/CreateRemoteDir';
 import { createStore } from 'solid-js/store';
 import type { FileTreeData, FileTreeNode } from './types';
-import type { Task, MoveLocal, MoveRemote } from '@/sync';
+import type { MoveLocal, MoveRemote, Task } from '@/sync';
 
 function isMoveTask(task?: Task): task is MoveLocal | MoveRemote {
 	return task?.name === 'moveLocal' || task?.name === 'moveRemote';

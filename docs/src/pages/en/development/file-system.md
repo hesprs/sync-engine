@@ -81,7 +81,7 @@ type ListReporter = (progress: Required<Progress>) => MaybePromise<ListOptions>;
 ### Class Implementation
 
 ```ts
-import type { Progress, RootFs, Stat, Request } from '@hesprs/sync-engine-sdk';
+import type { Progress, Request, RootFs, Stat } from '@hesprs/sync-engine-sdk';
 
 export type MyFsOptions = { endpoint: string; apiKey: string };
 

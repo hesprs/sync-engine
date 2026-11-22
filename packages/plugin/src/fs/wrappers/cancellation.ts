@@ -1,6 +1,6 @@
 import { syncCancelledError } from '@/sync';
 import type { Fs, ListReporter, WrappedFs } from '../interface';
-import type { MaybePromise, Binary, FileStat, General, FolderStat } from '@/types';
+import type { Binary, FileStat, FolderStat, General, MaybePromise } from '@/types';
 import type { Ref } from 'synthkernel';
 
 function assertNotCancelled(isCancelled: Ref<boolean>) {

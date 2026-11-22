@@ -17,7 +17,7 @@
     <a href="https://github.com/hesprs/sync-engine/actions">
         <img src="https://img.shields.io/github/actions/workflow/status/hesprs/sync-engine/ci.yml?logo=github&logoColor=white&label=CI&labelColor=d4ab00&color=333333" alt="ci">
     </a>
-    <a href="https://sync.consensia.cc">
+    <a href="https://sync.consensia.cc/zh-Hans/zh-Hans">
         <img src="https://img.shields.io/badge/Documentation-Ready-333333?labelColor=5C73E7&logo=vitepress&logoColor=white" alt="Documentation" />
     </a>
     <img src="https://img.shields.io/badge/Types-Strict-333333?logo=typescript&labelColor=blue&logoColor=white" alt="TypeScript">
@@ -38,7 +38,7 @@
     <a href="./README.md">
         <strong>English</strong>
     </a> • 
-    <a href="https://sync.consensia.cc">
+    <a href="https://sync.consensia.cc/zh-Hans">
         <strong>文档指南</strong>
     </a> • 
     <a href="https://community.obsidian.md/plugins/sync-engine">
@@ -50,19 +50,19 @@
 
 Sync Engine 是一款用于**多设备间同步 Vault 笔记文件**的插件，主要支持：
 
-**存储后端**：[S3](https://sync.consensia.cc/deep-dive/modules/s3)、[WebDAV](https://sync.consensia.cc/deep-dive/modules/webdav)、[Google Drive](https://sync.consensia.cc/deep-dive/modules/gdrive) 及 [Dropbox](https://sync.consensia.cc/deep-dive/modules/dropbox)<br>**核心特性**：
+**存储后端**：[S3](https://sync.consensia.cc/zh-Hans/deep-dive/modules/s3)、[WebDAV](https://sync.consensia.cc/zh-Hans/deep-dive/modules/webdav)、[Google Drive](https://sync.consensia.cc/zh-Hans/deep-dive/modules/gdrive) 及 [Dropbox](https://sync.consensia.cc/zh-Hans/deep-dive/modules/dropbox)<br>**核心特性**：
 
-- [客户端端到端加密](https://sync.consensia.cc/deep-dive/modules/encryption)
+- [客户端端到端加密](https://sync.consensia.cc/zh-Hans/deep-dive/modules/encryption)
 - 使用 Glob 规则进行精细化的同步策略配置（双向同步 / 镜像远程 / 镜像本地 / 不同步）。
 - 支持启动时同步、定时同步、焦点同步以及变更时同步。
-- 灵活的冲突解决方案（[智能合并](https://sync.consensia.cc/deep-dive/modules/smart-merge) / 保留两者 / 保留最新版 / 覆盖为远端 / 覆盖为本地 / 直接跳过）。
+- 灵活的冲突解决方案（[智能合并](https://sync.consensia.cc/zh-Hans/deep-dive/modules/smart-merge) / 保留两者 / 保留最新版 / 覆盖为远端 / 覆盖为本地 / 直接跳过）。
 - 同步文件创建 / 修改时间。
 - 速率与内存占用调优选项。
 - 自定义请求头设置。
 
-Sync Engine 还是一个**模块化扩展平台**。得益于[便捷的 SDK 支持](https://sync.consensia.cc/development/develop-a-module)，无需修改任何插件源码，任何人都能自主[构建专属模块](https://sync.consensia.cc/development/develop-a-module)来扩展功能，或[为社区贡献新特性](https://sync.consensia.cc/usage/contributing)。
+Sync Engine 还是一个**模块化扩展平台**。得益于[便捷的 SDK 支持](https://sync.consensia.cc/zh-Hans/development/develop-a-module)，无需修改任何插件源码，任何人都能自主[构建专属模块](https://sync.consensia.cc/zh-Hans/development/develop-a-module)来扩展功能，或[为社区贡献新特性](https://sync.consensia.cc/zh-Hans/usage/contributing)。
 
-欢迎访问使用文档网站 [`sync.consensia.cc`](https://sync.consensia.cc)，获取详细的使用指南、现有模块列表、权限说明、性能基测报告以及模块开发文档。
+欢迎访问使用文档网站 [`sync.consensia.cc/zh-Hans`](https://sync.consensia.cc/zh-Hans)，获取详细的使用指南、现有模块列表、权限说明、性能基测报告以及模块开发文档。
 
 目前社区已有不少优秀的跨设备笔记同步插件：
 
@@ -77,20 +77,20 @@ Sync Engine 正好填补了这一空白：让您自由选择存储服务；插�
 ### 极速
 
 - 采用增量同步机制，无需每次重复上传整个 Vault。
-- [锚定非对称存储](https://sync.consensia.cc/deep-dive/asymmetric-storage)技术大幅提升同步效率。
+- [锚定非对称存储](https://sync.consensia.cc/zh-Hans/deep-dive/asymmetric-storage)技术大幅提升同步效率。
 - 实时同步依靠本地缓存的远端状态，毫秒间即可完成状态校验。
-- [基准测试表明，部分指标超越 Remotely Save 近 **100 倍**](https://sync.consensia.cc/usage/benchmark)。
+- [基准测试表明，部分指标超越 Remotely Save 近 **100 倍**](https://sync.consensia.cc/zh-Hans/usage/benchmark)。
 - 面对包含数万文件的庞大 Vault 依然从容高效。
 - 同步性能不亚于自建专用服务器。
-- 详细的数据对比请参阅[性能基测试报告](https://sync.consensia.cc/usage/benchmark)。
+- 详细的数据对比请参阅[性能基测试报告](https://sync.consensia.cc/zh-Hans/usage/benchmark)。
 
 ### 免费且可靠
 
 - 完全开源，遵循 [MIT 开源协议](https://mit-license.org/)，可免费使用及分发。
 - 包括插件核心、全部模块及文档网站在内的所有源码均在开源仓库中公开呈现，并通过了 Obsidian 官方的自动化安全扫描。无任何隐蔽的数据埋点或第三方服务器依赖。
-- [官方文档](https://sync.consensia.cc)对所有细节做了透明交代，包含详细的[权限调阅](https://sync.consensia.cc/usage/permissions)与[安全说明](https://sync.consensia.cc/usage/security)。
-- 内置多重防护机制保障安全：[数据加密](https://sync.consensia.cc/deep-dive/modules/encryption)、[模块签名验证](https://sync.consensia.cc/deep-dive/extensibility)。
-- [同步算法](https://sync.consensia.cc/deep-dive/sync)经过海量实际使用场景的考验与演进打磨，稳定可靠。
+- [官方文档](https://sync.consensia.cc/zh-Hans)对所有细节做了透明交代，包含详细的[权限调阅](https://sync.consensia.cc/zh-Hans/usage/permissions)与[安全说明](https://sync.consensia.cc/zh-Hans/usage/security)。
+- 内置多重防护机制保障安全：[数据加密](https://sync.consensia.cc/zh-Hans/deep-dive/modules/encryption)、[模块签名验证](https://sync.consensia.cc/zh-Hans/deep-dive/extensibility)。
+- [同步算法](https://sync.consensia.cc/zh-Hans/deep-dive/sync)经过海量实际使用场景的考验与演进打磨，稳定可靠。
 
 ### 高度可扩展
 
@@ -107,7 +107,7 @@ Sync Engine 正好填补了这一空白：让您自由选择存储服务；插�
 4. 通过命令面板或侧边栏按钮发起首次同步。
 5. 预览即将执行的同步任务清单。
 6. 点击“确认”，您的文件便会以极快速度同步至目标后端。
-7. 查阅[官方文档](https://sync.consensia.cc)以解锁更多高级用法。
+7. 查阅[官方文档](https://sync.consensia.cc/zh-Hans)以解锁更多高级用法。
 
 ## 路线图
 
@@ -152,7 +152,7 @@ Sync Engine 设立了[功能需求清单](https://github.com/hesprs/sync-engine/
 
 </details>
 
-访问位于 [`sync.consensia.cc`](https://sync.consensia.cc) 的 Sync Engine 文档以获取更多详情。
+访问位于 [`sync.consensia.cc/zh-Hans`](https://sync.consensia.cc/zh-Hans) 的 Sync Engine 文档以获取更多详情。
 
 ## 开源协议
 

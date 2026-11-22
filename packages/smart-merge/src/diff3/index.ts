@@ -35,8 +35,7 @@ export type MergeChunk<T> =
 export type DiffResult<T> = MergeChunk<T>;
 
 export type DiffCommonResult<T> =
-	| { type: 'common'; common: Array<T> }
-	| { type: 'diff'; a: Array<T>; b: Array<T> };
+	{ type: 'common'; common: Array<T> } | { type: 'diff'; a: Array<T>; b: Array<T> };
 
 type Side = 0 | 1 | 2;
 type ChangedSide = 0 | 2;

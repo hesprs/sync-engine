@@ -11,8 +11,8 @@
 	],
 	"type": "module",
 	"scripts": {
-		"dev": "MODE=dev bun --bun tsdown",
-		"compile": "bun --bun tsdown",
+		"dev": "MODE=dev tsdown",
+		"compile": "tsdown",
 		"fix": "oxlint --silent --fix && bun fmt",
 		"check": "oxlint && bun fmt --check"
 	},

@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import {
+	Controls,
 	JSONCanvasViewerComponent as Viewer,
 	Minimap,
 	MistouchPreventer,
-	Controls,
 } from '@json-canvas-viewer/vue';
 import { useData } from 'vitepress';
 import type { JSONCanvas } from '@json-canvas-viewer/vue';

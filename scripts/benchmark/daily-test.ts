@@ -60,8 +60,7 @@ await execute(
 
 type MaybePromise<T> = Promise<T> | T;
 type Command =
-	| string
-	| { command: string; callback: (result: $.ShellPromise) => MaybePromise<void> };
+	string | { command: string; callback: (result: $.ShellPromise) => MaybePromise<void> };
 export type Commands = Array<Command | Array<Command>>;
 
 function handleCommand(command: Command) {

@@ -1,7 +1,7 @@
 import zh from './translations';
 import type {
-	SelectFromContext,
 	ObsidianLanguageCode,
+	SelectFromContext,
 	TranslationResource,
 } from '@hesprs/sync-engine-sdk';
 

@@ -1,0 +1,22 @@
+[fmt]
+tabWidth = 4
+printWidth = 100
+useTabs = true
+endOfLine = "lf"
+singleQuote = true
+proseWrap = "never"
+objectWrap = "collapse"
+embeddedLanguageFormatting = "auto"
+ignorePatterns = ["**/node_modules/**", "**/dist/**", "**/public/**"]
+
+[fmt.sortImports]
+newlinesBetween = false
+groups = ["unknown", "value-import", "type-import"]
+
+[fmt.jsdoc]
+preferCodeFences = true
+bracketSpacing = true
+
+[[fmt.overrides]]
+files = ["*.md", "*.yaml", "*.yml"]
+options = { tabWidth = 2, useTabs = false }

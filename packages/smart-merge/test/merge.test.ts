@@ -1,5 +1,5 @@
 import mergeOriginal from '@/utils/merge';
-import { test, expect } from 'bun:test';
+import { expect, test } from 'bun:test';
 import type { MergeParams } from '@/utils/merge';
 
 function merge(params: MergeParams): string {

@@ -1,4 +1,3 @@
-import { request } from '@/utils/native';
 import { afterAll, expect, test } from 'bun:test';
 import { Platform } from 'obsidian';
 
@@ -18,8 +17,6 @@ let result: { body: string; headers: Record<string, string>; status: number } = 
 	status: 200,
 };
 
-// The mobile branch is chosen per call from the live Platform object.
-// The Capacitor boundary has to be in place before calling into it.
 Platform.isMobileApp = true;
 window.Capacitor = {
 	registerPlugin: () => ({
@@ -29,6 +26,7 @@ window.Capacitor = {
 		},
 	}),
 } as never;
+const { request } = await import('@/utils/native');
 
 afterAll(() => {
 	Platform.isMobileApp = false;
