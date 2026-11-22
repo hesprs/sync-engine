@@ -11,8 +11,8 @@
 	],
 	"type": "module",
 	"scripts": {
-		"dev": "MODE=dev bun --env-file=.env tsdown",
-		"compile": "bun --env-file=.env tsdown",
+		"dev": "MODE=dev bun --bun --env-file=.env tsdown",
+		"compile": "bun --bun --env-file=.env tsdown",
 		"fix": "oxlint --silent --fix && bun fmt",
 		"check": "oxlint && bun fmt --check",
 		"tests": "bun test --parallel"
