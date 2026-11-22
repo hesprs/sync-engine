@@ -30,6 +30,12 @@ jobs:
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Symlink Node to Bun
+        run: |
+          mkdir -p "$RUNNER_TEMP/bun-node-bin"
+          ln -s "$(command -v bun)" "$RUNNER_TEMP/bun-node-bin/node"
+          echo "$RUNNER_TEMP/bun-node-bin" >> "$GITHUB_PATH"
+
       - name: Install dependencies
         run: bun install
 
