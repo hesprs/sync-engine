@@ -4,6 +4,7 @@
 	"noUpdateNotifier": true,
 	"concurrency": "100%",
 	"agentGuidance": false,
+	"globalDependencies": ["bunfig.toml", ".oxlintrc.json"],
 	"tasks": {
 		"compile": {
 			"dependsOn": ["^compile"],
@@ -14,19 +15,11 @@
 		"dev": {
 			"dependsOn": ["^dev"],
 			"outputs": ["dist/**"],
-			"cache": true
-		},
-		"fix": {
-			"dependsOn": [],
-			"cache": true
-		},
-		"check": {
 			"cache": true,
-			"dependsOn": ["^dev"]
+			"env": ["GDRIVE_CLIENT_ID", "GDRIVE_CLIENT_SECRET", "DROPBOX_APP_KEY"]
 		},
-		"tests": {
-			"dependsOn": ["^dev"],
-			"cache": true
-		}
+		"fix": { "dependsOn": [], "cache": true },
+		"check": { "cache": true, "dependsOn": ["^dev"] },
+		"tests": { "dependsOn": ["^dev"], "cache": true }
 	}
 }

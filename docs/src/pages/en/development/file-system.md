@@ -81,7 +81,7 @@ type ListReporter = (progress: Required<Progress>) => MaybePromise<ListOptions>;
 ### Class Implementation
 
 ```ts
-import type { Progress, RootFs, Stat, Request } from '@hesprs/sync-engine-sdk';
+import type { Progress, Request, RootFs, Stat } from '@hesprs/sync-engine-sdk';
 
 export type MyFsOptions = { endpoint: string; apiKey: string };
 
@@ -116,7 +116,7 @@ For existing wrappers with priorities, and detailed behavior of each wrapper, se
 
 ### `prefixWrapper`
 
-Prefix wrapper is a runtime export for backends to support base-directory-like behavior easily. Behavior detail see [Prefix Wrapper](../deep-dive/file-system-wrappers#prefix-wrapper).
+Prefix wrapper is a runtime export for backends to support base-directory-like behavior easily. For behavior details see [Prefix Wrapper](../deep-dive/file-system-wrappers#prefix-wrapper).
 
 ```ts
 import { prefixWrapper } from '@hesprs/sync-engine-sdk';
@@ -187,7 +187,7 @@ The optimizer receives the full atom list and can:
 
 - Replace multiple atoms with a single `CustomAtom`
 - Add or remove atoms
-- Wrap an atom's `execute` by reassign it to await `executeAtom()` of dependency atoms
+- Wrap an atom's `execute` by reassigning it to await `executeAtom()` of dependency atoms
 - Resolve or reject an atom directly
 
 `executeAtom` invokes an atom's `execute()` from the parent reference and caches the result universally, so the atom is only executed once using the outermost wrapping.

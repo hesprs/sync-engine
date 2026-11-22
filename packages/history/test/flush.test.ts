@@ -1,6 +1,6 @@
 import { flushPending, flushPendingBatch, FlushScheduler, reconcile } from '@/flush';
 import { decodeHeadLog } from '@/head-log';
-import { readLamport, openHistoryStores, readPending } from '@/store';
+import { openHistoryStores, readLamport, readPending } from '@/store';
 import { ingestEdit } from '@/wal';
 import { expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';

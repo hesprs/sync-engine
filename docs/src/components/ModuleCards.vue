@@ -2,7 +2,7 @@
 import modules from '@/modules.json';
 import { useData } from 'vitepress';
 
-const translations: Record<string, string> = { 'en-US': 'Download' };
+const translations: Record<string, string> = { 'en-US': 'Download', 'zh-CN': '下载' };
 const download = translations[useData().lang.value];
 </script>
 

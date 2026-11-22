@@ -15,12 +15,7 @@ export type CollaborationSettings = {
 	username: string;
 };
 export type CollaborationStatus =
-	| 'connected'
-	| 'connecting'
-	| 'disabled'
-	| 'error'
-	| 'missing-room'
-	| 'reconnecting';
+	'connected' | 'connecting' | 'disabled' | 'error' | 'missing-room' | 'reconnecting';
 
 export default function collaborationSetting(
 	ctx: {

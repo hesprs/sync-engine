@@ -7,14 +7,14 @@ Sync Engine uses a native Obsidian settings page to manage executable modules fr
 `ModuleManagement` extends Obsidian's `SettingPage`. Its page contains:
 
 - a full-width search field;
-- an icon button that opens a menu with the **Show installed only** toggle and **Install module from file**;
-- a Solid.js module-card list.
+- an icon button that opens a menu with the **Show installed only** toggle, **Install module from file**, **Install module from code**, and **Refresh sources**;
+- a Solid.js module-card grid.
 
 Module source URLs are edited separately on **Settings > Sync Engine > Development > Module sources**. Returning to Module management creates a new source snapshot and refreshes the catalog.
 
-The search field uses Obsidian's `SearchComponent`. An empty query sorts modules alphabetically. A non-empty query uses `prepareFuzzySearch()` against module names and descriptions, then sorts by match score and name.
+The search field uses Obsidian's `SearchComponent`. An empty query sorts modules alphabetically by module ID. A non-empty query uses `prepareFuzzySearch()` against module names and descriptions, then sorts by match score and module ID.
 
-**Install module from file** opens a file picker that only accepts `.js` files; other extensions are rejected with a notice. The chosen file opens the module editor with metadata prefilled from the file's magic bytes, see [extensibility: install from file](./extensibility#install-from-file).
+**Install module from file** opens a file picker that accepts `.js` and `.mjs` files; other extensions are rejected with a notice. The chosen file opens the module editor with metadata prefilled from the file's magic bytes, see [extensibility: install from file](./extensibility#install-from-file). **Install module from code** opens a code input modal where the user pastes module code, then follows the same editor flow.
 
 ## Module Cards
 
@@ -31,7 +31,7 @@ Actions are disabled while another action for the same module is running. Runnin
 
 ## Source And Compatibility State
 
-`fetchSources()` reads every configured source. Source responses are cached for automatic update checks and can be forced to refresh for manual operations. Duplicate IDs within a source are ignored.
+`fetchSources()` reads every configured source. Source responses are cached for automatic update checks. The **Refresh sources** menu item forces a refresh and shows a notice with the number of discovered modules and sources. Duplicate IDs within a source are ignored.
 
 If a source entry declares a `minPluginVersion` newer than the running plugin, the catalog marks the plugin as outdated. Update Sync Engine before installing modules that require the newer version.
 

@@ -1,4 +1,6 @@
+const MERGEABLE_EXTENSIONS = ['.md', '.markdown', '.txt'];
+
 export default function isMergeablePath(path: string): boolean {
 	path = path.trim().toLowerCase();
-	return path.endsWith('.md') || path.endsWith('.markdown');
+	return MERGEABLE_EXTENSIONS.some((ext) => path.endsWith(ext));
 }

@@ -98,21 +98,28 @@ export class PartBuffer {
 	}
 }
 
+// 0x80_00 stays far below the ~65k spread-argument limit of String.fromCharCode
 export function encodeBase64(value: BufferSource): string {
 	const bytes =
-		value instanceof ArrayBuffer
-			? new Uint8Array(value)
-			: new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
-	let binary = '';
-	const chunkSize = 0x80_00;
-	for (let offset = 0; offset < bytes.length; offset += chunkSize)
-		binary += String.fromCodePoint(...bytes.subarray(offset, offset + chunkSize));
-	return btoa(binary);
+		value instanceof Uint8Array
+			? value
+			: value instanceof ArrayBuffer
+				? new Uint8Array(value)
+				: new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+	if (typeof bytes.toBase64 === 'function') return bytes.toBase64();
+	const CHUNK = 0x80_00;
+	const parts: Array<string> = [];
+	for (let i = 0; i < bytes.length; i += CHUNK)
+		parts.push(String.fromCharCode(...bytes.subarray(i, i + CHUNK)));
+	return btoa(parts.join(''));
 }
 
 export function decodeBase64(value: string): Binary {
+	if (typeof Uint8Array.fromBase64 === 'function') return Uint8Array.fromBase64(value);
 	const binary = atob(value);
-	return Uint8Array.from(binary, (character) => character.codePointAt(0) as number);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+	return bytes;
 }
 
 export function encodeBase64Url(value: BufferSource): string {

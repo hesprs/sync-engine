@@ -22,7 +22,7 @@ export default class CodeInputModal extends Modal {
 		const { translate } = this.ctx;
 		const area = this.contentEl.createEl('textarea', {
 			attr: { placeholder: translate('writeCodeDescription') },
-			cls: 'min-h-25vh w-100% mb-3 resize-y',
+			cls: 'se-min-h-25vh se-w-100% se-mb-3 se-resize-y',
 		});
 		new Setting(this.contentEl)
 			.addButton((button) =>

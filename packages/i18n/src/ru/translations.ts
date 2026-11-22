@@ -34,7 +34,7 @@ const ru: Translations = {
 			});
 			frag.appendText(', чтобы существенно ускорить синхронизацию.');
 		}),
-	asymmetricStorageMigration: (flag) =>
+	asymmetricStorageWarning: (flag) =>
 		createFragment((frag) => {
 			if (flag) {
 				frag.createEl('p', {
@@ -50,9 +50,6 @@ const ru: Translations = {
 				ol.createEl('li', {
 					text: 'После включения убедитесь, что асимметричное хранилище активировано на всех устройствах.',
 				});
-				ol.createEl('li', {
-					text: 'Миграция необходима, если это хранилище ранее синхронизировалось без асимметричного хранилища.',
-				});
 			} else {
 				frag.createEl('p', {
 					text: 'Обратите внимание на следующее перед отключением асимметричного хранилища:',
@@ -63,9 +60,6 @@ const ru: Translations = {
 				});
 				ol.createEl('li', {
 					text: 'Убедитесь, что асимметричное хранилище отключено на всех устройствах.',
-				});
-				ol.createEl('li', {
-					text: 'Миграция необходима, если это хранилище ранее синхронизировалось с включённым асимметричным хранилищем.',
 				});
 			}
 		}),
@@ -133,6 +127,8 @@ const ru: Translations = {
 	development: 'Разработка',
 	diffMatchPatch: 'Объединить',
 	disableModule: 'Отключить модуль',
+	discoveredModules: ({ module, source }) =>
+		`Найдено ${pc(module, 'модуль', 'модуля', 'модулей')} из ${pc(source, 'источника', 'источников', 'источников')}.`,
 	done: 'Готово',
 	dontSync: 'Не синхронизировать',
 	download: 'Скачать',
@@ -208,9 +204,11 @@ const ru: Translations = {
 	maxRequestConcurrencyDescription:
 		'Ограничить количество параллельных запросов во время синхронизации. Полезно для сервисов с лимитом на частоту запросов. Измените лимит в поле ниже.',
 	maxRequestConcurrencyPlaceholder: 'Введите лимит запросов',
-	migrationInstruction: () =>
+	migrationInstruction: (enable) =>
 		createFragment((frag) => {
-			const p1 = frag.createEl('p', { text: 'См. ' });
+			const p1 = frag.createEl('p', {
+				text: `Если вы ранее синхронизировали хранилище, когда эта опция была ${enable ? 'отключена' : 'включена'}, может потребоваться миграция удалённого хранилища. См. `,
+			});
 			p1.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
 				text: 'страницу документации',
@@ -260,7 +258,7 @@ const ru: Translations = {
 	noticeStatusOnMobileDescription:
 		'Отображать всплывающее уведомление на мобильных устройствах во время синхронизации. Заменяет строку состояния, используемую на ПК.',
 	official: 'Официальный',
-	openReadme: 'Открыть страницу README модуля.',
+	openReadme: 'Открыть страницу README модуля',
 	pleaseSetBackend: 'Пожалуйста, выберите бэкенд!',
 	readmePage: 'Страница README',
 	readmePageDescription:
@@ -274,6 +272,7 @@ const ru: Translations = {
 		'Ускорить синхронизацию в реальном времени, повторно используя кэшированные данные и избегая лишней проверки удалённых файлов.',
 	realtimeSyncPlaceholder: 'Введите задержку (например, 500ms, 5s)',
 	recordsCleared: 'Записи очищены',
+	refreshSources: 'Обновить источники',
 	remoteMigration: 'Миграция удалённого хранилища',
 	removeLocal: 'Удалить локальный файл',
 	removeRecord: 'Удалить запись',
@@ -297,11 +296,11 @@ const ru: Translations = {
 				text: 'документацию',
 			});
 			paragraph.appendText(' для подробного объяснения каждой настройки. Метки настроек:');
-			const ul = frag.createEl('ul', 'list-none ps-0!');
+			const ul = frag.createEl('ul');
 			for (const label of labels) {
 				const li = ul.createEl('li');
 				const flair = addLabel(li, label);
-				flair.addClass('m-0');
+				flair.addClass('se-m-0');
 				li.appendText(` ${flair.ariaLabel}`);
 			}
 		}),
@@ -322,18 +321,74 @@ const ru: Translations = {
 	stopSync: 'Остановить синхронизацию',
 	syncProgress: 'Прогресс синхронизации',
 	syncStrategy: 'Стратегия синхронизации',
-	syncStrategyDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'Настройте разные стратегии синхронизации для разных файлов на основе правил Glob. Если с одним файлом совпадают несколько правил, применяется последнее из них. См. ',
-			);
-			frag.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
-				text: 'страницу документации',
-			});
-			frag.appendText('.');
-		}),
+	syncStrategyDescription:
+		'Настройте разные стратегии синхронизации для разных файлов на основе правил Glob. Если с одним файлом совпадают несколько правил, применяется последнее из них.',
 	syncStrategyNotInstalled: (strategy) => `Стратегия синхронизации «${strategy}» не установлена!`,
+	syncStrategyTips: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', {
+				text: 'Конфигурация стратегии синхронизации — это упорядоченный список записей вида ',
+			});
+			p1.createEl('a', {
+				attr: { href: 'https://en.wikipedia.org/wiki/Glob_(programming)' },
+			}).createEl('strong', { text: 'правило Glob' });
+			p1.appendText(' + ');
+			p1.createEl('strong', { text: 'направление синхронизации' });
+			p1.appendText(
+				'. Правило Glob выбирает целевой набор файлов, а направление синхронизации определяет, как синхронизируются изменения этих файлов. Один файл может соответствовать нескольким записям; приоритет имеет последняя совпадающая запись в списке.',
+			);
+			const p2 = frag.createEl('p', {
+				text: 'Правило Glob записывается как простой путь к файлу с ',
+			});
+			p2.createEl('code', { text: '/' });
+			p2.appendText(
+				' в качестве разделителя пути и несколькими расширениями подстановочных знаков:',
+			);
+			const olGlob = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				'*': 'соответствует любым символам внутри одного сегмента пути.',
+				'**': 'соответствует любому количеству сегментов, включая ни одного.',
+				'?': 'соответствует одному символу.',
+				'[abc]': 'соответствует одному символу из набора.',
+				'[!abc]': 'соответствует одному символу вне набора.',
+				'{a,b,c}':
+					'соответствует любому из перечисленных вариантов, фигурные скобки могут вкладываться.',
+			}).forEach(([key, text]) => {
+				const li = olGlob.createEl('li');
+				li.createEl('code', { text: key });
+				li.appendText(`: ${text}`);
+			});
+			const li1 = olGlob.createEl('li', { text: 'Правило, заканчивающееся на ' });
+			li1.createEl('code', { text: '/' });
+			li1.appendText(', соответствует только папкам.');
+			const li2 = olGlob.createEl('li', { text: 'Правило, начинающееся с ' });
+			li2.createEl('code', { text: '/' });
+			li2.appendText(
+				', сопоставляется от корня хранилища, иначе оно соответствует на любой глубине.',
+			);
+			const li3 = olGlob.createEl('li', {
+				text: 'Не забывайте добавлять расширения (например, ',
+			});
+			li3.createEl('code', { text: '.md' });
+			li3.appendText(') при сопоставлении файлов.');
+			olGlob.createEl('li', { text: 'Регистр в правилах учитывается.' });
+			frag.createEl('p', { text: 'Встроенные направления синхронизации включают:' });
+			const olDirection = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				Двунаправленная: 'синхронизирует изменения с обеих сторон.',
+				'Зеркало локального хранилища':
+					'перезаписывает удалённое хранилище локальными изменениями.',
+				'Зеркало удалённого хранилища':
+					'перезаписывает локальное хранилище удалёнными изменениями.',
+				'Не синхронизировать': 'исключает соответствующие файлы из синхронизации.',
+			}).forEach(([key, text]) => {
+				const li = olDirection.createEl('li');
+				li.createEl('strong', { text: key });
+				li.appendText(`: ${text}`);
+			});
+		}),
 	untrustedModule: 'Модуль из недоверенного источника',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
@@ -346,7 +401,7 @@ const ru: Translations = {
 			});
 			const ul = frag
 				.createDiv(
-					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
+					'se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-px-2',
 				)
 				.createEl('ul');
 			const li1 = ul.createEl('li');
@@ -384,7 +439,12 @@ const ru: Translations = {
 	updateModule: 'Обновить модуль',
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: 'Загрузить',
+	version: 'Версия',
+	versionDescription:
+		'Укажите версию модуля, используемую при сравнении обновлений и отображении в карточке модуля.',
+	versionPlaceholder: 'Введите версию (например, 0.0.1)',
 	walkingRemote: 'Сканирование удалённых файлов',
+	warning: 'Предупреждение',
 	writeCode: 'Написать код',
 	writeCodeDescription: 'Напишите код своего модуля здесь на JavaScript',
 	xConfigured: (count) => `Настроено: ${count}`,

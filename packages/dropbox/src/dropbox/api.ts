@@ -34,8 +34,7 @@ export type FolderMetadata = {
 };
 
 export type Metadata =
-	| ({ '.tag': 'file' } & FileMetadata)
-	| ({ '.tag': 'folder' } & FolderMetadata);
+	({ '.tag': 'file' } & FileMetadata) | ({ '.tag': 'folder' } & FolderMetadata);
 
 export type UploadArg = {
 	path: string;
@@ -62,10 +61,7 @@ export type FinishBatchEntry =
 	| { '.tag': 'failure'; failure: Record<string, unknown> };
 
 export type BatchEntry =
-	| DeleteBatchEntry
-	| RelocationBatchEntry
-	| CreateFolderBatchEntry
-	| FinishBatchEntry;
+	DeleteBatchEntry | RelocationBatchEntry | CreateFolderBatchEntry | FinishBatchEntry;
 
 /** Dropbox paths are relative to the app folder root and never end with a slash. */
 export function keyToPath(key: string): string {
@@ -79,8 +75,9 @@ export function keyToPath(key: string): string {
  */
 export function escapeHeaderJson(arg: Record<string, unknown>): string {
 	return JSON.stringify(arg).replaceAll(
-		/[\u007F-\uFFFF]/gu,
-		(char) => `\\u${(char.codePointAt(0) as number).toString(16).padStart(4, '0')}`,
+		// oxlint-disable-next-line require-unicode-regexp
+		/[\u007F-\uFFFF]/g,
+		(char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`,
 	);
 }
 

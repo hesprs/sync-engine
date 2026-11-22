@@ -10,8 +10,8 @@ const BADGE_STYLES = {
 
 function toggleSpin(el: Element | null | undefined, spinning: boolean): void {
 	if (!el) return;
-	if (spinning) (el as HTMLElement).addClass('animate-spin');
-	else (el as HTMLElement).removeClass('animate-spin');
+	if (spinning) (el as HTMLElement).addClass('se-animate-spin');
+	else (el as HTMLElement).removeClass('se-animate-spin');
 }
 
 export function setAttrIfChanged(el: HTMLElement, name: string, value?: string): void {

@@ -1,0 +1,3 @@
+[test]
+pathIgnorePatterns = ["**/*.spec.*"]
+preload = ["./test/obsidian-mock.spec.ts"]

@@ -1,4 +1,4 @@
-import { pollDeviceToken, revokeToken, startDeviceAuthorization } from './gdrive/auth';
+import { pollDeviceToken, startDeviceAuthorization } from './gdrive/auth';
 import { settingEntry as s } from '@hesprs/sync-engine-sdk';
 import { describeError, toError } from '@repo/shared/error';
 import { normalizeBaseDir } from '@repo/shared/path';
@@ -8,12 +8,12 @@ import type { GdriveSettings } from '@';
 import type {
 	CallableOrObjectTree,
 	Dispatch,
+	Events,
 	Fragment,
 	LabelDefinition,
 	Snippet,
 	Translate,
 	Translations,
-	Events,
 } from '@hesprs/sync-engine-sdk';
 import type { App, SettingGroupItem } from 'obsidian';
 
@@ -179,13 +179,12 @@ export default function gdriveSetting(
 								.setButtonText(translate('disconnect'))
 								.setDestructive()
 								.onClick(async () => {
-									const token = tokenManager.getRefreshToken();
-									if (!token) return;
-									await revokeToken(token);
-									settings.userId = '';
-									tokenManager.deleteRefreshToken();
-									tokenManager.invalidate();
-									void saveSettings();
+									if (tokenManager.getRefreshToken()) {
+										await tokenManager.deleteRefreshToken();
+										settings.userId = '';
+										tokenManager.invalidate();
+										void saveSettings();
+									}
 									refreshSettingTab();
 								}),
 						);

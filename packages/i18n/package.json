@@ -11,10 +11,10 @@
 	],
 	"type": "module",
 	"scripts": {
-		"dev": "MODE=dev bun --bun tsdown",
-		"compile": "bun --bun tsdown",
-		"fix": "oxlint --silent --fix && oxfmt",
-		"check": "oxlint && oxfmt --check"
+		"dev": "MODE=dev tsdown",
+		"compile": "tsdown",
+		"fix": "oxlint --silent --fix && bun fmt",
+		"check": "oxlint && bun fmt --check"
 	},
 	"devDependencies": {
 		"@hesprs/sync-engine-sdk": "workspace:*",

@@ -1,17 +1,17 @@
 import { createVaultRequest, VaultFs } from '@/fs';
-import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
+import { request } from '@/utils/native';
 import hash from '@repo/shared/crypto';
 import { toError } from '@repo/shared/error';
-import { requestUrl } from 'obsidian';
 import type { Dispatch } from './EventBus';
 import type { Snippet, Translate } from './I18n';
 import type { RecordStore } from './Storage';
 import type { StrategyMapping, SyncOptions } from './Sync';
 import type { Events, Translations } from '@';
 import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
-import type { Task, ConflictResolver, Decider, TaskFactory } from '@/sync';
-import type { General, MaybePromise, Binary, StringKV } from '@/types';
-import type { App, RequestUrlParam, Plugin, ObsidianProtocolHandler } from 'obsidian';
+import type { ConflictResolver, Decider, Task, TaskFactory } from '@/sync';
+import type { General, MaybePromise } from '@/types';
+import type { Request } from '@/utils/native';
+import type { App, ObsidianProtocolHandler, Plugin } from 'obsidian';
 
 type RejectableWrapper<T> = (value: T) => T | undefined;
 type OrderedWrapperEntry<T> = { priority: number; apply: RejectableWrapper<T> };
@@ -36,42 +36,6 @@ export type OptimizerEntry = OrderedApplyEntry<BatchOptimizer>;
 export type TriggerEntry = { priority: number; options?: () => SyncOptions };
 
 export type Infras = { localFs: Fs; remoteFs: Fs; record: RecordStore };
-
-export type RequestParam = Omit<RequestUrlParam, 'body' | 'url'> & {
-	body?: string | Binary;
-	ignoreCancellation?: boolean;
-};
-export type RequestResponse = {
-	text: () => string;
-	bytes: () => Binary;
-	// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
-	json: <T extends object = object>() => T;
-	headers: StringKV;
-	status: number;
-};
-export type Request = (url: string, params?: RequestParam) => Promise<RequestResponse>;
-const request: Request = async (url: string, params?: RequestParam) => {
-	const body = params?.body;
-	if (body instanceof Uint8Array) (params as RequestUrlParam).body = toArrayBuffer(body);
-	const response = await requestUrl(
-		params ? (Object.assign(params, { url }) as RequestUrlParam) : url,
-	);
-	const { arrayBuffer, headers, status } = response; // Those three properties are static while the rest two are getters
-	for (const [key, value] of Object.entries(headers)) {
-		const lower = key.toLowerCase();
-		if (key === lower) continue;
-		headers[lower] = value;
-		delete headers[key];
-	}
-	return {
-		bytes: () => toUint8Array(arrayBuffer),
-		headers,
-		// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
-		json: <T extends object = object>() => response.json as T,
-		status,
-		text: () => response.text,
-	};
-};
 
 export default class Registrar {
 	readonly root;

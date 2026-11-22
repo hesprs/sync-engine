@@ -1,8 +1,8 @@
 import 'tsdown/client';
-import { TokenManager, bearerMiddleware } from './gdrive/auth';
+import { bearerMiddleware, TokenManager } from './gdrive/auth';
 import checkConnection from './gdrive/check-connection';
 import GdriveFs from './gdrive/fs';
-import { ru, en, zh, zhTW } from './i18n';
+import { en, ru, zh, zhTW } from './i18n';
 import gdriveSetting from './setting';
 import styles from './styles.css?inline';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
@@ -18,8 +18,8 @@ import type {
 	SettingEntry,
 	Settings,
 	Translate,
-	Translations,
 	TranslationResource,
+	Translations,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 
@@ -55,6 +55,7 @@ export default class Gdrive {
 	declare settings: Settings;
 
 	readonly start = () => {
+		const { moduleSettings, ctx, cleanup, settings, tokenManager } = this;
 		const {
 			translate,
 			registerRemoteFs,
@@ -63,33 +64,37 @@ export default class Gdrive {
 			registerRemoteRequestMiddleware,
 			registerSetting,
 			registerCss,
-		} = this.ctx;
-		this.cleanup.push(
+		} = ctx;
+		cleanup.push(
 			registerCss(styles),
 			registerRemoteFs('gdrive', {
 				checkConnection,
-				instantiate: (request) => new GdriveFs(request, this.moduleSettings, memoryDB),
+				instantiate: (request) => new GdriveFs(request, moduleSettings, memoryDB),
 				prettyName: () => translate('gdrive'),
 			}),
 			registerRemoteFsWrapper({
 				apply: (fs) => {
 					if (digOriginal(fs) instanceof GdriveFs)
-						return prefixWrapper(fs, this.moduleSettings.baseDirectory);
+						return prefixWrapper(fs, moduleSettings.baseDirectory);
 				},
 				priority: 5998,
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
-					if (this.settings.remoteFs === 'gdrive')
-						return bearerMiddleware(request, this.tokenManager);
+					if (settings.remoteFs === 'gdrive')
+						return bearerMiddleware(request, tokenManager);
 				},
 				priority: 305,
 			}),
 			registerSetting({
-				apply: gdriveSetting(this.ctx as Context, this.moduleSettings, this.tokenManager),
+				apply: gdriveSetting(ctx as Context, moduleSettings, tokenManager),
 				priority: 683,
 			}),
 		);
+
+		// The token can exist despite the user ID is missing (e.g. user reinstalled the plugin), force a re-auth to prevent bugs caused by a missing ID
+		const token = tokenManager.getRefreshToken();
+		if (!moduleSettings.userId && token) void tokenManager.deleteRefreshToken();
 	};
 
 	readonly dispose = () => {

@@ -5,14 +5,18 @@
 	"license": "MIT",
 	"type": "module",
 	"exports": {
+		"./obsidian-mock": {
+			"default": "./test/obsidian-mock.spec.ts",
+			"types": "./test/obsidian-mock.spec.ts"
+		},
 		"./*": {
 			"default": "./src/*.ts",
 			"types": "./src/*.ts"
 		}
 	},
 	"scripts": {
-		"fix": "oxlint --silent --fix && oxfmt",
-		"check": "oxlint && oxfmt --check",
-		"tests": "bun --preload=./test/mocks test"
+		"fix": "oxlint --silent --fix && bun fmt",
+		"check": "oxlint && bun fmt --check",
+		"tests": "bun test --parallel"
 	}
 }

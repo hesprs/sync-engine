@@ -15,7 +15,7 @@ The module system trusts:
 The loader guards against:
 
 - module files without existing record to prove user approval are not loaded automatically
-- module file must match its recorded SHA-256 value before it is imported, unless explicitly disabled by the user
+- module files must match their recorded SHA-256 value before they are imported, unless explicitly disabled by the user
 - compromised custom sources cannot disturb existing modules
 
 ## Module Sources
@@ -58,7 +58,7 @@ The source entry supplies both the module download URL (`main`) and the expected
 
 Module artifacts are stored in `<vault config directory>/plugins/sync-engine/modules/<id>.js`. The module directory is inside Obsidian's plugin configuration directory. New installations explicitly exclude this module directory, as well as the broader vault config directory, from synchronization.
 
-Installed module metadata is stored in a IndexedDB store whose name is derived from the vault name: `modules-<hash of vault name>`, so normal attacking method (e.g. compromised syncing backend) cannot arbitrarily modify module meta.
+Installed module metadata is stored in an IndexedDB store whose name is derived from the vault name: `modules-<hash of vault name>`, so normal attacking method (e.g. compromised syncing backend) cannot arbitrarily modify module meta.
 
 The stored metadata extends source metadata with:
 
@@ -108,7 +108,11 @@ New modules are disabled by default. The downloaded text is integrity-checked be
 
 ### Install From File
 
-The module management menu also offers **Install module from file**. The user picks a `.js` file (other extensions are rejected with a notice), and the module editor opens with metadata prefilled from the file's magic bytes, a leading `/*! ... */` comment of `key: value` lines embedded at build time. On save, `installModule()` writes the file to the module directory, stores the confirmed metadata, and loads the module when it is enabled. No source is involved in this path.
+The module management menu also offers **Install module from file**. The user picks a `.js` or `.mjs` file (other extensions are rejected with a notice), and the module editor opens with metadata prefilled from the file's magic bytes, a leading `/*! ... */` comment of `key: value` lines embedded at build time. On save, `installModule()` writes the file to the module directory, stores the confirmed metadata, and loads the module when it is enabled. No source is involved in this path.
+
+### Install From Code
+
+The module management menu also offers **Install module from code**. The user pastes module code into a code input modal, and the module editor opens with metadata prefilled from the code's magic bytes. On save, `installModule()` writes the code to the module directory, stores the confirmed metadata, and loads the module when it is enabled. No source is involved in this path.
 
 ### Automatic Update
 
@@ -145,4 +149,4 @@ The registered module APIs include, among others:
 - capability registries for backends, resolvers, optimizers, listers, settings, and CSS
 - SynthKernel module management helpers and the shared `allModules` set
 
-These privileges are intentional for trusted modules. Similar to how Obsidian gives full API access to user downloaded and enabled plugins.
+These privileges are intentional for trusted modules. This is similar to how Obsidian gives full API access to user-downloaded and enabled plugins.

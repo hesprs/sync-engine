@@ -1,4 +1,4 @@
-import { exchangeCodeForTokens, revokeToken, startAuthorization } from './dropbox/auth';
+import { exchangeCodeForTokens, startAuthorization } from './dropbox/auth';
 import { settingEntry as s } from '@hesprs/sync-engine-sdk';
 import { describeError, toError } from '@repo/shared/error';
 import { normalizeBaseDir } from '@repo/shared/path';
@@ -8,12 +8,12 @@ import type { DropboxSettings } from '@';
 import type {
 	CallableOrObjectTree,
 	Dispatch,
+	Events,
 	Fragment,
 	LabelDefinition,
 	Snippet,
 	Translate,
 	Translations,
-	Events,
 } from '@hesprs/sync-engine-sdk';
 import type { App, SettingGroupItem } from 'obsidian';
 
@@ -169,12 +169,12 @@ export default function dropboxSetting(
 								.setButtonText(translate('disconnect'))
 								.setDestructive()
 								.onClick(async () => {
-									if (!tokenManager.getRefreshToken()) return;
-									await revokeToken(tokenManager);
-									settings.accountId = '';
-									tokenManager.deleteRefreshToken();
-									tokenManager.invalidate();
-									void saveSettings();
+									if (tokenManager.getRefreshToken()) {
+										await tokenManager.deleteRefreshToken();
+										settings.accountId = '';
+										tokenManager.invalidate();
+										void saveSettings();
+									}
 									refreshSettingTab();
 								}),
 						);

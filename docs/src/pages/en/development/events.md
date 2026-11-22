@@ -18,7 +18,7 @@ type Dispatch<O extends object> = <K extends keyof O>(
 `on` returns a cleanup callback. `dispatch` makes payloadless events (type `undefined`) optional — call `ctx.dispatch('syncCanceled')` without a second argument.
 
 ```ts
-import type { Events, On, Dispatch } from '@hesprs/sync-engine-sdk';
+import type { Dispatch, Events, On } from '@hesprs/sync-engine-sdk';
 
 const on: On<Events> = ctx.on;
 const on: Dispatch<Events> = ctx.dispatch;
@@ -45,7 +45,7 @@ unsubscribe();
 | `logGeneral` | `string` general log message |
 | `errorSync` | `Error` sync error |
 | `errorGeneral` | `Error` general error |
-| `moduleLoaded` | `string` module name |
+| `moduleLoaded` | `AugmentedModuleMeta` module metadata |
 | `moduleUnloaded` | `string` module name |
 | `syncStarted` | `{ isCancelled: Ref<boolean>; trigger: string }` |
 | `syncInitialized` | `Infras & { match: (path: string) => GlobMatchResult }`: the run's file systems, record store, and compiled matcher |

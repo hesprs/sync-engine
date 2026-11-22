@@ -1,11 +1,11 @@
 import {
 	createChunkAAD,
 	decodeBase64Url,
+	decryptChunk,
 	deriveRoomKeys,
 	deriveTopic,
 	encodeBase64Url,
 	encryptChunk,
-	decryptChunk,
 	generateRoomCode,
 	isFresh,
 	parseRoomCode,

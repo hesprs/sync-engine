@@ -4,14 +4,14 @@
 
 In practice, this means you pick a storage backend (your own WebDAV server, for example), optionally add advanced features like encryption, and press "Sync". You don't configure features you won't use, and you don't carry code for services you'll never connect to. The sync remains fast and reliable, regardless of the backend you are using.
 
-**Real human maintainers are accountable for Sync Engine**. Although Sync Engine accepts AI-assisted module contribution. The Sync Engine core (the plugin) is strictly human-written and rejects any "vibe-coding". It consists of many ingenious engineering innovations that no AI can replicate.
+**Real human maintainers are accountable for Sync Engine**. Although Sync Engine accepts AI-assisted module contributions, the Sync Engine core (the plugin) is strictly human-written and rejects any "vibe-coding". It consists of many ingenious engineering innovations that no AI can replicate.
 
 ## Similar Choices
 
 There are several ways to sync an Obsidian vault:
 
 - **[Obsidian Sync](https://obsidian.md/sync)** is the official, zero-setup option. If you want sync working in under a minute and don't mind a monthly fee, start there.
-- **[Remotely Save](https://github.com/remotely-save/remotely-save)** supports many backends (S3, Dropbox, OneDrive, WebDAV). But is optionally paid, development paused for years with stability issues.
+- **[Remotely Save](https://github.com/remotely-save/remotely-save)** supports many backends (S3, Dropbox, OneDrive, WebDAV). But is optionally paid, and development has been paused for years with stability issues.
 - **[Self-hosted LiveSync](https://github.com/vrtmrz/obsidian-livesync)** and **[Fast Note Sync](https://github.com/haierkeys/obsidian-fast-note-sync)** offer real-time, server-based sync. They work well if you are comfortable setting up your own server.
 - **[Relay](https://github.com/No-Instructions/Relay)** is a managed relay service. Convenient, but your notes pass through infrastructure you don't control.
 
@@ -43,7 +43,7 @@ Sync Engine core offers necessary features to ensure the extensibility and perfo
 - Incremental syncing never uploads the full vault each time.
 - [Anchored Asymmetric Storage](../deep-dive/asymmetric-storage) technology substantially accelerates syncing.
 - Real-time sync uses cached remote states, allowing it to complete within milliseconds.
-- [Benchmarking shows around **100x** faster than Remotely Save in daily syncing](./benchmark).
+- [Benchmarking shows it is around **100x** faster than Remotely Save in daily syncing](./benchmark).
 - Handles vaults with thousands of files smoothly.
 - Highly optimized core sync timing never wastes one millisecond.
 - Extensible optimizer slot ensures every request is optimized for your own service.
@@ -79,22 +79,22 @@ It is simple to start using Sync Engine:
 3. Fill the necessary information about your cloud service in the settings interface.
 4. Start your first sync from command palette or ribbon button.
 5. Review the sync tasks that will be performed.
-6. Click "Confirm", and your files will arrive the configured backend at the speed of light.
+6. Click "Confirm", and your files will arrive at the configured backend at the speed of light.
 7. Install Sync Engine on your other devices and configure them the same as the first device.
 8. If it goes correctly, every sync run will discover local and remote changes automatically and sync files between.
 
 ::: tip
 
-Sync Engine requires minimum version of Obsidian v1.13.0. If you are on Android or iOS, the cutoff is Android System Webview 98 or iOS 15.4. It cannot function normally on devices below these thresholds.
+Sync Engine requires a minimum Obsidian version of v1.13.0. If you are on Android or iOS, the cutoff is Android System Webview 98 or iOS 15.4. It cannot function normally on devices below these thresholds.
 
 :::
 
 ## Development
 
-If you think Sync Engine basic features cannot satisfy what you need and want to customize, here's why we recommend you to create a Sync Engine module instead of creating your own plugin:
+If you think Sync Engine's basic features cannot satisfy what you need and want to customize, here's why we recommend you to create a Sync Engine module instead of creating your own plugin:
 
-1. Sync Engine is highly optimized and battle-tested, develop upon Sync Engine will save you enormous time on testing and debugging.
+1. Sync Engine is highly optimized and battle-tested, developing upon Sync Engine will save you enormous time on testing and debugging.
 2. Sync Engine provides official SDK and clear documentations, its core already has mature syncing abstractions, you don't need to reinvent the wheel.
-3. Sync Engine's module ecosystem has multiplication effect, you can implement you own features while using functions from other modules. Instead of write all those features in a huge monolithic plugin.
+3. Sync Engine's module ecosystem has multiplication effect, you can implement your own features while using functions from other modules. Instead of writing all those features in a huge monolithic plugin.
 
 About how to develop a module, refer to [development documentation](../development/develop-a-module). See [contributing standards](./contributing) if you want to contribute to the official repo.

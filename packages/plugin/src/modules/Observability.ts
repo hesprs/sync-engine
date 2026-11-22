@@ -315,10 +315,10 @@ export default class Observability {
 				(idle) => {
 					if (idle) {
 						startIcon.removeAttribute('aria-disabled');
-						stopIcon.addClass('hidden');
+						stopIcon.addClass('se-hidden');
 					} else {
 						startIcon.setAttr('aria-disabled', 'true');
-						stopIcon.removeClass('hidden');
+						stopIcon.removeClass('se-hidden');
 					}
 					this.updateAllIcons();
 				},
@@ -360,7 +360,10 @@ export default class Observability {
 		this.statusEl = statusEl;
 		const iconWrap = statusEl.createSpan({ cls: 'sync-engine-status-icon-wrap' });
 		this.statusIconEl = iconWrap;
-		const status = statusEl.createSpan({ cls: 'ml-1 max-w-250px truncate', text: t('idle') });
+		const status = statusEl.createSpan({
+			cls: 'se-ml-1 se-max-w-250px se-truncate',
+			text: t('idle'),
+		});
 		this.cleanupCallbacks.push(progressText.subscribe((text) => status.setText(text)));
 	};
 

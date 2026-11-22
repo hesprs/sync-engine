@@ -1,23 +1,13 @@
 import { MAX_SYNC_LOGS } from '@/constants';
 import formatDateTime from '@/utils/format-date';
+import { OS } from '@/utils/native';
 import { formatTime } from '@/utils/unit-converter';
 import { describeError } from '@repo/shared/error';
-import { apiVersion, Platform } from 'obsidian';
+import { apiVersion } from 'obsidian';
 import { ref } from 'synthkernel';
 import type { Events } from '@';
 import type { General } from '@/types';
 import type { PluginManifest } from 'obsidian';
-
-// oxlint-disable-next-line sort-keys
-export const OS = {
-	'Android Tablet': Platform.isTablet && Platform.isAndroidApp,
-	iPadOS: Platform.isTablet && Platform.isMacOS,
-	Android: Platform.isAndroidApp,
-	iOS: Platform.isIosApp,
-	Linux: Platform.isLinux,
-	macOS: Platform.isMacOS,
-	Windows: Platform.isWin,
-};
 
 export type Dispatch<O extends object> = <K extends keyof O>(
 	...[key, payload]: undefined extends O[K] ? [K] : [K, O[K]]
@@ -105,7 +95,9 @@ export default class EventBus {
 				else putSyncLog(`Sync ended with result: \`${result}\`.`);
 				isIdle(true);
 			}),
-			on('moduleLoaded', (name) => putGeneralLog(`Module \`${name}\` loaded.`)),
+			on('moduleLoaded', ({ id, version }) =>
+				putGeneralLog(`Module \`${id}@${version}\` loaded.`),
+			),
 			on('moduleUnloaded', (name) => putGeneralLog(`Module \`${name}\` unloaded.`)),
 		);
 	}

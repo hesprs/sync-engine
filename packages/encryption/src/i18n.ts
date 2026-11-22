@@ -10,29 +10,29 @@ export const en: EncryptionTranslations = {
 	encryption: 'Encryption',
 	encryptionDescription:
 		'Encrypt files before upload and decrypt files when download. Encryption password is stored in Obsidian keychain.',
-	encryptionMigration: (mode) =>
+	encryptionWarning: ({ enable, backend }) =>
 		createFragment((frag) => {
-			if (mode) {
+			if (enable) {
 				frag.createEl('p', {
 					text: 'You should be cautious about following points before enabling encryption:',
 				});
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: 'All subsequent uploads will be encrypted.' });
-				ol.createEl('li', { text: 'Please ensure all devices have encryption enabled.' });
-				ol.createEl('li', {
-					text: 'Migration is necessary if you have previously synchronized without encryption.',
-				});
-				const li = ol.createEl('li', {
-					text: 'You should ensure all the items are identical on all your devices:',
-				});
-				const ul = li.createEl('ul');
-				const subItems = ['encryption password', 'server URL', 'account name'];
-				subItems.forEach((item) => ul.createEl('li', { text: item }));
 				ol.createEl('li', {
 					text: "The encryption algorithm binds the decryption key to the server identity. This provides better security, but it also means that if you move encrypted files to a different server, you won't be able to decrypt it.",
 				});
 				ol.createEl('li', {
-					text: 'Please avoid managing encrypted files manually on the server.',
+					text: 'For encryption and decryption to work, you should ensure that all devices are using the same account / ID of your backend, and all have encryption enabled with an identical encryption password.',
+				});
+				if (backend !== 'webdav' && backend !== 's3') {
+					const li = ol.createEl('li', { text: 'Please do not choose the existing ' });
+					li.createEl('code', { text: `sync-engine-*` });
+					li.appendText(
+						' secret in the Obsidian keychain, create a new and unique password instead.',
+					);
+				}
+				ol.createEl('li', {
+					text: 'Please avoid managing encrypted files manually on your backend.',
 				});
 			} else {
 				frag.createEl('p', {
@@ -43,9 +43,6 @@ export const en: EncryptionTranslations = {
 					text: 'All subsequent uploads will be in plaintext without encryption.',
 				});
 				ol.createEl('li', { text: 'Please ensure all devices have encryption disabled.' });
-				ol.createEl('li', {
-					text: 'Migration is necessary if this vault was previously synchronized with encryption.',
-				});
 			}
 		}),
 	migrationExplanation: () =>
@@ -81,34 +78,29 @@ export const zh: EncryptionTranslations = {
 	encryption: '加密',
 	encryptionDescription:
 		'在上传前加密文件，并在下载时解密文件。加密密码将存储在 Obsidian 钥匙串中。',
-	encryptionMigration: (mode) =>
+	encryptionWarning: ({ enable, backend }) =>
 		createFragment((frag) => {
-			if (mode) {
+			if (enable) {
 				frag.createEl('p', { text: '在启用加密之前，您需要注意以下几点：' });
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: '后续的所有上传都将被加密。' });
-				ol.createEl('li', { text: '请确保所有设备都已启用加密。' });
-				ol.createEl('li', {
-					text: '如果您之前在未加密的状态下进行过同步，则需要进行数据迁移。',
-				});
-				const li = ol.createEl('li', {
-					text: '您应当确保以下内容在您的所有设备上完全一致：',
-				});
-				const ul = li.createEl('ul');
-				const subItems = ['加密密码', '服务器 URL', '账户名称'];
-				subItems.forEach((item) => ul.createEl('li', { text: item }));
 				ol.createEl('li', {
 					text: '该加密算法会将解密密钥与服务器身份绑定。这提供了更好的安全性，但这也意味着，如果您将加密文件移动到其他服务器，您将无法对其进行解密。',
 				});
-				ol.createEl('li', { text: '请避免在服务器上手动管理已加密的文件。' });
+				ol.createEl('li', {
+					text: '为使加密和解密正常工作，请确保所有设备都使用后端的相同账户 / ID，并且都已启用加密且使用完全相同的加密密码。',
+				});
+				if (backend !== 'webdav' && backend !== 's3') {
+					const li = ol.createEl('li', { text: '请不要选择 Obsidian 钥匙串中已有的 ' });
+					li.createEl('code', { text: `sync-engine-*` });
+					li.appendText(' 机密，请改为创建一个全新且唯一的密码。');
+				}
+				ol.createEl('li', { text: '请避免在后端上手动管理已加密的文件。' });
 			} else {
 				frag.createEl('p', { text: '在禁用加密之前，您需要注意以下几点：' });
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: '后续的所有上传都将以明文形式进行，不再加密。' });
 				ol.createEl('li', { text: '请确保所有设备都已禁用加密。' });
-				ol.createEl('li', {
-					text: '如果此仓库之前是在加密状态下同步的，则需要进行数据迁移。',
-				});
 			}
 		}),
 	migrationExplanation: () =>
@@ -120,7 +112,7 @@ export const zh: EncryptionTranslations = {
 				text: '兼容窗口将在 2027 年 4 月 17 日后结束。在该日期之前，加密功能仍可正常使用，但需要进行',
 			});
 			p.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/usage/remote-migration' },
 				text: '远程迁移',
 			});
 			p.appendText('。');
@@ -144,30 +136,29 @@ export const zhTW: EncryptionTranslations = {
 	encryption: '加密',
 	encryptionDescription:
 		'在上傳前加密檔案，並在下載時解密檔案。加密密碼儲存於 Obsidian 金鑰圈中。',
-	encryptionMigration: (mode) =>
+	encryptionWarning: ({ enable, backend }) =>
 		createFragment((frag) => {
-			if (mode) {
+			if (enable) {
 				frag.createEl('p', { text: '在啟用加密前，請務必留意以下幾點：' });
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: '後續的所有上傳都將進行加密。' });
-				ol.createEl('li', { text: '請確保所有裝置皆已啟用加密。' });
-				ol.createEl('li', { text: '若您先前曾於未加密的狀態下進行同步，則必須執行遷移。' });
-				const li = ol.createEl('li', { text: '您應確保所有裝置上的以下項目完全一致：' });
-				const ul = li.createEl('ul');
-				const subItems = ['加密密碼', '伺服器 URL', '帳號名稱'];
-				subItems.forEach((item) => ul.createEl('li', { text: item }));
 				ol.createEl('li', {
 					text: '此加密演算法會將解密金鑰與伺服器識別資訊綁定。這能提供更好的安全性，但也意味著若您將加密檔案移至其他伺服器，您將無法解密該檔案。',
 				});
-				ol.createEl('li', { text: '請避免在伺服器端手動管理加密檔案。' });
+				ol.createEl('li', {
+					text: '為使加密與解密正常運作，請確保所有裝置都使用後端的相同帳戶 / ID，且皆已啟用加密並使用完全相同的加密密碼。',
+				});
+				if (backend !== 'webdav' && backend !== 's3') {
+					const li = ol.createEl('li', { text: '請不要選用 Obsidian 金鑰圈中已有的 ' });
+					li.createEl('code', { text: `sync-engine-*` });
+					li.appendText(' 機密，請改為建立一個全新且唯一的密碼。');
+				}
+				ol.createEl('li', { text: '請避免在後端上手動管理加密檔案。' });
 			} else {
 				frag.createEl('p', { text: '在停用加密前，請務必留意以下幾點：' });
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: '後續的所有上傳都將以未加密的明文形式進行。' });
 				ol.createEl('li', { text: '請確保所有裝置皆已停用加密。' });
-				ol.createEl('li', {
-					text: '若此儲存庫先前是在啟用加密的狀態下同步，則必須執行遷移。',
-				});
 			}
 		}),
 	migrationExplanation: () =>
@@ -203,31 +194,31 @@ export const ru: EncryptionTranslations = {
 	encryption: 'Шифрование',
 	encryptionDescription:
 		'Шифровать файлы перед загрузкой на сервер и расшифровывать их при скачивании. Пароль шифрования хранится в связке ключей Obsidian.',
-	encryptionMigration: (mode) =>
+	encryptionWarning: ({ enable, backend }) =>
 		createFragment((frag) => {
-			if (mode) {
+			if (enable) {
 				frag.createEl('p', {
 					text: 'Обратите внимание на следующее перед включением шифрования:',
 				});
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: 'Все последующие загрузки будут зашифрованы.' });
 				ol.createEl('li', {
-					text: 'Убедитесь, что шифрование включено на всех устройствах.',
-				});
-				ol.createEl('li', {
-					text: 'Миграция необходима, если ранее вы синхронизировали данные без шифрования.',
-				});
-				const li = ol.createEl('li', {
-					text: 'Убедитесь, что следующие параметры совпадают на всех ваших устройствах:',
-				});
-				const ul = li.createEl('ul');
-				const subItems = ['пароль шифрования', 'URL-адрес сервера', 'имя аккаунта'];
-				subItems.forEach((item) => ul.createEl('li', { text: item }));
-				ol.createEl('li', {
 					text: 'Алгоритм шифрования привязывает ключ расшифровки к идентификатору сервера. Это обеспечивает более высокую безопасность, но также означает, что при перемещении зашифрованных файлов на другой сервер вы не сможете их расшифровать.',
 				});
 				ol.createEl('li', {
-					text: 'Не управляйте зашифрованными файлами вручную на сервере.',
+					text: 'Чтобы шифрование и расшифровка работали, убедитесь, что все устройства используют один и тот же аккаунт / ID вашего бэкенда и что на всех устройствах включено шифрование с одинаковым паролем шифрования.',
+				});
+				if (backend !== 'webdav' && backend !== 's3') {
+					const li = ol.createEl('li', {
+						text: 'Пожалуйста, не выбирайте существующий секрет ',
+					});
+					li.createEl('code', { text: `sync-engine-*` });
+					li.appendText(
+						' в связке ключей Obsidian, вместо этого создайте новый уникальный пароль.',
+					);
+				}
+				ol.createEl('li', {
+					text: 'Пожалуйста, избегайте ручного управления зашифрованными файлами на вашем бэкенде.',
 				});
 			} else {
 				frag.createEl('p', {
@@ -239,9 +230,6 @@ export const ru: EncryptionTranslations = {
 				});
 				ol.createEl('li', {
 					text: 'Убедитесь, что шифрование отключено на всех устройствах.',
-				});
-				ol.createEl('li', {
-					text: 'Миграция необходима, если это хранилище ранее синхронизировалось с включённым шифрованием.',
 				});
 			}
 		}),

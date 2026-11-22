@@ -16,7 +16,7 @@ const zhTW: Translations = {
 			});
 			frag.appendText('來大幅提升同步速度。');
 		}),
-	asymmetricStorageMigration: (flag) =>
+	asymmetricStorageWarning: (flag) =>
 		createFragment((frag) => {
 			if (flag) {
 				frag.createEl('p', { text: '在啟用非對稱儲存前，請務必留意以下幾點：' });
@@ -28,17 +28,11 @@ const zhTW: Translations = {
 					text: '若您需要讓遠端檔案保持可讀的目錄結構，請勿啟用此功能。',
 				});
 				ol.createEl('li', { text: '啟用後，請確保所有裝置皆已開啟非對稱儲存。' });
-				ol.createEl('li', {
-					text: '若此儲存庫先前未啟用非對稱儲存即進行過同步，則必須執行遷移。',
-				});
 			} else {
 				frag.createEl('p', { text: '在停用非對稱儲存前，請務必留意以下幾點：' });
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: '後續的所有上傳將會還原為本地的層級結構。' });
 				ol.createEl('li', { text: '請確保所有裝置皆已停用非對稱儲存。' });
-				ol.createEl('li', {
-					text: '若此儲存庫先前是在啟用非對稱儲存的狀態下同步，則必須執行遷移。',
-				});
 			}
 		}),
 	avoidAutoSyncWhenOffline: '離線時避免自動同步',
@@ -99,6 +93,7 @@ const zhTW: Translations = {
 	development: '開發者選項',
 	diffMatchPatch: '文字合併',
 	disableModule: '停用模組',
+	discoveredModules: ({ module, source }) => `已從 ${source} 個來源找到 ${module} 個模組。`,
 	done: '完成',
 	dontSync: '不同步',
 	download: '下載',
@@ -170,9 +165,11 @@ const zhTW: Translations = {
 	maxRequestConcurrencyDescription:
 		'限制同步過程中的同時請求數量。此選項適用於有請求速率限制的服務。請在欄位中修改併發限制。',
 	maxRequestConcurrencyPlaceholder: '輸入併發限制',
-	migrationInstruction: () =>
+	migrationInstruction: (enable) =>
 		createFragment((frag) => {
-			const p1 = frag.createEl('p', { text: '請參閱' });
+			const p1 = frag.createEl('p', {
+				text: `若此儲存庫先前是在${enable ? '停用' : '啟用'}此選項的狀態下同步，您可能需要遷移遠端儲存。請參閱`,
+			});
 			p1.createEl('a', {
 				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
 				text: '文件頁面',
@@ -220,7 +217,7 @@ const zhTW: Translations = {
 	noticeStatusOnMobile: '行動裝置同步狀態通知',
 	noticeStatusOnMobileDescription: '同步進行時於行動裝置上顯示通知訊息（取代桌面版的狀態列）。',
 	official: '官方',
-	openReadme: '開啟模組的 README 頁面。',
+	openReadme: '開啟模組的 README 頁面',
 	pleaseSetBackend: '請先設定後端！',
 	readmePage: 'README 頁面',
 	readmePageDescription: '設定模組的選用 README 頁面，留空表示無 README。',
@@ -232,6 +229,7 @@ const zhTW: Translations = {
 	realtimeSyncFastModeDescription: '透過重複使用快取資料來加速即時同步，並跳過不必要的遠端掃描。',
 	realtimeSyncPlaceholder: '輸入同步延遲（例如 500ms, 5s）',
 	recordsCleared: '紀錄已清除',
+	refreshSources: '重新整理來源',
 	remoteMigration: '遠端遷移',
 	removeLocal: '移除本地',
 	removeRecord: '移除紀錄',
@@ -252,11 +250,11 @@ const zhTW: Translations = {
 				text: '文件',
 			});
 			p.appendText('以瞭解各項設定的詳細說明。設定標籤：');
-			const ul = frag.createEl('ul', 'list-none ps-0!');
+			const ul = frag.createEl('ul');
 			for (const label of labels) {
 				const li = ul.createEl('li');
 				const flair = addLabel(li, label);
-				flair.addClass('m-0');
+				flair.addClass('se-m-0');
 				li.appendText(` ${flair.ariaLabel}`);
 			}
 		}),
@@ -276,18 +274,61 @@ const zhTW: Translations = {
 	stopSync: '停止同步',
 	syncProgress: '同步進度',
 	syncStrategy: '同步策略',
-	syncStrategyDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'根據 Glob 規則為不同的檔案設定不同的同步策略。當有多個規則配對至同一個檔案時，以最後一個規則為準。詳見',
-			);
-			frag.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
-				text: '文件頁面',
-			});
-			frag.appendText('。');
-		}),
+	syncStrategyDescription:
+		'根據 Glob 規則為不同的檔案設定不同的同步策略。當有多個規則配對至同一個檔案時，以最後一個規則為準。',
 	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安裝！`,
+	syncStrategyTips: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', { text: '同步策略配置是一個由 ' });
+			p1.createEl('a', {
+				attr: { href: 'https://en.wikipedia.org/wiki/Glob_(programming)' },
+			}).createEl('strong', { text: 'Glob 規則' });
+			p1.appendText(' + ');
+			p1.createEl('strong', { text: '同步方向' });
+			p1.appendText(
+				' 條目組成的有序列表。Glob 規則選定目標檔案集合，同步方向決定這些檔案的變更如何同步。同一個檔案可以被多個條目配對，列表中最後一條配對的條目優先生效。',
+			);
+			const p2 = frag.createEl('p', { text: 'Glob 規則寫作一個以 ' });
+			p2.createEl('code', { text: '/' });
+			p2.appendText(' 為路徑分隔符的簡單檔案路徑，並帶有若干萬用字元擴充：');
+			const olGlob = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				'*': '比對單一路徑段內的任意字元。',
+				'**': '比對任意數量的路徑段，包括零個。',
+				'?': '比對一個字元。',
+				'[abc]': '比對集合中的一個字元。',
+				'[!abc]': '比對集合之外的一個字元。',
+				'{a,b,c}': '比對列出的任意變體，花括號可以巢狀。',
+			}).forEach(([key, text]) => {
+				const li = olGlob.createEl('li');
+				li.createEl('code', { text: key });
+				li.appendText(`：${text}`);
+			});
+			const li1 = olGlob.createEl('li', { text: '以 ' });
+			li1.createEl('code', { text: '/' });
+			li1.appendText(' 結尾的規則僅比對資料夾。');
+			const li2 = olGlob.createEl('li', { text: '以 ' });
+			li2.createEl('code', { text: '/' });
+			li2.appendText(' 開頭的規則從儲存庫根目錄開始比對，否則可在任意深度比對。');
+			const li3 = olGlob.createEl('li', { text: '比對檔案時，記得加上副檔名（例如 ' });
+			li3.createEl('code', { text: '.md' });
+			li3.appendText('）。');
+			olGlob.createEl('li', { text: '規則區分大小寫。' });
+			frag.createEl('p', { text: '內建的同步方向包括：' });
+			const olDirection = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				雙向同步: '同步兩側的變更。',
+				鏡像本機: '用本機變更覆蓋遠端。',
+				鏡像遠端: '用遠端變更覆蓋本機。',
+				不同步: '將配對的檔案排除在同步之外。',
+			}).forEach(([key, text]) => {
+				const li = olDirection.createEl('li');
+				li.createEl('strong', { text: key });
+				li.appendText(`：${text}`);
+			});
+		}),
 	untrustedModule: '非信任模組',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
@@ -298,7 +339,7 @@ const zhTW: Translations = {
 			p1.createEl('strong', { text: '請在繼續之前檢閱以下資訊：' });
 			const ul = frag
 				.createDiv(
-					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
+					'se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-px-2',
 				)
 				.createEl('ul');
 			const li1 = ul.createEl('li');
@@ -335,7 +376,11 @@ const zhTW: Translations = {
 	updateModule: '更新模組',
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: '上傳',
+	version: '版本',
+	versionDescription: '設定用於更新比較與模組卡片顯示的模組版本。',
+	versionPlaceholder: '輸入版本（例如 0.0.1）',
 	walkingRemote: '正在掃描遠端檔案',
+	warning: '警告',
 	writeCode: '撰寫程式碼',
 	writeCodeDescription: '在此處以 JavaScript 撰寫您的模組程式碼',
 	xConfigured: (count) => `已設定 ${count} 項`,

@@ -1,7 +1,7 @@
 import { reactivelyValidate } from '@/settings/utils';
 import { formatUrl, parseUrl } from '@repo/shared/path';
 import { sha256 } from '@repo/shared/sha256-bytes';
-import { App, Modal, Setting } from 'obsidian';
+import { App, Modal, Setting, TextAreaComponent, TextComponent } from 'obsidian';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Fragment, Translate } from '@/modules/I18n';
 import type { MaybePromise, StringKV } from '@/types';
@@ -29,6 +29,9 @@ export type ModuleEditorTranslations = {
 	readmePage: string;
 	readmePageDescription: string;
 	readmePagePlaceholder: string;
+	version: string;
+	versionDescription: string;
+	versionPlaceholder: string;
 };
 
 export default class ModuleEditorModal extends Modal {
@@ -44,7 +47,7 @@ export default class ModuleEditorModal extends Modal {
 		},
 	) {
 		super(ctx.app);
-		this.contentEl.addClass('sync-engine-setting');
+		this.contentEl.addClass('se-setting');
 	}
 
 	onOpen() {
@@ -69,7 +72,7 @@ export default class ModuleEditorModal extends Modal {
 			description: description || magic.description || 'An unknown module.',
 			enabled,
 			icon: icon || magic.icon || 'puzzle',
-			id: id || name || magic.name || crypto.randomUUID(),
+			id: id || magic.id || name || magic.name || crypto.randomUUID(),
 			integrity,
 			main,
 			name: name || magic.name || 'Unknown Module',
@@ -81,6 +84,29 @@ export default class ModuleEditorModal extends Modal {
 
 		let integrityEnabled = integrity !== '';
 		this.setTitle(translate('editModuleInformation'));
+		const saveOnBlur = (
+			text: TextComponent | TextAreaComponent,
+			key: 'name' | 'description' | 'version' | 'icon',
+		) =>
+			text.inputEl.addEventListener('blur', () => {
+				const trimmed = text.getValue().trim();
+				text.setValue(trimmed);
+				updated[key] = trimmed;
+			});
+		const validateUrl = (text: TextComponent, key: 'readme' | 'source') =>
+			reactivelyValidate<string>({
+				format: formatUrl,
+				onSave: (value) => (updated[key] = value),
+				parse: (value) => {
+					if (!value.trim()) return '';
+					try {
+						return parseUrl(value);
+					} catch {
+						// Return undefined
+					}
+				},
+				text,
+			});
 
 		new Setting(this.contentEl)
 			.setName(translate('enable'))
@@ -93,84 +119,67 @@ export default class ModuleEditorModal extends Modal {
 			.setName(translate('name'))
 			.setDesc(translate('nameDescription'))
 			.addText((text) =>
-				text
-					.setValue(updated.name)
-					.setPlaceholder(translate('namePlaceholder'))
-					.inputEl.addEventListener('blur', () => {
-						const trimmed = text.getValue().trim();
-						text.setValue(trimmed);
-						updated.name = trimmed;
-					}),
+				saveOnBlur(
+					text.setValue(updated.name).setPlaceholder(translate('namePlaceholder')),
+					'name',
+				),
 			);
 
 		new Setting(this.contentEl)
 			.setName(translate('description'))
 			.setDesc(translate('descriptionDescription'))
 			.addTextArea((text) => {
-				text.setValue(updated.description)
-					.setPlaceholder(translate('descriptionPlaceholder'))
-					.inputEl.addEventListener('blur', () => {
-						const trimmed = text.getValue().trim();
-						text.setValue(trimmed);
-						updated.description = trimmed;
-					});
-				text.inputEl.addClass('min-w-100%');
+				saveOnBlur(
+					text
+						.setValue(updated.description)
+						.setPlaceholder(translate('descriptionPlaceholder')),
+					'description',
+				);
+				text.inputEl.addClass('se-min-w-100%');
+			});
+
+		new Setting(this.contentEl)
+			.setName(translate('version'))
+			.setDesc(translate('versionDescription'))
+			.addText((text) => {
+				saveOnBlur(
+					text.setValue(updated.version).setPlaceholder(translate('versionPlaceholder')),
+					'version',
+				);
+				text.inputEl.addClass('se-min-w-100%');
 			});
 
 		new Setting(this.contentEl)
 			.setName(translate('icon'))
 			.setDesc(translate('iconDescription'))
 			.addText((text) =>
-				text
-					.setValue(updated.icon)
-					.setPlaceholder(translate('iconPlaceholder'))
-					.inputEl.addEventListener('blur', () => {
-						const trimmed = text.getValue().trim();
-						text.setValue(trimmed);
-						updated.icon = trimmed;
-					}),
+				saveOnBlur(
+					text.setValue(updated.icon).setPlaceholder(translate('iconPlaceholder')),
+					'icon',
+				),
 			);
 
 		new Setting(this.contentEl)
 			.setName(translate('update'))
 			.setDesc(translate('updateDescription'))
-			.addText((text) => {
-				text.setPlaceholder(translate('updatePlaceholder')).setValue(updated.source);
-				reactivelyValidate<string>({
-					onSave: (value) => (updated.source = value),
-					parse: (value) => {
-						if (!value.trim()) return '';
-						try {
-							return parseUrl(value);
-						} catch {
-							// Return undefined
-						}
-					},
-					text,
-				});
-			});
+			.addText((text) =>
+				validateUrl(
+					text.setPlaceholder(translate('updatePlaceholder')).setValue(updated.source),
+					'source',
+				),
+			);
 
 		new Setting(this.contentEl)
 			.setName(translate('readmePage'))
 			.setDesc(translate('readmePageDescription'))
-			.addText((text) => {
-				text.setValue(formatUrl(updated.readme ?? '')).setPlaceholder(
-					translate('readmePagePlaceholder'),
-				);
-				reactivelyValidate<string>({
-					format: formatUrl,
-					onSave: (value) => (updated.source = value),
-					parse: (value) => {
-						if (!value.trim()) return '';
-						try {
-							return parseUrl(value);
-						} catch {
-							// Return undefined
-						}
-					},
-					text,
-				});
-			});
+			.addText((text) =>
+				validateUrl(
+					text
+						.setValue(formatUrl(updated.readme ?? ''))
+						.setPlaceholder(translate('readmePagePlaceholder')),
+					'readme',
+				),
+			);
 
 		new Setting(this.contentEl)
 			.setName(translate('integrityVerification'))

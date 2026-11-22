@@ -1,8 +1,8 @@
 import 'tsdown/client';
-import { PendingAuthorization, TokenManager, bearerMiddleware } from './dropbox/auth';
+import { bearerMiddleware, PendingAuthorization, TokenManager } from './dropbox/auth';
 import checkConnection from './dropbox/check-connection';
 import DropboxFs from './dropbox/fs';
-import { ru, en, zh, zhTW } from './i18n';
+import { en, ru, zh, zhTW } from './i18n';
 import dropboxOptimizer from './optimizer';
 import dropboxSetting from './setting';
 import styles from './styles.css?inline';
@@ -19,8 +19,8 @@ import type {
 	SettingEntry,
 	Settings,
 	Translate,
-	Translations,
 	TranslationResource,
+	Translations,
 } from '@hesprs/sync-engine-sdk';
 import type { App, ObsidianProtocolHandler } from 'obsidian';
 
@@ -64,6 +64,7 @@ export default class Dropbox {
 	declare settings: Settings;
 
 	readonly start = () => {
+		const { ctx, cleanup, tokenManager, pending, moduleSettings, settings } = this;
 		const {
 			translate,
 			registerRemoteFs,
@@ -74,39 +75,38 @@ export default class Dropbox {
 			registerCss,
 			registerObsidianProtocolHandler,
 		} = this.ctx;
-		this.cleanup.push(
+		cleanup.push(
 			registerCss(styles),
 			registerRemoteFs('dropbox', {
 				checkConnection,
-				instantiate: (request) => new DropboxFs(request, this.moduleSettings),
+				instantiate: (request) => new DropboxFs(request, moduleSettings),
 				prettyName: () => translate('dropbox'),
 			}),
 			registerRemoteFsWrapper({
 				apply: (fs) => {
 					if (digOriginal(fs) instanceof DropboxFs)
-						return prefixWrapper(fs, this.moduleSettings.baseDirectory);
+						return prefixWrapper(fs, moduleSettings.baseDirectory);
 				},
 				priority: 6418,
 			}),
 			registerRemoteRequestMiddleware({
 				apply: (request) => {
-					if (this.settings.remoteFs === 'dropbox')
-						return bearerMiddleware(request, this.tokenManager);
+					if (settings.remoteFs === 'dropbox')
+						return bearerMiddleware(request, tokenManager);
 				},
 				priority: 306,
 			}),
 			registerRemoteOptimizer({ apply: dropboxOptimizer, priority: 3342 }),
 			registerSetting({
-				apply: dropboxSetting(
-					this.ctx as Context,
-					this.moduleSettings,
-					this.tokenManager,
-					this.pending,
-				),
+				apply: dropboxSetting(ctx as Context, moduleSettings, tokenManager, pending),
 				priority: 803,
 			}),
-			registerObsidianProtocolHandler('sync-engine-dropbox-auth', this.pending.notify),
+			registerObsidianProtocolHandler('sync-engine-dropbox-auth', pending.notify),
 		);
+
+		// The token can exist despite the user ID is missing (e.g. user reinstalled the plugin), force a re-auth to prevent bugs caused by a missing ID
+		const token = tokenManager.getRefreshToken();
+		if (!moduleSettings.accountId && token) void tokenManager.deleteRefreshToken();
 	};
 
 	readonly dispose = () => this.cleanup.splice(0).forEach((fn) => fn());

@@ -11,12 +11,12 @@ const zh: Translations = {
 		createFragment((frag) => {
 			frag.appendText('使用 ');
 			frag.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/deep-dive/asymmetric-storage' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/deep-dive/asymmetric-storage' },
 				text: '非对称存储',
 			});
 			frag.appendText(' 来大幅提升同步速度。');
 		}),
-	asymmetricStorageMigration: (flag) =>
+	asymmetricStorageWarning: (flag) =>
 		createFragment((frag) => {
 			if (flag) {
 				frag.createEl('p', { text: '在启用非对称存储之前，您需要注意以下几点：' });
@@ -26,17 +26,11 @@ const zh: Translations = {
 				});
 				ol.createEl('li', { text: '如果您需要远程端保持人类可读性，请不要启用此功能。' });
 				ol.createEl('li', { text: '启用后，请确保所有设备都已启用非对称存储。' });
-				ol.createEl('li', {
-					text: '如果该库此前在未启用非对称存储的情况下同步过，则必须进行迁移。',
-				});
 			} else {
 				frag.createEl('p', { text: '在禁用非对称存储之前，您需要注意以下几点：' });
 				const ol = frag.createEl('ol');
 				ol.createEl('li', { text: '后续的所有上传都将镜像本地的层级结构。' });
 				ol.createEl('li', { text: '请确保所有设备都已禁用非对称存储。' });
-				ol.createEl('li', {
-					text: '如果该库此前在启用非对称存储的情况下同步过，则必须进行迁移。',
-				});
 			}
 		}),
 	avoidAutoSyncWhenOffline: '离线时避免自动同步',
@@ -97,6 +91,7 @@ const zh: Translations = {
 	development: '开发',
 	diffMatchPatch: '合并',
 	disableModule: '禁用模块',
+	discoveredModules: ({ module, source }) => `已从 ${source} 个源发现 ${module} 个模块。`,
 	done: '完成',
 	dontSync: '不同步',
 	download: '下载',
@@ -168,11 +163,13 @@ const zh: Translations = {
 	maxRequestConcurrencyDescription:
 		'限制同步过程中的同时请求数。此选项对于有请求频率限制的服务非常有用。在输入框中修改并发限制。',
 	maxRequestConcurrencyPlaceholder: '输入并发限制',
-	migrationInstruction: () =>
+	migrationInstruction: (enable) =>
 		createFragment((frag) => {
-			const p1 = frag.createEl('p', { text: '请参阅' });
+			const p1 = frag.createEl('p', {
+				text: `如果该库此前在${enable ? '禁用' : '启用'}此选项的情况下同步过，您可能需要迁移远程存储。请参阅`,
+			});
 			p1.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/remote-migration' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/usage/remote-migration' },
 				text: '文档页面',
 			});
 			p1.appendText(
@@ -219,7 +216,7 @@ const zh: Translations = {
 	noticeStatusOnMobileDescription:
 		'同步进行时在移动设备上显示通知提示。在桌面端则会替换状态栏显示。',
 	official: '官方',
-	openReadme: '打开模块的 README 页面。',
+	openReadme: '打开模块的 README 页面',
 	pleaseSetBackend: '请先设置后端！',
 	readmePage: 'README 页面',
 	readmePageDescription: '设置模块的可选 README 页面，留空表示无 README。',
@@ -231,6 +228,7 @@ const zh: Translations = {
 	realtimeSyncFastModeDescription: '通过复用缓存数据来加速实时同步，并避免不必要的远程探测。',
 	realtimeSyncPlaceholder: '输入同步延迟（例如 500ms, 5s）',
 	recordsCleared: '记录已清除',
+	refreshSources: '刷新源',
 	remoteMigration: '远程迁移',
 	removeLocal: '移除本地',
 	removeRecord: '移除记录',
@@ -247,15 +245,15 @@ const zh: Translations = {
 		createFragment((frag) => {
 			const p = frag.createEl('p', { text: '感谢您选择 Sync Engine！访问 ' });
 			p.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/settings' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/usage/settings' },
 				text: '文档',
 			});
 			p.appendText('以了解每个设置的详细说明。设置标签：');
-			const ul = frag.createEl('ul', 'list-none ps-0!');
+			const ul = frag.createEl('ul');
 			for (const label of labels) {
 				const li = ul.createEl('li');
 				const flair = addLabel(li, label);
-				flair.addClass('m-0');
+				flair.addClass('se-m-0');
 				li.appendText(` ${flair.ariaLabel}`);
 			}
 		}),
@@ -274,18 +272,61 @@ const zh: Translations = {
 	stopSync: '停止同步',
 	syncProgress: '同步进度',
 	syncStrategy: '同步策略',
-	syncStrategyDescription: () =>
-		createFragment((frag) => {
-			frag.appendText(
-				'根据 Glob 规则为不同的文件配置不同的同步策略。当多条规则匹配同一个文件时，以最后一条规则为准。详见',
-			);
-			frag.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/usage/settings#sync-strategy' },
-				text: '文档页面',
-			});
-			frag.appendText('。');
-		}),
+	syncStrategyDescription:
+		'根据 Glob 规则为不同的文件配置不同的同步策略。当多条规则匹配同一个文件时，以最后一条规则为准。',
 	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安装！`,
+	syncStrategyTips: () =>
+		createFragment((frag) => {
+			const p1 = frag.createEl('p', { text: '同步策略配置是一个由 ' });
+			p1.createEl('a', {
+				attr: { href: 'https://en.wikipedia.org/wiki/Glob_(programming)' },
+			}).createEl('strong', { text: 'Glob 规则' });
+			p1.appendText(' + ');
+			p1.createEl('strong', { text: '同步方向' });
+			p1.appendText(
+				' 条目组成的有序列表。Glob 规则选定目标文件集合，同步方向决定这些文件的变更如何同步。同一个文件可以被多个条目匹配，列表中最后一条匹配的条目优先生效。',
+			);
+			const p2 = frag.createEl('p', { text: 'Glob 规则写作一个以 ' });
+			p2.createEl('code', { text: '/' });
+			p2.appendText(' 为路径分隔符的简单文件路径，并带有若干通配符扩展：');
+			const olGlob = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				'*': '匹配单个路径段内的任意字符。',
+				'**': '匹配任意数量的路径段，包括零个。',
+				'?': '匹配一个字符。',
+				'[abc]': '匹配集合中的一个字符。',
+				'[!abc]': '匹配集合之外的一个字符。',
+				'{a,b,c}': '匹配列出的任意变体，花括号可以嵌套。',
+			}).forEach(([key, text]) => {
+				const li = olGlob.createEl('li');
+				li.createEl('code', { text: key });
+				li.appendText(`：${text}`);
+			});
+			const li1 = olGlob.createEl('li', { text: '以 ' });
+			li1.createEl('code', { text: '/' });
+			li1.appendText(' 结尾的规则仅匹配文件夹。');
+			const li2 = olGlob.createEl('li', { text: '以 ' });
+			li2.createEl('code', { text: '/' });
+			li2.appendText(' 开头的规则从仓库根目录开始匹配，否则可在任意深度匹配。');
+			const li3 = olGlob.createEl('li', { text: '匹配文件时，记得添加扩展名（例如 ' });
+			li3.createEl('code', { text: '.md' });
+			li3.appendText('）。');
+			olGlob.createEl('li', { text: '规则区分大小写。' });
+			frag.createEl('p', { text: '内置的同步方向包括：' });
+			const olDirection = frag.createEl('ul');
+			// oxlint-disable-next-line sort-keys
+			Object.entries({
+				双向同步: '同步两侧的变更。',
+				镜像本地: '用本地变更覆盖远程。',
+				镜像远程: '用远程变更覆盖本地。',
+				不同步: '将匹配的文件排除在同步之外。',
+			}).forEach(([key, text]) => {
+				const li = olDirection.createEl('li');
+				li.createEl('strong', { text: key });
+				li.appendText(`：${text}`);
+			});
+		}),
 	untrustedModule: '非信任模块',
 	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
 		createFragment((frag) => {
@@ -296,7 +337,7 @@ const zh: Translations = {
 			p1.createEl('strong', { text: '请在继续之前查看以下信息：' });
 			const ul = frag
 				.createDiv(
-					'rounded-lg border border-[--background-modifier-border] bg-[--background-secondary] px-2',
+					'se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-px-2',
 				)
 				.createEl('ul');
 			const li1 = ul.createEl('li');
@@ -322,7 +363,7 @@ const zh: Translations = {
 				'如果您确认该模块在您的控制之下，可以选择“配置”并启用它；如果您不知道它来自哪里，可以选择将其删除。关于此警告的详细说明，请参阅 ',
 			);
 			p2.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
+				attr: { href: 'https://sync.consensia.cc/zh-Hans/deep-dive/extensibility' },
 				text: '文档页面',
 			});
 			p2.appendText('。');
@@ -334,7 +375,11 @@ const zh: Translations = {
 	updateModule: '更新模块',
 	updatePlaceholder: 'https://example.com/modules.json',
 	upload: '上传',
+	version: '版本',
+	versionDescription: '设置用于更新比较和模块卡片显示的模块版本。',
+	versionPlaceholder: '输入版本（例如 0.0.1）',
 	walkingRemote: '正在探测远程文件',
+	warning: '警告',
 	writeCode: '编写代码',
 	writeCodeDescription: '在此处使用 JavaScript 编写您的模块代码',
 	xConfigured: (count) => `已配置 ${count} 项`,

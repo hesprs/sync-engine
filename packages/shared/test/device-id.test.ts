@@ -1,6 +1,8 @@
+import ObsidianMock from './obsidian-mock.spec';
 import { DEVICE_ID_STORAGE_KEY, getOrCreateDeviceId } from '@/device-id';
-import { App } from '@/obsidian-mock.spec';
 import { beforeEach, expect, test } from 'bun:test';
+
+const { App } = ObsidianMock;
 
 beforeEach(() => {
 	if (typeof localStorage !== 'undefined') localStorage.clear();

@@ -1,6 +1,6 @@
 import { testKit } from '@/sdk/dev';
 import prefixWrapper from '@/sdk/prefix';
-import { test, expect } from 'bun:test';
+import { expect, test } from 'bun:test';
 
 const { bytes, file, folder, fs: testFs, stream } = testKit;
 

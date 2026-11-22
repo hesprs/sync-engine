@@ -2,7 +2,7 @@ import { TEMP_FOLDER } from './request';
 import parseTimestamp from '@repo/shared/timestamp';
 import type { ListReporter, RootFs } from '../interface';
 import type { VaultRequest } from './request';
-import type { Stat, Binary, FileStat, StringKV, MaybePromise } from '@/types';
+import type { Binary, FileStat, MaybePromise, Stat, StringKV } from '@/types';
 import type { DataWriteOptions } from 'obsidian';
 
 const MAX_WRITE_TRIAL = 5;
@@ -168,7 +168,9 @@ export default class VaultFs implements RootFs {
 			: { isDir: true, key, meta };
 	}
 
-	async removeIfExist(key: string) {
-		if (await this.exists(key)) await this.delete(key);
+	removeIfExist(key: string) {
+		return this.exists(key).then((exists) => {
+			if (exists) return this.delete(key);
+		});
 	}
 }

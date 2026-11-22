@@ -19,24 +19,24 @@ The Sync Engine repository accepts two kinds of issues: bug report and feature r
 
 - Any sensitive information about yourself
 - More than one bug: please report in separate issues
-- Speculative "root cause" guesses or "fix options": if you have made to this step, you might want to make a pull request.
+- Speculative "root cause" guesses or "fix options": if you have made it to this step, you might want to make a pull request.
 
-Bug reports where maintainers have requested clarification / coordinated testing but the reporter hasn't provided any relevant information will be closed after 72 hours; the reporter claimed to coordinate but no further information are provided will also be closed after 72 hours.
+Bug reports where maintainers have requested clarification / coordinated testing but the reporter hasn't provided any relevant information will be closed after 72 hours; reports where the reporter claimed to coordinate but provided no further information will also be closed after 72 hours.
 
 ### Feature Request
 
 **A feature request contains**:
 
-- Clear description of now the feature should work
-- (Optional) Your idea of implementation of you would like to participate the brainstorming
+- Clear description of how the feature should work
+- (Optional) Your implementation ideas if you would like to participate in the brainstorming
 
 A feature request is a normal issue, but maintainers will move the request to a dedicated meta issue for easier management after some communication.
 
-We **strongly recommend** you writing your own Sync Engine module to achieve your requirement before opening a feature request, since Sync Engine is super extensible and most functions can be achieved by modules. Sync Engine also provides official SDK, documentation, and AI agent skill to assist module development. There are abundant module examples in the Sync Engine monorepo.
+We **strongly recommend** that you write your own Sync Engine module to achieve your requirement before opening a feature request, since Sync Engine is super extensible and most functions can be achieved by modules. Sync Engine also provides official SDK, documentation, and AI agent skill to assist module development. There are abundant module examples in the Sync Engine monorepo.
 
 ## Fork Policy
 
-Sync Engine welcomes forks that contributes to the development of the Sync Engine monorepo.
+Sync Engine welcomes forks that contribute to the development of the Sync Engine monorepo.
 
 However, as stated in [Obsidian developer policies](https://docs.obsidian.md/Developer+policies#Forks), Sync Engine disallows any type of malicious forking that submits to Obsidian's official plugin directory as another standalone plugin, as long as Sync Engine repo remains active or maintainers haven't permitted. Maintainers will report upon discovery.
 
@@ -54,7 +54,7 @@ The project uses:
 - **Bun** as its package manager and task runner
 - **Turbo** for monorepo management
 - **Tsdown** for building
-- **Oxlint and Oxfmt** for linting and formatting
+- **Oxlint and Bun fmt** for linting and formatting
 - **VitePress** for documentation website
 
 The plugin core uses:
@@ -92,7 +92,7 @@ Sync Engine Monorepo
 
 **CI/CD**:
 
-The CI is run for every pull request commits, it runs `bun check` and `bun tests`. If any of them fails, the pull request cannot merge.
+The CI runs for every pull request commit, it runs `bun check` and `bun tests`. If any of them fails, the pull request cannot merge.
 
 The core plugin release is triggered by any tag push. Tags containing hyphens trigger pre-release, tags with no hyphens trigger normal release. The release workflow captures corresponding description in `packages/plugin/CHANGELOG.md` as release detail.
 
@@ -108,21 +108,14 @@ Commit message format: `<title>(<scope>): <message>`. Keep the message concise, 
 
 It is required to document relevant implementation in `docs` directory if your contribution creates a new module, contains sophisticated implementations, or changes core SDK API.
 
-For maintainer convenience, the review messages will be in English. Same to issues, if a pull request failed review or CI and hasn't had any meaningful changes over 72 hours, the PR will be closed.
+For maintainer convenience, the review messages will be in English. Same for issues, if a pull request failed review or CI and hasn't had any meaningful changes over 72 hours, the PR will be closed.
 
 #### Module Contribution
 
 If you want to contribute a new module, please make it a package under `packages`. The `package.json` of your module should at least include the following:
 
 ```json
-{
-  "contributors": [
-    {
-      "name": "<the-name-to-call-you>",
-      "github": "<your-github-account-name>"
-    }
-  ]
-}
+{ "contributors": [{ "name": "<the-name-to-call-you>", "github": "<your-github-account-name>" }] }
 ```
 
 Then modify `modules.json` at the repo root to include your module:
@@ -140,7 +133,7 @@ Then modify `modules.json` at the repo root to include your module:
 ]
 ```
 
-Once the PR is accepted, you module will become part of official modules. You will also be responsible for the future issues and pull requests about your module.
+Once the PR is accepted, your module will become part of official modules. You will also be responsible for the future issues and pull requests about your module.
 
 If your pull request contains substantial modification of an existing module, you can also include your information in the `contributors` field.
 
@@ -157,5 +150,5 @@ Sync Engine repo generally accepts AI-assisted pull requests, especially for mod
 
 The code can be written by AI; but when making pull requests, Sync Engine requires the author must be the GitHub account of a real human. **Any names of corporate AI agent entities are forbidden in co-author list, commit messages, and code.** This is because:
 
-- Commits made by AI often signify insufficient development skill of the human to be capable for future maintenance.
+- Commits made by AI often signify insufficient development skill of the human to be capable of future maintenance.
 - Copyright of code in this repo belong to the corresponding authors and contributors, AI co-authoring creates ambiguities around code ownership.

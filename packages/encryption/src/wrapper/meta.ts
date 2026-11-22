@@ -1,11 +1,11 @@
 import { DECRYPTION_ERROR_MESSAGE, importAesGcmKey } from './shared';
 import {
-	textToUint8Array,
-	uint8ArrayToText,
 	concatBinary,
-	toUint8Array,
 	decodeBase64,
 	encodeBase64,
+	textToUint8Array,
+	toUint8Array,
+	uint8ArrayToText,
 } from '@repo/shared/binary';
 import type { Binary, StringKV } from '@hesprs/sync-engine-sdk';
 

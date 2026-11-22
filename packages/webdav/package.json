@@ -11,14 +11,16 @@
 	],
 	"type": "module",
 	"scripts": {
-		"dev": "MODE=dev bun --bun tsdown",
-		"compile": "bun --bun tsdown",
-		"fix": "oxlint --silent --fix && oxfmt",
-		"check": "oxlint && oxfmt --check",
-		"tests": "bun --preload=./test/mocks test"
+		"dev": "MODE=dev tsdown",
+		"compile": "tsdown",
+		"fix": "oxlint --silent --fix && bun fmt",
+		"check": "oxlint && bun fmt --check",
+		"tests": "bun test --parallel"
 	},
 	"devDependencies": {
 		"@hesprs/sync-engine-sdk": "workspace:*",
-		"@repo/shared": "workspace:*"
+		"@repo/shared": "workspace:*",
+		"hash-wasm": "catalog:",
+		"uni-kv": "catalog:"
 	}
 }

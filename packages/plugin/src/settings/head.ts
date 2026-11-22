@@ -23,7 +23,7 @@ export type HeadSettingTranslations = {
 	backend: string;
 	backendDescription: string;
 	syncStrategy: string;
-	syncStrategyDescription: Fragment;
+	syncStrategyDescription: string;
 	globPlaceholder: string;
 	checkConnectionFailed: string;
 	checkConnectionSuccess: string;
@@ -33,11 +33,12 @@ export type HeadSettingTranslations = {
 	xEnabled: Snippet<number>;
 	xConfigured: Snippet<number>;
 	settingTips: Fragment<{ labels: Array<LabelDefinition>; addLabel: typeof addLabel }>;
+	syncStrategyTips: Fragment;
 	addStrategy: string;
 	noStrategyConfigured: string;
 };
 
-type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs: string }>;
+type CheckConnectionDB = DatabaseSync<General, { lastCheckedFs?: string }>;
 
 export default function headSettings(
 	ctx: {
@@ -78,8 +79,9 @@ export default function headSettings(
 			name: 'dummy',
 			render: (setting) => {
 				setting.settingEl.addClass(
-					'sync-engine-setting-hide-name',
-					'sync-engine-setting-rendered-desc',
+					'se-setting-hide-name',
+					'se-setting-rendered-desc',
+					'markdown-rendered',
 				);
 				queueMicrotask(() => {
 					const tab = getSettingTab();
@@ -155,7 +157,18 @@ export default function headSettings(
 				type: 'page',
 			}),
 			{
-				1000: s(() => {
+				1000: s(() => ({
+					desc: translate('syncStrategyTips'),
+					name: 'dummy',
+					render: (setting) =>
+						setting.settingEl.addClass(
+							'se-setting-hide-name',
+							'se-setting-rendered-desc',
+							'markdown-rendered',
+						),
+					searchable: false,
+				})),
+				2000: s(() => {
 					const options: StringKV = {};
 					deciderRegistry.forEach(({ prettyName }, key) => {
 						const name = prettyName?.();
@@ -248,30 +261,30 @@ function setupCheckConnection({
 }) {
 	let timeout: number | undefined;
 	const possibleClasses = [
-		'color-[--color-green]',
-		'color-[--color-red]',
-		'color-[-text-faint]',
-		'animate-spin',
+		'se-color-[--color-green]',
+		'se-color-[--color-red]',
+		'se-color-[-text-faint]',
+		'se-animate-spin',
 	];
 	const setChecking = () => {
 		const ele = button.setIcon('loader-circle').setDisabled(true)
 			.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClass('animate-spin', 'color-[-text-faint]');
+		ele.addClass('se-animate-spin', 'se-color-[-text-faint]');
 	};
 	const setSuccess = () => {
 		const ele = button.setIcon('check').setDisabled(false).extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClass('color-[--color-green]');
+		ele.addClass('se-color-[--color-green]');
 	};
 	const setError = () => {
 		const ele = button.setIcon('cloud-off').setDisabled(false)
 			.extraSettingsEl.firstElementChild;
 		if (!ele) return;
 		ele.removeClasses(possibleClasses);
-		ele.addClass('color-[--color-red]');
+		ele.addClass('se-color-[--color-red]');
 	};
 	const scheduleCheckConnection = () =>
 		(timeout = window.setTimeout(() => void check(), CHECK_CONNECTION_INTERVAL));
@@ -290,6 +303,7 @@ function setupCheckConnection({
 			setError();
 			if (force) new Notice(`${translate('checkConnectionFailed')}: ${error.message}`, 5000);
 			logError(describeError(error, `Check connection to \`${settings.remoteFs}\` failed`));
+			memoryDB.setMeta('lastCheckedFs', undefined);
 			cleanup();
 			scheduleCheckConnection();
 		};

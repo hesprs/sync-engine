@@ -9,5 +9,7 @@ export default defineConfig({
 	minify: true,
 	outExtensions: () => ({ js: '.js' }),
 	outputOptions: { codeSplitting: false },
+	platform: 'browser',
 	plugins: [syncEngineModule(moduleCatalog)],
+	treeshake: { manualPureFunctions: ['Mutex'] }, // Removes the dead Mutexes in hash-wasm
 });

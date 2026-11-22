@@ -154,5 +154,5 @@ export async function md5Base64(data: Binary | string): Promise<string> {
 	const bytes = typeof data === 'string' ? textToUint8Array(data) : data;
 	const hexDigest = await md5(bytes);
 	const raw = (hexDigest.match(/.{2}/gu) as Array<string>).map((h) => Number.parseInt(h, 16));
-	return btoa(String.fromCodePoint(...raw));
+	return btoa(String.fromCharCode(...raw));
 }

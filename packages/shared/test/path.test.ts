@@ -1,11 +1,11 @@
 import {
+	basename,
+	dirname,
+	formatUrl,
 	normalizeBaseDir,
 	normalizeKey,
 	parseUrl,
-	formatUrl,
 	stripEndSlash,
-	basename,
-	dirname,
 } from '@/path';
 import { expect, test } from 'bun:test';
 

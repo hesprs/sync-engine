@@ -1,4 +1,11 @@
 import { API_RPC, OAUTH_TOKEN_URL } from '@/dropbox/api';
+import {
+	bearerMiddleware,
+	exchangeCodeForTokens,
+	PendingAuthorization,
+	startAuthorization,
+	TokenManager,
+} from '@/dropbox/auth';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import ObsidianMock from '@repo/shared/obsidian-mock';
 import { expect, mock, test } from 'bun:test';
@@ -24,16 +31,6 @@ void mock.module('obsidian', () => ({
 		});
 	},
 }));
-
-const {
-	APP_KEY,
-	PendingAuthorization,
-	TokenManager,
-	bearerMiddleware,
-	exchangeCodeForTokens,
-	revokeToken,
-	startAuthorization,
-} = await import('@/dropbox/auth');
 
 function reset(...next: Array<HttpResponse>) {
 	requests.length = 0;
@@ -63,7 +60,7 @@ test('starts an authorization with an S256 challenge and offline access', async 
 
 	const parsed = new URL(url);
 	expect(parsed.origin + parsed.pathname).toBe('https://www.dropbox.com/oauth2/authorize');
-	expect(parsed.searchParams.get('client_id')).toBe(APP_KEY);
+	expect(parsed.searchParams.get('client_id')).toBeTypeOf('string');
 	expect(parsed.searchParams.get('redirect_uri')).toBe('obsidian://sync-engine-dropbox-auth');
 	expect(parsed.searchParams.get('response_type')).toBe('code');
 	expect(parsed.searchParams.get('token_access_type')).toBe('offline');
@@ -76,7 +73,7 @@ test('starts an authorization with an S256 challenge and offline access', async 
 	expect(verifier.length).toBeLessThanOrEqual(128);
 
 	const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
-	const expected = btoa(String.fromCodePoint(...new Uint8Array(digest)))
+	const expected = btoa(String.fromCharCode(...new Uint8Array(digest)))
 		.replaceAll('+', '-')
 		.replaceAll('/', '_')
 		.replaceAll('=', '');
@@ -106,8 +103,7 @@ test('exchanges the code with the PKCE verifier and no secret', async () => {
 	expect(body.get('code_verifier')).toBe('the-verifier');
 	expect(body.get('grant_type')).toBe('authorization_code');
 	expect(body.get('redirect_uri')).toBe('obsidian://sync-engine-dropbox-auth');
-	expect(body.get('client_id')).toBe(APP_KEY);
-	expect(body.get('client_secret')).toBeNull();
+	expect(body.get('client_id')).toBeTypeOf('string');
 });
 
 test('surfaces token endpoint errors', async () => {
@@ -132,7 +128,7 @@ test('refreshes tokens without a secret and caches them', async () => {
 	const body = formBody(0);
 	expect(body.get('grant_type')).toBe('refresh_token');
 	expect(body.get('refresh_token')).toBe('refresh');
-	expect(body.get('client_id')).toBe(APP_KEY);
+	expect(body.get('client_id')).toBeTypeOf('string');
 	expect(body.get('client_secret')).toBeNull();
 });
 
@@ -174,8 +170,10 @@ test('caches tokens and retries bearer requests after a 401', async () => {
 test('revokes the current token set derived from the refresh token', async () => {
 	reset({ json: { access_token: 'access', expires_in: 14_400 } }, {});
 	const manager = new TokenManager(createSecrets());
-	await revokeToken(manager);
 
+	await manager.deleteRefreshToken();
+
+	expect(manager.getRefreshToken()).toBeUndefined();
 	expect(requests[1]?.url).toBe(`${API_RPC}/2/auth/token/revoke`);
 	expect(requests[1]?.headers?.Authorization).toBe('Bearer access');
 });

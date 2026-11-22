@@ -1,12 +1,12 @@
 # Writing a Sync Engine Module
 
-Modules lets you unlock infinite extension beyond Sync Engine base features. This documentation covers everything you need to write, build, test, and publish a module.
+Modules let you unlock infinite extension beyond Sync Engine base features. This documentation covers everything you need to write, build, test, and publish a module.
 
 ## Scaffolding a Module Project
 
-To develop a Sync Engine module, you at least need a JavaScript Runtime and a package manager, for example, `Bun`, or `Node.js` + `npm`/`pnpm`.
+To develop a Sync Engine module, you need at least a JavaScript runtime and a package manager, for example, `Bun`, or `Node.js` + `npm`/`pnpm`.
 
-Create a project folder and run following command, you can use any package manager, throughout this documentation we will be using `Bun`:
+Create a project folder and run the following command, you can use any package manager, throughout this documentation we will be using `Bun`:
 
 ```sh
 bun init -y
@@ -42,7 +42,7 @@ your-module
 └── ... (linter, formatter, etc.)
 ```
 
-Create `tsdown.config.ts` and write following content:
+Create `tsdown.config.ts` and write the following content:
 
 ```TypeScript
 import syncEngineModule from '@hesprs/sync-engine-sdk/tsdown-plugin';
@@ -55,13 +55,14 @@ export default defineConfig({
 	minify: true,
 	outExtensions: () => ({ js: '.js' }),
 	outputOptions: { codeSplitting: false },
+	platform: 'browser',
 	plugins: [syncEngineModule()],
 });
 ```
 
-This config makes Tsdown output a single minified JavaScript file, which can be directly loaded by Sync Engine core. The `syncEngineModule` plugin bridges Obsidian API imports and can embed module metadata as magic bytes, see [Tsdown Plugin](#tsdown-plugin).
+This config makes Tsdown output a single minified JavaScript file, which can be directly loaded by Sync Engine core. The `syncEngineModule` plugin bridges Obsidian API imports and can embed module metadata as magic bytes, see [Tsdown Plugin](#tsdown-plugin). `platform: 'browser'` targets the browser runtime that loads modules inside Obsidian's renderer.
 
-Finally add following commands to your `package.json`:
+Finally add the following commands to your `package.json`:
 
 ```json
 { "scripts": { "dev": "MODE=dev tsdown", "build": "tsdown" } }
@@ -89,6 +90,7 @@ Passing module metadata to the plugin prepends a magic bytes comment to each com
 ```TypeScript
 plugins: [
 	syncEngineModule({
+		id: 'my-module',
 		name: 'My Module',
 		icon: 'puzzle',
 		description: 'An example module.',
@@ -103,6 +105,7 @@ The output file then starts with:
 
 ```js
 /*!
+id: my-module
 name: My Module
 icon: puzzle
 description: An example module.
@@ -159,11 +162,11 @@ Every module:
 
 :::
 
-You can found abundant module examples in Sync Engine monorepo:
+You can find abundant module examples in Sync Engine monorepo:
 
 - [Encryption](https://github.com/hesprs/sync-engine/tree/main/packages/encryption): uses settings, i18n, file system, and in-memory database API.
 - [Smart Merge](https://github.com/hesprs/sync-engine/tree/main/packages/smart-merge): uses settings, i18n, file system, IndexedDB, and conflict resolution API.
-- [WebDAV](ttps://github.com/hesprs/sync-engine/tree/main/packages/webdav): great example of how to add a backend to Sync Engine.
+- [WebDAV](https://github.com/hesprs/sync-engine/tree/main/packages/webdav): great example of how to add a backend to Sync Engine.
 
 ## Build A Feedback Loop
 

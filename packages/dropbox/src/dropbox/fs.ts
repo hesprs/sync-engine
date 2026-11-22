@@ -13,7 +13,7 @@ import {
 	verifyEntries,
 } from './api';
 import UploadSessions from './sessions';
-import { SESSION_CHUNK_SIZE, appendSession, concurrentUploadSession, read2xx } from './upload';
+import { appendSession, concurrentUploadSession, read2xx, SESSION_CHUNK_SIZE } from './upload';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
 import { collectStreamToBinary } from '@repo/shared/binary';
 import { toError } from '@repo/shared/error';

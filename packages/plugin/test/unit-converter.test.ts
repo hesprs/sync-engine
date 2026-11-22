@@ -1,4 +1,4 @@
-import { parseTime, formatTime } from '@/utils/unit-converter';
+import { formatTime, parseTime } from '@/utils/unit-converter';
 import { expect, test } from 'bun:test';
 
 test('parses values with and without explicit units', () => {

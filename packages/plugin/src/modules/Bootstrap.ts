@@ -1,24 +1,24 @@
 import en from '@/en';
 import {
-	rateLimiterMiddleware,
-	cancellationWrapper,
-	optimizationWrapper,
-	contextWrapper,
-	retryMiddleware,
-	hierarchicalOptimizer,
 	asymmetricStorageWrapper,
-	customHeadersMiddleware,
 	cancellationMiddleware,
+	cancellationWrapper,
+	contextWrapper,
+	customHeadersMiddleware,
+	hierarchicalOptimizer,
+	optimizationWrapper,
+	rateLimiterMiddleware,
+	retryMiddleware,
 } from '@/fs';
 import {
 	bidirectionalDecider,
-	mirrorLocalDecider,
-	mirrorRemoteDecider,
 	keepLocalResolver,
 	keepRemoteResolver,
 	latestSurviveResolver,
-	renameAndKeepBothResolver,
+	mirrorLocalDecider,
+	mirrorRemoteDecider,
 	pholderDecider,
+	renameAndKeepBothResolver,
 } from '@/sync';
 import { NONE_STRATEGY } from '@repo/shared/glob-match';
 import type { Dispatch, On } from './EventBus';
@@ -26,11 +26,11 @@ import type { ObsidianLanguageCode, Translate, TranslationResource } from './I18
 import type {
 	ConflictResolverEntry,
 	DeciderEntry,
-	RemoteFsEntry,
-	OptimizerEntry,
 	FsWrapperEntry,
-	RemoteRequestMiddlewareEntry,
 	LocalRequestMiddlewareEntry,
+	OptimizerEntry,
+	RemoteFsEntry,
+	RemoteRequestMiddlewareEntry,
 	TriggerEntry,
 } from './Registrar';
 import type { Events, Translations } from '@';

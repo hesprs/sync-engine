@@ -1,6 +1,6 @@
 # Runtime Permissions
 
-This page is an exhaustive list of runtime APIs used by Sync Engine and official modules that may raise concerns, with verifiable explanations that justify their necessity. You can also compare this list against Obsidian Community website "Disclosure" section in the plugin scorecard.
+This page is an exhaustive list of runtime APIs used by Sync Engine and official modules that may raise concerns, with verifiable explanations that justify their necessity. You can also compare this list against the "Disclosure" section in the plugin scorecard on the Obsidian Community website.
 
 ## Dynamic JavaScript Module Evaluation
 
@@ -41,7 +41,7 @@ Sync Engine plugin and `sync.consensia.cc` don't contain any type of telemetry.
 Obsidian secret storage is shown as "Keychain" in Obsidian settings. Sync Engine and official modules acquire secrets in following scenarios:
 
 - Plugin core: reads the configured [secret headers](./settings#custom-headers) at the start of a sync run
-- [WebDAV](../deep-dive/modules/webdav) module: reads the configured WebDAV token secret at the start of a sync run for service authentication
+- [WebDAV](../deep-dive/modules/webdav) module: reads the configured WebDAV password secret at the start of a sync run for service authentication
 - [S3](../deep-dive/modules/s3) module: reads the configured secret access key when resolving S3 credentials for connection checks or sync operations
 - [Google Drive](../deep-dive/modules/gdrive) module: manages a secret named `sync-engine-gdrive-refresh-token` automatically and uses that for authorizing connection checks and sync operations.
 - [Dropbox](../deep-dive/modules/dropbox) module: manages a secret named `sync-engine-dropbox-refresh-token` automatically and uses that for authorizing connection checks and sync operations.

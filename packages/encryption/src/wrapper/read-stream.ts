@@ -1,8 +1,8 @@
 import {
-	DECRYPTION_ERROR_MESSAGE,
-	FILE_SALT_LENGTH,
 	decryptContentChunk,
+	DECRYPTION_ERROR_MESSAGE,
 	deriveFileKey,
+	FILE_SALT_LENGTH,
 	getEncryptedChunkCount,
 	getEncryptedChunkSize,
 	importAesGcmKey,
@@ -51,7 +51,9 @@ export default function createDecryptedReadableStream(
 
 			const encryptedChunk = pending.slice(expectedSize);
 			controller.enqueue(
-				await decryptContentChunk(await fileKeyPromise, encryptedChunk, chunkIndex),
+				await fileKeyPromise.then((fk) =>
+					decryptContentChunk(fk, encryptedChunk, chunkIndex),
+				),
 			);
 			chunkIndex += 1;
 		}

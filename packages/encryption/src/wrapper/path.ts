@@ -71,8 +71,8 @@ function decryptBasename(nameKey: Binary, encryptedBasename: string): string {
 			decodeBase64Url(encryptedBasename),
 		);
 		return normalizeBasename(uint8ArrayToText(plaintext));
-	} catch {
-		throw new Error('Encrypted file name is malformed');
+	} catch (error) {
+		throw new Error('File name decryption failed', { cause: error });
 	}
 }
 

@@ -317,7 +317,7 @@ test('mobile header icon renders in view-actions and responds to status changes 
 	// When syncing, spinning class is present
 	fake.isIdle(false);
 	const mainIcon = mobileBtn?.querySelector('.sync-engine-main-icon');
-	expect(mainIcon?.hasClass('animate-spin')).toBe(true);
+	expect(mainIcon?.hasClass('se-animate-spin')).toBe(true);
 
 	// Click while syncing shows progress modal
 	mobileBtn?.trigger('click');
@@ -371,11 +371,11 @@ test('mobile header icon defers until layoutReady, skips deferred leaves, and av
 
 	fake.isIdle(false);
 	expect(mobileBtn?.querySelector('.sync-engine-main-icon')).toBe(mainIcon);
-	expect(mainIcon?.hasClass('animate-spin')).toBe(true);
+	expect(mainIcon?.hasClass('se-animate-spin')).toBe(true);
 
 	fake.isIdle(true);
 	expect(mobileBtn?.querySelector('.sync-engine-main-icon')).toBe(mainIcon);
-	expect(mainIcon?.hasClass('animate-spin')).toBe(false);
+	expect(mainIcon?.hasClass('se-animate-spin')).toBe(false);
 
 	fake.obs.dispose();
 	Platform.isMobile = false;

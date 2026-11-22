@@ -39,3 +39,9 @@ Special data are separated into the following categories that should be always n
 - For other comments, single-line preferred. If multiple lines are needed, each line must be complete sentence(s).
 - Comment line can exceed print width limit.
 - Prefer destructuring if it improves conciseness.
+
+## Text Style
+
+- Markdown italic marker use `*italic*` for spans that must have non-space non-punctuation adjacent characters, otherwise use `_italic_`.
+- For CJK prose, there should be a space between a non-punctuation CJK character and a latin letter or ASCII number.
+- For text translated from English to other languages, keep proper nouns and terms that would have awkward translations in the native language in English. Do not enforce full text translation. Do not add parenthesis.

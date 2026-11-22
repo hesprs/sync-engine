@@ -1,10 +1,11 @@
 import {
+	buildUrl,
 	DRIVE_API,
 	DRIVE_UPLOAD_API,
+	escapeQuery,
 	FILE_FIELDS,
 	FOLDER_MIME,
-	buildUrl,
-	escapeQuery,
+	getFileUid,
 	parseDriveError,
 	toStat,
 } from './api';
@@ -191,16 +192,15 @@ export default class GdriveFs implements RootFs {
 	}
 
 	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
-		const file = await singleUpload(
-			{
-				...(await this.uploadTarget(key, stat, 'multipart')),
-				mimeType: guessMimeType(basename(key)),
-				request: this.request,
-			},
-			await value,
+		const file = await Promise.all([this.uploadTarget(key, stat, 'multipart'), value]).then(
+			([targets, val]) =>
+				singleUpload(
+					{ ...targets, mimeType: guessMimeType(basename(key)), request: this.request },
+					val,
+				),
 		);
-		if (file.id) this.ids.set(key, file.id);
-		return file.md5Checksum ?? `${stat.mtime}~${stat.size}`;
+		this.ids.set(key, file.id);
+		return getFileUid(file, key);
 	}
 
 	async writeStream(
@@ -208,16 +208,12 @@ export default class GdriveFs implements RootFs {
 		value: MaybePromise<ReadableStream<Binary>>,
 		stat: FileStat,
 	): Promise<string> {
-		const file = await resumableUpload(
-			{
-				...(await this.uploadTarget(key, stat, 'resumable')),
-				request: this.request,
-				size: stat.size,
-			},
-			await value,
+		const file = await Promise.all([this.uploadTarget(key, stat, 'resumable'), value]).then(
+			([targets, val]) =>
+				resumableUpload({ ...targets, request: this.request, size: stat.size }, val),
 		);
-		if (file.id) this.ids.set(key, file.id);
-		return file.md5Checksum ?? `${stat.mtime}~${stat.size}`;
+		this.ids.set(key, file.id);
+		return getFileUid(file, key);
 	}
 
 	async delete(key: string): Promise<void> {
@@ -311,9 +307,9 @@ export default class GdriveFs implements RootFs {
 		return toStat(key, entry);
 	}
 
-	async exists(key: string): Promise<boolean> {
+	exists(key: string): Promise<boolean> {
 		// When Sync Engine calls `exists()`, the only possibility is that something unexpected happened, don't trust cache here
-		return (await this.resolveIdFresh(key)) !== undefined;
+		return this.resolveIdFresh(key).then((id) => id !== undefined);
 	}
 
 	/**
@@ -350,7 +346,6 @@ export default class GdriveFs implements RootFs {
 			if (siblings) siblings.push(file);
 			else childrenByParent.set(parent, [file]);
 		}
-
 		const results: Array<Stat> = [];
 		const total = all.length;
 		let completed = 0;
@@ -366,7 +361,20 @@ export default class GdriveFs implements RootFs {
 				if (verdict === 'advance') await walk(entry.id, childKey);
 			}
 		};
-		await walk(startId, key === '/' ? '' : key);
+		// Drive resolves the `root` alias in requests but never echoes it back in responses, so a root listing must walk from every parent that is not itself a listed file.
+		const getWalkRoot = () => {
+			if (key !== '/') return [startId];
+			const idSet = new Set(all.map((file) => file.id));
+			const orphanRoots = new Set<string>();
+			for (const { parents } of all) {
+				const root = parents[0];
+				if (root && !idSet.has(root)) orphanRoots.add(root);
+			}
+			return [...orphanRoots];
+		};
+		const walkKey = key === '/' ? '' : key;
+		const walkRoots = getWalkRoot();
+		await Promise.all(walkRoots.map((walkRoot) => walk(walkRoot, walkKey)));
 		return results;
 	}
 }

@@ -1,7 +1,7 @@
 import { renderTogglableValue, settingEntry as s } from './utils';
 import setNeedMigration from '@/components/MigrationModal';
 import type { LabelDefinition } from './utils';
-import type { Settings, Context } from '@';
+import type { Context, Settings } from '@';
 import type { MigrationModalTranslations } from '@/components/MigrationModal';
 import type { Fragment, Translate } from '@/modules/I18n';
 import type { CallableOrObjectTree } from '@/modules/Setting';
@@ -26,7 +26,7 @@ export type FeaturesSettingTranslations = {
 	focusSyncPlaceholder: string;
 	asymmetricStorage: string;
 	asymmetricStorageDescription: Fragment;
-	asymmetricStorageMigration: Fragment<boolean>;
+	asymmetricStorageWarning: Fragment<boolean>;
 } & MigrationModalTranslations;
 
 export default function featuresSettings(ctx: {
@@ -123,7 +123,7 @@ export default function featuresSettings(ctx: {
 									settings.asymmetricStorage = value;
 									void saveSettings();
 								},
-								content: (value) => translate('asymmetricStorageMigration', value),
+								content: (value) => translate('asymmetricStorageWarning', value),
 								needMigration: () => recordStoreExists(),
 								toggle: toggle.setValue(settings.asymmetricStorage),
 							}),

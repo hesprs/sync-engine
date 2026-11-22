@@ -1,10 +1,10 @@
-import { PART_SIZE, multipartUpload } from './multipart';
+import { multipartUpload, PART_SIZE } from './multipart';
 import { md5Base64 } from './sigv4';
 import { buildUrl, buildUrlWithQuery } from './url';
 import {
+	extractMetaHeaders,
 	formatS3Error,
 	getFileUid,
-	extractMetaHeaders,
 	parseS3Error,
 	rootValue,
 	toMetaHeaders,

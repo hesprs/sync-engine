@@ -11,16 +11,16 @@ function createCapabilityDesc({
 	defaulting: Snippet<string>;
 }) {
 	return ({
-		description,
-		supported,
-		unsupported,
-		defaulted,
-	}: {
-		description: string | Fragment;
-		supported: string;
-		unsupported: string;
-		defaulted: string;
-	}): Fragment =>
+			description,
+			supported,
+			unsupported,
+			defaulted,
+		}: {
+			description: string | Fragment;
+			supported: string;
+			unsupported: string;
+			defaulted: string;
+		}): Fragment =>
 		() =>
 			createFragment((frag) => {
 				frag.createEl('p', {

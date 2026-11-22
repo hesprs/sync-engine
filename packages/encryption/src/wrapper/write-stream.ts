@@ -2,8 +2,8 @@ import { encryptContentChunk } from './content';
 import {
 	CONTENT_CHUNK_SIZE,
 	DECRYPTION_ERROR_MESSAGE,
-	FILE_SALT_LENGTH,
 	deriveFileKey,
+	FILE_SALT_LENGTH,
 	getEncryptedFileSize,
 	importAesGcmKey,
 } from './shared';
