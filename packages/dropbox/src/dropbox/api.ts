@@ -34,8 +34,7 @@ export type FolderMetadata = {
 };
 
 export type Metadata =
-	| ({ '.tag': 'file' } & FileMetadata)
-	| ({ '.tag': 'folder' } & FolderMetadata);
+	({ '.tag': 'file' } & FileMetadata) | ({ '.tag': 'folder' } & FolderMetadata);
 
 export type UploadArg = {
 	path: string;
@@ -62,10 +61,7 @@ export type FinishBatchEntry =
 	| { '.tag': 'failure'; failure: Record<string, unknown> };
 
 export type BatchEntry =
-	| DeleteBatchEntry
-	| RelocationBatchEntry
-	| CreateFolderBatchEntry
-	| FinishBatchEntry;
+	DeleteBatchEntry | RelocationBatchEntry | CreateFolderBatchEntry | FinishBatchEntry;
 
 /** Dropbox paths are relative to the app folder root and never end with a slash. */
 export function keyToPath(key: string): string {

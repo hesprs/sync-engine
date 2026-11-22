@@ -1,12 +1,12 @@
 import {
-	RemoveLocal,
-	CreateRemoteDir,
-	Upload,
 	AddRecord,
-	RemoveRecord,
 	convertMoves,
+	CreateRemoteDir,
+	RemoveLocal,
+	RemoveRecord,
 	syncCancelledError,
 	taskMap,
+	Upload,
 } from '@/sync';
 import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import { REGRET_ERROR_MESSAGE } from '@/utils/pipe';
@@ -19,7 +19,7 @@ import type { DeleteConfirmReturn } from './ProgressModal';
 import type { Infras } from './Registrar';
 import type { Events, Translations } from '@';
 import type { Fs, ListOptions, ListReporter } from '@/fs';
-import type { Task, ConflictResolver, TaskFactory, TaskNames, TaskOptionsMap } from '@/sync';
+import type { ConflictResolver, Task, TaskFactory, TaskNames, TaskOptionsMap } from '@/sync';
 import type {
 	GlobStrategy,
 	MaybePromise,

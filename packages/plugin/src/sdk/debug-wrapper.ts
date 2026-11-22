@@ -1,4 +1,4 @@
-import type { WrappedFs, Fs, ListReporter } from '@/fs';
+import type { Fs, ListReporter, WrappedFs } from '@/fs';
 import type { Binary, FileStat, FolderStat, MaybePromise } from '@/types';
 
 class DebugFs implements WrappedFs {

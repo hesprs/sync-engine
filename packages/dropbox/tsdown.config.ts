@@ -3,7 +3,6 @@ import moduleCatalog from '@repo/shared/module-catalog';
 import { defineConfig } from 'tsdown';
 
 const appKey = process.env.DROPBOX_APP_KEY;
-
 if (!appKey) throw new Error('DROPBOX_APP_KEY must be set to compile Dropbox.');
 
 export default defineConfig({

@@ -1,8 +1,8 @@
 import {
-	TokenManager,
 	bearerMiddleware,
 	pollDeviceToken,
 	startDeviceAuthorization,
+	TokenManager,
 } from '@/gdrive/auth';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import ObsidianMock from '@repo/shared/obsidian-mock';

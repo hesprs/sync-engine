@@ -1,16 +1,16 @@
 import type {
 	BatchOptimizer,
 	DeleteAtom,
-	InputAtom,
 	Fs,
-	WrappedFs,
+	InputAtom,
+	ListReporter,
 	MkdirAtom,
 	MoveAtom,
-	WriteAtom,
 	OutputAtom,
-	ListReporter,
+	WrappedFs,
+	WriteAtom,
 } from '../interface';
-import type { MaybePromise, Binary, FileStat, FolderStat } from '@/types';
+import type { Binary, FileStat, FolderStat, MaybePromise } from '@/types';
 
 type Omitted<T> = Omit<T, 'resolve' | 'reject'>;
 

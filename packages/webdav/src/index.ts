@@ -1,4 +1,4 @@
-import { en, zh, zhTW, ru } from '@/i18n';
+import { en, ru, zh, zhTW } from '@/i18n';
 import webdavSetting from '@/setting';
 import authorizationMiddleware from '@/webdav/auth';
 import { checkConnection } from '@/webdav/check-connection';
@@ -7,18 +7,18 @@ import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
 import type { WebdavTranslations } from '@/setting';
 import type { DigestInfo } from '@/webdav/auth';
 import type {
-	RemoteFsEntry,
+	Context,
+	DatabaseSync,
 	FsWrapperEntry,
-	Translate,
-	Translations,
+	ObsidianLanguageCode,
+	RemoteFsEntry,
+	RemoteRequestMiddlewareEntry,
 	SelectFromContext,
 	SettingEntry,
-	ObsidianLanguageCode,
-	TranslationResource,
 	Settings,
-	Context,
-	RemoteRequestMiddlewareEntry,
-	DatabaseSync,
+	Translate,
+	TranslationResource,
+	Translations,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 

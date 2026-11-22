@@ -8,9 +8,9 @@ import type { Control } from './helpers';
 import type { FileMetadata } from '@/dropbox/api';
 import type {
 	InputAtom,
+	OutputAtom,
 	RequestParam,
 	RequestResponse,
-	OutputAtom,
 	StringKV,
 } from '@hesprs/sync-engine-sdk';
 

@@ -1,8 +1,8 @@
 import 'tsdown/client';
-import { TokenManager, bearerMiddleware } from './gdrive/auth';
+import { bearerMiddleware, TokenManager } from './gdrive/auth';
 import checkConnection from './gdrive/check-connection';
 import GdriveFs from './gdrive/fs';
-import { ru, en, zh, zhTW } from './i18n';
+import { en, ru, zh, zhTW } from './i18n';
 import gdriveSetting from './setting';
 import styles from './styles.css?inline';
 import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
@@ -18,8 +18,8 @@ import type {
 	SettingEntry,
 	Settings,
 	Translate,
-	Translations,
 	TranslationResource,
+	Translations,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 

@@ -1,10 +1,10 @@
 import { API_RPC, OAUTH_TOKEN_URL } from '@/dropbox/api';
 import {
-	PendingAuthorization,
-	TokenManager,
 	bearerMiddleware,
 	exchangeCodeForTokens,
+	PendingAuthorization,
 	startAuthorization,
+	TokenManager,
 } from '@/dropbox/auth';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
 import ObsidianMock from '@repo/shared/obsidian-mock';

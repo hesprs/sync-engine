@@ -1,8 +1,8 @@
 import {
-	DECRYPTION_ERROR_MESSAGE,
-	FILE_SALT_LENGTH,
 	decryptContentChunk,
+	DECRYPTION_ERROR_MESSAGE,
 	deriveFileKey,
+	FILE_SALT_LENGTH,
 	getEncryptedChunkCount,
 	getEncryptedChunkSize,
 	importAesGcmKey,

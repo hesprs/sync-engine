@@ -1,4 +1,4 @@
-import { en, zh, zhTW, ru } from '@/i18n';
+import { en, ru, zh, zhTW } from '@/i18n';
 import s3BatchDeleteOptimizer from '@/optimizer';
 import { checkConnection } from '@/s3/check-connection';
 import S3Fs from '@/s3/fs';
@@ -8,20 +8,20 @@ import { digOriginal, prefixWrapper } from '@hesprs/sync-engine-sdk';
 import type { UrlStyle } from '@/s3/sigv4';
 import type { S3Translations } from '@/setting';
 import type {
-	RemoteFsEntry,
-	FsWrapperEntry,
-	Translate,
-	Translations,
-	SelectFromContext,
-	SettingEntry,
-	ObsidianLanguageCode,
-	TranslationResource,
-	Settings,
-	OptimizerEntry,
-	RemoteRequestMiddlewareEntry,
+	Binary,
 	Context,
 	DatabaseSync,
-	Binary,
+	FsWrapperEntry,
+	ObsidianLanguageCode,
+	OptimizerEntry,
+	RemoteFsEntry,
+	RemoteRequestMiddlewareEntry,
+	SelectFromContext,
+	SettingEntry,
+	Settings,
+	Translate,
+	TranslationResource,
+	Translations,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 
@@ -154,8 +154,7 @@ export default class S3 {
 		const { secretStorage } = this.ctx.app;
 		const secretAccessKey = secretStorage.getSecret(_secretAccessKey);
 		const sessionToken = (enabled ? secretStorage.getSecret(value) : undefined) as
-			| string
-			| undefined;
+			string | undefined;
 		if (!secretAccessKey || (enabled && !sessionToken) || !endpoint || !bucket)
 			throw new Error('Please configure S3 account!');
 		return {

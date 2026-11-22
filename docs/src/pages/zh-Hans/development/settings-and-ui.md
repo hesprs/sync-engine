@@ -21,8 +21,7 @@ ctx.registerSetting(entry: SettingEntry): () => boolean;
 
 ```ts
 type CallableOrObjectTree =
-  | { [order: number]: CallableOrObjectTree }
-  | ((self: SettingTree) => SettingDefinitionItem);
+  { [order: number]: CallableOrObjectTree } | ((self: SettingTree) => SettingDefinitionItem);
 ```
 
 Sync Engine 从最小的数字键到最大的键遍历这个对象，把回调渲染为 Obsidian 设置。数字键不是设置名称、持久化的设置键或数值控件的值。它们只提供同级顺序，并标识扩展插入的分支。它们不需要连续：
@@ -82,7 +81,7 @@ Sync Engine 从最小的数字键到最大的键遍历这个对象，把回调�
 
 ```ts
 import { settingEntry } from '@hesprs/sync-engine-sdk';
-import type { Context, CallableOrObjectTree } from '@hesprs/sync-engine-sdk';
+import type { CallableOrObjectTree, Context } from '@hesprs/sync-engine-sdk';
 import type { SettingGroupItem } from 'obsidian';
 
 export default function mySettings(

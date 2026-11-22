@@ -8,10 +8,10 @@ import type { RecordStore } from './Storage';
 import type { StrategyMapping, SyncOptions } from './Sync';
 import type { Events, Translations } from '@';
 import type { BatchOptimizer, Fs, RootFs, VaultRequest } from '@/fs';
-import type { Task, ConflictResolver, Decider, TaskFactory } from '@/sync';
+import type { ConflictResolver, Decider, Task, TaskFactory } from '@/sync';
 import type { General, MaybePromise } from '@/types';
 import type { Request } from '@/utils/native';
-import type { App, Plugin, ObsidianProtocolHandler } from 'obsidian';
+import type { App, ObsidianProtocolHandler, Plugin } from 'obsidian';
 
 type RejectableWrapper<T> = (value: T) => T | undefined;
 type OrderedWrapperEntry<T> = { priority: number; apply: RejectableWrapper<T> };

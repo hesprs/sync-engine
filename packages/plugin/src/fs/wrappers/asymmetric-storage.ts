@@ -1,6 +1,6 @@
 import { basename, dirname, isFolder, isSub } from '@repo/shared/path';
 import type { Fs, ListReporter, WrappedFs } from '../interface';
-import type { Stat, Binary, FileStat, FolderStat, MaybePromise } from '@/types';
+import type { Binary, FileStat, FolderStat, MaybePromise, Stat } from '@/types';
 import type { StoreSync } from 'uni-kv';
 
 const ROOT_KEY = '/';

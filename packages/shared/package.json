@@ -5,6 +5,10 @@
 	"license": "MIT",
 	"type": "module",
 	"exports": {
+		"./obsidian-mock": {
+			"default": "./test/obsidian-mock.spec.ts",
+			"types": "./test/obsidian-mock.spec.ts"
+		},
 		"./*": {
 			"default": "./src/*.ts",
 			"types": "./src/*.ts"
@@ -13,6 +17,6 @@
 	"scripts": {
 		"fix": "oxlint --silent --fix && bun fmt",
 		"check": "oxlint && bun fmt --check",
-		"tests": "bun test ./test"
+		"tests": "bun test --parallel"
 	}
 }

@@ -18,7 +18,7 @@ type Dispatch<O extends object> = <K extends keyof O>(
 `on` 返回清理回调。`dispatch` 让无载荷事件（类型为 `undefined`）可以省略参数：不带第二个参数调用 `ctx.dispatch('syncCanceled')` 即可。
 
 ```ts
-import type { Events, On, Dispatch } from '@hesprs/sync-engine-sdk';
+import type { Dispatch, Events, On } from '@hesprs/sync-engine-sdk';
 
 const on: On<Events> = ctx.on;
 const on: Dispatch<Events> = ctx.dispatch;

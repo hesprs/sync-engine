@@ -21,8 +21,7 @@ The value passed to `apply` is a nested object. Each numeric key points to eithe
 
 ```ts
 type CallableOrObjectTree =
-  | { [order: number]: CallableOrObjectTree }
-  | ((self: SettingTree) => SettingDefinitionItem);
+  { [order: number]: CallableOrObjectTree } | ((self: SettingTree) => SettingDefinitionItem);
 ```
 
 Sync Engine walks this object from the smallest numeric key to the largest and renders the callbacks as Obsidian settings. Numeric keys are not setting names, persisted setting keys, or numeric control values. They only provide sibling order and identify the branch where an extension is inserted. They do not need to be consecutive:
@@ -82,7 +81,7 @@ Use the SDK `settingEntry()` helper when defining a parent and its children toge
 
 ```ts
 import { settingEntry } from '@hesprs/sync-engine-sdk';
-import type { Context, CallableOrObjectTree } from '@hesprs/sync-engine-sdk';
+import type { CallableOrObjectTree, Context } from '@hesprs/sync-engine-sdk';
 import type { SettingGroupItem } from 'obsidian';
 
 export default function mySettings(

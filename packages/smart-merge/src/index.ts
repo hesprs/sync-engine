@@ -1,4 +1,4 @@
-import { en, zh, zhTW, ru } from '@/i18n';
+import { en, ru, zh, zhTW } from '@/i18n';
 import smartMergeResolver from '@/resolver';
 import smartMergeSetting from '@/setting';
 import smartMergeBaseTextWrapper from '@/wrapper';
@@ -6,15 +6,15 @@ import type { SmartMergeTranslations } from '@/i18n';
 import type { SmartMergeSettings } from '@/setting';
 import type {
 	ConflictResolverEntry,
-	DatabaseAsync,
-	ObsidianLanguageCode,
 	Context,
+	DatabaseAsync,
 	FsWrapperEntry,
+	ObsidianLanguageCode,
 	SelectFromContext,
 	SettingEntry,
 	StoreAsync,
-	TranslationResource,
 	Translate,
+	TranslationResource,
 } from '@hesprs/sync-engine-sdk';
 
 type SmartMergeStoreSchema = Record<`base-text-${string}`, string>;

@@ -1,16 +1,16 @@
-import { en, zh, ru, zhTW } from '@/i18n';
+import { en, ru, zh, zhTW } from '@/i18n';
 import encryptionSetting from '@/setting';
 import encryptionWrapper from '@/wrapper';
 import type { EncryptionTranslations } from '@/setting';
 import type { EncryptionDB } from '@/wrapper';
 import type {
 	Context,
-	ObsidianLanguageCode,
 	FsWrapperEntry,
+	ObsidianLanguageCode,
 	SelectFromContext,
 	SettingEntry,
-	TranslationResource,
 	Translate,
+	TranslationResource,
 } from '@hesprs/sync-engine-sdk';
 import type { App } from 'obsidian';
 

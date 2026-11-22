@@ -1,5 +1,5 @@
 // oxlint-disable typescript/method-signature-style
-import type { MaybePromise, Progress, Stat, Binary, FileStat, FolderStat } from '@/types';
+import type { Binary, FileStat, FolderStat, MaybePromise, Progress, Stat } from '@/types';
 
 /**
  * All keys use unified format:

@@ -8,12 +8,12 @@ import type { GdriveSettings } from '@';
 import type {
 	CallableOrObjectTree,
 	Dispatch,
+	Events,
 	Fragment,
 	LabelDefinition,
 	Snippet,
 	Translate,
 	Translations,
-	Events,
 } from '@hesprs/sync-engine-sdk';
 import type { App, SettingGroupItem } from 'obsidian';
 

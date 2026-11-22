@@ -1,5 +1,5 @@
-import { documentSplitter, codeSplitter, proseSplitter } from '@/utils/splitters';
-import { test, expect } from 'bun:test';
+import { codeSplitter, documentSplitter, proseSplitter } from '@/utils/splitters';
+import { expect, test } from 'bun:test';
 
 test('documentSplitter', () => {
 	const { joints, tokens, splitters } = documentSplitter(`# Title

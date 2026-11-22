@@ -9,7 +9,8 @@ import { Platform, requestUrl } from 'obsidian';
 import type { Binary, StringKV } from '@/types';
 import type { RequestUrlParam } from 'obsidian';
 
-const { isTablet, isIosApp, isAndroidApp, isWin, isMacOS, isLinux, isPhone } = Platform;
+const { isTablet, isIosApp, isAndroidApp, isWin, isMacOS, isLinux, isPhone, isMobileApp } =
+	Platform;
 // oxlint-disable-next-line sort-keys
 export const OS = {
 	'Android Tablet': isTablet && isAndroidApp,
@@ -99,7 +100,7 @@ async function requestViaCapacitor(
 }
 
 export async function request(url: string, params?: RequestParam): Promise<RequestResponse> {
-	if (Platform.isMobileApp) return requestViaCapacitor(url, params);
+	if (isMobileApp) return requestViaCapacitor(url, params);
 	const body = params?.body;
 	if (body instanceof Uint8Array) (params as RequestUrlParam).body = toArrayBuffer(body);
 	const response = await requestUrl(

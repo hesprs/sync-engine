@@ -26,7 +26,7 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - `bun dev:docs`: start docs dev server
 - `bun build:docs`: build docs website
 - `bun fix`: format and fix fixable lint errors (always run before `bun check`).
-- `bun check`: check types, lint and format (no file change).
+- `bun check`: check types, lint and format (no file change, Oxlint does type check).
 - `bun dev`: building without clearing dist.
 - `bun tests`: run all tests (do not use `bun test`).
 - `bun tests -F <package-name> -- <test path>`: run tests in specific file.

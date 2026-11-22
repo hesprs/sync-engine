@@ -1,10 +1,10 @@
 import {
+	buildUrl,
 	DRIVE_API,
 	DRIVE_UPLOAD_API,
+	escapeQuery,
 	FILE_FIELDS,
 	FOLDER_MIME,
-	buildUrl,
-	escapeQuery,
 	getFileUid,
 	parseDriveError,
 	toStat,
