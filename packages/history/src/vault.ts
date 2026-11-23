@@ -1,5 +1,6 @@
 import { isTextFile } from '@/chunker';
 import { TFile } from 'obsidian';
+import type { CommitLocation } from '@/types';
 import type { App } from 'obsidian';
 
 export async function readFileBytes(app: App, file: TFile): Promise<Uint8Array> {
@@ -52,16 +53,24 @@ export async function writeVaultFile(
 
 export function findDeletedKeys(
 	app: App,
-	locations: Array<[string, unknown]>,
+	locations: Array<[string, CommitLocation]>,
 	isIgnored: (key: string) => boolean,
 ): Array<string> {
-	return [
-		...new Set(
-			locations
-				.map(([key]) => key.split('@')[0])
-				.filter((key) => !app.vault.getAbstractFileByPath(key) && !isIgnored(key)),
-		),
-	];
+	const latest = new Map<string, number>();
+	for (const [ref] of locations) {
+		const separator = ref.lastIndexOf('@');
+		if (separator <= 0 || separator === ref.length - 1) continue;
+		const lamport = Number(ref.slice(separator + 1));
+		if (!Number.isFinite(lamport)) continue;
+		const key = ref.slice(0, separator);
+		const previous = latest.get(key);
+		if (previous === undefined || lamport > previous) latest.set(key, lamport);
+	}
+
+	return [...latest]
+		.filter(([key]) => !app.vault.getAbstractFileByPath(key) && !isIgnored(key))
+		.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+		.map(([key]) => key);
 }
 
 export const isRemoteWriteTask = (name: string): boolean =>

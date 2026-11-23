@@ -101,7 +101,7 @@ export const TIER_DAILY_CUTOFF_MS = 30 * DAY_MS;
 // ==========================================
 
 /** Prefix for all remote history objects stored in S3/WebDAV. */
-export const HISTORY_PREFIX = 'sync-engine-history/';
+export const HISTORY_PREFIX = '.sync-engine-history/';
 
 /** File extensions treated as mergeable plain text by the chunker. */
 export const TEXT_EXTS = ['.md', '.canvas', '.txt', '.json', '.base'];
