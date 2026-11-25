@@ -1,4 +1,6 @@
 import { isTextFile } from '@/chunker';
+import { dirname } from '@repo/shared/path';
+import { mkdirRecursive } from '@repo/shared/vault';
 import { TFile } from 'obsidian';
 import type { CommitLocation } from '@/types';
 import type { App } from 'obsidian';
@@ -32,6 +34,7 @@ export async function writeVaultFile(
 ): Promise<void> {
 	const target = app.vault.getAbstractFileByPath(filePath);
 	const isText = isTextFile(filePath);
+	if (!(target instanceof TFile)) await mkdirRecursive(app.vault.adapter, dirname(filePath));
 	if (isText || !binary)
 		await (target instanceof TFile
 			? app.vault.modify(target, content)

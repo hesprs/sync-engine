@@ -3,6 +3,7 @@ import { MOBILE_SYNC_NOTICE_HIDE_DELAY_MS, SINCE_LAST_SYNC_UPDATE_INTERVAL_MS } 
 import roundPercent from '@/utils/round-percent';
 import { formatTime } from '@/utils/unit-converter';
 import { describeError, toError } from '@repo/shared/error';
+import { mkdirRecursive } from '@repo/shared/vault';
 import { Notice, Platform } from 'obsidian';
 import { computed, ref } from 'synthkernel';
 import type { Dispatch, On } from './EventBus';
@@ -10,7 +11,7 @@ import type { Translate } from './I18n';
 import type { SyncTerminateReason, TaskInfo } from './Sync';
 import type { Events, Translations } from '@';
 import type { Progress } from '@/types';
-import type { App, Command, DataAdapter, Plugin, WorkspaceLeaf } from 'obsidian';
+import type { App, Command, Plugin, WorkspaceLeaf } from 'obsidian';
 import type { Ref } from 'synthkernel';
 
 export type SyncStage =
@@ -456,14 +457,4 @@ export default class Observability {
 		syncStage: this.syncStage,
 		walkProgress: this.walkProgress,
 	};
-}
-
-async function mkdirRecursive(adapter: DataAdapter, path: string): Promise<void> {
-	const parts = path.split('/');
-	let currentPath = '';
-	for (const part of parts) {
-		if (!part) return;
-		currentPath = currentPath ? `${currentPath}/${part}` : part;
-		if (!(await adapter.exists(currentPath))) await adapter.mkdir(currentPath);
-	}
 }
