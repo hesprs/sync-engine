@@ -3,11 +3,13 @@ name: debug-plugin
 description: Local E2E debugging. Use when diagnosing unreasonable bugs that can be experimented locally.
 ---
 
-Sync Engine repo contains a real Obsidian vault, with configs in `./obsidian/` and files for testing at `./test-files/`. The workflow below requires a live Obsidian instance, when there's no instance, start one first.
+Sync Engine repo contains a real Obsidian vault, with configs in `./obsidian/` and files for testing at `./test-files/`.
+
+**IMPORTANT**: The workflow below requires a live Obsidian instance. ALWAYS check whether there's an Obsidian process running first. If not, start plain `obsidian` in background BEFORE using any Obsidian CLI command. With none running, it launches a new Obsidian process and never returns, so the call hangs until killed.
 
 ## Useful Commands
 
-All commands should be executed at project root.
+All Obsidian CLI commands should be executed at project root.
 
 - `obsidian help`: show the full list of Obsidian CLI commands
 - `obsidian dev:debug on`: attach debugger and capture console logs

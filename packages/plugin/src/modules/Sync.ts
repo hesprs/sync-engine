@@ -241,6 +241,7 @@ export default class Sync {
 
 			if (isCancelled()) throw syncCancelledError;
 			dispatch('executionStarted', tasks);
+			// Concurrency control, task ordering, and whatever things are handled by middlewares and optimizers, not here
 			await Promise.all(
 				tasks.map(async (task) => {
 					const complete = () => dispatch('taskCompleted', toTaskInfo(task));
