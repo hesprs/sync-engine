@@ -81,7 +81,8 @@ export const en: WebdavTranslations = {
 				);
 			}),
 		supported: 'most WebDAV servers',
-		unsupported: 'InfiniCLOUD, Nutstore, and Synology WebDAV with default configuration',
+		unsupported:
+			'InfiniCLOUD and Nutstore, also OpenCloud, Apache, and Synology WebDAV unless explicitly enabled',
 	}),
 	endpoint: 'Server URL',
 	endpointDescription: 'Enter the URL to the root directory on the WebDAV server.',
@@ -151,7 +152,7 @@ export const zh: WebdavTranslations = {
 				);
 			}),
 		supported: '大多数 WebDAV 服务器',
-		unsupported: 'InfiniCLOUD、坚果云和默认配置的群晖 WebDAV',
+		unsupported: 'InfiniCLOUD 和坚果云，以及 OpenCloud、Apache 和群晖 WebDAV（除非已明确启用）',
 	}),
 	endpoint: '服务器 URL',
 	endpointDescription: '请输入 WebDAV 服务器上根目录的 URL。',
@@ -220,7 +221,8 @@ export const ru: WebdavTranslations = {
 				);
 			}),
 		supported: 'большинство серверов WebDAV',
-		unsupported: 'InfiniCLOUD, Nutstore и Synology WebDAV с настройками по умолчанию',
+		unsupported:
+			'InfiniCLOUD и Nutstore, а также OpenCloud, Apache и Synology WebDAV, если явно не включено',
 	}),
 	endpoint: 'URL-адрес сервера',
 	endpointDescription: 'Введите URL-адрес корневого каталога на сервере WebDAV.',
@@ -290,7 +292,7 @@ export const zhTW: WebdavTranslations = {
 				);
 			}),
 		supported: '大多數 WebDAV 伺服器',
-		unsupported: 'InfiniCLOUD、堅果雲和預設設定的群暉 WebDAV',
+		unsupported: 'InfiniCLOUD 和堅果雲，以及 OpenCloud、Apache 和群暉 WebDAV（除非已明確啟用）',
 	}),
 	endpoint: '伺服器 URL',
 	endpointDescription: '輸入 WebDAV 伺服器上根目錄的 URL。',

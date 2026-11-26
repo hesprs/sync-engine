@@ -39,7 +39,6 @@ export type ResolvedMeta = { meta?: StringKV; headers?: StringKV };
 type WebDAVPropValue = string | { '#text'?: string } | undefined;
 
 type WebDAVProp = {
-	displayname?: WebDAVPropValue;
 	getcontentlength?: WebDAVPropValue;
 	getetag?: WebDAVPropValue;
 	getlastmodified?: WebDAVPropValue;
@@ -131,7 +130,6 @@ export default class WebdavFs implements RootFs {
 		this.propfindBody = `<?xml version="1.0" encoding="utf-8"?>
 <propfind xmlns="DAV:"${fileMetadata ? ` xmlns:se="${WEBDAV_PAGE}"` : ''}>
   <prop>
-    <displayname/>
     <resourcetype/>
     <getlastmodified/>
     <getcontentlength/>
@@ -284,13 +282,12 @@ export default class WebdavFs implements RootFs {
 
 	async write(key: string, value: MaybePromise<Binary>, stat: FileStat): Promise<string> {
 		const { headers, meta } = await this.resolveMeta(stat.meta);
-		const {
-			headers: { etag },
-		} = await this.requestOrThrow(buildUrl(this.endpoint, key), {
+		const { headers: resHeaders } = await this.requestOrThrow(buildUrl(this.endpoint, key), {
 			body: await value,
 			headers,
 			method: 'PUT',
 		});
+		const etag = resHeaders.etag ?? resHeaders['oc-etag'];
 		return Promise.all([
 			etag
 				? Promise.resolve(normalizeEtag(etag))

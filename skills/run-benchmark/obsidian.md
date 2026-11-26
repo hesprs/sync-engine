@@ -48,10 +48,10 @@ Secrets live in the app's secret store, keyed by a name: `obsidian vault=<name> 
 
 A configuration field that asks for a secret holds that name, not the value. The value stays out of your output; when the leader places a secret, they tell you only the name to put in the configuration.
 
-## Eval quoting
+## Caveats
 
 `code="..."` stops at the first double quote, so an eval body keeps to single quotes — or lives in a file passed as `code="$(cat file)"`. A loop or heredoc inside your own automation is where this usually breaks.
 
-`eval` is fire-and-forget: it returns a synchronous result and nothing useful for a promise, so log what you need into the console file instead of relying on the return value.
+`eval` is fire-and-forget: it returns a synchronous result and nothing useful for a promise, so log what you need into the console instead of relying on the return value.
 
 The renderer's `fetch()` to `http://` is blocked by CSP. Anything reaching a local endpoint from inside the app goes through `requestUrl` in the main process.
