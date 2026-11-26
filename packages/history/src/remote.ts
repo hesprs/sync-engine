@@ -30,8 +30,18 @@ function fileStat(key: string, size: number, mtime = Date.now()): FileStat {
 
 const includeAll = (): ListOptions => 'include';
 
+export function isMissingError(error: unknown): boolean {
+	if (isNotFound(error)) return true;
+	const msg = String(error).toLowerCase();
+	return msg.includes('missing');
+}
+
 function remotePath(ns: string, ...parts: Array<string>): string {
 	return [ns, ...parts].join('/');
+}
+
+function remoteDir(ns: string, ...parts: Array<string>): string {
+	return `${remotePath(ns, ...parts)}/`;
 }
 
 function headKey(ns: string, deviceId: string): string {
@@ -98,9 +108,10 @@ export function openRemoteHistory(
 	async function listHeadStats(): Promise<Array<RemoteHeadStat>> {
 		let stats: Array<Stat>;
 		try {
-			stats = await fs.list(remotePath(ns, 'heads'), includeAll);
-		} catch {
-			return [];
+			stats = await fs.list(remoteDir(ns, 'heads'), includeAll);
+		} catch (error) {
+			if (isMissingError(error)) return [];
+			throw error;
 		}
 		return stats
 			.filter((stat): stat is FileStat => !stat.isDir && stat.key.endsWith('.log'))
@@ -113,12 +124,13 @@ export function openRemoteHistory(
 
 	async function listPackNames(packDeviceId: string): Promise<Array<string>> {
 		// Object stores have no real folder object, so exists(folder) is unreliable. List directly
-		// and treat a missing folder as an empty set.
+		// and treat a missing folder as an empty set, while propagating genuine request errors.
 		let stats: Array<Stat>;
 		try {
-			stats = await fs.list(remotePath(ns, 'packs', packDeviceId), includeAll);
-		} catch {
-			return [];
+			stats = await fs.list(remoteDir(ns, 'packs', packDeviceId), includeAll);
+		} catch (error) {
+			if (isMissingError(error)) return [];
+			throw error;
 		}
 		return stats
 			.filter((stat) => !stat.isDir && stat.key.endsWith('.pack'))
@@ -148,7 +160,7 @@ export function openRemoteHistory(
 				if (!bytes || bytes.byteLength === 0) return;
 				return await decodeHeadLog(bytes);
 			} catch (error) {
-				if (isNotFound(error) || String(error).toLowerCase().includes('missing')) return;
+				if (isMissingError(error)) return;
 				throw error;
 			}
 		},

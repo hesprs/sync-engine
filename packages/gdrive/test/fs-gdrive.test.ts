@@ -280,3 +280,48 @@ test('list covers every unlisted parent and dedupes shared parents', async () =>
 	const result = await fs.list('/', () => 'include' as const);
 	expect(result.map(({ key }) => key).sort()).toStrictEqual(['a.md', 'b.md', 'moved.md']);
 });
+
+test('read resolves uncached file id via fresh lookup and subdir list preserves outside cache', async () => {
+	const { calls, fs } = createFs((url, params) => {
+		if (url.includes('alt=media') && url.includes('/files/pack-1'))
+			return binaryResponse(bytes('pack-data'));
+		const q = new URL(url).searchParams.get('q') ?? '';
+		if (q === 'trashed = false')
+			return response({
+				files: [
+					{
+						id: 'heads-dir',
+						mimeType: FOLDER_MIME,
+						name: 'heads',
+						parents: ['root-0AAK'],
+					},
+					{
+						id: 'head-1',
+						md5Checksum: 'h1',
+						mimeType: 'application/octet-stream',
+						modifiedTime: new Date(1000).toISOString(),
+						name: 'dev.log',
+						parents: ['heads-dir'],
+						size: '3',
+					},
+				],
+			});
+		if (params.method === 'GET' && q.includes("name = 'packs'"))
+			return response({ files: [{ id: 'packs-dir' }] });
+		if (params.method === 'GET' && q.includes("name = 'p1.pack'"))
+			return response({ files: [{ id: 'pack-1' }] });
+		if (params.method === 'GET' && q.includes("name = 'heads'"))
+			return response({ files: [{ id: 'heads-dir' }] });
+		throw new Error(`Unexpected request: ${params.method} ${url}`);
+	});
+
+	// Cold read without prior list resolves via resolveIdFresh and caches pack-1.
+	expect(await fs.read('packs/p1.pack')).toStrictEqual(bytes('pack-data'));
+	// Listing a sibling folder must not evict packs/p1.pack from the id cache.
+	const listed = await fs.list('heads/', () => 'include' as const);
+	expect(listed.map((item) => item.key)).toStrictEqual(['heads/dev.log']);
+	const callsBeforeSecondRead = calls.length;
+	expect(await fs.read('packs/p1.pack')).toStrictEqual(bytes('pack-data'));
+	// Second read hits cache directly (1 GET for alt=media, no fresh lookup queries).
+	expect(calls.length - callsBeforeSecondRead).toBe(1);
+});

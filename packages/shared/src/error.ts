@@ -31,6 +31,7 @@ export function isNotFound(error: unknown): boolean {
 		getStatus(error) === 404 ||
 		message.includes('ENOENT') ||
 		message.includes('NOSUCHKEY') ||
-		message.includes('NOT FOUND')
+		message.includes('NOT FOUND') ||
+		message.includes('NOT_FOUND')
 	);
 }

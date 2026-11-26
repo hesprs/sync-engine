@@ -146,7 +146,9 @@ export default class GdriveFs implements RootFs {
 					uploadType,
 				}),
 			};
-		const parentId = this.resolveId(dirname(key));
+		const parent = dirname(key);
+		const parentId = this.resolveId(parent) ?? (await this.resolveIdFresh(parent));
+		if (!parentId) throw notFoundError(parent);
 		const parsedCtime = parseTimestamp(meta.ctime);
 		const parsedMtime = parseTimestamp(meta.mtime);
 		if (parsedCtime) metadata.createdTime = new Date(parsedCtime).toISOString();
@@ -164,7 +166,7 @@ export default class GdriveFs implements RootFs {
 	}
 
 	async read(key: string): Promise<Binary> {
-		const id = this.resolveId(key);
+		const id = this.resolveId(key) ?? (await this.resolveIdFresh(key));
 		if (id === undefined) throw notFoundError(key);
 		const response = await this.requestOrThrow(
 			buildUrl(DRIVE_API, `/files/${id}`, { alt: 'media' }),
@@ -217,7 +219,7 @@ export default class GdriveFs implements RootFs {
 	}
 
 	async delete(key: string): Promise<void> {
-		const id = this.resolveId(key);
+		const id = this.resolveId(key) ?? (await this.resolveIdFresh(key));
 		if (id === undefined) return;
 		const trashed = this.options.useTrash;
 		try {
@@ -266,7 +268,7 @@ export default class GdriveFs implements RootFs {
 	 */
 	async mkdir(key: string, stat: FolderStat, recursive: boolean): Promise<void> {
 		const parent = dirname(key);
-		let parentId = this.resolveId(parent);
+		let parentId = this.resolveId(parent) ?? (await this.resolveIdFresh(parent));
 		if (!parentId && recursive) {
 			await this.mkdir(parent, { isDir: true, key: parent, meta: () => ({}) }, true);
 			parentId = this.resolveId(parent);
@@ -293,7 +295,8 @@ export default class GdriveFs implements RootFs {
 	}
 
 	async stat(key: string): Promise<Stat> {
-		const parentId = this.resolveId(dirname(key));
+		const parent = dirname(key);
+		const parentId = this.resolveId(parent) ?? (await this.resolveIdFresh(parent));
 		if (!parentId) throw notFoundError(key);
 		const url = buildUrl(DRIVE_API, '/files', {
 			fields: `files(${FILE_FIELDS})`,
@@ -336,7 +339,8 @@ export default class GdriveFs implements RootFs {
 			pageToken = parsed.nextPageToken;
 		} while (pageToken);
 
-		this.ids.clear();
+		if (key === '/') this.ids.clear();
+		else this.dropCache(key);
 		this.ids.set(key, startId);
 		const childrenByParent = new Map<string, Array<DriveFile>>();
 		for (const file of all) {

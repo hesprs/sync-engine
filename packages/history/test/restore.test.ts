@@ -274,3 +274,17 @@ test('restoreVersion restores standalone blob for attachment files without decod
 	expect(restored.text).toBe('');
 	expect(restored.merged).toBe(false);
 });
+
+test('listVersions rethrows non-not-found errors instead of silently returning empty', async () => {
+	const { remote, stores } = await seedVersion('secret', 1);
+	remote.getObject = () =>
+		Promise.reject(new Error('Cannot decrypt history: the encryption password changed'));
+	let caught = '';
+	try {
+		await listVersions({ remote, stores }, 'note.md');
+	} catch (error) {
+		caught = String(error);
+	}
+	expect(caught).toContain('Cannot decrypt history');
+	expect(await stores.index.get('note.md@1')).toBeDefined();
+});

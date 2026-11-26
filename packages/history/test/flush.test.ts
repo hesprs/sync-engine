@@ -480,3 +480,148 @@ test('reconcile skips readHead when remote head uid matches cached remoteUid', a
 	const cached2 = await stores.heads.get('device-b');
 	expect(cached2?.remoteUid).toBe('etag-v2');
 });
+
+test('reconcile marks head incomplete when a pack is missing and retries only missing packs later', async () => {
+	const { ctx, objects, remote, stores } = setup();
+	const { encodePack, packFileName } = await import('@/pack');
+	const { keyHash } = await import('@/chunker');
+	const { buildCommitLog } = await import('@/head-log');
+
+	const pack1 = await encodePack(
+		{ baseLamport: 1, createdAt: 1000, deviceId: 'device-b', ns: 'ns', peakLamport: 1, seq: 1 },
+		[
+			{
+				at: 1000,
+				blobs: [],
+				chunks: [],
+				deviceId: 'device-b',
+				flags: 1,
+				inlineLength: 3,
+				inlineOffset: 0,
+				key: 'first.md',
+				keyHash: await keyHash('first.md'),
+				lamport: 1,
+				parents: [],
+			},
+		],
+		encoder.encode('one'),
+	);
+	const pack2 = await encodePack(
+		{ baseLamport: 2, createdAt: 2000, deviceId: 'device-b', ns: 'ns', peakLamport: 2, seq: 2 },
+		[
+			{
+				at: 2000,
+				blobs: [],
+				chunks: [],
+				deviceId: 'device-b',
+				flags: 1,
+				inlineLength: 3,
+				inlineOffset: 0,
+				key: 'second.md',
+				keyHash: await keyHash('second.md'),
+				lamport: 2,
+				parents: [],
+			},
+		],
+		encoder.encode('two'),
+	);
+	const file1 = packFileName('device-b', 1, pack1.header.hash);
+	const file2 = packFileName('device-b', 2, pack2.header.hash);
+	// Only pack1 is available during the first reconcile; pack2 transiently returns missing/404.
+	objects.set(`ns/packs/device-b/${file1}`, pack1.bytes);
+
+	const log = await buildCommitLog({
+		chunkIndex: {},
+		deviceId: 'device-b',
+		generation: 2,
+		heads: [],
+		ns: 'ns',
+		packs: [
+			{ deviceId: 'device-b', fromLamport: 1, hash: pack1.header.hash, seq: 1, toLamport: 1 },
+			{ deviceId: 'device-b', fromLamport: 2, hash: pack2.header.hash, seq: 2, toLamport: 2 },
+		],
+		peakLamport: 2,
+		seq: 2,
+		updatedAt: 2000,
+	});
+	await remote.writeHead(log);
+	remote.listHeads = () => Promise.resolve([{ deviceId: 'device-b', uid: 'etag-1' }]);
+
+	const fetched: Array<string> = [];
+	const origGetObject = remote.getObject;
+	remote.getObject = (key: string) => {
+		fetched.push(key);
+		return origGetObject(key);
+	};
+
+	await reconcile(ctx);
+	expect(await stores.index.get('first.md@1')).toBeDefined();
+	expect(await stores.index.get('second.md@2')).toBeUndefined();
+	const partial = await stores.heads.get('device-b');
+	expect(partial?.incomplete).toBe(true);
+	expect(partial?.remoteUid).toBeUndefined();
+
+	// Now pack2 becomes available; next reconcile with the same remote uid must retry pack2 only.
+	objects.set(`ns/packs/device-b/${file2}`, pack2.bytes);
+	fetched.length = 0;
+	await reconcile(ctx);
+	expect(fetched).toStrictEqual([`ns/packs/device-b/${file2}`]);
+	expect(await stores.index.get('second.md@2')).toBeDefined();
+	const completed = await stores.heads.get('device-b');
+	expect(completed?.incomplete).toBeUndefined();
+	expect(completed?.remoteUid).toBe('etag-1');
+});
+
+test('flushPending before reconcile on a cold DB still allows reconcile to index prior remote packs', async () => {
+	const { ctx, objects, remote, stores } = setup();
+	const { encodePack, packFileName } = await import('@/pack');
+	const { keyHash } = await import('@/chunker');
+	const { buildCommitLog } = await import('@/head-log');
+
+	const prior = await encodePack(
+		{ baseLamport: 1, createdAt: 1000, deviceId: 'device-a', ns: 'ns', peakLamport: 1, seq: 1 },
+		[
+			{
+				at: 1000,
+				blobs: [],
+				chunks: [],
+				deviceId: 'device-a',
+				flags: 1,
+				inlineLength: 5,
+				inlineOffset: 0,
+				key: 'old.md',
+				keyHash: await keyHash('old.md'),
+				lamport: 1,
+				parents: [],
+			},
+		],
+		encoder.encode('prior'),
+	);
+	const priorFile = packFileName('device-a', 1, prior.header.hash);
+	objects.set(`ns/packs/device-a/${priorFile}`, prior.bytes);
+	const remoteLog = await buildCommitLog({
+		chunkIndex: {},
+		deviceId: 'device-a',
+		generation: 1,
+		heads: ['old.md@1'],
+		ns: 'ns',
+		packs: [
+			{ deviceId: 'device-a', fromLamport: 1, hash: prior.header.hash, seq: 1, toLamport: 1 },
+		],
+		peakLamport: 1,
+		seq: 1,
+		updatedAt: 1000,
+	});
+	await remote.writeHead(remoteLog);
+
+	// Local DB is empty (deleted), same deviceId writes a new edit and flushes before reconcile.
+	await ingestEdit(stores, 'new.md', encoder.encode('fresh'), 1);
+	await flushPending(ctx, 'openHistory');
+	expect(await stores.index.get('new.md@2')).toBeDefined();
+	expect(await stores.index.get('old.md@1')).toBeUndefined();
+
+	// Subsequent reconcile must still index the prior remote pack for device-a.
+	await reconcile(ctx);
+	expect(await stores.index.get('old.md@1')).toBeDefined();
+	expect((await stores.heads.get('device-a'))?.incomplete).toBeUndefined();
+});

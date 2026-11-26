@@ -11,8 +11,8 @@ import {
 import { buildCommitLog } from '@/head-log';
 import { allChunkLocations, allCommitLocations, markChunks, packRefKey } from '@/index-store';
 import { decodePack, encodePack, packFileName } from '@/pack';
+import { isMissingError } from '@/remote';
 import { FLAG_CHECKPOINT } from '@/types';
-import { isNotFound } from '@repo/shared/error';
 import type { DecodedPack } from '@/pack';
 import type { RemoteHistory } from '@/remote';
 import type { HistoryStores } from '@/store';
@@ -123,12 +123,6 @@ function selectLiveEntries(
 	}
 
 	return { kept, pruned: [...pruned, ...tieredPruned, ...extraPruned] };
-}
-
-function isMissingError(error: unknown): boolean {
-	if (isNotFound(error)) return true;
-	const msg = String(error).toLowerCase();
-	return msg.includes('nosuchkey') || msg.includes('missing') || msg.includes('not found');
 }
 
 function packObjectKey(remote: RemoteHistory, pack: PackRef): string {

@@ -115,7 +115,12 @@ export default class HistoryModule {
 						remote: this.remote,
 						requestSync: () => {},
 						stores: this.stores,
-					}).catch(() => {});
+					}).catch((error: unknown) => {
+						this.ctx.dispatch?.(
+							'logSync',
+							`History reconcile failed: ${String(error)}`,
+						);
+					});
 
 				void this.checkAutoGc();
 			}),
@@ -194,7 +199,9 @@ export default class HistoryModule {
 			requestSync: (trigger) => void ctx.requestSync(trigger),
 			stores,
 		});
-		void reconcile({ remote, requestSync: () => {}, stores }).catch(() => {});
+		void reconcile({ remote, requestSync: () => {}, stores }).catch((error: unknown) => {
+			ctx.dispatch?.('logSync', `History reconcile failed: ${String(error)}`);
+		});
 	}
 
 	private isSyncIgnored(filePath: string): boolean {

@@ -9,9 +9,9 @@ import {
 import { buildCommitLog } from '@/head-log';
 import { markChunks, packRefKey, putCommitLocation } from '@/index-store';
 import { decodePack, encodePack, packFileName, textBytes } from '@/pack';
+import { isMissingError } from '@/remote';
 import { blobPresent, bumpLamport, clearPending, markBlobs, readPending } from '@/store';
 import { FLAG_DELETION, FLAG_SMALL_FILE } from '@/types';
-import { isNotFound } from '@repo/shared/error';
 import { sha256Bytes, sha256Text } from '@repo/shared/sha256-bytes';
 import type { RemoteHistory } from '@/remote';
 import type { HistoryStores } from '@/store';
@@ -34,12 +34,6 @@ type Assembled = {
 	blobBytes: Array<{ hash: string; bytes: Uint8Array }>;
 	blobRefs: Array<BlobRef>;
 };
-
-function isMissingError(error: unknown): boolean {
-	if (isNotFound(error)) return true;
-	const msg = String(error).toLowerCase();
-	return msg.includes('nosuchkey') || msg.includes('missing') || msg.includes('not found');
-}
 
 function uint8Concat(parts: Array<Uint8Array>): Uint8Array {
 	let total = 0;
@@ -127,22 +121,33 @@ async function assemble(ctx: FlushContext, wal: Array<WalEntry>, seq: number): P
 	};
 }
 
-async function currentLog(ctx: FlushContext): Promise<CommitLog> {
+async function loadCurrentLog(
+	ctx: FlushContext,
+): Promise<{ hasUnindexedPriorPacks: boolean; local?: CommitLog; log: CommitLog }> {
 	const local = await ctx.stores.heads.get(ctx.remote.deviceId);
-	if (local) return local;
+	if (local && !local.incomplete) return { hasUnindexedPriorPacks: false, local, log: local };
 	const remote = await ctx.remote.readHead(ctx.remote.deviceId);
-	if (remote) return remote;
-	return buildCommitLog({
-		chunkIndex: {},
-		deviceId: ctx.remote.deviceId,
-		generation: 0,
-		heads: [],
-		ns: ctx.remote.ns,
-		packs: [],
-		peakLamport: 0,
-		seq: 0,
-		updatedAt: Date.now(),
-	});
+	if (remote)
+		return {
+			hasUnindexedPriorPacks: remote.packs.length > 0 || remote.seq > 0,
+			local,
+			log: remote,
+		};
+	return {
+		hasUnindexedPriorPacks: false,
+		local,
+		log: await buildCommitLog({
+			chunkIndex: {},
+			deviceId: ctx.remote.deviceId,
+			generation: 0,
+			heads: [],
+			ns: ctx.remote.ns,
+			packs: [],
+			peakLamport: 0,
+			seq: 0,
+			updatedAt: Date.now(),
+		}),
+	};
 }
 
 /** Replays a pending batch into one pack. Ordering is blobs → pack → head → WAL commit. */
@@ -179,7 +184,7 @@ async function flushWal(
 	_reason: string,
 ): Promise<boolean> {
 	if (wal.length === 0) return false;
-	const log = await currentLog(ctx);
+	const { hasUnindexedPriorPacks, local, log } = await loadCurrentLog(ctx);
 	const seq = log.seq + 1;
 	const assembled = await assemble(ctx, wal, seq);
 
@@ -221,7 +226,17 @@ async function flushWal(
 	for (const location of assembled.chunkLocations)
 		nextLog.chunkIndex[location.hash] = packRefKey(realRef);
 	await ctx.remote.writeHead(nextLog);
-	await ctx.stores.heads.set(ctx.remote.deviceId, nextLog);
+	await ctx.stores.heads.set(
+		ctx.remote.deviceId,
+		hasUnindexedPriorPacks
+			? {
+					...nextLog,
+					incomplete: true,
+					packs: [...(local?.packs ?? []), realRef].slice(-MAX_PACK_WINDOW),
+					remoteUid: undefined,
+				}
+			: nextLog,
+	);
 	// 4. Local index + WAL commit (last; everything before is replayable).
 	for (const entry of assembled.entries)
 		await putCommitLocation(ctx.stores, `${entry.key}@${entry.lamport}`, {
@@ -299,12 +314,12 @@ async function runReconcile(ctx: FlushContext): Promise<void> {
 		const headId = typeof head === 'string' ? head : head.deviceId;
 		const uid = typeof head === 'string' ? undefined : head.uid;
 		const cached = await ctx.stores.heads.get(headId);
-		if (headId === ctx.remote.deviceId && cached) {
+		if (headId === ctx.remote.deviceId && cached && !cached.incomplete) {
 			seenLamport = Math.max(seenLamport, cached.peakLamport);
 			continue;
 		}
 
-		if (cached && uid !== undefined && cached.remoteUid === uid) {
+		if (cached && !cached.incomplete && uid !== undefined && cached.remoteUid === uid) {
 			seenLamport = Math.max(seenLamport, cached.peakLamport);
 			continue;
 		}
@@ -313,7 +328,7 @@ async function runReconcile(ctx: FlushContext): Promise<void> {
 		if (!log) continue;
 		if (uid !== undefined) log.remoteUid = uid;
 		seenLamport = Math.max(seenLamport, log.peakLamport);
-		if (cached && cached.generation >= log.generation) {
+		if (cached && !cached.incomplete && cached.generation >= log.generation) {
 			if (uid !== undefined && cached.remoteUid !== uid) {
 				cached.remoteUid = uid;
 				await ctx.stores.heads.set(headId, cached);
@@ -332,6 +347,7 @@ async function runReconcile(ctx: FlushContext): Promise<void> {
 		const known = new Set(
 			log.packs.map((pack) => packFileName(pack.deviceId, pack.seq, pack.hash)),
 		);
+		let hadMissingPack = false;
 		for (const fileName of await ctx.remote.listPacks(log.deviceId)) {
 			if (known.has(fileName)) continue;
 			// An orphan pack is self-certifying: seq + hash in the name are enough to index it.
@@ -349,20 +365,36 @@ async function runReconcile(ctx: FlushContext): Promise<void> {
 				};
 				await indexPack(ctx, orphanRef, decoded.header, decoded.entries);
 			} catch (error) {
-				if (isMissingError(error)) continue;
+				if (isMissingError(error)) {
+					hadMissingPack = true;
+					continue;
+				}
 				throw error;
 			}
 		}
+		const indexedPacks: Array<PackRef> = [];
 		for (const ref of log.packs) {
-			if (cachedPackKeys.has(`${ref.deviceId}:${ref.seq}:${ref.hash}`)) continue;
+			if (cachedPackKeys.has(`${ref.deviceId}:${ref.seq}:${ref.hash}`)) {
+				indexedPacks.push(ref);
+				continue;
+			}
 			try {
 				await indexPackByRef(ctx, ref);
+				indexedPacks.push(ref);
 			} catch (error) {
-				if (isMissingError(error)) continue;
+				if (isMissingError(error)) {
+					hadMissingPack = true;
+					continue;
+				}
 				throw error;
 			}
 		}
-		await ctx.stores.heads.set(log.deviceId, log);
+		await ctx.stores.heads.set(
+			log.deviceId,
+			hadMissingPack
+				? { ...log, incomplete: true, packs: indexedPacks, remoteUid: undefined }
+				: log,
+		);
 	}
 }
 

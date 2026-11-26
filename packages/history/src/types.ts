@@ -2,6 +2,7 @@ import type { HistoryTranslations } from '@/i18n';
 import type { HistoryDatabase } from '@/store';
 import type {
 	Context,
+	Dispatch,
 	Events,
 	ObsidianLanguageCode,
 	On,
@@ -84,6 +85,7 @@ export type CommitLog = {
 	updatedAt: number;
 	integrity: string; // SHA-256 of the log minus this field
 	remoteUid?: string; // Remote storage UID/ETag for zero-cost reconcile short-circuit
+	incomplete?: boolean; // Local-only marker when some packs failed to index and must be retried
 };
 
 /** WAL record. Persisted before an edit is considered captured. */
@@ -137,6 +139,7 @@ export type TogglableValue<T = number> = { enabled: boolean; value: T };
 export type HistoryContext = SelectFromContext<{
 	addCommand: (command: Command) => Command;
 	app: App;
+	dispatch?: Dispatch<Events>;
 	getNamespace: Context['getNamespace'];
 	indexedDB: HistoryDatabase;
 	on: On<Events>;
