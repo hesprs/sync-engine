@@ -24,7 +24,7 @@ export default function retryMiddleware(request: Request, options?: RetryOptions
 				if (RETRYABLE_STATUS_CODES.has(response.status) && i < maxRetry) {
 					const retryAfter = Number(response.headers['retry-after']);
 					if (retryAfter && retryAfter > MAX_RETRY_AFTER) return response;
-					await sleep(retryAfter || retryDelay(i));
+					await sleep(retryAfter * 1000 || retryDelay(i));
 					continue;
 				}
 				return response;
