@@ -139,7 +139,8 @@ export default function createVaultRequest(app: App): VaultRequest {
 			) as never;
 		if (method === 'DELETE') {
 			const { trash = getTrashOption(vault) } = params;
-			if (trash === 'permanent') return adapter.remove(path) as never;
+			if (trash === 'permanent')
+				return (isFolder(key) ? adapter.rmdir(path, true) : adapter.remove(path)) as never;
 			if (trash === 'local' || !(await adapter.trashSystem(path)))
 				await adapter.trashLocal(path);
 			return undefined as never;
