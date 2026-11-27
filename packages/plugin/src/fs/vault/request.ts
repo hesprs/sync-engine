@@ -1,6 +1,6 @@
 import { OS } from '@/utils/native';
 import { chunkSize, concurrency } from '@/utils/pipe';
-import { toArrayBuffer, toUint8Array } from '@repo/shared/binary';
+import { binaryToArrayBuffer, toBinary } from '@repo/shared/binary';
 import { requestNative } from '@repo/shared/e2e-utils.spec';
 import { basename, isFolder, stripEndSlash } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
@@ -92,7 +92,7 @@ export default function createVaultRequest(app: App): VaultRequest {
 		params?: T,
 	): Promise<VaultRequestResponseMap[T['method']]> => {
 		const path = toVaultPath(key);
-		const get = () => adapter.readBinary(path).then((buffer) => toUint8Array(buffer)) as never;
+		const get = () => adapter.readBinary(path).then((buffer) => toBinary(buffer)) as never;
 		if (!params) return get();
 		const { method } = params;
 
@@ -131,11 +131,11 @@ export default function createVaultRequest(app: App): VaultRequest {
 		}
 		if (method === 'PUT')
 			return withCheckChars(key, () =>
-				adapter.writeBinary(path, toArrayBuffer(params.value), params),
+				adapter.writeBinary(path, binaryToArrayBuffer(params.value), params),
 			) as never;
 		if (method === 'APPEND')
 			return withCheckChars(key, () =>
-				adapter.appendBinary(path, toArrayBuffer(params.value), params),
+				adapter.appendBinary(path, binaryToArrayBuffer(params.value), params),
 			) as never;
 		if (method === 'DELETE') {
 			const { trash = getTrashOption(vault) } = params;

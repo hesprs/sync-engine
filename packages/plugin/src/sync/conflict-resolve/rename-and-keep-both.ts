@@ -1,5 +1,5 @@
 import { readWithSize, REGRET_ERROR, writeWithSize } from '@/utils/pipe';
-import { uint8ArrayEquals } from '@repo/shared/binary';
+import { binaryEquals } from '@repo/shared/binary';
 import type { ConflictResolverPayload } from '../tasks/interface';
 
 export default async function renameAndKeepBothResolver({
@@ -21,7 +21,7 @@ export default async function renameAndKeepBothResolver({
 		if (
 			localValue instanceof Uint8Array &&
 			remoteValue instanceof Uint8Array &&
-			uint8ArrayEquals(localValue, remoteValue)
+			binaryEquals(localValue, remoteValue)
 		) {
 			await record.set(key, { isDir: false, local: local.uid, remote: remote.uid });
 			throw REGRET_ERROR;

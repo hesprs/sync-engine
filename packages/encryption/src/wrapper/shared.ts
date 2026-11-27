@@ -1,5 +1,5 @@
-import { concatBinary, textToUint8Array, toUint8Array } from '@repo/shared/binary';
-import { sha256Digest } from '@repo/shared/sha256-bytes';
+import { concatBinary, toBinary } from '@repo/shared/binary';
+import { sha256 } from '@repo/shared/crypto';
 import type { Binary } from '@hesprs/sync-engine-sdk';
 
 const EMPTY_SALT: Binary = new Uint8Array(0);
@@ -29,7 +29,7 @@ export async function deriveFileKey(
 	fileSalt: BufferSource,
 	encryptedFileSize: number,
 ): Promise<Binary> {
-	const fileKeySalt = await sha256Digest(concatBinary(fileSalt, encodeUInt64(encryptedFileSize)));
+	const fileKeySalt = await sha256(concatBinary(fileSalt, encodeUInt64(encryptedFileSize)));
 	return deriveHkdfKey(rootFileKey, FILE_KEY_INFO, fileKeySalt);
 }
 
@@ -41,9 +41,9 @@ export async function deriveHkdfKey(
 	const keyMaterial = await crypto.subtle.importKey('raw', masterKey, 'HKDF', false, [
 		'deriveBits',
 	]);
-	return toUint8Array(
+	return toBinary(
 		await crypto.subtle.deriveBits(
-			{ hash: 'SHA-256', info: textToUint8Array(info), name: 'HKDF', salt },
+			{ hash: 'SHA-256', info: toBinary(info), name: 'HKDF', salt },
 			keyMaterial,
 			MASTER_KEY_LENGTH * 8,
 		),
@@ -60,7 +60,7 @@ export async function decryptContentChunk(
 	chunkIndex: number,
 ): Promise<Binary> {
 	try {
-		return toUint8Array(
+		return toBinary(
 			await crypto.subtle.decrypt(
 				{ iv: encodeUInt96(chunkIndex), name: 'AES-GCM' },
 				key,
@@ -107,5 +107,3 @@ function encodeUInt(value: number, byteLength: number): Binary {
 	}
 	return result;
 }
-
-export { sha256Digest } from '@repo/shared/sha256-bytes';

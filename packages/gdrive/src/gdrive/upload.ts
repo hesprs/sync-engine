@@ -1,5 +1,5 @@
 import { parseDriveError } from './api';
-import { concatBinary, PartBuffer, textToUint8Array } from '@repo/shared/binary';
+import { concatBinary, PartBuffer, toBinary } from '@repo/shared/binary';
 import type { DriveFile } from './api';
 import type { Binary, Request, RequestResponse } from '@hesprs/sync-engine-sdk';
 
@@ -55,7 +55,7 @@ async function startSession({
 	url,
 }: SessionOptions): Promise<{ request: Request; location: string }> {
 	const response = await request(url, {
-		body: textToUint8Array(JSON.stringify(metadata)),
+		body: toBinary(JSON.stringify(metadata)),
 		headers: {
 			'Content-Type': 'application/json; charset=UTF-8',
 			'X-Upload-Content-Length': String(size),
@@ -102,11 +102,11 @@ export async function singleUpload(
 ): Promise<DriveFile> {
 	const boundary = createBoundary();
 	const body = concatBinary(
-		textToUint8Array(
+		toBinary(
 			`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`,
 		),
 		value,
-		textToUint8Array(`\r\n--${boundary}--`),
+		toBinary(`\r\n--${boundary}--`),
 	);
 	const response = await request(url, {
 		body,

@@ -1,6 +1,6 @@
 import { buildUrlWithQuery } from './url';
 import { getFileUid, rootValue, toMetaHeaders } from './utils';
-import { textToUint8Array } from '@repo/shared/binary';
+import { toBinary } from '@repo/shared/binary';
 import chunkedUpload from '@repo/shared/chunked-upload';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import type { UrlStyle } from './sigv4';
@@ -81,7 +81,7 @@ export async function multipartUpload(
 		const completeBody = buildCompleteMultipartXml(parts);
 		const completeUrl = buildUrlWithQuery(options, { uploadId });
 		const completeResponse = await request(completeUrl, {
-			body: textToUint8Array(completeBody),
+			body: toBinary(completeBody),
 			headers: { 'Content-Type': 'application/xml' },
 			method: 'POST',
 		});

@@ -1,8 +1,8 @@
 import { API_RPC, OAUTH_AUTHORIZE_URL, OAUTH_TOKEN_URL } from './api';
-import { encodeBase64Url, textToUint8Array } from '@repo/shared/binary';
+import { encodeBase64Url, toBinary } from '@repo/shared/binary';
+import { sha256 } from '@repo/shared/crypto';
 import { getStatus } from '@repo/shared/error';
 import { compileQuery } from '@repo/shared/path';
-import { sha256Digest } from '@repo/shared/sha256-bytes';
 import { requestUrl } from 'obsidian';
 import type { Request, StringKV } from '@hesprs/sync-engine-sdk';
 import type { ObsidianProtocolData, SecretStorage } from 'obsidian';
@@ -57,10 +57,7 @@ export async function startAuthorization(): Promise<AuthorizationRequest> {
 	const state = encodeBase64Url(crypto.getRandomValues(new Uint8Array(16)));
 	return {
 		state,
-		url: buildAuthorizeUrl(
-			state,
-			encodeBase64Url(await sha256Digest(textToUint8Array(verifier))),
-		),
+		url: buildAuthorizeUrl(state, encodeBase64Url(await sha256(toBinary(verifier)))),
 		verifier,
 	};
 }

@@ -1,9 +1,9 @@
 import {
+	binaryToArrayBuffer,
+	binaryToText,
 	decodeBase64,
 	encodeBase64,
-	toArrayBuffer,
-	toUint8Array,
-	uint8ArrayToText,
+	toBinary,
 } from '@repo/shared/binary';
 import { Platform, requestUrl } from 'obsidian';
 import type { Binary, StringKV } from '@/types';
@@ -93,22 +93,22 @@ async function requestViaCapacitor(
 		bytes: () => bytes,
 		headers: lowered,
 		// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
-		json: <T extends object = object>() => JSON.parse(uint8ArrayToText(bytes)) as T,
+		json: <T extends object = object>() => JSON.parse(binaryToText(bytes)) as T,
 		status,
-		text: () => uint8ArrayToText(bytes),
+		text: () => binaryToText(bytes),
 	};
 }
 
 export async function request(url: string, params?: RequestParam): Promise<RequestResponse> {
 	if (isMobileApp) return requestViaCapacitor(url, params);
 	const body = params?.body;
-	if (body instanceof Uint8Array) (params as RequestUrlParam).body = toArrayBuffer(body);
+	if (body instanceof Uint8Array) (params as RequestUrlParam).body = binaryToArrayBuffer(body);
 	const response = await requestUrl(
 		params ? (Object.assign(params, { url }) as RequestUrlParam) : url,
 	);
 	const { arrayBuffer, headers, status } = response; // Those three properties are static while the rest two are getters
 	return {
-		bytes: () => toUint8Array(arrayBuffer),
+		bytes: () => toBinary(arrayBuffer),
 		headers: lowercaseHeaders(headers),
 		// oxlint-disable-next-line typescript/no-unnecessary-type-parameters
 		json: <T extends object = object>() => response.json as T,

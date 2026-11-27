@@ -1,6 +1,6 @@
 import { createVaultRequest, VaultFs } from '@/fs';
 import { request } from '@/utils/native';
-import hash from '@repo/shared/crypto';
+import { fnv1a } from '@repo/shared/crypto';
 import { toError } from '@repo/shared/error';
 import type { Dispatch } from './EventBus';
 import type { Snippet, Translate } from './I18n';
@@ -202,7 +202,7 @@ export default class Registrar {
 			if (fs instanceof Error) return fs as never;
 			remoteFs = fs as never;
 		}
-		return hash(`${localFs.getUid()}~~${remoteFs.getUid()}`);
+		return fnv1a(`${localFs.getUid()}~~${remoteFs.getUid()}`);
 	};
 
 	private readonly initializeSync = (): Infras => {

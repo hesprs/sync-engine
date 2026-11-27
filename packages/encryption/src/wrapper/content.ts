@@ -11,9 +11,9 @@ import {
 	importAesGcmKey,
 	MASTER_KEY_LENGTH,
 	MASTER_SALT_LENGTH,
-	sha256Digest,
 } from './shared';
-import { concatBinary, textToUint8Array, toUint8Array } from '@repo/shared/binary';
+import { concatBinary, toBinary } from '@repo/shared/binary';
+import { sha256 } from '@repo/shared/crypto';
 import { argon2id } from 'hash-wasm';
 import type { Binary } from '@hesprs/sync-engine-sdk';
 
@@ -22,8 +22,8 @@ const NAME_KEY_INFO = 'name-key-v1';
 const META_KEY_INFO = 'meta-key-v1';
 
 export async function deriveMasterSalt(remoteUid: string): Promise<Binary> {
-	const digest = await sha256Digest(textToUint8Array(remoteUid));
-	return toUint8Array(digest.slice(0, MASTER_SALT_LENGTH));
+	const digest = await sha256(toBinary(remoteUid));
+	return toBinary(digest.slice(0, MASTER_SALT_LENGTH));
 }
 
 export function deriveMasterKey(password: string | Binary, masterSalt: Binary): Promise<Binary> {
@@ -75,7 +75,7 @@ export async function encryptContentChunk(
 	chunk: Binary,
 	chunkIndex: number,
 ): Promise<Binary> {
-	return toUint8Array(
+	return toBinary(
 		await crypto.subtle.encrypt({ iv: encodeUInt96(chunkIndex), name: 'AES-GCM' }, key, chunk),
 	);
 }

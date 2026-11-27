@@ -1,10 +1,5 @@
 import { gcmsiv } from '@noble/ciphers/aes.js';
-import {
-	decodeBase64Url,
-	encodeBase64Url,
-	textToUint8Array,
-	uint8ArrayToText,
-} from '@repo/shared/binary';
+import { binaryToText, decodeBase64Url, encodeBase64Url, toBinary } from '@repo/shared/binary';
 import type { Binary, StoreSync } from '@hesprs/sync-engine-sdk';
 
 export type EncryptionStores = {
@@ -13,7 +8,7 @@ export type EncryptionStores = {
 };
 
 const BASENAME_CACHE_LIMIT = 10_000;
-const FILE_NAME_NONCE = textToUint8Array('file-name-v1');
+const FILE_NAME_NONCE = toBinary('file-name-v1');
 
 export function encryptPathSegments(
 	nameKey: Binary,
@@ -58,9 +53,7 @@ function decryptPathSegment(nameKey: Binary, segment: string, stores: Encryption
 
 function encryptBasename(nameKey: Binary, basename: string): string {
 	const normalizedBasename = normalizeBasename(basename);
-	const ciphertext = gcmsiv(nameKey, FILE_NAME_NONCE).encrypt(
-		textToUint8Array(normalizedBasename),
-	);
+	const ciphertext = gcmsiv(nameKey, FILE_NAME_NONCE).encrypt(toBinary(normalizedBasename));
 	return encodeBase64Url(ciphertext);
 }
 
@@ -70,7 +63,7 @@ function decryptBasename(nameKey: Binary, encryptedBasename: string): string {
 		const plaintext = gcmsiv(nameKey, FILE_NAME_NONCE).decrypt(
 			decodeBase64Url(encryptedBasename),
 		);
-		return normalizeBasename(uint8ArrayToText(plaintext));
+		return normalizeBasename(binaryToText(plaintext));
 	} catch (error) {
 		throw new Error('File name decryption failed', { cause: error });
 	}

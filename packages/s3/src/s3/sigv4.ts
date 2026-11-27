@@ -1,6 +1,6 @@
-import { textToUint8Array } from '@repo/shared/binary';
+import { encodeHex, toBinary } from '@repo/shared/binary';
+import { sha256Text } from '@repo/shared/crypto';
 import { compileQuery } from '@repo/shared/path';
-import { sha256Text, toHex } from '@repo/shared/sha256-bytes';
 import { md5 } from 'hash-wasm';
 import type { S3DB } from '..';
 import type { Binary, Request, RequestParam, StringKV } from '@hesprs/sync-engine-sdk';
@@ -126,7 +126,7 @@ async function signRequest(
 		db.setMeta('s3KeyMarker', marker);
 		db.setMeta('s3Key', kSigning);
 	}
-	const signature = toHex(await hmac(kSigning, stringToSign));
+	const signature = encodeHex(await hmac(kSigning, stringToSign));
 	const credential = `${accessKeyId}/${credentialScope}`;
 	headers.authorization = `AWS4-HMAC-SHA256 Credential=${credential}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
@@ -151,8 +151,7 @@ export function sigv4Middleware(request: Request, credentials: SigV4Options, db:
 }
 
 export async function md5Base64(data: Binary | string): Promise<string> {
-	const bytes = typeof data === 'string' ? textToUint8Array(data) : data;
-	const hexDigest = await md5(bytes);
+	const hexDigest = await md5(toBinary(data));
 	const raw = (hexDigest.match(/.{2}/gu) as Array<string>).map((h) => Number.parseInt(h, 16));
 	return btoa(String.fromCharCode(...raw));
 }
