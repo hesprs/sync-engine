@@ -11,7 +11,6 @@ export function fnv1a(input: unknown): string {
 	return (hashHex >>> 0).toString(16);
 }
 
-/** Computes SHA-256 digest returning raw ArrayBuffer. */
 export async function sha256(data: Binary): Promise<Binary> {
 	return toBinary(await crypto.subtle.digest('SHA-256', data));
 }
