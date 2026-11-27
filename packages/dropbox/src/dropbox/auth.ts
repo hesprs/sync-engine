@@ -39,7 +39,7 @@ function describeAuthError(data: TokenResponse, status: number): string {
 	return data.error_description ?? data.error ?? `HTTP ${status}`;
 }
 
-export function buildAuthorizeUrl(state: string, codeChallenge: string): string {
+function buildAuthorizeUrl(state: string, codeChallenge: string): string {
 	return `${OAUTH_AUTHORIZE_URL}?${compileQuery({
 		client_id: APP_KEY,
 		code_challenge: codeChallenge,
@@ -57,7 +57,10 @@ export async function startAuthorization(): Promise<AuthorizationRequest> {
 	const state = encodeBase64Url(crypto.getRandomValues(new Uint8Array(16)));
 	return {
 		state,
-		url: buildAuthorizeUrl(state, encodeBase64Url(await sha256Digest(textToUint8Array(verifier)))),
+		url: buildAuthorizeUrl(
+			state,
+			encodeBase64Url(await sha256Digest(textToUint8Array(verifier))),
+		),
 		verifier,
 	};
 }

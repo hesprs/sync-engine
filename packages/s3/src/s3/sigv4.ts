@@ -73,7 +73,7 @@ function buildCanonicalHeaders(headers: StringKV): {
 	return { canonicalHeaders: canonicalHeadersStr, signedHeaders };
 }
 
-export async function signRequest(
+async function signRequest(
 	{
 		method,
 		url,
