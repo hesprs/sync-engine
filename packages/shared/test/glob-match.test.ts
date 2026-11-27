@@ -1,7 +1,6 @@
-import { NONE_STRATEGY, normalizeGlob, prepareGlobMatch } from '@/utils/glob-match';
+import { NONE_STRATEGY, normalizeGlob, prepareGlobMatch } from '@/glob-match';
 import { expect, test } from 'bun:test';
-import type { GlobStrategy } from '@/types';
-import type { GlobMatchResult } from '@/utils/glob-match';
+import type { GlobMatchResult, GlobStrategy } from '@/glob-match';
 
 const rule = (expr: string, strategy: string): GlobStrategy => ({ expr, strategy });
 

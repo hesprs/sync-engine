@@ -1,7 +1,7 @@
 import ModuleManagement from './module-management';
 import { generateEditableList, reactivelyValidate, settingEntry as s } from './utils';
-import { normalizeGlob } from '@/utils/glob-match';
 import { describeError, toError } from '@repo/shared/error';
+import { normalizeGlob } from '@repo/shared/glob-match';
 import { ExtraButtonComponent, Notice, PluginSettingTab, setTooltip } from 'obsidian';
 import type { AugmentedSettingDefinitionItem, LabelDefinition } from './utils';
 import type { Context, Events, Settings } from '@';
