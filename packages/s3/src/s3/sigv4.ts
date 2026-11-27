@@ -1,5 +1,6 @@
 import { textToUint8Array } from '@repo/shared/binary';
 import { compileQuery } from '@repo/shared/path';
+import { sha256Text, toHex } from '@repo/shared/sha256-bytes';
 import { md5 } from 'hash-wasm';
 import type { S3DB } from '..';
 import type { Binary, Request, RequestParam, StringKV } from '@hesprs/sync-engine-sdk';
@@ -15,18 +16,6 @@ export type SigV4Options = {
 };
 
 const encoder = new TextEncoder();
-
-function toHex(bytes: Binary): string {
-	return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function sha256Hex(data: Binary): Promise<string> {
-	const digest = await crypto.subtle.digest(
-		'SHA-256',
-		data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
-	);
-	return toHex(new Uint8Array(digest));
-}
 
 async function hmac(key: Binary, message: string): Promise<Binary> {
 	const keyData = key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength);
@@ -122,7 +111,7 @@ export async function signRequest(
 		'AWS4-HMAC-SHA256',
 		amzDate,
 		credentialScope,
-		await sha256Hex(encoder.encode(canonicalRequest)),
+		await sha256Text(canonicalRequest),
 	].join('\n');
 
 	let kSigning: Binary;
