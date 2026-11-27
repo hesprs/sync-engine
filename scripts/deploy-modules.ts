@@ -1,6 +1,6 @@
 // oxlint-disable import/no-nodejs-modules no-console
 import modules from '../modules.json' with { type: 'json' };
-import sha256 from '../packages/plugin/src/utils/sha-256';
+import { sha256Text } from '../packages/shared/src/crypto';
 import { mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -87,7 +87,7 @@ async function main(): Promise<void> {
 
 			const content = await Bun.file(source).text();
 			staged.set(basename, content);
-			const integrity = await sha256(content);
+			const integrity = await sha256Text(content);
 			deployed.push({ ...module, integrity });
 			console.log(`Redeployed ${basename} (integrity: ${integrity})`);
 		}

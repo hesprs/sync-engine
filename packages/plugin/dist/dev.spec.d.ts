@@ -80,5 +80,5 @@ declare const testKit: {
   taskKeys: typeof taskKeys;
   taskNames: typeof taskNames;
 };
-declare function sha256(input: string): Promise<string>;
-export { debugWrapper, sha256, testKit };
+export declare function sha256Text(file: string): Promise<string>;
+export { debugWrapper, testKit };

@@ -7,7 +7,7 @@ import {
 	streamThreshold,
 	writeWithSize,
 } from '@hesprs/sync-engine-sdk';
-import { textToUint8Array, uint8ArrayEquals, uint8ArrayToText } from '@repo/shared/binary';
+import { binaryEquals, binaryToText, toBinary } from '@repo/shared/binary';
 import parseTimestamp from '@repo/shared/timestamp';
 import type { MergeOptions } from '@/utils/merge';
 import type {
@@ -79,18 +79,18 @@ export default function smartMergeResolver(
 				readWithSize(remoteFs, key, remote) as Promise<Binary>,
 				store.get(key),
 			]);
-			if (uint8ArrayEquals(localBuffer, remoteBuffer)) {
+			if (binaryEquals(localBuffer, remoteBuffer)) {
 				await record.set(key, { isDir: false, local: local.uid, remote: remote.uid });
 				throw REGRET_ERROR;
 			}
 
-			const localText = uint8ArrayToText(localBuffer);
-			const remoteText = uint8ArrayToText(remoteBuffer);
+			const localText = binaryToText(localBuffer);
+			const remoteText = binaryToText(remoteBuffer);
 			const mergedText = merge(
 				{ a: localText, b: remoteText, o: baseText ?? commonBase(localText, remoteText) },
 				mergeOptions,
 			);
-			const mergedBuffer = textToUint8Array(mergedText);
+			const mergedBuffer = toBinary(mergedText);
 			return { localBuffer, mergedBuffer, remoteBuffer, type: 'merge' };
 		};
 		const mergePromise = getMergedBuffer();
@@ -103,8 +103,8 @@ export default function smartMergeResolver(
 			}
 			const { localBuffer, remoteBuffer, mergedBuffer } = result;
 			if (
-				(side === 'local' && uint8ArrayEquals(localBuffer, mergedBuffer)) ||
-				(side === 'remote' && uint8ArrayEquals(remoteBuffer, mergedBuffer))
+				(side === 'local' && binaryEquals(localBuffer, mergedBuffer)) ||
+				(side === 'remote' && binaryEquals(remoteBuffer, mergedBuffer))
 			)
 				throw REGRET_ERROR;
 			return mergedBuffer;

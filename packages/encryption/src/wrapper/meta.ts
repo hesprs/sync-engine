@@ -1,11 +1,10 @@
 import { DECRYPTION_ERROR_MESSAGE, importAesGcmKey } from './shared';
 import {
+	binaryToText,
 	concatBinary,
 	decodeBase64,
 	encodeBase64,
-	textToUint8Array,
-	toUint8Array,
-	uint8ArrayToText,
+	toBinary,
 } from '@repo/shared/binary';
 import type { Binary, StringKV } from '@hesprs/sync-engine-sdk';
 
@@ -18,9 +17,9 @@ export async function encryptMeta(metaKey: Binary, meta: StringKV): Promise<Stri
 		const ciphertext = await crypto.subtle.encrypt(
 			{ iv, name: 'AES-GCM' },
 			cryptoKey,
-			textToUint8Array(value),
+			toBinary(value),
 		);
-		meta[key] = encodeBase64(concatBinary(iv, toUint8Array(ciphertext)));
+		meta[key] = encodeBase64(concatBinary(iv, toBinary(ciphertext)));
 	}
 	return meta;
 }
@@ -31,8 +30,8 @@ export async function decryptMeta(metaKey: Binary, meta: StringKV): Promise<Stri
 		try {
 			const data = decodeBase64(value);
 			if (data.byteLength < META_NONCE_LENGTH) throw new Error(DECRYPTION_ERROR_MESSAGE);
-			meta[key] = uint8ArrayToText(
-				toUint8Array(
+			meta[key] = binaryToText(
+				toBinary(
 					await crypto.subtle.decrypt(
 						{ iv: data.subarray(0, META_NONCE_LENGTH), name: 'AES-GCM' },
 						cryptoKey,

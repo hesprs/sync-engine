@@ -11,7 +11,7 @@ import {
 } from './api';
 import { guessMimeType, resumableUpload, singleUpload } from './upload';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { textToUint8Array } from '@repo/shared/binary';
+import { toBinary } from '@repo/shared/binary';
 import { getStatus } from '@repo/shared/error';
 import { basename, dirname, isFolder } from '@repo/shared/path';
 import createRangeReadStream from '@repo/shared/read-stream';
@@ -225,7 +225,7 @@ export default class GdriveFs implements RootFs {
 				buildUrl(DRIVE_API, `/files/${id}`, trashed ? { fields: 'id' } : {}),
 				trashed
 					? {
-							body: textToUint8Array(JSON.stringify({ trashed: true })),
+							body: toBinary(JSON.stringify({ trashed: true })),
 							headers: { 'Content-Type': 'application/json; charset=UTF-8' },
 							method: 'PATCH',
 						}
@@ -251,7 +251,7 @@ export default class GdriveFs implements RootFs {
 		}
 		await Promise.all([
 			this.requestOrThrow(buildUrl(DRIVE_API, `/files/${id}`, query), {
-				body: textToUint8Array(JSON.stringify({ name: basename(newKey) })),
+				body: toBinary(JSON.stringify({ name: basename(newKey) })),
 				headers: { 'Content-Type': 'application/json; charset=UTF-8' },
 				method: 'PATCH',
 			}),
@@ -275,7 +275,7 @@ export default class GdriveFs implements RootFs {
 		const response = await this.requestOrThrow(
 			buildUrl(DRIVE_API, '/files', { fields: 'id' }),
 			{
-				body: textToUint8Array(
+				body: toBinary(
 					JSON.stringify({
 						appProperties: await stat.meta(),
 						mimeType: FOLDER_MIME,

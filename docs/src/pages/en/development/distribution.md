@@ -94,20 +94,20 @@ For modules not part of the official monorepo:
 
 It is highly recommended to contribute your module to the Sync Engine monorepo if you think your module can benefit more people, see [contributing](../usage/contributing#module-contribution).
 
-### Computing `integrity` with `sha256`
+### Computing `integrity` with `sha256Text`
 
-The `integrity` field in `ModuleMeta` is a 64-character hex SHA-256 hash of the module's source code string. Use the `sha256` utility exported from `@hesprs/sync-engine-sdk/dev` to compute it:
+The `integrity` field in `ModuleMeta` is a 64-character hex SHA-256 hash of the module's source code string. Use the `sha256Text` utility exported from `@hesprs/sync-engine-sdk/dev` to compute it:
 
 ```ts
-import { sha256 } from '@hesprs/sync-engine-sdk/dev';
+import { sha256Text } from '@hesprs/sync-engine-sdk/dev';
 
 const source = await Bun.file('./dist/my-module.js').text();
-const integrity = await sha256(source);
+const integrity = await sha256Text(source);
 // → "a1b2c3d4..." (64 hex characters)
 ```
 
 ```ts
-function sha256(input: string): Promise<string>;
+function sha256Text(text: string): Promise<string>;
 ```
 
 It is a dev export (from `sdk/dev.ts`) because module integrity is computed at build time, not at runtime. This is the identical function that Sync Engine uses internally to verify integrity.

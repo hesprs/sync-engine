@@ -58,4 +58,4 @@ This is the monorepo for an extensible Obsidian syncing plugin to sync vault fil
 - Excluding main plugin, shared utils and documentation site, all packages are Sync Engine modules, they use the SDK and follow unified module structure.
 - `null` forbidden, use `undefined` consistently.
 - Lint warnings in scope must be addressed, except conditional ones (TODO with date, upstream issue, ...)
-- SDK types (`**/*.d.ts` in `packages/plugin/dist/`) are committed to satisfy Obsidian automated linting. Never edit, delete, restore, clean, or otherwise alter these files, even when builds or checks create uncommitted changes. Leave their existing worktree state unchanged.
+- SDK types (`**/*.d.ts` in `packages/plugin/dist/`) are committed to satisfy Obsidian automated linting. DO NOT CARE ABOUT THEM. Leave them there however they change. And you can act freely without caring about or reverting them from changes.

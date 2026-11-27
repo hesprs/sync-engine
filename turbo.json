@@ -18,7 +18,7 @@
 			"cache": true,
 			"env": ["GDRIVE_CLIENT_ID", "GDRIVE_CLIENT_SECRET", "DROPBOX_APP_KEY"]
 		},
-		"fix": { "dependsOn": [], "cache": true },
+		"fix": { "dependsOn": ["^fix"], "cache": true },
 		"check": { "cache": true, "dependsOn": ["^dev"] },
 		"tests": { "dependsOn": ["^dev"], "cache": true }
 	}

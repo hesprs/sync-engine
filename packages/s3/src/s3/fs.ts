@@ -10,7 +10,7 @@ import {
 	toMetaHeaders,
 } from './utils';
 import { chunkSize, concurrency } from '@hesprs/sync-engine-sdk';
-import { collectStreamToBinary, textToUint8Array } from '@repo/shared/binary';
+import { collectStreamToBinary, toBinary } from '@repo/shared/binary';
 import { getStatus, toError } from '@repo/shared/error';
 import normalizeEtag from '@repo/shared/normalize-etag';
 import { dirname, isFolder, parseUrl } from '@repo/shared/path';
@@ -225,7 +225,7 @@ export default class S3Fs implements RootFs {
 				let response: RequestResponse;
 				try {
 					response = await this.requestOrThrow(url, {
-						body: textToUint8Array(body),
+						body: toBinary(body),
 						headers: {
 							'Content-MD5': await md5Base64(body),
 							'Content-Type': 'application/xml',

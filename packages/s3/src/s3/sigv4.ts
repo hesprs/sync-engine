@@ -1,4 +1,5 @@
-import { textToUint8Array } from '@repo/shared/binary';
+import { encodeHex, toBinary } from '@repo/shared/binary';
+import { sha256Text } from '@repo/shared/crypto';
 import { compileQuery } from '@repo/shared/path';
 import { md5 } from 'hash-wasm';
 import type { S3DB } from '..';
@@ -15,18 +16,6 @@ export type SigV4Options = {
 };
 
 const encoder = new TextEncoder();
-
-function toHex(bytes: Binary): string {
-	return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function sha256Hex(data: Binary): Promise<string> {
-	const digest = await crypto.subtle.digest(
-		'SHA-256',
-		data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
-	);
-	return toHex(new Uint8Array(digest));
-}
 
 async function hmac(key: Binary, message: string): Promise<Binary> {
 	const keyData = key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength);
@@ -84,7 +73,7 @@ function buildCanonicalHeaders(headers: StringKV): {
 	return { canonicalHeaders: canonicalHeadersStr, signedHeaders };
 }
 
-export async function signRequest(
+async function signRequest(
 	{
 		method,
 		url,
@@ -122,7 +111,7 @@ export async function signRequest(
 		'AWS4-HMAC-SHA256',
 		amzDate,
 		credentialScope,
-		await sha256Hex(encoder.encode(canonicalRequest)),
+		await sha256Text(canonicalRequest),
 	].join('\n');
 
 	let kSigning: Binary;
@@ -137,7 +126,7 @@ export async function signRequest(
 		db.setMeta('s3KeyMarker', marker);
 		db.setMeta('s3Key', kSigning);
 	}
-	const signature = toHex(await hmac(kSigning, stringToSign));
+	const signature = encodeHex(await hmac(kSigning, stringToSign));
 	const credential = `${accessKeyId}/${credentialScope}`;
 	headers.authorization = `AWS4-HMAC-SHA256 Credential=${credential}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
@@ -162,8 +151,7 @@ export function sigv4Middleware(request: Request, credentials: SigV4Options, db:
 }
 
 export async function md5Base64(data: Binary | string): Promise<string> {
-	const bytes = typeof data === 'string' ? textToUint8Array(data) : data;
-	const hexDigest = await md5(bytes);
+	const hexDigest = await md5(toBinary(data));
 	const raw = (hexDigest.match(/.{2}/gu) as Array<string>).map((h) => Number.parseInt(h, 16));
 	return btoa(String.fromCharCode(...raw));
 }

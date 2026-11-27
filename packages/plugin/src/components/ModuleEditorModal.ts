@@ -1,5 +1,5 @@
 import { reactivelyValidate } from '@/settings/utils';
-import sha256 from '@/utils/sha-256';
+import { sha256Text } from '@repo/shared/crypto';
 import { formatUrl, parseUrl } from '@repo/shared/path';
 import { App, Modal, Setting, TextAreaComponent, TextComponent } from 'obsidian';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
@@ -199,7 +199,7 @@ export default class ModuleEditorModal extends Modal {
 					.onClick(async () => {
 						const newHash = integrityEnabled
 							? file
-								? await sha256(file)
+								? await sha256Text(file)
 								: integrity
 							: '';
 						await onSave(Object.assign(updated, { integrity: newHash }));

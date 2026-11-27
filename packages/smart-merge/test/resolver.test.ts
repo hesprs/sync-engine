@@ -1,6 +1,6 @@
 import smartMergeResolver from '@/resolver';
 import { testKit } from '@hesprs/sync-engine-sdk/dev';
-import { uint8ArrayToText } from '@repo/shared/binary';
+import { binaryToText } from '@repo/shared/binary';
 import { beforeEach, expect, test } from 'bun:test';
 import { openMemoryDB } from 'uni-kv';
 import type { SmartMergeDatabase } from '@/index';
@@ -45,8 +45,8 @@ test('resolver should merge when base text exists', async () => {
 		remoteFs: remote.fs,
 	});
 
-	expect(uint8ArrayToText(remote.calls.write[0]?.[1])).toBe('line1-local\nline2\nline3-remote');
-	expect(uint8ArrayToText(local.calls.write[0]?.[1])).toBe('line1-local\nline2\nline3-remote');
+	expect(binaryToText(remote.calls.write[0]?.[1])).toBe('line1-local\nline2\nline3-remote');
+	expect(binaryToText(local.calls.write[0]?.[1])).toBe('line1-local\nline2\nline3-remote');
 	expect(await record.get('note.md')).toStrictEqual({
 		isDir: false,
 		local: 'write-uid',
@@ -69,12 +69,12 @@ test('resolver merges with a synthetic base when base text is missing', async ()
 	});
 
 	// Without an ancestor the merge unions both sides instead of discarding one.
-	const merged = uint8ArrayToText(remote.calls.write[0]?.[1]);
+	const merged = binaryToText(remote.calls.write[0]?.[1]);
 	expect(merged).toContain('line1');
 	expect(merged).toContain('line2-local');
 	expect(merged).toContain('line2-remote');
 	expect(merged).toContain('line3');
-	expect(uint8ArrayToText(local.calls.write[0]?.[1])).toBe(merged);
+	expect(binaryToText(local.calls.write[0]?.[1])).toBe(merged);
 	expect(await record.get('note.md')).toStrictEqual({
 		isDir: false,
 		local: 'write-uid',
@@ -125,7 +125,7 @@ test('resolver writes a small newer winner through the binary path when only the
 
 	// The content is the small local binary, so the loser's write must not take the stream path.
 	expect(remote.calls.writeStream).toStrictEqual([]);
-	expect(uint8ArrayToText(remote.calls.write[0]?.[1])).toBe('small local wins');
+	expect(binaryToText(remote.calls.write[0]?.[1])).toBe('small local wins');
 	expect(await record.get('large.md')).toStrictEqual({
 		isDir: false,
 		local: 'local-new',

@@ -1,7 +1,6 @@
 import UntrustedModuleModal from '@/components/UntrustedModuleModal';
-import sha256 from '@/utils/sha-256';
 import untilTrue from '@/utils/until-true';
-import hash from '@repo/shared/crypto';
+import { fnv1a, sha256Text } from '@repo/shared/crypto';
 import { importCode } from '@repo/shared/e2e-utils.spec';
 import { describeError, toError } from '@repo/shared/error';
 import { parseUrl } from '@repo/shared/path';
@@ -76,7 +75,7 @@ export default class Extensibility {
 	) {
 		this.moduleDir = `${ctx.manifest.dir}/modules`;
 		(window as WindowAugmentation).syncEngineApiBridge = obsidian;
-		this.moduleStore = ctx.indexedDB.getStore(`modules-${hash(ctx.app.vault.getName())}`);
+		this.moduleStore = ctx.indexedDB.getStore(`modules-${fnv1a(ctx.app.vault.getName())}`);
 	}
 
 	readonly start = () => {
@@ -154,7 +153,7 @@ export default class Extensibility {
 		const { adapter } = app.vault;
 		try {
 			const file = module ?? (await adapter.read(this.getModulePath(id)));
-			if (integrity && (await sha256(file)) !== integrity)
+			if (integrity && (await sha256Text(file)) !== integrity)
 				throw new Error(translate('integrityCheckFailed'));
 			const moduleJs = await importCode<{ default?: GeneralCtor }>(file);
 			const ctor = moduleJs.default;
