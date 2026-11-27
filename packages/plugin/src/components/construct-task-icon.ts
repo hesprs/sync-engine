@@ -13,10 +13,10 @@ export default function constructTaskIcon(
 	const { icon: mainIcon, color: mainColor } = getMain(name, isDir);
 	setIcon(element, mainIcon);
 	const main = getIcon(element);
-	main.addClass('se-cropped-icon');
 	main.setAttr('stroke', mainColor);
 	const auxiliaryIconColor = getAuxiliary(name);
 	if (!auxiliaryIconColor) return element;
+	main.addClass('se-cropped-icon');
 	const { icon: auxiliaryIcon, color: auxiliaryColor } = auxiliaryIconColor;
 	setIcon(element, auxiliaryIcon);
 	const auxiliary = getIcon(element);
