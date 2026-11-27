@@ -2,6 +2,7 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 export type Binary = Uint8Array<ArrayBuffer>;
+export { toHex } from './sha256-bytes';
 
 export function toUint8Array(buffer: ArrayBuffer) {
 	return new Uint8Array(buffer);
@@ -98,7 +99,13 @@ export class PartBuffer {
 }
 
 // 0x80_00 stays far below the ~65k spread-argument limit of String.fromCharCode
-export function encodeBase64(bytes: Binary): string {
+export function encodeBase64(value: BufferSource): string {
+	const bytes =
+		value instanceof Uint8Array
+			? value
+			: value instanceof ArrayBuffer
+				? new Uint8Array(value)
+				: new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
 	if (typeof bytes.toBase64 === 'function') return bytes.toBase64();
 	const CHUNK = 0x80_00;
 	const parts: Array<string> = [];
@@ -115,11 +122,12 @@ export function decodeBase64(value: string): Binary {
 	return bytes;
 }
 
-export function encodeBase64Url(value: Binary): string {
+export function encodeBase64Url(value: BufferSource): string {
 	return encodeBase64(value).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '');
 }
 
 export function decodeBase64Url(value: string): Binary {
+	if (!/^[A-Za-z0-9_-]*$/u.test(value)) throw new Error('Invalid base64url value');
 	const padding = value.length % 4;
 	const normalized =
 		value.replaceAll('-', '+').replaceAll('_', '/') +

@@ -19,6 +19,17 @@ export function toError(error: unknown): Error {
 	return error instanceof Error ? error : new Error(String(error), { cause: error });
 }
 
+export function isNotFound(error: unknown): boolean {
+	const message = (((error as ErrorLike).message as string) ?? String(error)).toUpperCase();
+	return (
+		getStatus(error) === 404 ||
+		message.includes('ENOENT') ||
+		message.includes('NOSUCHKEY') ||
+		message.includes('NOT FOUND') ||
+		message.includes('NOT_FOUND')
+	);
+}
+
 export function describeError(error: Error, msg: string, newObj?: boolean) {
 	const e = newObj ? structuredClone(error) : error;
 	e.message = `${msg}: \`${error.message}\``;
