@@ -1,6 +1,6 @@
-import { isFolder } from './path';
+import { isFolder } from '@repo/shared/path';
+import type { GlobStrategy } from '@/types';
 
-export type GlobStrategy = { expr: string; strategy: string };
 export type GlobMatchResult = { strategy: string; advance?: boolean };
 export const NONE_STRATEGY = 'none';
 

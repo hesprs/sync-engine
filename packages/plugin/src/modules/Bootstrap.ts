@@ -20,7 +20,7 @@ import {
 	pholderDecider,
 	renameAndKeepBothResolver,
 } from '@/sync';
-import { NONE_STRATEGY } from '@repo/shared/glob-match';
+import { NONE_STRATEGY } from '@/utils/glob-match';
 import type { Dispatch, On } from './EventBus';
 import type { ObsidianLanguageCode, Translate, TranslationResource } from './I18n';
 import type {
