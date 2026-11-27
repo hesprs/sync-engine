@@ -1,5 +1,4 @@
 import '@/global.css';
-import { NONE_STRATEGY } from './utils/glob-match';
 import Bootstrap from '@/modules/Bootstrap';
 import EventBus from '@/modules/EventBus';
 import Extensibility, { OFFICIAL_SOURCE } from '@/modules/Extensibility';
@@ -11,6 +10,7 @@ import Scheduler from '@/modules/Scheduler';
 import Setting from '@/modules/Setting';
 import Storage from '@/modules/Storage';
 import Sync from '@/modules/Sync';
+import { NONE_STRATEGY } from '@repo/shared/glob-match';
 import { Plugin } from 'obsidian';
 import { createContext } from 'synthkernel';
 import type { App, PluginManifest } from 'obsidian';

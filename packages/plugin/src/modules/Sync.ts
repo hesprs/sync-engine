@@ -8,9 +8,9 @@ import {
 	taskMap,
 	Upload,
 } from '@/sync';
-import { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 import { REGRET_ERROR_MESSAGE } from '@/utils/pipe';
 import { toError } from '@repo/shared/error';
+import { NONE_STRATEGY, prepareGlobMatch } from '@repo/shared/glob-match';
 import { isSub } from '@repo/shared/path';
 import { ref } from 'synthkernel';
 import type { Dispatch, On } from './EventBus';
@@ -30,7 +30,7 @@ import type {
 	StatsMap,
 	TogglableValue,
 } from '@/types';
-import type { GlobMatchResult } from '@/utils/glob-match';
+import type { GlobMatchResult } from '@repo/shared/glob-match';
 import type { Ref } from 'synthkernel';
 
 export type SyncTerminateReason =
