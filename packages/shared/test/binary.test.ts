@@ -1,11 +1,14 @@
 import {
+	binaryEquals,
 	collectStreamToBinary,
 	concatBinary,
 	decodeBase64,
 	decodeBase64Url,
 	encodeBase64,
 	encodeBase64Url,
+	encodeHex,
 	PartBuffer,
+	toBinary,
 } from '@/binary';
 import { expect, test } from 'bun:test';
 import type { Binary } from '@/binary';
@@ -125,6 +128,19 @@ test('decode functions fall back to the manual path when fromBase64 is absent', 
 test('slice throws when fewer bytes are buffered than requested', () => {
 	const buffer = new PartBuffer();
 	buffer.push(new Uint8Array([1]));
-
 	expect(() => buffer.slice(2)).toThrow();
+});
+
+test('toBinary encodes text as UTF-8 and passes an existing binary through', () => {
+	const bytes = new Uint8Array([1, 2, 3]);
+	expect(toBinary('hé')).toStrictEqual(new Uint8Array([0x68, 0xc3, 0xa9]));
+	expect(toBinary(bytes)).toBe(bytes);
+});
+
+test('binaryEquals detects differing bytes of the same length', () => {
+	expect(binaryEquals(new Uint8Array([1, 2]), new Uint8Array([1, 3]))).toBe(false);
+});
+
+test('encodeHex writes lowercase hex', () => {
+	expect(encodeHex(new Uint8Array([0, 15, 16, 255]))).toBe('000f10ff');
 });

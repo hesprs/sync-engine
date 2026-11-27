@@ -15,6 +15,6 @@ export async function sha256(data: Binary): Promise<Binary> {
 	return toBinary(await crypto.subtle.digest('SHA-256', data));
 }
 
-export async function sha256Text(file: string): Promise<string> {
-	return sha256(toBinary(file)).then(encodeHex);
+export async function sha256Text(text: string): Promise<string> {
+	return sha256(toBinary(text)).then(encodeHex);
 }

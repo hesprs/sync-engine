@@ -19,11 +19,11 @@
 
 ### `/dev` 运行时导出
 
-| 导出           | 说明                                                                         |
-| -------------- | ---------------------------------------------------------------------------- |
-| `debugWrapper` | 记录调用的 FS 包装器。见[调试与测试](./debug-and-testing#debugwrapper)。     |
-| `testKit`      | 测试工具集。见[调试与测试](./debug-and-testing#testkit)。                    |
-| `sha256`       | SHA-256 哈希工具。见[分发](./distribution#computing-integrity-with-sha256)。 |
+| 导出           | 说明                                                                      |
+| -------------- | ------------------------------------------------------------------------- |
+| `debugWrapper` | 记录调用的 FS 包装器。见[调试与测试](./debug-and-testing#debugwrapper)。  |
+| `testKit`      | 测试工具集。见[调试与测试](./debug-and-testing#testkit)。                 |
+| `sha256Text`   | SHA-256 哈希工具。见[分发](./distribution#用-sha256text-计算-integrity)。 |
 
 ### `/tsdown-plugin` 导出
 

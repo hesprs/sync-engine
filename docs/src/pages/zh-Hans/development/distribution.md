@@ -94,20 +94,20 @@ moduleSources: ['https://sync.consensia.cc/modules.json'];
 
 如果你认为你的模块能让更多人受益，强烈建议把它贡献到 Sync Engine monorepo，见[贡献指南](../usage/contributing#模块贡献)。
 
-### 用 `sha256` 计算 `integrity`
+### 用 `sha256Text` 计算 `integrity`
 
-`ModuleMeta` 的 `integrity` 字段是模块源码字符串的 64 位十六进制 SHA-256 哈希。使用 `@hesprs/sync-engine-sdk/dev` 导出的 `sha256` 工具计算：
+`ModuleMeta` 的 `integrity` 字段是模块源码字符串的 64 位十六进制 SHA-256 哈希。使用 `@hesprs/sync-engine-sdk/dev` 导出的 `sha256Text` 工具计算：
 
 ```ts
-import { sha256 } from '@hesprs/sync-engine-sdk/dev';
+import { sha256Text } from '@hesprs/sync-engine-sdk/dev';
 
 const source = await Bun.file('./dist/my-module.js').text();
-const integrity = await sha256(source);
+const integrity = await sha256Text(source);
 // → "a1b2c3d4..." (64 hex characters)
 ```
 
 ```ts
-function sha256(input: string): Promise<string>;
+function sha256Text(text: string): Promise<string>;
 ```
 
 它是一个 dev 导出（来自 `sdk/dev.ts`），因为模块完整性在构建期计算，而不是运行时。Sync Engine 内部验证完整性用的就是同一个函数。

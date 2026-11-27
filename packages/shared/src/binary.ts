@@ -118,7 +118,6 @@ export function encodeBase64Url(value: Binary): string {
 }
 
 export function decodeBase64Url(value: string): Binary {
-	if (!/^[A-Za-z0-9_-]*$/u.test(value)) throw new Error('Invalid base64url value');
 	const padding = value.length % 4;
 	const normalized =
 		value.replaceAll('-', '+').replaceAll('_', '/') +

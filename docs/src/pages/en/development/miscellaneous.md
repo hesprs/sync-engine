@@ -23,7 +23,7 @@
 | --- | --- |
 | `debugWrapper` | FS wrapper that logs calls. See [debug and testing](./debug-and-testing#debugwrapper). |
 | `testKit` | Test harness utilities. See [debug and testing](./debug-and-testing#testkit). |
-| `sha256` | SHA-256 hash utility. See [distribution](./distribution#computing-integrity-with-sha256). |
+| `sha256Text` | SHA-256 hash utility. See [distribution](./distribution#computing-integrity-with-sha256text). |
 
 ### `/tsdown-plugin` exports
 

@@ -23,7 +23,7 @@ const META_KEY_INFO = 'meta-key-v1';
 
 export async function deriveMasterSalt(remoteUid: string): Promise<Binary> {
 	const digest = await sha256(toBinary(remoteUid));
-	return toBinary(digest.slice(0, MASTER_SALT_LENGTH));
+	return digest.slice(0, MASTER_SALT_LENGTH);
 }
 
 export function deriveMasterKey(password: string | Binary, masterSalt: Binary): Promise<Binary> {
