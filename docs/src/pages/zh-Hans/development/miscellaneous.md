@@ -16,6 +16,8 @@
 | `settingEntry` | 把父设置定义与嵌套设置定义组合起来。见[设置与界面](./settings-and-ui#嵌套设置注册)。 |
 | `reactivelyValidate` | 给设置文本输入附加响应式校验。见[设置与界面](./settings-and-ui#响应式输入校验)。 |
 | `generateEditableList` | 生成由临时草稿存储支持的可编辑列表设置定义。见[设置与界面](./settings-and-ui#可编辑列表)。 |
+| `NONE_STRATEGY` | 表示在 `syncStrategy` 规则中排除路径的策略名（`'none'`）。 |
+| `prepareGlobMatch` | 将 `syncStrategy` glob 规则编译为路径匹配函数，返回 `{ strategy, advance? }`。 |
 
 ### `/dev` 运行时导出
 
@@ -40,14 +42,14 @@
 | 核心数据 | `Binary`、`MaybePromise`、`StringKV`、`Progress`、`FileStat`、`FolderStat`、`Stat`、`StatsMap`、`RecordStat`、`RecordStatsMap` |
 | 文件系统 | `RootFs`、`WrappedFs`、`Fs`、`WriteAtom`、`DeleteAtom`、`MoveAtom`、`MkdirAtom`、`InputAtom`、`CustomAtom`、`OutputAtom`、`ListOptions`、`ListReporter`、`OptimizerInput`、`OptimizerOutput`、`BatchOptimizer` |
 | 注册 | `FsWrapperEntry`、`RemoteFsEntry`、`RemoteRequestMiddlewareEntry`、`LocalRequestMiddlewareEntry`、`TriggerEntry`、`DeciderEntry`、`OptimizerEntry`、`SettingEntry`、`CallableOrObjectTree`、`LabelDefinition`、`ConflictResolverEntry`、`Request` |
-| 同步 | `TaskNames`、`Task`、`AddRecord`、`RemoveRecord`、`Download`、`Upload`、`CreateLocalDir`、`CreateRemoteDir`、`RemoveLocal`、`RemoveRemote`、`MoveLocal`、`MoveRemote`、`ResolveConflict`、`TaskFactory`、`DeciderInput`、`Decider`、`SyncOptions`、`RemoteLister`、`ConflictResolver`、`ConflictResolverPayload`、`SyncTerminateReason` |
+| 同步 | `TaskNames`、`Task`、`AddRecord`、`RemoveRecord`、`Download`、`Upload`、`CreateLocalDir`、`CreateRemoteDir`、`RemoveLocal`、`RemoveRemote`、`MoveLocal`、`MoveRemote`、`ResolveConflict`、`TaskFactory`、`DeciderInput`、`Decider`、`SyncOptions`、`RemoteLister`、`ConflictResolver`、`ConflictResolverPayload`、`SyncTerminateReason`、`GlobStrategy`、`GlobMatchResult` |
 | 存储 | `RecordStore`、`StoreAsync`、`StoreSync`、`StoreOperations`、`DatabaseAsync`、`DatabaseSync` |
 | 模块 | `ModuleMeta`、`AugmentedModuleMeta`、`ModuleStatus`、`StatusLevel` |
 | 请求 | `VaultRequest`、`RequestParam`、`RequestResponse`（`Request` 返回的响应类型） |
 | 国际化 | `ObsidianLanguageCode`、`Fragment`、`Snippet`、`TranslationResource`、`Translate` |
 | 其他 | `ExistingMemoryDB` |
 
-内部辅助类型会出现在导出的签名中，但不是独立的根导出。它们包括 `TogglableValue`、`GlobStrategy`、`GlobMatchResult`、`Infras`、`BaseTaskOptions`、`GenericOptions`、`WithRemoteFileStat`、`WithLocalFileStat`、`WithRemoteFolderStat`、`WithLocalFolderStat`、`WithLocalStat`、`WithRemoteStat`、`WithBothStats`、`WithBothFileStats`、`WithNewKey`、`TaskOptionsMap`、`TaskInfo`、`FailedTaskInfo`、`DeleteConfirmReturn` 和 `CustomHeaders`。
+内部辅助类型会出现在导出的签名中，但不是独立的根导出。它们包括 `TogglableValue`、`Infras`、`BaseTaskOptions`、`GenericOptions`、`WithRemoteFileStat`、`WithLocalFileStat`、`WithRemoteFolderStat`、`WithLocalFolderStat`、`WithLocalStat`、`WithRemoteStat`、`WithBothStats`、`WithBothFileStats`、`WithNewKey`、`TaskOptionsMap`、`TaskInfo`、`FailedTaskInfo`、`DeleteConfirmReturn` 和 `CustomHeaders`。
 
 ## 设置
 
