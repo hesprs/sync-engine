@@ -42,7 +42,7 @@
 | Registration | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `TriggerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request` |
 | Sync | `TaskNames`, `Task`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `SyncOptions`, `RemoteLister`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
 | Storage | `RecordStore`, `StoreAsync`, `StoreSync`, `StoreOperations`, `DatabaseAsync`, `DatabaseSync` |
-| Modules | `ModuleMeta`, `AugmentedModuleMeta` |
+| Modules | `ModuleMeta`, `AugmentedModuleMeta`, `ModuleStatus`, `StatusLevel` |
 | Request | `VaultRequest`, `RequestParam`, `RequestResponse` (the response type returned by `Request`) |
 | Internationalization | `ObsidianLanguageCode`, `Fragment`, `Snippet`, `TranslationResource`, `Translate` |
 | Other | `ExistingMemoryDB` |
@@ -125,17 +125,19 @@ These Context members are not commonly used by modules. Explore the source code 
 
 ### UI and Observability
 
-| Member                 | Purpose                                   |
-| ---------------------- | ----------------------------------------- |
-| `executionProgress`    | Reactive `Progress` for task execution.   |
-| `walkProgress`         | Reactive `Progress` for remote traversal. |
-| `syncStage`            | Reactive current sync stage.              |
-| `showProgress()`       | Opens progress UI.                        |
-| `hideProgress()`       | Hides progress UI.                        |
-| `getLogs()`            | Returns formatted current logs.           |
-| `exportLogs()`         | Exports logs to vault file.               |
-| `startScheduledSync()` | Starts interval sync.                     |
-| `stopScheduledSync()`  | Stops interval sync.                      |
+| Member                         | Purpose                                                      |
+| ------------------------------ | ------------------------------------------------------------ |
+| `executionProgress`            | Reactive `Progress` for task execution.                      |
+| `walkProgress`                 | Reactive `Progress` for remote traversal.                    |
+| `syncStage`                    | Reactive current sync stage.                                 |
+| `showProgress()`               | Opens progress UI.                                           |
+| `hideProgress()`               | Hides progress UI.                                           |
+| `getLogs()`                    | Returns formatted current logs.                              |
+| `exportLogs()`                 | Exports logs to vault file.                                  |
+| `setModuleStatus(id, status?)` | Sets the sync icon status badge.                             |
+| `getModuleStatus(id)`          | Returns the current reported `ModuleStatus` for a module ID. |
+| `startScheduledSync()`         | Starts interval sync.                                        |
+| `stopScheduledSync()`          | Stops interval sync.                                         |
 
 ### Core and Host
 

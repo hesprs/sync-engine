@@ -42,7 +42,7 @@
 | 注册 | `FsWrapperEntry`、`RemoteFsEntry`、`RemoteRequestMiddlewareEntry`、`LocalRequestMiddlewareEntry`、`TriggerEntry`、`DeciderEntry`、`OptimizerEntry`、`SettingEntry`、`CallableOrObjectTree`、`LabelDefinition`、`ConflictResolverEntry`、`Request` |
 | 同步 | `TaskNames`、`Task`、`AddRecord`、`RemoveRecord`、`Download`、`Upload`、`CreateLocalDir`、`CreateRemoteDir`、`RemoveLocal`、`RemoveRemote`、`MoveLocal`、`MoveRemote`、`ResolveConflict`、`TaskFactory`、`DeciderInput`、`Decider`、`SyncOptions`、`RemoteLister`、`ConflictResolver`、`ConflictResolverPayload`、`SyncTerminateReason` |
 | 存储 | `RecordStore`、`StoreAsync`、`StoreSync`、`StoreOperations`、`DatabaseAsync`、`DatabaseSync` |
-| 模块 | `ModuleMeta`、`AugmentedModuleMeta` |
+| 模块 | `ModuleMeta`、`AugmentedModuleMeta`、`ModuleStatus`、`StatusLevel` |
 | 请求 | `VaultRequest`、`RequestParam`、`RequestResponse`（`Request` 返回的响应类型） |
 | 国际化 | `ObsidianLanguageCode`、`Fragment`、`Snippet`、`TranslationResource`、`Translate` |
 | 其他 | `ExistingMemoryDB` |
@@ -125,17 +125,19 @@
 
 ### UI 与可观测性
 
-| 成员                   | 用途                          |
-| ---------------------- | ----------------------------- |
-| `executionProgress`    | 任务执行的响应式 `Progress`。 |
-| `walkProgress`         | 远端遍历的响应式 `Progress`。 |
-| `syncStage`            | 响应式的当前同步阶段。        |
-| `showProgress()`       | 打开进度界面。                |
-| `hideProgress()`       | 隐藏进度界面。                |
-| `getLogs()`            | 返回格式化的当前日志。        |
-| `exportLogs()`         | 把日志导出到仓库文件。        |
-| `startScheduledSync()` | 启动定时同步。                |
-| `stopScheduledSync()`  | 停止定时同步。                |
+| 成员                           | 用途                                        |
+| ------------------------------ | ------------------------------------------- |
+| `executionProgress`            | 任务执行的响应式 `Progress`。               |
+| `walkProgress`                 | 远端遍历的响应式 `Progress`。               |
+| `syncStage`                    | 响应式的当前同步阶段。                      |
+| `showProgress()`               | 打开进度界面。                              |
+| `hideProgress()`               | 隐藏进度界面。                              |
+| `getLogs()`                    | 返回格式化的当前日志。                      |
+| `exportLogs()`                 | 把日志导出到仓库文件。                      |
+| `setModuleStatus(id, status?)` | 设置同步图标状态角标。                      |
+| `getModuleStatus(id)`          | 返回指定模块 ID 当前上报的 `ModuleStatus`。 |
+| `startScheduledSync()`         | 启动定时同步。                              |
+| `stopScheduledSync()`          | 停止定时同步。                              |
 
 ### 核心与宿主
 
