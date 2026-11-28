@@ -44,4 +44,5 @@ Special data are separated into the following categories that should be always n
 
 - Markdown italic marker use `*italic*` for spans that must have non-space non-punctuation adjacent characters, otherwise use `_italic_`.
 - For CJK prose, there should be a space between a non-punctuation CJK character and a latin letter or ASCII number.
-- For text translated from English to other languages, keep proper nouns and terms that would have awkward translations in the native language in English. Do not enforce full text translation. Do not add parenthesis.
+- For text translated from English to other languages, keep proper nouns and terms that would have awkward translations in the native language in English. Do not enforce full text translation. Do not translate the term while leaving the English glossed in parentheses, or oppositely keep the English term while adding the translation in parens; choose one canonical form and stick to it.
+- For text quoting the product's UI strings, the translated text should use the string in the target language the same as how the product translates them in the UI.

@@ -77,10 +77,10 @@ Startup loading performs the following steps:
 3. Remove folders and files that do not end in `.js`.
 4. Parse each JavaScript filename into a module ID.
 5. Match each file with metadata from the local IndexedDB store.
-6. Open a warning modal for a file with no stored metadata (untrusted module).
+6. Install a file with no stored metadata automatically.
 7. Load a module only when its stored metadata has `enabled: true`.
 
-An untrusted module is not loaded automatically. The user may configure it through the warning modal or delete it. Configuring an untrusted module creates metadata for the local file. Its integrity value is calculated from the file when integrity verification is enabled.
+A file with no stored metadata is installed automatically. Metadata is derived from the file's magic bytes with fallback defaults, the integrity value is calculated from the file, and the module is disabled by default. It is not loaded until the user enables it, and it can be edited or deleted later through the [Module Management UI](./module-management-page).
 
 When loading an installed artifact, the loader reads it through the vault `DataAdapter`. During a download, it may instead verify the fetched response text directly. When integrity check is not disabled by the user, it calculates SHA-256 over the module text and compares the result with the stored value.
 
@@ -108,11 +108,11 @@ New modules are disabled by default. The downloaded text is integrity-checked be
 
 ### Install From File
 
-The module management menu also offers **Install module from file**. The user picks a `.js` or `.mjs` file (other extensions are rejected with a notice), and the module editor opens with metadata prefilled from the file's magic bytes, a leading `/*! ... */` comment of `key: value` lines embedded at build time. On save, `installModule()` writes the file to the module directory, stores the confirmed metadata, and loads the module when it is enabled. No source is involved in this path.
+The module management menu also offers **Install module from file**. The user picks a `.js` or `.mjs` file (other extensions are rejected with a notice). `installModuleFromCode()` derives the metadata from the file's magic bytes, a leading `/*! ... */` comment of `key: value` lines embedded at build time, writes the file to the module directory, stores the metadata, and loads the module when it is enabled. No source is involved in this path.
 
 ### Install From Code
 
-The module management menu also offers **Install module from code**. The user pastes module code into a code input modal, and the module editor opens with metadata prefilled from the code's magic bytes. On save, `installModule()` writes the code to the module directory, stores the confirmed metadata, and loads the module when it is enabled. No source is involved in this path.
+The module management menu also offers **Install module from code**. The user pastes module code into a code input modal. `installModuleFromCode()` derives the metadata from the code's magic bytes, writes the code to the module directory, stores the metadata, and loads the module when it is enabled. No source is involved in this path.
 
 ### Automatic Update
 

@@ -1,6 +1,6 @@
 # Dropbox 模块
 
-Dropbox 模块注册 `dropbox` 远端文件系统。它把仓库存储在一个 Dropbox 应用的应用文件夹（app folder）内，通过 Dropbox 公开 API 执行文件操作。模块使用带 PKCE 的 Dropbox OAuth 2.0 认证，不使用第三方服务器或代理。
+Dropbox 模块注册 `dropbox` 远端文件系统。它把仓库存储在一个 Dropbox 应用的应用文件夹内，通过 Dropbox 公开 API 执行文件操作。模块使用带 PKCE 的 Dropbox OAuth 2.0 认证，不使用第三方服务器或代理。
 
 ## 设置
 

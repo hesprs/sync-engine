@@ -1,4 +1,3 @@
-import UntrustedModuleModal from '@/components/UntrustedModuleModal';
 import untilTrue from '@/utils/until-true';
 import { fnv1a, sha256Text } from '@repo/shared/crypto';
 import { importCode } from '@repo/shared/e2e-utils.spec';
@@ -9,7 +8,7 @@ import { compare } from 'verkit';
 import type { Dispatch } from './EventBus';
 import type { Snippet, Translate } from './I18n';
 import type { Context, Events, Translations } from '@';
-import type { General } from '@/types';
+import type { General, StringKV } from '@/types';
 import type { App, PluginManifest } from 'obsidian';
 import type { Ref } from 'synthkernel';
 import type { DatabaseAsync, StoreAsync, StoreOperations } from 'uni-kv';
@@ -99,6 +98,12 @@ export default class Extensibility {
 			delete: (path: string) => operations.push(() => adapter.remove(path)),
 			download: (meta: AugmentedModuleMeta) =>
 				operations.push(() => this.downloadModule(meta, false)),
+			install: (path: string, initial?: Partial<AugmentedModuleMeta>) =>
+				operations.push(async () => {
+					await adapter
+						.read(path)
+						.then((file) => this.installModuleFromCode(file, initial));
+				}),
 			load: (meta: AugmentedModuleMeta) => operations.push(() => this.loadModule(meta)),
 			store: (operation: StoreOperations<AugmentedModuleMeta>) => storeOps.push(operation),
 		};
@@ -126,18 +131,7 @@ export default class Extensibility {
 			else if (meta) {
 				this.discoveredModules.set(id, meta);
 				if (meta.enabled) factory.load(meta);
-			} else
-				new UntrustedModuleModal(this.ctx, {
-					id,
-					onSave: async (newMeta) => {
-						this.discoveredModules.set(id, newMeta);
-						await Promise.all([
-							this.moduleStore.set(id, newMeta),
-							newMeta.enabled ? this.loadModule(newMeta, true) : Promise.resolve(),
-						]);
-					},
-					path: this.getModulePath(id),
-				}).open();
+			} else factory.install(this.getModulePath(id), { id });
 		}
 		await execute();
 	};
@@ -149,10 +143,9 @@ export default class Extensibility {
 	) => {
 		const { id, integrity, name, enabled } = meta;
 		if (this.loadedModules.get(id)) return;
-		const { dispatch, translate, app, __addModule__, __getModule__, allModules } = this.ctx;
-		const { adapter } = app.vault;
+		const { dispatch, translate, __addModule__, __getModule__, allModules } = this.ctx;
 		try {
-			const file = module ?? (await adapter.read(this.getModulePath(id)));
+			const file = module ?? (await this.readModule(id));
 			if (integrity && (await sha256Text(file)) !== integrity)
 				throw new Error(translate('integrityCheckFailed'));
 			const moduleJs = await importCode<{ default?: GeneralCtor }>(file);
@@ -204,6 +197,39 @@ export default class Extensibility {
 			this.moduleStore.set(id, meta),
 		]);
 		this.discoveredModules.set(id, meta);
+	};
+
+	private readonly installModuleFromCode = async (
+		module: string,
+		initial?: Partial<AugmentedModuleMeta>,
+	) => {
+		const magic = parseMagicBytes(module);
+		const {
+			enabled = false,
+			name,
+			icon,
+			description,
+			source,
+			integrity,
+			version,
+			main = '',
+			readme,
+			id,
+		} = initial ?? {};
+		const updated: AugmentedModuleMeta = {
+			description: description || magic.description || 'An unknown module.',
+			enabled,
+			icon: icon || magic.icon || 'puzzle',
+			id: id || magic.id || name || magic.name || crypto.randomUUID(),
+			integrity: integrity ?? (await sha256Text(module)),
+			main,
+			name: name || magic.name || 'Unknown Module',
+			readme: readme || magic.readme || undefined,
+			source: source || magic.source || '',
+			version: version || magic.version || '0.0.1',
+		};
+		await this.installModule(updated, module);
+		return updated;
 	};
 
 	private readonly downloadModule = async (meta: AugmentedModuleMeta, waitIdle = true) => {
@@ -351,6 +377,9 @@ export default class Extensibility {
 		void this.moduleStore.set(id, Object.assign(meta, { enabled: false }));
 	};
 
+	private readonly readModule = (id: string) =>
+		this.ctx.app.vault.adapter.read(this.getModulePath(id));
+
 	private readonly getModulePath = (id: string) => `${this.moduleDir}/${id}${MODULE_EXTENSION}`;
 
 	private readonly parseModulePath = (path: string) =>
@@ -370,10 +399,12 @@ export default class Extensibility {
 		enableModule: this.enableModule,
 		fetchSources: this.fetchSources,
 		installModule: this.installModule,
+		installModuleFromCode: this.installModuleFromCode,
 		loadAllModules: this.loadAllModules,
 		loadModule: this.loadModule,
 		loadedModules: this.loadedModules,
 		pluginOutdated: false,
+		readModule: this.readModule,
 		unloadModule: this.unloadModule,
 		updateModuleMeta: this.updateModuleMeta,
 		updateModules: this.updateModules,
@@ -398,5 +429,15 @@ function isValidMeta(meta: unknown): meta is ModuleMeta {
 		!/[<>:"/\\|?*]/u.test(meta.id) &&
 		meta.integrity.length === 64 &&
 		/^[0-9a-f]*$/u.test(meta.integrity)
+	);
+}
+
+function parseMagicBytes(file: string): StringKV {
+	const block = /^\s*\/\*!(?<block>[\s\S]*?)\*\//u.exec(file)?.groups?.block ?? '';
+	return Object.fromEntries(
+		[...block.matchAll(/^(?<key>.+?):\s*(?<value>.*)$/gmu)].map(({ groups }) => {
+			const { key, value } = groups as { key: string; value: string };
+			return [key.trim(), value.trim()];
+		}),
 	);
 }

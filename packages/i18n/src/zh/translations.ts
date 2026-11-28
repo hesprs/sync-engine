@@ -51,7 +51,6 @@ const zh: Translations = {
 		'Sync Engine 会记录同步状态，以便在本地和远程文件之间解析同步操作。此选项允许您选择性地清除记录。警告：此操作很可能会导致数据丢失。',
 	completed: '已完成',
 	completedNoop: '已是最新状态',
-	configure: '配置',
 	confirm: '确认',
 	confirmDeleteDescription: (count) =>
 		`请确认即将被删除的 ${count} 个本地文件，未选中的文件将被重新上传。`,
@@ -83,7 +82,6 @@ const zh: Translations = {
 	customHeaders: '自定义请求头',
 	customHeadersDescription:
 		'添加要随每次请求一起发送的自定义请求头，它们可以明文存储，也可以存储在 Obsidian keychain 中。',
-	delete: '删除',
 	deleteModule: '删除模块',
 	description: '描述',
 	descriptionDescription: '设置在模块卡片中显示的描述文本。',
@@ -200,6 +198,7 @@ const zh: Translations = {
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
 	moduleSources: '模块源',
 	moduleSourcesDescription: '编辑获取模块目录的模块源，以便安装第三方 Sync Engine 模块。',
+	moduleXInstalled: (x) => `模块 “${x}” 已安装。`,
 	moveLocal: '移动本地',
 	moveRemote: '移动远程',
 	name: '名称',
@@ -273,7 +272,7 @@ const zh: Translations = {
 	syncProgress: '同步进度',
 	syncStrategy: '同步策略',
 	syncStrategyDescription:
-		'根据 Glob 规则为不同的文件配置不同的同步策略。当多条规则匹配同一个文件时，以最后一条规则为准。',
+		'使用 Glob 规则为不同的文件配置不同的同步策略，或将某些文件和文件夹排除在同步之外。',
 	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安装！`,
 	syncStrategyTips: () =>
 		createFragment((frag) => {
@@ -326,47 +325,6 @@ const zh: Translations = {
 				li.createEl('strong', { text: key });
 				li.appendText(`：${text}`);
 			});
-		}),
-	untrustedModule: '非信任模块',
-	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
-		createFragment((frag) => {
-			const p1 = frag.createEl('p');
-			p1.appendText('Sync Engine 检测到一个名为 ');
-			p1.createEl('code', { text: fileName });
-			p1.appendText(' 的已安装模块，该模块从未在当前仓库的 Sync Engine 中注册。');
-			p1.createEl('strong', { text: '请在继续之前查看以下信息：' });
-			const ul = frag
-				.createDiv(
-					'se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-px-2',
-				)
-				.createEl('ul');
-			const li1 = ul.createEl('li');
-			li1.appendText('文件名：');
-			li1.createEl('code', { text: fileName });
-			const li2 = ul.createEl('li');
-			li2.appendText('文件路径：');
-			li2.createEl('code', { text: path });
-			const li3 = ul.createEl('li');
-			li3.appendText('大小：');
-			li3.createEl('code', { text: size });
-			const li4 = ul.createEl('li');
-			li4.appendText('创建时间：');
-			li4.createEl('code', { text: ctime });
-			const li5 = ul.createEl('li');
-			li5.appendText('修改时间：');
-			li5.createEl('code', { text: mtime });
-			const p2 = frag.createEl('p');
-			p2.createEl('strong', {
-				text: '为防止恶意代码执行，Sync Engine 现在需要获得您的明确同意。',
-			});
-			p2.appendText(
-				'如果您确认该模块在您的控制之下，可以选择“配置”并启用它；如果您不知道它来自哪里，可以选择将其删除。关于此警告的详细说明，请参阅 ',
-			);
-			p2.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/zh-Hans/deep-dive/extensibility' },
-				text: '文档页面',
-			});
-			p2.appendText('。');
 		}),
 	update: '更新',
 	updateAvailable: '有可用更新',

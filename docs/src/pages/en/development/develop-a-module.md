@@ -117,7 +117,7 @@ readme: https://example.com/my-module
 
 The metadata can also be an array of `{ id, ...meta }` or a record keyed by entry name, which assigns different metadata to each entry in multi-entry builds. All fields are optional, omitted fields produce no line, and entries without a match get no comment.
 
-When a user installs a module from a local file, Sync Engine parses this comment to prefill module metadata in the editor, see [distribution](./distribution#magic-bytes) for when magic bytes or source metadata is used.
+When a user installs a module from a local file, Sync Engine parses this comment to derive the module metadata, see [distribution](./distribution#magic-bytes) for when magic bytes or source metadata is used.
 
 ## Module Contract
 

@@ -35,7 +35,7 @@ Sync Engine 从最小的数字键到最大的键遍历这个对象，把回调�
 
 当注册在同一层级包含相同的键时，Sync Engine 合并它们的子项。这是这个 API 的关键能力：模块可以扩展一个已有的嵌套分组，而不用替换这个分组或拥有设置页。合并后，原有的父回调仍然负责渲染所有子项。
 
-例如，核心设置可以在 `1000` 注册一个 Features 分组：
+例如，核心设置可以在 `1000` 注册一个功能分组：
 
 ```ts
 {
@@ -138,9 +138,9 @@ this.cleanup.push(removeSettings);
 | 区块     | 优先级 | 内容                                                       |
 | -------- | -----: | ---------------------------------------------------------- |
 | 顶部配置 |    `0` | 后端、模块管理、自动更新、同步策略、冲突解决器。           |
-| 功能     | `1000` | 实时、启动、定时、聚焦同步；实时同步快速模式；非对称存储。 |
-| 控制项   | `2000` | 文件大小、请求并发、请求间隔上限。                         |
-| 其他     | `3000` | 自定义请求头、移动端通知、离线行为、任务和删除确认。       |
+| 功能     | `1000` | 实时、启动、定时、焦点同步；实时同步快速模式；非对称存储。 |
+| 控制     | `2000` | 文件大小、请求并发、请求间隔上限。                         |
+| 杂项     | `3000` | 自定义请求头、移动端通知、离线行为、任务和删除确认。       |
 | 开发     | `4000` | 记录清理、日志导出和模块源页面。                           |
 
 模块贡献的设置在模块加载时加入，模块卸载时移除。两个事件之后设置页都会刷新。
@@ -185,10 +185,10 @@ return settingEntry(() => ({
 
 Sync Engine 当前提供这些标签：
 
-| 标签      | 含义                               |
-| --------- | ---------------------------------- |
-| **Match** | 该设置在所有设备上应保持相同的值。 |
-| **Speed** | 正确的配置可以提升同步速度。       |
+| 标签     | 含义                               |
+| -------- | ---------------------------------- |
+| **匹配** | 该设置在所有设备上应保持相同的值。 |
+| **速度** | 正确的配置可以提升同步速度。       |
 
 设置需要模块专属的解释时，使用自定义 `LabelDefinition`。标签只描述设置；它们不改变设置的值、校验或同步行为。
 
@@ -282,7 +282,7 @@ const label = translate('connected', 'WebDAV');
 const summary = translate('files', { succeeded: 3, failed: 0 });
 ```
 
-普通字符串原样返回。片段（snippet）资源以函数提供值：函数接收带类型的参数并返回最终字符串。富内容用 fragment 资源：函数接收带类型的参数并返回 `DocumentFragment`。用 `createFragment()`（Obsidian 全局）和 `createEl()`、`createDiv()`、`appendText()` 等 DOM 辅助函数构建 fragment。语言需要复数形式时，在 snippet 和 fragment 里使用 `Intl.PluralRules`。
+普通字符串原样返回。snippet 资源以函数提供值：函数接收带类型的参数并返回最终字符串。富内容用 fragment 资源：函数接收带类型的参数并返回 `DocumentFragment`。用 `createFragment()`（Obsidian 全局）和 `createEl()`、`createDiv()`、`appendText()` 等 DOM 辅助函数构建 fragment。语言需要复数形式时，在 snippet 和 fragment 里使用 `Intl.PluralRules`。
 
 `ObsidianLanguageCode`、`Fragment`、`Snippet`、`TranslationResource` 和 `Translate` 都是 SDK 导出。核心完整的英文资源表见 [Sync Engine core English translations](https://github.com/hesprs/sync-engine/blob/main/packages/plugin/src/en.ts)。
 

@@ -77,10 +77,10 @@ type AugmentedModuleMeta = ModuleMeta & { enabled: boolean; source: string; icon
 3. 移除不以 `.js` 结尾的文件夹和文件。
 4. 把每个 JavaScript 文件名解析为模块 ID。
 5. 把每个文件与本地 IndexedDB 存储中的元数据匹配。
-6. 对没有存储元数据的文件（不可信模块）打开警告弹窗。
+6. 自动安装没有存储元数据的文件。
 7. 只有存储元数据为 `enabled: true` 的模块才会加载。
 
-不可信的模块不会被自动加载。用户可以通过警告弹窗配置它或删除它。配置不可信模块会为本地文件创建元数据。启用完整性验证时，integrity 值从文件计算。
+没有存储元数据的文件会被自动安装。元数据从文件的 magic bytes 推导，缺失字段使用默认值，integrity 值从文件计算，模块默认禁用。它在用户启用之前不会被加载，之后可以在[模块管理界面](./module-management-page)中编辑或删除。
 
 加载已安装的产物时，加载器通过 vault 的 `DataAdapter` 读取它。下载过程中，它可能改为直接验证获取到的响应文本。完整性检查未被用户禁用时，它对模块文本计算 SHA-256，并与存储值比较。
 
@@ -108,11 +108,11 @@ type AugmentedModuleMeta = ModuleMeta & { enabled: boolean; source: string; icon
 
 ### 从文件安装
 
-模块管理菜单还提供 **Install module from file**。用户选择一个 `.js` 或 `.mjs` 文件（其他扩展名以通知拒绝），模块编辑器打开，元数据从文件的 magic bytes 预填，即在构建期嵌入的、位于文件开头的 `key: value` 行形式的 `/*! ... */` 注释。保存时，`installModule()` 把文件写入模块目录，存储确认过的元数据，并在模块启用时加载。这条路径不涉及任何模块源。
+模块管理菜单还提供 **从文件安装模块**。用户选择一个 `.js` 或 `.mjs` 文件（其他扩展名以通知拒绝）。`installModuleFromCode()` 从文件的 magic bytes 推导元数据，即在构建期嵌入的、位于文件开头的 `key: value` 行形式的 `/*! ... */` 注释，把文件写入模块目录，存储元数据，并在模块启用时加载。这条路径不涉及任何模块源。
 
 ### 从代码安装
 
-模块管理菜单还提供 **Install module from code**。用户把模块代码粘贴进代码输入弹窗，模块编辑器打开，元数据从代码的 magic bytes 预填。保存时，`installModule()` 把代码写入模块目录，存储确认过的元数据，并在模块启用时加载。这条路径不涉及任何模块源。
+模块管理菜单还提供 **从代码安装模块**。用户把模块代码粘贴进代码输入弹窗。`installModuleFromCode()` 从代码的 magic bytes 推导元数据，把代码写入模块目录，存储元数据，并在模块启用时加载。这条路径不涉及任何模块源。
 
 ### 自动更新
 

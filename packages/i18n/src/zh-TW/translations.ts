@@ -53,7 +53,6 @@ const zhTW: Translations = {
 		'Sync Engine 會記錄同步狀態以處理本地與遠端檔案之間的變更。此選項允許您選擇性地清除紀錄。警告：此操作可能會導致資料遺失。',
 	completed: '已完成',
 	completedNoop: '已是最新狀態',
-	configure: '設定',
 	confirm: '確認',
 	confirmDeleteDescription: (count) =>
 		`請確認將被刪除的 ${count} 個本地檔案，未勾選的檔案將會重新上傳。`,
@@ -85,7 +84,6 @@ const zhTW: Translations = {
 	customHeaders: '自訂標頭',
 	customHeadersDescription:
 		'新增每次請求時要包含的自訂標頭，可選擇以明文儲存或儲存於 Obsidian 金鑰圈中。',
-	delete: '刪除',
 	deleteModule: '刪除模組',
 	description: '說明',
 	descriptionDescription: '設定顯示於模組卡片中的說明文字。',
@@ -202,6 +200,7 @@ const zhTW: Translations = {
 	moduleSourcePlaceholder: 'https://example.com/modules.json',
 	moduleSources: '模組來源',
 	moduleSourcesDescription: '編輯取得模組目錄的模組來源，以便安裝第三方 Sync Engine 模組。',
+	moduleXInstalled: (x) => `模組 “${x}” 已安裝。`,
 	moveLocal: '移動本地',
 	moveRemote: '移動遠端',
 	name: '名稱',
@@ -275,7 +274,7 @@ const zhTW: Translations = {
 	syncProgress: '同步進度',
 	syncStrategy: '同步策略',
 	syncStrategyDescription:
-		'根據 Glob 規則為不同的檔案設定不同的同步策略。當有多個規則配對至同一個檔案時，以最後一個規則為準。',
+		'使用 Glob 規則為不同的檔案設定不同的同步策略，或將某些檔案和資料夾排除在同步之外。',
 	syncStrategyNotInstalled: (strategy) => `同步策略 “${strategy}” 未安裝！`,
 	syncStrategyTips: () =>
 		createFragment((frag) => {
@@ -328,47 +327,6 @@ const zhTW: Translations = {
 				li.createEl('strong', { text: key });
 				li.appendText(`：${text}`);
 			});
-		}),
-	untrustedModule: '非信任模組',
-	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
-		createFragment((frag) => {
-			const p1 = frag.createEl('p');
-			p1.appendText('Sync Engine 偵測到一個已安裝的模組，名為 ');
-			p1.createEl('code', { text: fileName });
-			p1.appendText('，此模組從未在此庫中向 Sync Engine 註冊。');
-			p1.createEl('strong', { text: '請在繼續之前檢閱以下資訊：' });
-			const ul = frag
-				.createDiv(
-					'se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-px-2',
-				)
-				.createEl('ul');
-			const li1 = ul.createEl('li');
-			li1.appendText('檔案名稱：');
-			li1.createEl('code', { text: fileName });
-			const li2 = ul.createEl('li');
-			li2.appendText('檔案路徑：');
-			li2.createEl('code', { text: path });
-			const li3 = ul.createEl('li');
-			li3.appendText('大小：');
-			li3.createEl('code', { text: size });
-			const li4 = ul.createEl('li');
-			li4.appendText('建立時間：');
-			li4.createEl('code', { text: ctime });
-			const li5 = ul.createEl('li');
-			li5.appendText('修改時間：');
-			li5.createEl('code', { text: mtime });
-			const p2 = frag.createEl('p');
-			p2.createEl('strong', {
-				text: '為了防止惡意程式碼執行，Sync Engine 現需取得您的明確同意。',
-			});
-			p2.appendText(
-				'若該模組在您的控制範圍內，您可以選擇「設定」並將其啟用；若您不確定其來源，亦可將其刪除。關於此警告的詳細說明，請參閱 ',
-			);
-			p2.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
-				text: '文件頁面',
-			});
-			p2.appendText('。');
 		}),
 	update: '更新',
 	updateAvailable: '有可用更新',

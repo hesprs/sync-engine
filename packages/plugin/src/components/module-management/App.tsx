@@ -1,5 +1,4 @@
 import CodeInputModal from '../CodeInputModal';
-import ModuleEditorModal from '../ModuleEditorModal';
 import Card from './Card';
 import { MODULE_EXTENSION } from '@/modules/Extensibility';
 import { ExtraButtonComponent, Menu, Notice, prepareFuzzySearch, SearchComponent } from 'obsidian';
@@ -159,28 +158,18 @@ export default function App(props: {
 							pickFile(
 								item.setIcon('package').setTitle(t('installModuleFromFile')),
 								async (fileObj) => {
-									let extension: string;
-									if (fileObj.name.endsWith(MODULE_EXTENSION))
-										extension = MODULE_EXTENSION;
-									else if (fileObj.name.endsWith(ALTERNATIVE_MODULE_EXTENSION))
-										extension = ALTERNATIVE_MODULE_EXTENSION;
-									else {
+									if (
+										!fileObj.name.endsWith(MODULE_EXTENSION) &&
+										!fileObj.name.endsWith(ALTERNATIVE_MODULE_EXTENSION)
+									) {
 										new Notice(t('moduleExtensionWarning'));
 										return;
 									}
-									const file = await fileObj.text();
-									new ModuleEditorModal(props.ctx, {
-										file,
-										initial: {
-											id: fileObj.name
-												.slice(0, -extension.length)
-												.normalize('NFC'),
-										},
-										onSave: async (meta) => {
-											await props.ctx.installModule(meta, file);
-											syncSnapshots();
-										},
-									}).open();
+									const { name } = await fileObj
+										.text()
+										.then(props.ctx.installModuleFromCode);
+									syncSnapshots();
+									new Notice(t('moduleXInstalled', name));
 								},
 							),
 						)
@@ -188,17 +177,14 @@ export default function App(props: {
 							item
 								.setIcon('code-xml')
 								.setTitle(t('installModuleFromCode'))
-								.onClick(() => {
-									new CodeInputModal(props.ctx, (file) =>
-										new ModuleEditorModal(props.ctx, {
-											file,
-											onSave: async (meta) => {
-												await props.ctx.installModule(meta, file);
-												syncSnapshots();
-											},
-										}).open(),
-									).open();
-								}),
+								.onClick(() =>
+									new CodeInputModal(props.ctx, async (code) => {
+										const { name } =
+											await props.ctx.installModuleFromCode(code);
+										syncSnapshots();
+										new Notice(t('moduleXInstalled', name));
+									}).open(),
+								),
 						)
 						.addItem((item) =>
 							item

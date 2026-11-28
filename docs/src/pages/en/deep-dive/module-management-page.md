@@ -14,7 +14,7 @@ Module source URLs are edited separately on **Settings > Sync Engine > Developme
 
 The search field uses Obsidian's `SearchComponent`. An empty query sorts modules alphabetically by module ID. A non-empty query uses `prepareFuzzySearch()` against module names and descriptions, then sorts by match score and module ID.
 
-**Install module from file** opens a file picker that accepts `.js` and `.mjs` files; other extensions are rejected with a notice. The chosen file opens the module editor with metadata prefilled from the file's magic bytes, see [extensibility: install from file](./extensibility#install-from-file). **Install module from code** opens a code input modal where the user pastes module code, then follows the same editor flow.
+**Install module from file** opens a file picker that accepts `.js` and `.mjs` files; other extensions are rejected with a notice. The chosen file installs immediately with metadata derived from its magic bytes, and a notice confirms the installation, see [extensibility: install from file](./extensibility#install-from-file). **Install module from code** opens a code input modal where the user pastes module code; the code follows the same install flow.
 
 ## Module Cards
 

@@ -67,7 +67,7 @@
 | `noticeStatusOnMobile` | `boolean` |
 | `avoidAutoSyncWhenOffline` | `boolean` |
 | `startupSync` | `TogglableValue`，延迟（毫秒） |
-| `focusSync` | `TogglableValue`，聚焦同步的最小间隔（毫秒） |
+| `focusSync` | `TogglableValue`，焦点同步的最小间隔（毫秒） |
 | `scheduledSync` | `TogglableValue`，间隔（毫秒） |
 | `realtimeSync` | `TogglableValue`，防抖延迟（毫秒） |
 | `maxRequestConcurrency` | `TogglableValue` |
