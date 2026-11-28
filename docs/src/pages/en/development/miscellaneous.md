@@ -16,6 +16,8 @@
 | `settingEntry` | Combines a parent setting definition with nested setting definitions. See [Settings and UI](./settings-and-ui#nested-setting-registration). |
 | `reactivelyValidate` | Attaches reactive validation to a setting text input. See [Settings and UI](./settings-and-ui#reactive-input-validation). |
 | `generateEditableList` | Generates an editable list setting definition backed by an ephemeral draft store. See [Settings and UI](./settings-and-ui#editable-lists). |
+| `NONE_STRATEGY` | Strategy name (`'none'`) representing excluded paths in `syncStrategy` rules. |
+| `prepareGlobMatch` | Compiles `syncStrategy` glob rules into a path matcher returning `{ strategy, advance? }`. |
 
 ### `/dev` runtime exports
 
@@ -40,14 +42,14 @@
 | Core data | `Binary`, `MaybePromise`, `StringKV`, `Progress`, `FileStat`, `FolderStat`, `Stat`, `StatsMap`, `RecordStat`, `RecordStatsMap` |
 | Filesystem | `RootFs`, `WrappedFs`, `Fs`, `WriteAtom`, `DeleteAtom`, `MoveAtom`, `MkdirAtom`, `InputAtom`, `CustomAtom`, `OutputAtom`, `ListOptions`, `ListReporter`, `OptimizerInput`, `OptimizerOutput`, `BatchOptimizer` |
 | Registration | `FsWrapperEntry`, `RemoteFsEntry`, `RemoteRequestMiddlewareEntry`, `LocalRequestMiddlewareEntry`, `TriggerEntry`, `DeciderEntry`, `OptimizerEntry`, `SettingEntry`, `CallableOrObjectTree`, `LabelDefinition`, `ConflictResolverEntry`, `Request` |
-| Sync | `TaskNames`, `Task`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `SyncOptions`, `RemoteLister`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason` |
+| Sync | `TaskNames`, `Task`, `AddRecord`, `RemoveRecord`, `Download`, `Upload`, `CreateLocalDir`, `CreateRemoteDir`, `RemoveLocal`, `RemoveRemote`, `MoveLocal`, `MoveRemote`, `ResolveConflict`, `TaskFactory`, `DeciderInput`, `Decider`, `SyncOptions`, `RemoteLister`, `ConflictResolver`, `ConflictResolverPayload`, `SyncTerminateReason`, `GlobStrategy`, `GlobMatchResult` |
 | Storage | `RecordStore`, `StoreAsync`, `StoreSync`, `StoreOperations`, `DatabaseAsync`, `DatabaseSync` |
-| Modules | `ModuleMeta`, `AugmentedModuleMeta` |
+| Modules | `ModuleMeta`, `AugmentedModuleMeta`, `ModuleStatus`, `StatusLevel` |
 | Request | `VaultRequest`, `RequestParam`, `RequestResponse` (the response type returned by `Request`) |
 | Internationalization | `ObsidianLanguageCode`, `Fragment`, `Snippet`, `TranslationResource`, `Translate` |
 | Other | `ExistingMemoryDB` |
 
-Internal supporting types can appear in exported signatures but are not standalone root exports. They include `TogglableValue`, `GlobStrategy`, `GlobMatchResult`, `Infras`, `BaseTaskOptions`, `GenericOptions`, `WithRemoteFileStat`, `WithLocalFileStat`, `WithRemoteFolderStat`, `WithLocalFolderStat`, `WithLocalStat`, `WithRemoteStat`, `WithBothStats`, `WithBothFileStats`, `WithNewKey`, `TaskOptionsMap`, `TaskInfo`, `FailedTaskInfo`, `DeleteConfirmReturn`, and `CustomHeaders`.
+Internal supporting types can appear in exported signatures but are not standalone root exports. They include `TogglableValue`, `Infras`, `BaseTaskOptions`, `GenericOptions`, `WithRemoteFileStat`, `WithLocalFileStat`, `WithRemoteFolderStat`, `WithLocalFolderStat`, `WithLocalStat`, `WithRemoteStat`, `WithBothStats`, `WithBothFileStats`, `WithNewKey`, `TaskOptionsMap`, `TaskInfo`, `FailedTaskInfo`, `DeleteConfirmReturn`, and `CustomHeaders`.
 
 ## Settings
 
@@ -125,17 +127,19 @@ These Context members are not commonly used by modules. Explore the source code 
 
 ### UI and Observability
 
-| Member                 | Purpose                                   |
-| ---------------------- | ----------------------------------------- |
-| `executionProgress`    | Reactive `Progress` for task execution.   |
-| `walkProgress`         | Reactive `Progress` for remote traversal. |
-| `syncStage`            | Reactive current sync stage.              |
-| `showProgress()`       | Opens progress UI.                        |
-| `hideProgress()`       | Hides progress UI.                        |
-| `getLogs()`            | Returns formatted current logs.           |
-| `exportLogs()`         | Exports logs to vault file.               |
-| `startScheduledSync()` | Starts interval sync.                     |
-| `stopScheduledSync()`  | Stops interval sync.                      |
+| Member                         | Purpose                                                      |
+| ------------------------------ | ------------------------------------------------------------ |
+| `executionProgress`            | Reactive `Progress` for task execution.                      |
+| `walkProgress`                 | Reactive `Progress` for remote traversal.                    |
+| `syncStage`                    | Reactive current sync stage.                                 |
+| `showProgress()`               | Opens progress UI.                                           |
+| `hideProgress()`               | Hides progress UI.                                           |
+| `getLogs()`                    | Returns formatted current logs.                              |
+| `exportLogs()`                 | Exports logs to vault file.                                  |
+| `setModuleStatus(id, status?)` | Sets the sync icon status badge.                             |
+| `getModuleStatus(id)`          | Returns the current reported `ModuleStatus` for a module ID. |
+| `startScheduledSync()`         | Starts interval sync.                                        |
+| `stopScheduledSync()`          | Stops interval sync.                                         |
 
 ### Core and Host
 

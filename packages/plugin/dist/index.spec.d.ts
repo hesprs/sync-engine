@@ -93,6 +93,8 @@ type GlobMatchResult = {
   strategy: string;
   advance?: boolean;
 };
+export declare const NONE_STRATEGY = "none";
+export declare function prepareGlobMatch(rules: Array<GlobStrategy>): (path: string) => GlobMatchResult;
 type SyncTerminateReason = {
   result: 'cancelled';
 } | {
@@ -724,6 +726,11 @@ declare class Bootstrap {
   readonly dispose: () => void;
 }
 type SyncStage = 'none' | 'walkingRemote' | 'awaitingConfirmation' | 'executing' | 'completed' | 'completedNoop' | 'cancelled' | 'failed';
+type StatusLevel = 'ok' | 'warning' | 'error';
+type ModuleStatus = {
+  level: StatusLevel;
+  message?: string;
+};
 declare class Observability {
   private readonly ctx;
   private lastSyncTime;
@@ -733,6 +740,10 @@ declare class Observability {
   private readonly walkProgress;
   private readonly executionProgress;
   private readonly cleanupCallbacks;
+  private readonly moduleStatuses;
+  private startIconEl?;
+  private statusIconEl?;
+  private statusEl?;
   private readonly t;
   private readonly progressText;
   readonly settings: {
@@ -761,6 +772,12 @@ declare class Observability {
     getLogs: () => string;
     app: App;
   });
+  readonly setModuleStatus: (id: string, status?: ModuleStatus) => (() => void);
+  readonly getModuleStatus: (id: string) => ModuleStatus | undefined;
+  private computeBadge;
+  private readonly updateAllIcons;
+  private readonly cleanupMobileHeaderIcons;
+  private readonly updateMobileHeaderIcons;
   readonly start: () => void;
   private readonly setupStatus;
   private readonly setupCommands;
@@ -769,6 +786,8 @@ declare class Observability {
   root: {
     executionProgress: Ref<Progress<TaskInfo>>;
     exportLogs: () => Promise<void>;
+    getModuleStatus: (id: string) => ModuleStatus | undefined;
+    setModuleStatus: (id: string, status?: ModuleStatus) => (() => void);
     syncStage: Ref<SyncStage>;
     walkProgress: Ref<Progress>;
   };
@@ -915,4 +934,4 @@ export declare function readWithSize(fs: Fs, key: string, stat: FileStat): Promi
 export declare function writeWithSize(fs: Fs, key: string, value: MaybePromise<Binary | ReadableStream<Binary>>, stat: FileStat): MaybePromise<string>;
 export declare function digOriginal(wrapped: Fs): RootFs;
 export type SelectFromContext<O extends object> = Context extends O ? O : never;
-export { type AddRecord, type AugmentedModuleMeta, type BatchOptimizer, type Binary, type CallableOrObjectTree, type ConflictResolver, type ConflictResolverEntry, type ConflictResolverPayload, type Context, type CreateLocalDir, type CreateRemoteDir, type CustomAtom, type DatabaseAsync, type DatabaseSync, type Decider, type DeciderEntry, type DeciderInput, type DeleteAtom, type Dispatch, type Download, type Events, type ExistingMemoryDB, type FileStat, type FolderStat, type Fragment, type Fs, type FsWrapperEntry, type InputAtom, type LabelDefinition, type ListOptions, type ListReporter, type LocalRequestMiddlewareEntry, type MaybePromise, type MkdirAtom, type ModuleMeta, type MoveAtom, type MoveLocal, type MoveRemote, OS, type ObsidianLanguageCode, type On, type OptimizerEntry, type OptimizerInput, type OptimizerOutput, type OutputAtom, type Progress, type RecordStat, type RecordStatsMap, type RecordStore, type RemoteFsEntry, type RemoteLister, type RemoteRequestMiddlewareEntry, type RemoveLocal, type RemoveRecord, type RemoveRemote, type Request, type RequestParam, type RequestResponse, type ResolveConflict, type RootFs, type SettingEntry, type Settings, type Snippet, type Stat, type StatsMap, type StoreAsync, type StoreOperations, type StoreSync, type StringKV, type SyncOptions, type SyncTerminateReason, type Task, type TaskFactory, type TaskNames, type Translate, type TranslationResource, type Translations, type TriggerEntry, type Upload, type VaultRequest, type WrappedFs, type WriteAtom, chunkSize, concurrency, prefixWrapper, request, setNeedMigration, streamThreshold };
+export { type AddRecord, type AugmentedModuleMeta, type BatchOptimizer, type Binary, type CallableOrObjectTree, type ConflictResolver, type ConflictResolverEntry, type ConflictResolverPayload, type Context, type CreateLocalDir, type CreateRemoteDir, type CustomAtom, type DatabaseAsync, type DatabaseSync, type Decider, type DeciderEntry, type DeciderInput, type DeleteAtom, type Dispatch, type Download, type Events, type ExistingMemoryDB, type FileStat, type FolderStat, type Fragment, type Fs, type FsWrapperEntry, type GlobMatchResult, type GlobStrategy, type InputAtom, type LabelDefinition, type ListOptions, type ListReporter, type LocalRequestMiddlewareEntry, type MaybePromise, type MkdirAtom, type ModuleMeta, type ModuleStatus, type MoveAtom, type MoveLocal, type MoveRemote, OS, type ObsidianLanguageCode, type On, type OptimizerEntry, type OptimizerInput, type OptimizerOutput, type OutputAtom, type Progress, type RecordStat, type RecordStatsMap, type RecordStore, type RemoteFsEntry, type RemoteLister, type RemoteRequestMiddlewareEntry, type RemoveLocal, type RemoveRecord, type RemoveRemote, type Request, type RequestParam, type RequestResponse, type ResolveConflict, type RootFs, type SettingEntry, type Settings, type Snippet, type Stat, type StatsMap, type StatusLevel, type StoreAsync, type StoreOperations, type StoreSync, type StringKV, type SyncOptions, type SyncTerminateReason, type Task, type TaskFactory, type TaskNames, type Translate, type TranslationResource, type Translations, type TriggerEntry, type Upload, type VaultRequest, type WrappedFs, type WriteAtom, chunkSize, concurrency, prefixWrapper, request, setNeedMigration, streamThreshold };

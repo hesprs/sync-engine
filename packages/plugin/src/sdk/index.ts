@@ -19,6 +19,7 @@ export {
 } from '@/utils/pipe';
 export { request, OS } from '@/utils/native';
 export { settingEntry, reactivelyValidate, generateEditableList } from '@/settings/utils';
+export { NONE_STRATEGY, prepareGlobMatch } from '@/utils/glob-match';
 
 export type {
 	Translate,
@@ -36,12 +37,14 @@ export type {
 	StatsMap,
 	FileStat,
 	FolderStat,
+	GlobStrategy,
 	Progress,
 	Stat,
 	MaybePromise,
 	Binary,
 	StringKV,
 } from '@/types';
+export type { GlobMatchResult } from '@/utils/glob-match';
 export type {
 	ConflictResolver,
 	ConflictResolverPayload,
@@ -78,6 +81,7 @@ export type { RecordStore } from '@/modules/Storage';
 export type { ModuleMeta, AugmentedModuleMeta } from '@/modules/Extensibility';
 export type { SyncTerminateReason, SyncOptions, RemoteLister } from '@/modules/Sync';
 export type { ExistingMemoryDB } from '@/modules/Bootstrap';
+export type { ModuleStatus, StatusLevel } from '@/modules/Observability';
 export type * from '@/fs/interface';
 export type { VaultRequest } from '@/fs';
 export type { Request, RequestParam, RequestResponse } from '@/utils/native';
