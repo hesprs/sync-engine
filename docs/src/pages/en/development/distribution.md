@@ -48,7 +48,7 @@ The `id` field cannot contain `< > : " / \ | ? *`. There is no character restric
 Module metadata can reach users through two channels:
 
 - **Source metadata**: when a module is downloaded from a source, the entry from the source JSON is authoritative. Magic bytes in the downloaded file are ignored.
-- **Magic bytes**: when a user installs a module from a local file through **Install module from file**, there is no source JSON. Sync Engine parses the `/*! ... */` comment at the top of the file and prefills the module editor with it. The user reviews and confirms the metadata before it is stored.
+- **Magic bytes**: when a user installs a module locally through **Install module from file** or **Install module from code**, there is no source JSON. Sync Engine parses the `/*! ... */` comment at the top of the code and uses it as the module metadata.
 
 Build-time embedding of magic bytes with the [Tsdown plugin](./develop-a-module#magic-bytes) is therefore mainly useful for modules distributed as standalone files. If your module is distributed through a source, keep metadata in the source JSON and you can omit magic bytes entirely.
 

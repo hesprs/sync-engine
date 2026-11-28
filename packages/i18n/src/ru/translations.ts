@@ -82,7 +82,6 @@ const ru: Translations = {
 		'Sync Engine записывает состояния синхронизации для разрешения операций между локальными и удалёнными файлами. Внимание: очистка записей повлияет на решения синхронизации.',
 	completed: 'Завершено',
 	completedNoop: 'Уже синхронизировано',
-	configure: 'Настроить',
 	confirm: 'Подтвердить',
 	confirmDeleteDescription: (count) =>
 		`Подтвердите удаление ${count} локальных файлов; невыбранные файлы будут повторно отправлены на удалённое хранилище.`,
@@ -119,7 +118,6 @@ const ru: Translations = {
 	customHeaders: 'Пользовательские заголовки',
 	customHeadersDescription:
 		'Добавьте пользовательские заголовки, которые будут отправляться с каждым запросом. Их можно хранить в открытом виде или в связке ключей Obsidian.',
-	delete: 'Удалить',
 	deleteModule: 'Удалить модуль',
 	description: 'Описание',
 	descriptionDescription: 'Укажите текст описания, отображаемый в карточке модуля.',
@@ -242,6 +240,7 @@ const ru: Translations = {
 	moduleSources: 'Источники модулей',
 	moduleSourcesDescription:
 		'Редактируйте источники модулей, из которых формируется каталог. Это позволяет устанавливать сторонние модули Sync Engine.',
+	moduleXInstalled: (x) => `Модуль «${x}» установлен.`,
 	moveLocal: 'Переместить локальный файл',
 	moveRemote: 'Переместить удалённый файл',
 	name: 'Название',
@@ -322,7 +321,7 @@ const ru: Translations = {
 	syncProgress: 'Прогресс синхронизации',
 	syncStrategy: 'Стратегия синхронизации',
 	syncStrategyDescription:
-		'Настройте разные стратегии синхронизации для разных файлов на основе правил Glob. Если с одним файлом совпадают несколько правил, применяется последнее из них.',
+		'Используйте правила Glob для настройки разных стратегий синхронизации для разных файлов или исключения отдельных файлов и папок из синхронизации.',
 	syncStrategyNotInstalled: (strategy) => `Стратегия синхронизации «${strategy}» не установлена!`,
 	syncStrategyTips: () =>
 		createFragment((frag) => {
@@ -388,49 +387,6 @@ const ru: Translations = {
 				li.createEl('strong', { text: key });
 				li.appendText(`: ${text}`);
 			});
-		}),
-	untrustedModule: 'Модуль из недоверенного источника',
-	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
-		createFragment((frag) => {
-			const p1 = frag.createEl('p');
-			p1.appendText('Sync Engine обнаружил установленный модуль с именем ');
-			p1.createEl('code', { text: fileName });
-			p1.appendText(', который никогда не регистрировался в Sync Engine в этом хранилище. ');
-			p1.createEl('strong', {
-				text: 'Пожалуйста, ознакомьтесь со следующей информацией перед продолжением:',
-			});
-			const ul = frag
-				.createDiv(
-					'se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-px-2',
-				)
-				.createEl('ul');
-			const li1 = ul.createEl('li');
-			li1.appendText('Имя файла: ');
-			li1.createEl('code', { text: fileName });
-			const li2 = ul.createEl('li');
-			li2.appendText('Путь к файлу: ');
-			li2.createEl('code', { text: path });
-			const li3 = ul.createEl('li');
-			li3.appendText('Размер: ');
-			li3.createEl('code', { text: size });
-			const li4 = ul.createEl('li');
-			li4.appendText('Дата создания: ');
-			li4.createEl('code', { text: ctime });
-			const li5 = ul.createEl('li');
-			li5.appendText('Дата изменения: ');
-			li5.createEl('code', { text: mtime });
-			const p2 = frag.createEl('p');
-			p2.createEl('strong', {
-				text: 'Для предотвращения выполнения вредоносного кода Sync Engine теперь требуется ваше явное согласие. ',
-			});
-			p2.appendText(
-				'Вы можете выбрать «Настроить» и включить его, если вы контролируете этот модуль, или удалить, если не знаете, откуда он. Пояснение к этому предупреждению см. в ',
-			);
-			p2.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
-				text: 'документации',
-			});
-			p2.appendText('.');
 		}),
 	update: 'Обновить',
 	updateAvailable: 'Доступно обновление',

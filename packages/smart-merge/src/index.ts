@@ -34,6 +34,7 @@ export default class SmartMerge {
 			getNamespace: Context['getNamespace'];
 			registerI18n: (locale: ObsidianLanguageCode, resource: TranslationResource) => void;
 			registerRemoteFsWrapper: (entry: FsWrapperEntry) => () => void;
+			registerLocalFsWrapper: (entry: FsWrapperEntry) => () => void;
 			registerConflictResolver: (id: string, entry: ConflictResolverEntry) => () => void;
 			registerSetting: (entry: SettingEntry) => () => void;
 		}>,
@@ -62,6 +63,7 @@ export default class SmartMerge {
 			registerSetting,
 			saveSettings,
 			translate,
+			registerLocalFsWrapper,
 		} = this.ctx;
 		this.cleanup.push(
 			registerRemoteFsWrapper({
@@ -69,6 +71,14 @@ export default class SmartMerge {
 					smartMergeBaseTextWrapper(
 						fs,
 						indexedDB.getStore(`base-text-${getNamespace(undefined, fs)}`),
+					),
+				priority: 20_098,
+			}),
+			registerLocalFsWrapper({
+				apply: (fs) =>
+					smartMergeBaseTextWrapper(
+						fs,
+						indexedDB.getStore(`base-text-${getNamespace(fs)}`),
 					),
 				priority: 20_098,
 			}),

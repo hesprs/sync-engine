@@ -31,7 +31,7 @@
 
 **启动速度**：
 
-在测试机上彻底杀掉 Obsidian Electron 应用并重启 5 次，每次记录 Obsidian 设置 -> General -> Advanced -> Notify if startup takes longer than expected -> 秒表图标 -> 被测插件的启动时间（毫秒）。然后取 5 次记录的平均值。
+在测试机上彻底杀掉 Obsidian Electron 应用并重启 5 次，每次记录 Obsidian 设置 -> 关于 -> 高级 -> 应用启动缓慢时进行通知 -> 秒表图标 -> 被测插件的启动时间（毫秒）。然后取 5 次记录的平均值。
 
 **同步隐藏文件**：插件能否（或能否配置为）同步以 `.` 开头的文件夹中的任意文件。例如 `.obsidian/` 目录。（Obsidian 的 `vault.*` API 看不到这些文件，只有 `vault.adapter.*` 可以）
 

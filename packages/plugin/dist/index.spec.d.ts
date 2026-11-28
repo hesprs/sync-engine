@@ -288,113 +288,6 @@ type FileTreeTranslations = {
   selectAll: string;
   xSelected: Snippet<number>;
 } & Record<TaskNames, string>;
-type ModuleInstance = {
-  moduleSettings: object;
-  dispose?: () => void;
-  start?: () => void;
-};
-type ModuleCtor = new (ctx: object) => ModuleInstance;
-type ModuleMeta = {
-  id: string;
-  name: string;
-  version: string;
-  description: string;
-  main: string;
-  icon?: string;
-  minPluginVersion?: string;
-  readme?: string;
-  integrity: string;
-};
-type AugmentedModuleMeta = ModuleMeta & {
-  enabled: boolean;
-  source: string;
-  icon: string;
-};
-declare class Extensibility {
-  private readonly ctx;
-  private readonly moduleDir;
-  private readonly sourceCache;
-  private readonly discoveredModules;
-  private readonly loadedModules;
-  private readonly moduleStore;
-  private autoUpdateTimeout?;
-  readonly settings: {
-    moduleSources: Array<string>;
-    moduleAutoUpdate: boolean;
-    modules: Record<string, object>;
-  };
-  readonly i18n: {
-    failedToLoadModule: Snippet<string>;
-    failedToDownloadModule: Snippet<string>;
-    failedToFetchSource: Snippet<string>;
-    discoveredModules: Snippet<{
-      module: number;
-      source: number;
-    }>;
-    integrityCheckFailed: string;
-  };
-  readonly events: {
-    moduleLoaded: AugmentedModuleMeta;
-    moduleUnloaded: string;
-  };
-  constructor(ctx: {
-    app: App;
-    __addModule__: Context['__addModule__'];
-    __getModule__: Context['__getModule__'];
-    dispatch: Dispatch<Events>;
-    translate: Translate<Translations>;
-    allModules: Set<General$1>;
-    isIdle: Ref<boolean>;
-    saveSettings: () => Promise<void>;
-    indexedDB: DatabaseAsync<Record<string, AugmentedModuleMeta>>;
-    manifest: PluginManifest;
-  });
-  readonly start: () => void;
-  private readonly createOperationFactory;
-  private readonly loadAllModules;
-  private readonly loadModule;
-  private readonly unloadModule;
-  private readonly installModule;
-  private readonly downloadModule;
-  private readonly deleteModule;
-  private readonly fetchSources;
-  private readonly updateModules;
-  private readonly updateModuleMeta;
-  private readonly enableModule;
-  private readonly disableModule;
-  private readonly getModulePath;
-  private readonly parseModulePath;
-  readonly dispose: () => void;
-  readonly root: {
-    deleteModule: (id: string) => Promise<void>;
-    disableModule: (id: string) => void;
-    discoveredModules: Map<string, AugmentedModuleMeta>;
-    downloadModule: (meta: AugmentedModuleMeta, waitIdle?: boolean) => Promise<void>;
-    enableModule: (id: string) => Promise<void>;
-    fetchSources: (manual?: boolean) => Promise<AugmentedModuleMeta[]>;
-    installModule: (meta: AugmentedModuleMeta, module: string) => Promise<void>;
-    loadAllModules: () => Promise<void>;
-    loadModule: (meta: AugmentedModuleMeta, start?: boolean, module?: string) => Promise<void>;
-    loadedModules: Map<string, ModuleCtor>;
-    pluginOutdated: boolean;
-    unloadModule: (id: string) => void;
-    updateModuleMeta: (meta: AugmentedModuleMeta) => Promise<void>;
-    updateModules: () => Promise<void>;
-  };
-}
-type FileInfo = {
-  path: string;
-  size: string;
-  mtime: string;
-  ctime: string;
-  fileName: string;
-};
-type UntrustedModuleTranslations = {
-  untrustedModule: string;
-  untrustedModuleDescription: Fragment<FileInfo>;
-  delete: string;
-  configure: string;
-};
 type SettingTree = {
   (self: SettingTree): SettingDefinitionItem;
   [key: number]: SettingTree;
@@ -562,6 +455,104 @@ type FeaturesSettingTranslations = {
   asymmetricStorageDescription: Fragment;
   asymmetricStorageWarning: Fragment<boolean>;
 } & MigrationModalTranslations;
+type ModuleInstance = {
+  moduleSettings: object;
+  dispose?: () => void;
+  start?: () => void;
+};
+type ModuleCtor = new (ctx: object) => ModuleInstance;
+type ModuleMeta = {
+  id: string;
+  name: string;
+  version: string;
+  description: string;
+  main: string;
+  icon?: string;
+  minPluginVersion?: string;
+  readme?: string;
+  integrity: string;
+};
+type AugmentedModuleMeta = ModuleMeta & {
+  enabled: boolean;
+  source: string;
+  icon: string;
+};
+declare class Extensibility {
+  private readonly ctx;
+  private readonly moduleDir;
+  private readonly sourceCache;
+  private readonly discoveredModules;
+  private readonly loadedModules;
+  private readonly moduleStore;
+  private autoUpdateTimeout?;
+  readonly settings: {
+    moduleSources: Array<string>;
+    moduleAutoUpdate: boolean;
+    modules: Record<string, object>;
+  };
+  readonly i18n: {
+    failedToLoadModule: Snippet<string>;
+    failedToDownloadModule: Snippet<string>;
+    failedToFetchSource: Snippet<string>;
+    discoveredModules: Snippet<{
+      module: number;
+      source: number;
+    }>;
+    integrityCheckFailed: string;
+  };
+  readonly events: {
+    moduleLoaded: AugmentedModuleMeta;
+    moduleUnloaded: string;
+  };
+  constructor(ctx: {
+    app: App;
+    __addModule__: Context['__addModule__'];
+    __getModule__: Context['__getModule__'];
+    dispatch: Dispatch<Events>;
+    translate: Translate<Translations>;
+    allModules: Set<General$1>;
+    isIdle: Ref<boolean>;
+    saveSettings: () => Promise<void>;
+    indexedDB: DatabaseAsync<Record<string, AugmentedModuleMeta>>;
+    manifest: PluginManifest;
+  });
+  readonly start: () => void;
+  private readonly createOperationFactory;
+  private readonly loadAllModules;
+  private readonly loadModule;
+  private readonly unloadModule;
+  private readonly installModule;
+  private readonly installModuleFromCode;
+  private readonly downloadModule;
+  private readonly deleteModule;
+  private readonly fetchSources;
+  private readonly updateModules;
+  private readonly updateModuleMeta;
+  private readonly enableModule;
+  private readonly disableModule;
+  private readonly readModule;
+  private readonly getModulePath;
+  private readonly parseModulePath;
+  readonly dispose: () => void;
+  readonly root: {
+    deleteModule: (id: string) => Promise<void>;
+    disableModule: (id: string) => void;
+    discoveredModules: Map<string, AugmentedModuleMeta>;
+    downloadModule: (meta: AugmentedModuleMeta, waitIdle?: boolean) => Promise<void>;
+    enableModule: (id: string) => Promise<void>;
+    fetchSources: (manual?: boolean) => Promise<AugmentedModuleMeta[]>;
+    installModule: (meta: AugmentedModuleMeta, module: string) => Promise<void>;
+    installModuleFromCode: (module: string, initial?: Partial<AugmentedModuleMeta>) => Promise<AugmentedModuleMeta>;
+    loadAllModules: () => Promise<void>;
+    loadModule: (meta: AugmentedModuleMeta, start?: boolean, module?: string) => Promise<void>;
+    loadedModules: Map<string, ModuleCtor>;
+    pluginOutdated: boolean;
+    readModule: (id: string) => Promise<string>;
+    unloadModule: (id: string) => void;
+    updateModuleMeta: (meta: AugmentedModuleMeta) => Promise<void>;
+    updateModules: () => Promise<void>;
+  };
+}
 type HeadSettingTranslations = {
   moduleAutoUpdate: string;
   moduleAutoUpdateDescription: string;
@@ -640,6 +631,7 @@ type ModuleManagementTranslations = {
   installModuleFromFile: string;
   installModuleFromCode: string;
   moduleExtensionWarning: Fragment;
+  moduleXInstalled: Snippet<string>;
   refreshSources: string;
 };
 type ModuleEditorTranslations = {
@@ -698,7 +690,7 @@ declare class Bootstrap {
     renameAndKeepBoth: string;
     skip: string;
     dontSync: string;
-  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & UntrustedModuleTranslations & FileTreeTranslations & ModulesTranslations;
+  } & ControlsSettingTranslations & DevelopmentSettingTranslations & FeaturesSettingTranslations & HeadSettingTranslations & MiscellaneousSettingTranslations & FileTreeTranslations & ModulesTranslations;
   readonly settings: {
     maxRequestConcurrency: TogglableValue;
     minRequestInterval: TogglableValue;

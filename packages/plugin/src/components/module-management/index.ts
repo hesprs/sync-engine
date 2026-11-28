@@ -1,7 +1,7 @@
 import App from './App';
 import { render } from 'solid-js/web';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
-import type { Fragment, Translate } from '@/modules/I18n';
+import type { Fragment, Snippet, Translate } from '@/modules/I18n';
 import type { App as ObsidianApp } from 'obsidian';
 
 export type PendingAction = 'delete' | 'disable' | 'download' | 'enable' | 'editInfo';
@@ -28,12 +28,17 @@ export type ModuleManagementTranslations = {
 	installModuleFromFile: string;
 	installModuleFromCode: string;
 	moduleExtensionWarning: Fragment;
+	moduleXInstalled: Snippet<string>;
 	refreshSources: string;
 };
 
 export type ModuleManagementContext = {
-	installModule: (meta: AugmentedModuleMeta, module: string) => Promise<void>;
+	installModuleFromCode: (
+		module: string,
+		initial?: Partial<AugmentedModuleMeta>,
+	) => Promise<AugmentedModuleMeta>;
 	fetchSources: (manual?: boolean) => Promise<Array<AugmentedModuleMeta>>;
+	readModule: (id: string) => Promise<string>;
 	discoveredModules: Map<string, AugmentedModuleMeta>;
 	loadedModules: Map<string, unknown>;
 	downloadModule: (meta: AugmentedModuleMeta) => Promise<void>;

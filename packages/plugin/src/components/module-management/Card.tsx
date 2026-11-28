@@ -17,6 +17,7 @@ export default function Card(props: {
 		| 'translate'
 		| 'updateModuleMeta'
 		| 'app'
+		| 'readModule'
 	>;
 	upstream?: AugmentedModuleMeta;
 	canonical: AugmentedModuleMeta;

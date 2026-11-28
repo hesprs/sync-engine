@@ -35,7 +35,6 @@ import type {
 } from './Registrar';
 import type { Events, Translations } from '@';
 import type { FileTreeTranslations } from '@/components/file-tree';
-import type { UntrustedModuleTranslations } from '@/components/UntrustedModuleModal';
 import type { BatchOptimizer } from '@/fs';
 import type { ControlsSettingTranslations } from '@/settings/controls';
 import type { DevelopmentSettingTranslations } from '@/settings/development';
@@ -84,7 +83,6 @@ export default class Bootstrap {
 		FeaturesSettingTranslations &
 		HeadSettingTranslations &
 		MiscellaneousSettingTranslations &
-		UntrustedModuleTranslations &
 		FileTreeTranslations &
 		ModulesTranslations;
 	declare readonly settings: {

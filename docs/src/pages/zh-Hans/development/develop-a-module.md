@@ -117,7 +117,7 @@ readme: https://example.com/my-module
 
 元数据也可以是 `{ id, ...meta }` 的数组，或以入口名为键的记录，为多入口构建中的每个入口分配不同的元数据。所有字段都是可选的，省略的字段不产生行，没有匹配的入口不产生注释。
 
-用户从本地文件安装模块时，Sync Engine 会解析这段注释来预填编辑器中的模块元数据。magic bytes 与源元数据各自的生效时机见[分发](./distribution#magic-bytes)。
+用户从本地文件安装模块时，Sync Engine 会解析这段注释来推导模块元数据。magic bytes 与源元数据各自的生效时机见[分发](./distribution#magic-bytes)。
 
 ## 模块契约
 

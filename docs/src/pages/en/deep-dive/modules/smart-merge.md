@@ -1,21 +1,20 @@
 # Smart Merge Module
 
-Smart Merge is an optional text conflict resolver for text files. It keeps a base snapshot for each mergeable file, then uses that snapshot to distinguish independent edits from conflicting edits. The module registers a remote file system wrapper, the `smartMerge` conflict resolver, and settings.
+Smart Merge is an optional text conflict resolver for text files. It keeps a base snapshot for each mergeable file, then uses that snapshot to distinguish independent edits from conflicting edits. The module registers local and remote file system wrappers, the `smartMerge` conflict resolver, and settings.
 
 ## Supported Files and Registration
 
 Only paths that end in `.md`, `.markdown`, or `.txt` after trimming and lowercasing are mergeable. Other files are passed through without base-text tracking.
 
-The module wraps the remote file system with priority `20_098`. The wrapper delegates normal file system behavior to the wrapped instance and adds base snapshot maintenance. The resolver is registered under the ID `smartMerge`.
+The module wraps the local and remote file systems with priority `20_098`. Each wrapper delegates normal file system behavior to the wrapped instance and adds base snapshot maintenance. The resolver is registered under the ID `smartMerge`.
 
 ## Base Snapshot Lifecycle
 
 The wrapper receives a `uni-kv` `StoreAsync<string>` for its local/remote file-system namespace. The store maps file keys to plain text snapshots.
 
-- After a successful `write()`, the wrapper stores the written value as text if the path is mergeable. A failed write does not update the snapshot.
-- After a successful `move()`, an existing snapshot moves from the old key to the new key. A move to the same key does not change the store.
-- After a successful `delete()`, the snapshot for that key is deleted.
-- `read()`, `readStream()`, `mkdir()`, `stat()`, `exists()`, and `list()` keep their original behavior.
+- After a successful file write, the wrapper stores the written value as text if the path is mergeable. A failed write does not update the snapshot.
+- After a successful file movement, an existing snapshot moves from the old key to the new key. A move to the same key does not change the store.
+- After a successful deletion, the snapshot for that key is deleted.
 
 The database store name is `base-text-<namespace>`, where the namespace is the same namespace selected by plugin core for the local and remote file systems. This prevents snapshots from being shared between unrelated sync targets.
 
@@ -31,9 +30,9 @@ When a base snapshot exists:
 4. Write the merged text only to sides whose current text differs from it.
 5. Record the resulting local and remote UIDs.
 
-The merged file's `mtime` is set to `max(local.mtime, remote.mtime)`. The merged `meta` preserves `ctime` as the earliest creation time between both sides, sets `mtime` to the merge time, and merges remaining meta fields from both sides.
+The merged file's metadata preserves creation time as the earliest creation time between both sides, sets modification time to the merge time, and merges remaining meta fields from both sides.
 
-When no base snapshot exists, Smart Merge cannot distinguish independent changes. It falls back to latest-survive behavior: copy the side with the newer modification time to the other side. Local wins only when `local.mtime > remote.mtime`; equal timestamps select the remote side. The fallback uses the SDK transfer helper, so large content can be transferred as a stream.
+When no base snapshot exists, Smart Merge creates a synthetic base `o` using the common regions of both text. For unmergeable files, it falls back to latest-survive strategy.
 
 ## Merge Model
 
@@ -64,4 +63,4 @@ The default markers are:
 | Remote (`theirs`) | `<mark class="conflict theirs">`  | `</mark>` |
 | Deletion          | `<mark class="conflict deleted">` | `</mark>` |
 
-Users can configure all six marker strings independently in the Smart Merge settings. Changes update module settings and are persisted through the plugin settings store.
+Users can configure all six marker strings independently in the Smart Merge settings.

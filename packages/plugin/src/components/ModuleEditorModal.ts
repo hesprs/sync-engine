@@ -4,7 +4,7 @@ import { formatUrl, parseUrl } from '@repo/shared/path';
 import { App, Modal, Setting, TextAreaComponent, TextComponent } from 'obsidian';
 import type { AugmentedModuleMeta } from '@/modules/Extensibility';
 import type { Fragment, Translate } from '@/modules/I18n';
-import type { MaybePromise, StringKV } from '@/types';
+import type { MaybePromise } from '@/types';
 
 export type ModuleEditorTranslations = {
 	editModuleInformation: string;
@@ -38,10 +38,13 @@ export default class ModuleEditorModal extends Modal {
 	private saved = false;
 
 	constructor(
-		private readonly ctx: { app: App; translate: Translate<ModuleEditorTranslations> },
+		private readonly ctx: {
+			app: App;
+			translate: Translate<ModuleEditorTranslations>;
+			readModule: (id: string) => Promise<string>;
+		},
 		private readonly options: {
-			initial?: Partial<AugmentedModuleMeta>;
-			file?: string;
+			initial: AugmentedModuleMeta;
 			onSave: (updated: AugmentedModuleMeta) => MaybePromise<void>;
 			onCancel?: () => MaybePromise<void>;
 		},
@@ -51,36 +54,10 @@ export default class ModuleEditorModal extends Modal {
 	}
 
 	onOpen() {
-		const { translate } = this.ctx;
-		const { initial, onSave, file } = this.options;
-		const {
-			enabled = false,
-			name,
-			icon,
-			description,
-			source,
-			integrity = '<placeholder>',
-			version,
-			main = '',
-			readme,
-			id,
-		} = initial ?? {};
-
-		const magic = file ? parseMagicBytes(file) : {};
-		const updated: AugmentedModuleMeta = {
-			...this.options.initial,
-			description: description || magic.description || 'An unknown module.',
-			enabled,
-			icon: icon || magic.icon || 'puzzle',
-			id: id || magic.id || name || magic.name || crypto.randomUUID(),
-			integrity,
-			main,
-			name: name || magic.name || 'Unknown Module',
-			readme: readme || magic.readme || undefined,
-			source: source || magic.source || '',
-			version: version || magic.version || '0.0.1',
-		};
-		if (magic.readme) updated.readme ??= magic.readme;
+		const { translate, readModule } = this.ctx;
+		const { initial, onSave } = this.options;
+		const { integrity, enabled, id } = initial;
+		const updated: AugmentedModuleMeta = { ...initial };
 
 		let integrityEnabled = integrity !== '';
 		this.setTitle(translate('editModuleInformation'));
@@ -197,12 +174,13 @@ export default class ModuleEditorModal extends Modal {
 					.setCta()
 					.setButtonText(translate('save'))
 					.onClick(async () => {
-						const newHash = integrityEnabled
-							? file
-								? await sha256Text(file)
-								: integrity
+						updated.integrity = integrityEnabled
+							? integrity ||
+								(await readModule(id)
+									.then(sha256Text)
+									.catch(() => ''))
 							: '';
-						await onSave(Object.assign(updated, { integrity: newHash }));
+						await onSave(updated);
 						this.saved = true;
 						this.close();
 					}),
@@ -213,14 +191,4 @@ export default class ModuleEditorModal extends Modal {
 		if (!this.saved) void this.options.onCancel?.();
 		this.contentEl.empty();
 	}
-}
-
-function parseMagicBytes(file: string): StringKV {
-	const block = /^\s*\/\*!(?<block>[\s\S]*?)\*\//u.exec(file)?.groups?.block ?? '';
-	return Object.fromEntries(
-		[...block.matchAll(/^(?<key>.+?):\s*(?<value>.*)$/gmu)].map(({ groups }) => {
-			const { key, value } = groups as { key: string; value: string };
-			return [key.trim(), value.trim()];
-		}),
-	);
 }

@@ -48,7 +48,7 @@ type ModuleMeta = {
 模块元数据通过两条渠道到达用户：
 
 - **源元数据**：模块从模块源下载时，源 JSON 中的条目是权威的，下载文件中的 magic bytes 会被忽略。
-- **Magic bytes**：用户通过 **Install module from file** 从本地文件安装模块时，不存在源 JSON。Sync Engine 解析文件顶部的 `/*! ... */` 注释，用它预填模块编辑器。元数据在存储前由用户审查并确认。
+- **Magic bytes**：用户通过 **从文件安装模块** 或 **从代码安装模块** 在本地安装模块时，不存在源 JSON。Sync Engine 解析代码顶部的 `/*! ... */` 注释，用它作为模块元数据。
 
 因此，用 [Tsdown 插件](./develop-a-module#magic-bytes)在构建期嵌入 magic bytes，主要对以独立文件分发的模块有用。如果模块通过模块源分发，把元数据放在源 JSON 中即可，magic bytes 可以完全省略。
 
@@ -90,7 +90,7 @@ moduleSources: ['https://sync.consensia.cc/modules.json'];
 2. 在稳定的 URL 托管模块源 JSON 文件（例如 `https://my-modules.example.com/modules.json`）。
 3. 在每个模块 `main` 字段指定的 URL 托管它的 `.js` 文件。
 4. 任何静态托管都可以：JsDelivr、GitHub Releases、Cloudflare Pages 等。
-5. 用户在 **Settings > Sync Engine > Development > Module sources** 添加你的模块源 URL。
+5. 用户在 **设置 > Sync Engine > 开发 > 模块源** 添加你的模块源 URL。
 
 如果你认为你的模块能让更多人受益，强烈建议把它贡献到 Sync Engine monorepo，见[贡献指南](../usage/contributing#模块贡献)。
 

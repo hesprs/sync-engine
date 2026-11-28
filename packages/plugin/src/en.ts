@@ -71,7 +71,6 @@ const en: Translations = {
 		'Sync Engine records sync states to resolve sync operations between local and remote files. This option allows you to clear records. Warning: this action is likely to cause changes in sync decisions.',
 	completed: 'Completed',
 	completedNoop: 'Already synced',
-	configure: 'Configure',
 	confirm: 'Confirm',
 	confirmDeleteDescription: (count) =>
 		`Please confirm the ${count} local ${pItem(count)} that will be deleted; unselected items will be re-uploaded.`,
@@ -105,7 +104,6 @@ const en: Translations = {
 	customHeaders: 'Custom headers',
 	customHeadersDescription:
 		'Add custom headers to be included with each request, they can either be stored in plaintext or in Obsidian keychain.',
-	delete: 'Delete',
 	deleteModule: 'Delete module',
 	description: 'Description',
 	descriptionDescription: 'Set the description text to be displayed in the module card.',
@@ -229,6 +227,7 @@ const en: Translations = {
 	moduleSources: 'Module sources',
 	moduleSourcesDescription:
 		'Edit module sources from which the module catalog is obtained. In this way you can install third-party Sync Engine modules.',
+	moduleXInstalled: (x) => `Module "${x}" installed.`,
 	moveLocal: 'Move local',
 	moveRemote: 'Move remote',
 	name: 'Name',
@@ -310,7 +309,7 @@ const en: Translations = {
 	syncProgress: 'Sync progress',
 	syncStrategy: 'Sync strategy',
 	syncStrategyDescription:
-		'Configure different synchronization strategies for different files based on Glob rules. The last rule wins when multiple rules match the same file.',
+		'Use Glob rules to configure different synchronization strategies for different files, or exclude certain files and folders from syncing.',
 	syncStrategyNotInstalled: (strategy) => `Sync strategy "${strategy}" not installed!`,
 	syncStrategyTips: () =>
 		createFragment((frag) => {
@@ -369,49 +368,6 @@ const en: Translations = {
 				li.createEl('strong', { text: key });
 				li.appendText(`: ${text}`);
 			});
-		}),
-	untrustedModule: 'Untrusted module',
-	untrustedModuleDescription: ({ fileName, size, path, mtime, ctime }) =>
-		createFragment((frag) => {
-			const p1 = frag.createEl('p');
-			p1.appendText('Sync Engine detected an installed module named ');
-			p1.createEl('code', { text: fileName });
-			p1.appendText(', which is never registered by Sync Engine in this vault. ');
-			p1.createEl('strong', {
-				text: 'Please review following information before proceeding:',
-			});
-			const ul = frag
-				.createDiv(
-					'se-rounded-lg se-border se-border-[--background-modifier-border] se-bg-[--background-secondary] se-px-2',
-				)
-				.createEl('ul');
-			const li1 = ul.createEl('li');
-			li1.appendText('File name: ');
-			li1.createEl('code', { text: fileName });
-			const li2 = ul.createEl('li');
-			li2.appendText('File path: ');
-			li2.createEl('code', { text: path });
-			const li3 = ul.createEl('li');
-			li3.appendText('Size: ');
-			li3.createEl('code', { text: size });
-			const li4 = ul.createEl('li');
-			li4.appendText('Created at: ');
-			li4.createEl('code', { text: ctime });
-			const li5 = ul.createEl('li');
-			li5.appendText('Modified at: ');
-			li5.createEl('code', { text: mtime });
-			const p2 = frag.createEl('p');
-			p2.createEl('strong', {
-				text: 'To prevent malicious code execution, Sync Engine now requires your explicit consent. ',
-			});
-			p2.appendText(
-				'You can choose "Configure" and enable it if it is under your control, or delete it if you don\'t know where is it from. For an explanation of this warning, see ',
-			);
-			p2.createEl('a', {
-				attr: { href: 'https://sync.consensia.cc/deep-dive/extensibility' },
-				text: 'documentation page',
-			});
-			p2.appendText('.');
 		}),
 	update: 'Update',
 	updateAvailable: 'Update available',
